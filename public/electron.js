@@ -15,7 +15,8 @@ function createWindow () {
   })
 
   // win.setMenuBarVisibility(false)
-  mainWindow.loadURL(isDev ? 'http://localhost:3000' : `file://${path.join(__dirname, '../build/index.html')}`);
+  win.loadURL(`file://${path.join(__dirname, '../build/index.html')}`);
+  // win.loadURL('http://localhost:3000');
 }
 
 app.whenReady().then(createWindow)

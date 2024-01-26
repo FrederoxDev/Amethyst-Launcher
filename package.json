@@ -1,8 +1,7 @@
 {
   "name": "react-launcher",
-  "version": "0.1.0",
-  "private": true,
-  "main": "public/electron.js",
+  "version": "2.1.0",
+  "main": "src/electron.js",
   "author": "FrederoxDev",
   "description": "AmethystLauncher",
   "dependencies": {
@@ -14,6 +13,7 @@
     "@types/node": "^16.18.70",
     "@types/react": "^18.2.47",
     "@types/react-dom": "^18.2.18",
+    "electron-is-dev": "^3.0.1",
     "jszip": "^3.10.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -23,9 +23,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start-react": "react-scripts start",
-    "start-electron": "electron .",
-    "build-installer": "electron-builder --win --x64"
+    "build": "react-scripts build && electron-builder"
   },
   "eslintConfig": {
     "extends": [
@@ -34,8 +32,37 @@
     ]
   },
   "devDependencies": {
-    "electron-builder": "^24.9.1",
     "electron": "^28.1.3",
+    "electron-builder": "^24.9.1",
     "tailwindcss": "^3.4.1"
+  },
+  "build": {
+    "productName": "Amethyst Launcher",
+    "appId": "com.frederoxdev.amethystlauncher",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "build/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
