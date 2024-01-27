@@ -9,10 +9,16 @@ import { cacheMinecraftData, downloadVersion, extractVersion, isRegisteredVersio
 import ButtonSection from './components/ButtonSection';
 import ToggleSection from './components/ToggleSection';
 import ModSection from './components/ModSection';
+import { LauncherConfig } from './types/Config';
 const child = window.require('child_process') as typeof import('child_process')
+const fs = window.require('fs') as typeof import('fs');
 
 const semVersion = new SemVersion(1, 20, 51, 1)
 const minecraftVersion = new MinecraftVersion(semVersion, "58c5f0cd-09d7-4e99-a6b6-c3829fd62ac9", VersionType.Release)
+
+const configPath = "C:/Users/blake/AppData/Local/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/AC/Amethyst/launcher_config.json"
+
+let hasInitialized = false;
 
 export default function App() {
   const [ runtimeMod, setRuntimeMod ] = useState<string>("None");
@@ -28,12 +34,43 @@ export default function App() {
   const [ actionLock, setActionLock ] = useState(false)
   const [ loadingPercent, setLoadingPercent ] = useState(0);
 
+  const readConfig = () => {
+    let data: LauncherConfig = {};
+    
+    try {
+      const jsonData = fs.readFileSync(configPath, 'utf-8');
+      data = JSON.parse(jsonData);
+    } catch {}
+
+    // Update states 
+    setKeepLauncherOpen(data["keep_open"] ?? true);
+    setDeveloperMode(data["developer_mode"] ?? false);
+    setActiveMods(data["mods"] ?? []);
+    setRuntimeMod(data["runtime"] ?? "None");
+  }
+
+  const writeConfig = () => {
+    const config: LauncherConfig = {
+      mods: activeMods,
+      runtime: runtimeMod,
+      keep_open: keepLauncherOpen,
+      developer_mode: developerMode
+    }
+
+    fs.writeFileSync(configPath, JSON.stringify(config, undefined, 4));
+  }
+
+  useEffect(readConfig, []);
+
   useEffect(() => {
-    console.log(`runtimeMod: ${runtimeMod}`);
-    console.log(`keepLauncherOpen: ${keepLauncherOpen}`);
-    console.log(`developerMode: ${developerMode}`);
-    console.log(`activeMods: ${activeMods.join(", ")}`);
-  }, [runtimeMod, keepLauncherOpen, developerMode, activeMods])
+    // Don't write the first time that we read the config values
+    if (!hasInitialized) {
+      hasInitialized = true;
+      return;
+    }
+
+    writeConfig();
+  }, [keepLauncherOpen, developerMode, activeMods, runtimeMod])
 
   const installGame = async () => {
     setActionLock(true);
