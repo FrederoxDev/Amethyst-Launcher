@@ -11,9 +11,15 @@ import ToggleSection from './components/ToggleSection';
 import ModSection from './components/ModSection';
 const child = window.require('child_process') as typeof import('child_process')
 
+const semVersion = new SemVersion(1, 20, 51, 1)
+const minecraftVersion = new MinecraftVersion(semVersion, "58c5f0cd-09d7-4e99-a6b6-c3829fd62ac9", VersionType.Release)
+
 export default function App() {
-  const [ runtimeMod, setRuntimeMod ] = useState("None");
-  const [ allRuntimeMods, setAllRuntimeMods ] = useState(["None", "AmethystRuntime@1.1.0"]);
+  const [ runtimeMod, setRuntimeMod ] = useState<string>("None");
+  const [ allRuntimeMods, setAllRuntimeMods ] = useState<string[]>(["None", "AmethystRuntime@1.1.0"]);
+
+  const [ allMods, setAllMods ] = useState<string[]>(["ItemInformation@1.2.0", "Zoom@1.0.0"]);
+  const [ activeMods, setActiveMods ] = useState<string[]>(["ItemInformation@1.2.0", "Zoom@1.0.0"]);
 
   const [ keepLauncherOpen, setKeepLauncherOpen ] = useState(true);
   const [ developerMode, setDeveloperMode ] = useState(false);
@@ -21,13 +27,13 @@ export default function App() {
   const [ status, setStatus ] = useState("")
   const [ actionLock, setActionLock ] = useState(false)
   const [ loadingPercent, setLoadingPercent ] = useState(0);
- 
-  const semVersion = new SemVersion(1, 20, 51, 1)
-  const minecraftVersion = new MinecraftVersion(semVersion, "58c5f0cd-09d7-4e99-a6b6-c3829fd62ac9", VersionType.Release)
 
   useEffect(() => {
-    console.log("Save config");
-  }, [runtimeMod, keepLauncherOpen, developerMode])
+    console.log(`runtimeMod: ${runtimeMod}`);
+    console.log(`keepLauncherOpen: ${keepLauncherOpen}`);
+    console.log(`developerMode: ${developerMode}`);
+    console.log(`activeMods: ${activeMods.join(", ")}`);
+  }, [runtimeMod, keepLauncherOpen, developerMode, activeMods])
 
   const installGame = async () => {
     setActionLock(true);
@@ -57,7 +63,6 @@ export default function App() {
     setLoadingPercent(0);
     setActionLock(false);
 
-
     const startGameCmd = `start minecraft:`;
     child.spawn(startGameCmd, { shell: true })
   }
@@ -67,7 +72,6 @@ export default function App() {
       <Title />
       <MainPanel>
         <DividedSection>
-          {/* Runtime Mod Selector */}
           <Dropdown 
             id="runtime-mod" 
             options={allRuntimeMods}
@@ -91,7 +95,7 @@ export default function App() {
           subtext='Enables hot-reloading and prompting to attach a debugger.'
         />
 
-        <ModSection actionLock={actionLock} />
+        <ModSection actionLock={actionLock} allMods={allMods} activeMods={activeMods} setActiveMods={setActiveMods} />
 
         <ButtonSection launchGame={installGame} actionLock={actionLock} loadingPercent={loadingPercent} status={status} />
       </MainPanel>

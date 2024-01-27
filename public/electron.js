@@ -8,18 +8,16 @@ function createWindow () {
     webPreferences: {
       nodeIntegration: true,
       preload: path.join(__dirname, 'preload.js'),
-      sandbox: false,
-      webSecurity: false,
+      sandbox: false, // false needed for exposing things like window.require
+      webSecurity: true,
       contextIsolation: false
     }
-  })
+  });
 
-  console.log("HELLO!")
-  console.log("dirname", __dirname);
-  
+  win.setMenuBarVisibility(false)
+
   if (app.isPackaged) {
     win.loadURL(`file://${path.join(__dirname, '../build/index.html')}`);
-    win.setMenuBarVisibility(false)
   }
   else {
     win.loadURL('http://localhost:3000');
