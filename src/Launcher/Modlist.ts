@@ -1,4 +1,4 @@
-import { getMinecraftFolder } from "../VersionSwitcher/VersionManager";
+import { getMinecraftFolder } from "../versionSwitcher/VersionManager";
 import { ModConfig } from "../types/ModConfig";
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');

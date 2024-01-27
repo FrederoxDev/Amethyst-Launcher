@@ -5,12 +5,13 @@ import Dropdown from './components/Dropdown';
 import { useEffect, useState } from 'react';
 import { SemVersion } from './types/SemVersion';
 import { MinecraftVersion, VersionType } from './types/MinecraftVersion';
-import { cacheMinecraftData, downloadVersion, extractVersion, getMinecraftFolder, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, unregisterExisting } from './VersionSwitcher/VersionManager';
+import { cacheMinecraftData, downloadVersion, extractVersion, getMinecraftFolder, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, unregisterExisting } from './versionSwitcher/VersionManager';
 import ButtonSection from './components/ButtonSection';
 import ToggleSection from './components/ToggleSection';
 import ModSection from './components/ModSection';
 import { LauncherConfig } from './types/LauncherConfig';
-import { findAllMods } from './Launcher/Modlist';
+import { findAllMods } from './launcher/Modlist';
+import { Router } from 'react-router-dom';
 const child = window.require('child_process') as typeof import('child_process')
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path'); 
@@ -114,7 +115,6 @@ export default function App() {
 
   return (
     <div className={`select-none ${actionLock ? "cursor-wait" : ""} h-screen overflow-hidden`}>
-      <Title />
       <MainPanel>
         <DividedSection>
           <Dropdown 
