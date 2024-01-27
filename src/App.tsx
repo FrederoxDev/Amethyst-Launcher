@@ -5,19 +5,20 @@ import Dropdown from './components/Dropdown';
 import { useEffect, useState } from 'react';
 import { SemVersion } from './types/SemVersion';
 import { MinecraftVersion, VersionType } from './types/MinecraftVersion';
-import { cacheMinecraftData, downloadVersion, extractVersion, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, unregisterExisting } from './VersionManager';
+import { cacheMinecraftData, downloadVersion, extractVersion, getMinecraftFolder, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, unregisterExisting } from './VersionSwitcher/VersionManager';
 import ButtonSection from './components/ButtonSection';
 import ToggleSection from './components/ToggleSection';
 import ModSection from './components/ModSection';
-import { LauncherConfig } from './types/Config';
+import { LauncherConfig } from './types/LauncherConfig';
+import { findAllMods } from './Launcher/Modlist';
 const child = window.require('child_process') as typeof import('child_process')
 const fs = window.require('fs') as typeof import('fs');
+const path = window.require('path') as typeof import('path'); 
 
 const semVersion = new SemVersion(1, 20, 51, 1)
 const minecraftVersion = new MinecraftVersion(semVersion, "58c5f0cd-09d7-4e99-a6b6-c3829fd62ac9", VersionType.Release)
 
-const configPath = "C:/Users/blake/AppData/Local/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/AC/Amethyst/launcher_config.json"
-
+const configPath = path.join(getMinecraftFolder(), "AC", "Amethyst", "launcher_config.json");
 let hasInitialized = false;
 
 export default function App() {
@@ -50,9 +51,11 @@ export default function App() {
   }
 
   const writeConfig = () => {
+    const realRuntime = runtimeMod == "None" ? "" : runtimeMod;
+
     const config: LauncherConfig = {
       mods: activeMods,
-      runtime: runtimeMod,
+      runtime: realRuntime,
       keep_open: keepLauncherOpen,
       developer_mode: developerMode
     }
@@ -60,7 +63,12 @@ export default function App() {
     fs.writeFileSync(configPath, JSON.stringify(config, undefined, 4));
   }
 
-  useEffect(readConfig, []);
+  useEffect(() => {
+    const modList = findAllMods();
+    setAllRuntimeMods(["None", ...modList.runtimeMods]);
+    setAllMods(modList.mods);
+    readConfig();
+  }, []);
 
   useEffect(() => {
     // Don't write the first time that we read the config values

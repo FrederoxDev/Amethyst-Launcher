@@ -1,6 +1,6 @@
-import { MinecraftVersion } from "./types/MinecraftVersion";
-import { download } from "./downloader/MinecraftVersionDownloader";
-import { Extractor } from "./installer/Extractor";
+import { MinecraftVersion } from "../types/MinecraftVersion";
+import { download } from "./MinecraftVersionDownloader";
+import { Extractor } from "./Extractor";
 const regedit = window.require('regedit-rs') as typeof import('regedit-rs');
 const child = window.require('child_process') as typeof import('child_process')
 const fs = window.require('fs') as typeof import('fs');
