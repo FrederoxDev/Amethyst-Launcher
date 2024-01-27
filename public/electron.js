@@ -14,9 +14,16 @@ function createWindow () {
     }
   })
 
-  // win.setMenuBarVisibility(false)
-  win.loadURL(`file://${path.join(__dirname, '../build/index.html')}`);
-  // win.loadURL('http://localhost:3000');
+  console.log("HELLO!")
+  console.log("dirname", __dirname);
+  
+  if (app.isPackaged) {
+    win.loadURL(`file://${path.join(__dirname, '../build/index.html')}`);
+    win.setMenuBarVisibility(false)
+  }
+  else {
+    win.loadURL('http://localhost:3000');
+  }
 }
 
 app.whenReady().then(createWindow)

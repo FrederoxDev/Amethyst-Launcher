@@ -17,11 +17,11 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": false,
+    "noEmit": true,
     "jsx": "react-jsx",
     "outDir": "build"
   },
   "include": [
     "src"
-, "public/electron.js", "public/preload.js", "public/electron.js"  ]
+  ]
 }

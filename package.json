@@ -1,7 +1,7 @@
 {
   "name": "react-launcher",
   "version": "2.1.0",
-  "main": "src/electron.js",
+  "main": "public/electron.js",
   "author": "FrederoxDev",
   "description": "AmethystLauncher",
   "dependencies": {
@@ -23,7 +23,10 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "build": "react-scripts build && electron-builder"
+    "start-react": "react-scripts start",
+    "start-electron": "electron .",
+    "build": "react-scripts build && electron-builder",
+    "run-built": "\"./dist/win-unpacked/Amethyst Launcher.exe\""
   },
   "eslintConfig": {
     "extends": [
@@ -40,7 +43,8 @@
     "productName": "Amethyst Launcher",
     "appId": "com.frederoxdev.amethystlauncher",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "public"
     },
     "files": [
       "build/**/*"
