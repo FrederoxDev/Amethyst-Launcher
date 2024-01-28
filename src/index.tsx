@@ -29,13 +29,11 @@ root.render(
         </div>
 
         {/* Main View */}
-        <div className='fixed top-[48px] left-[80px] right-0 bottom-0'>
             <Routes>
               {/* <Route path='/' element={<App />} /> */}
               <Route path='/' element={ <ProfilePage /> } />
               <Route path='/profile-editor' element={ <ProfileEditor /> } />
             </Routes>
-        </div>
       </div>
     </BrowserRouter>
   </React.StrictMode>

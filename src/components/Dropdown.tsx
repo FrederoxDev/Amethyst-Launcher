@@ -12,7 +12,7 @@ export default function Dropdown({ id, labelText, options, value, setValue }: Dr
         setValue(selectedValue);
     };
 
-    return <div className="h-full">
+    return <div className="">
         <label htmlFor={id} className="minecraft-seven text-white text-[14px]">{labelText}</label>
         <select name={id} id={id} onChange={handleSelectChange} value={value}
             className="box-border border-[2px] border-[#1E1E1F] bg-[#313233] w-full 
