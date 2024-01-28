@@ -15,7 +15,7 @@ export default function ProfileEditor() {
     const [ profileRuntime, setProfileRuntime ] = useState<string>("");
     const [ profileMinecraftVersion, setProfileMinecraftVersion ] = useState<string>("");
 
-    const { allMods, allRuntimes, allMinecraftVersions, allProfiles, setAllProfiles, selectedProfile } = useAppState()
+    const { allMods, allRuntimes, allMinecraftVersions, allProfiles, setAllProfiles, selectedProfile, saveData } = useAppState()
     const navigate = useNavigate();
 
     if (allProfiles.length == 0) navigate("/profiles");
@@ -59,7 +59,7 @@ export default function ProfileEditor() {
         allProfiles[selectedProfile].mods = profileActiveMods;
         allProfiles[selectedProfile].minecraft_version = profileMinecraftVersion;
         
-        saveAllProfiles(allProfiles);
+        saveData();
         navigate("/profiles");
     }
 
@@ -67,7 +67,8 @@ export default function ProfileEditor() {
         const newProfiles = allProfiles;
         newProfiles.splice(selectedProfile, 1);
         setAllProfiles(allProfiles);
-        saveAllProfiles(allProfiles);
+        
+        saveData();
         navigate("/profiles");
     }
 

@@ -1,6 +1,7 @@
 import { getAmethystFolder, getMinecraftFolder } from "../versionSwitcher/VersionManager";
 import { ModConfig } from "../types/ModConfig";
 import { Profile } from "../types/Profile";
+import { LauncherConfig } from "../types/LauncherConfig";
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
 
@@ -71,4 +72,26 @@ export function findAllProfiles(): Profile[] {
 export function saveAllProfiles(profiles: Profile[]) {
     const profilesFile = path.join(getAmethystFolder(), "profiles.json");
     fs.writeFileSync(profilesFile, JSON.stringify(profiles, undefined, 4));
+}
+
+export function saveLauncherConfig(config: LauncherConfig) {
+    const configPath = path.join(getMinecraftFolder(), "AC", "Amethyst", "launcher_config.json");
+    fs.writeFileSync(configPath, JSON.stringify(config, undefined, 4));
+}
+
+export function readLauncherConfig(): LauncherConfig {
+    const configPath = path.join(getMinecraftFolder(), "AC", "Amethyst", "launcher_config.json");
+    let data: LauncherConfig = {};
+    
+    try {
+      const jsonData = fs.readFileSync(configPath, 'utf-8');
+      data = JSON.parse(jsonData);
+    } catch {}
+
+    return {
+        developer_mode: data["developer_mode"] ?? false,
+        keep_open: data["keep_open"] ?? true,
+        mods: data["mods"] ?? [],
+        runtime: data["runtime"] ?? "Vanilla"
+    }
 }

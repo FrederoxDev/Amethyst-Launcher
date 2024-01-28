@@ -1,17 +1,16 @@
-import { BrowserRouter, Link, Route, Routes, useLocation } from "react-router-dom";
+import { CSSProperties } from "react";
+import { Link, Route, Routes, useLocation } from "react-router-dom";
 import Title from "./components/Title";
 import { AppStateProvider } from "./contexts/AppState";
 import LauncherPage from "./pages/LauncherPage";
 import ProfileEditor from "./pages/ProfileEditor";
 import ProfilePage from "./pages/ProfilePage";
-import { CSSProperties } from "react";
 import SettingsPage from "./pages/SettingsPage";
 
 export default function App() {
   const location = useLocation();
   const highlightedIcon: CSSProperties = { borderWidth: "4px", borderColor: "#FFFFFF" };
   const unselectedIcon: CSSProperties = { borderWidth: "2px", borderColor: "#1E1E1F" }
-
 
   return (
     <div className='h-screen overflow-hidden bg-[#313233]'>

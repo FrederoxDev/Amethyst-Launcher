@@ -1,3 +1,4 @@
+import { profile } from "console";
 import DividedSection from "../components/DividedSection";
 import Dropdown from "../components/Dropdown";
 import MainPanel from "../components/MainPanel";
@@ -5,7 +6,7 @@ import MinecraftButton from "../components/MinecraftButton";
 import { useAppState } from "../contexts/AppState";
 
 export default function LauncherPage() {
-    const { allProfiles, selectedProfile } = useAppState();
+    const { allProfiles, selectedProfile, setSelectedProfile } = useAppState();
 
     return (
         <MainPanel>
@@ -22,7 +23,9 @@ export default function LauncherPage() {
                             labelText="Profile"
                             options={allProfiles?.map(profile => profile.name)}
                             value={ allProfiles[selectedProfile]?.name }
-                            setValue={() => {}}
+                            setValue={(value) => {
+                                setSelectedProfile(allProfiles.map(profile => profile.name).findIndex(e => e == value));
+                            }}
                             id="profile-select"
                         />
                     </div>
