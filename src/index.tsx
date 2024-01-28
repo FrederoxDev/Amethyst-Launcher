@@ -7,6 +7,7 @@ import Title from './components/Title';
 import MainPage from './pages/MainPage';
 import ProfilePage from './pages/ProfilePage';
 import ProfileEditor from './pages/ProfileEditor';
+import { AppStateProvider } from './contexts/AppState';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -20,20 +21,19 @@ root.render(
 
         {/* Side Panel */}
         <div className='fixed left-0 top-[48px] h-full bg-[#313233] w-[80px] flex flex-col border-r-[2px] border-r-[#1E1E1F]'>
-          {/* <Link to="/" className='block p-[8px]'>
-            <div className='bg-red-700 w-[64px] h-[64px] box-border border-[#1E1E1F] border-[2px]'>Home</div>
-          </Link> */}
           <Link to="/" className='block p-[8px]'>
             <div className='bg-red-700 w-[64px] h-[64px] box-border border-[#1E1E1F] border-[2px]'>Profiles</div>
           </Link>
         </div>
 
         {/* Main View */}
-            <Routes>
-              {/* <Route path='/' element={<App />} /> */}
-              <Route path='/' element={ <ProfilePage /> } />
-              <Route path='/profile-editor' element={ <ProfileEditor /> } />
-            </Routes>
+        <AppStateProvider>
+          <Routes>
+            {/* <Route path='/' element={<App />} /> */}
+            <Route path='/' element={<ProfilePage />} />
+            <Route path='/profile-editor' element={<ProfileEditor />} />
+          </Routes>
+        </AppStateProvider>
       </div>
     </BrowserRouter>
   </React.StrictMode>

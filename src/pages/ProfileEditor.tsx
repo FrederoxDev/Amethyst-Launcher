@@ -1,21 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DividedSection from "../components/DividedSection";
 import MainPanel from "../components/MainPanel";
 import TextInput from "../components/TextInput";
 import ModSection from "../components/ModSection";
 import Dropdown from "../components/Dropdown";
 import MinecraftButton, { MinecraftButtonStyle } from "../components/MinecraftButton";
+import { useAppState } from "../contexts/AppState";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfileEditor() {
-    const [ profileName, setProfileName ] = useState("Profile 1");
-    const [ profileActiveMods, setProfileActiveMods ] = useState<string[]>(["AmethystRuntime@1.2.0"])
-    const [ profileRuntime, setProfileRuntime ] = useState<string>("None");
-    const [ allMods, setAllMods ] = useState(["AmethystRuntime@1.2.0", "OtherMod@1.2.0", "Test@0.3.0"])
-
-    const [ allRuntimes, setAllRuntimes ] = useState(["Vanilla", "AmethystRuntime@1.2.0"])
-
-    const [ allMinecraftVersions, setAllMinecraftVersions ] = useState<string[]>(["1.20.51.1"]);
+    const [ profileName, setProfileName ] = useState("");
+    const [ profileActiveMods, setProfileActiveMods ] = useState<string[]>([])
+    const [ profileRuntime, setProfileRuntime ] = useState<string>("");
     const [ profileMinecraftVersion, setProfileMinecraftVersion ] = useState<string>("");
+
+    const { allMods, allRuntimes, allMinecraftVersions, allProfiles, selectedProfile } = useAppState()
+    const navigate = useNavigate();
+
 
     const toggleModActive = (name: string) => {
         if (profileActiveMods.includes(name)) {
@@ -41,6 +42,27 @@ export default function ProfileEditor() {
             </div>
         )
     }
+
+    const loadProfile = () => {
+        const profile = allProfiles[selectedProfile];
+        setProfileName(profile.name);
+        setProfileRuntime(profile.runtime);
+        setProfileActiveMods(profile.mods);
+        setProfileMinecraftVersion(profile.minecraft_version);
+    }
+
+    const saveProfile = () => {
+        allProfiles[selectedProfile].name = profileName;
+        allProfiles[selectedProfile].runtime = profileRuntime;
+        allProfiles[selectedProfile].mods = profileActiveMods;
+        allProfiles[selectedProfile].minecraft_version = profileMinecraftVersion;
+        
+        navigate("/");
+    }
+
+    useEffect(() => {
+        loadProfile()
+    }, []);
 
     return (
         <MainPanel>
@@ -81,7 +103,7 @@ export default function ProfileEditor() {
 
             {/* Profile Actions */}
             <DividedSection className="flex justify-around gap-[8px]">
-                <div className="w-[50%]"><MinecraftButton text="Save Profile"/></div>
+                <div className="w-[50%]"><MinecraftButton text="Save Profile" onClick={() => saveProfile()} /></div>
                 <div className="w-[50%]"><MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} /></div>
             </DividedSection>
         </MainPanel>
