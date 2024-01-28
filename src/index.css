@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+* {
+    user-select: none;
+}
+
 @font-face {
     font-family: 'Minecraft-Ten';
     src: url('../public/fonts/Minecraft-Ten.otf') format('opentype');
