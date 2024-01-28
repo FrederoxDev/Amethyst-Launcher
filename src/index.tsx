@@ -2,39 +2,24 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
-import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom';
 import Title from './components/Title';
 import MainPage from './pages/MainPage';
 import ProfilePage from './pages/ProfilePage';
 import ProfileEditor from './pages/ProfileEditor';
 import { AppStateProvider } from './contexts/AppState';
+import LauncherPage from './pages/LauncherPage';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 
+// const location = useLocation();
+
 root.render(
   <React.StrictMode>
     <BrowserRouter basename='/'>
-      <div className='h-screen overflow-hidden'>
-        <Title />
-
-        {/* Side Panel */}
-        <div className='fixed left-0 top-[48px] h-full bg-[#313233] w-[80px] flex flex-col border-r-[2px] border-r-[#1E1E1F]'>
-          <Link to="/" className='block p-[8px]'>
-            <div className='bg-red-700 w-[64px] h-[64px] box-border border-[#1E1E1F] border-[2px]'>Profiles</div>
-          </Link>
-        </div>
-
-        {/* Main View */}
-        <AppStateProvider>
-          <Routes>
-            {/* <Route path='/' element={<App />} /> */}
-            <Route path='/' element={<ProfilePage />} />
-            <Route path='/profile-editor' element={<ProfileEditor />} />
-          </Routes>
-        </AppStateProvider>
-      </div>
+      <App />
     </BrowserRouter>
   </React.StrictMode>
 );

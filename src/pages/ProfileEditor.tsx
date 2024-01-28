@@ -18,7 +18,7 @@ export default function ProfileEditor() {
     const { allMods, allRuntimes, allMinecraftVersions, allProfiles, setAllProfiles, selectedProfile } = useAppState()
     const navigate = useNavigate();
 
-    if (allProfiles.length == 0) navigate("/");
+    if (allProfiles.length == 0) navigate("/profiles");
 
     const toggleModActive = (name: string) => {
         if (profileActiveMods.includes(name)) {
@@ -60,7 +60,7 @@ export default function ProfileEditor() {
         allProfiles[selectedProfile].minecraft_version = profileMinecraftVersion;
         
         saveAllProfiles(allProfiles);
-        navigate("/");
+        navigate("/profiles");
     }
 
     const deleteProfile = () => {
@@ -68,7 +68,7 @@ export default function ProfileEditor() {
         newProfiles.splice(selectedProfile, 1);
         setAllProfiles(allProfiles);
         saveAllProfiles(allProfiles);
-        navigate("/");
+        navigate("/profiles");
     }
 
     useEffect(() => {

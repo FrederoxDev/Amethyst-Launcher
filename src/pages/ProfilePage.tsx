@@ -44,8 +44,6 @@ export default function ProfilePage() {
                 const newProfiles = [...allProfiles, defaultProfile];
                 setAllProfiles(newProfiles);
 
-                console.log("all", allProfiles, allProfiles.length);
-
                 setSelectedProfile(newProfiles.length - 1);
                 navigate("/profile-editor");
             }}>

@@ -1,149 +1,50 @@
-import Title from './components/Title';
-import DividedSection from './components/DividedSection';
-import MainPanel from './components/MainPanel'
-import Dropdown from './components/Dropdown';
-import { useEffect, useState } from 'react';
-import { SemVersion } from './types/SemVersion';
-import { MinecraftVersion, VersionType } from './types/MinecraftVersion';
-import { cacheMinecraftData, downloadVersion, extractVersion, getMinecraftFolder, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, unregisterExisting } from './versionSwitcher/VersionManager';
-import ButtonSection from './components/ButtonSection';
-import ToggleSection from './components/ToggleSection';
-import ModSection from './components/ModSection';
-import { LauncherConfig } from './types/LauncherConfig';
-import { findAllMods } from './launcher/Modlist';
-import { Router } from 'react-router-dom';
-const child = window.require('child_process') as typeof import('child_process')
-const fs = window.require('fs') as typeof import('fs');
-const path = window.require('path') as typeof import('path'); 
-
-const semVersion = new SemVersion(1, 20, 51, 1)
-const minecraftVersion = new MinecraftVersion(semVersion, "58c5f0cd-09d7-4e99-a6b6-c3829fd62ac9", VersionType.Release)
-
-const configPath = path.join(getMinecraftFolder(), "AC", "Amethyst", "launcher_config.json");
-let hasInitialized = false;
+import { BrowserRouter, Link, Route, Routes, useLocation } from "react-router-dom";
+import Title from "./components/Title";
+import { AppStateProvider } from "./contexts/AppState";
+import LauncherPage from "./pages/LauncherPage";
+import ProfileEditor from "./pages/ProfileEditor";
+import ProfilePage from "./pages/ProfilePage";
+import { CSSProperties } from "react";
+import SettingsPage from "./pages/SettingsPage";
 
 export default function App() {
-  const [ runtimeMod, setRuntimeMod ] = useState<string>("None");
-  const [ allRuntimeMods, setAllRuntimeMods ] = useState<string[]>(["None", "AmethystRuntime@1.1.0"]);
+  const location = useLocation();
+  const highlightedIcon: CSSProperties = { borderWidth: "4px", borderColor: "#FFFFFF" };
+  const unselectedIcon: CSSProperties = { borderWidth: "2px", borderColor: "#1E1E1F" }
 
-  const [ allMods, setAllMods ] = useState<string[]>(["ItemInformation@1.2.0", "Zoom@1.0.0"]);
-  const [ activeMods, setActiveMods ] = useState<string[]>(["ItemInformation@1.2.0", "Zoom@1.0.0"]);
-
-  const [ keepLauncherOpen, setKeepLauncherOpen ] = useState(true);
-  const [ developerMode, setDeveloperMode ] = useState(false);
-
-  const [ status, setStatus ] = useState("")
-  const [ actionLock, setActionLock ] = useState(false)
-  const [ loadingPercent, setLoadingPercent ] = useState(0);
-
-  const readConfig = () => {
-    let data: LauncherConfig = {};
-    
-    try {
-      const jsonData = fs.readFileSync(configPath, 'utf-8');
-      data = JSON.parse(jsonData);
-    } catch {}
-
-    // Update states 
-    setKeepLauncherOpen(data["keep_open"] ?? true);
-    setDeveloperMode(data["developer_mode"] ?? false);
-    setActiveMods(data["mods"] ?? []);
-    setRuntimeMod(data["runtime"] ?? "None");
-  }
-
-  const writeConfig = () => {
-    const realRuntime = runtimeMod == "None" ? "" : runtimeMod;
-
-    const config: LauncherConfig = {
-      mods: activeMods,
-      runtime: realRuntime,
-      keep_open: keepLauncherOpen,
-      developer_mode: developerMode
-    }
-
-    fs.writeFileSync(configPath, JSON.stringify(config, undefined, 4));
-  }
-
-  useEffect(() => {
-    const modList = findAllMods();
-    setAllRuntimeMods(["None", ...modList.runtimeMods]);
-    setAllMods(modList.mods);
-    readConfig();
-  }, []);
-
-  useEffect(() => {
-    // Don't write the first time that we read the config values
-    if (!hasInitialized) {
-      hasInitialized = true;
-      return;
-    }
-
-    writeConfig();
-  }, [keepLauncherOpen, developerMode, activeMods, runtimeMod])
-
-  const installGame = async () => {
-    setActionLock(true);
-
-    // Only install the game once
-    if (!isVersionDownloaded(minecraftVersion)) {
-      await downloadVersion(minecraftVersion, setStatus, setLoadingPercent);
-      await extractVersion(minecraftVersion, setStatus, setLoadingPercent);
-    }
-
-    // Only register the game if needed
-    if (!isRegisteredVersionOurs(minecraftVersion)) {
-      setStatus("Copying existing minecraft data")
-      cacheMinecraftData();
-
-      setStatus("Unregistering existing version");
-      await unregisterExisting();
-
-      setStatus("Registering downloaded version");
-      await registerVersion(minecraftVersion)
-
-      setStatus("Restoring existing minecraft data")
-      restoreMinecraftData();
-    } 
-  
-    setStatus("")
-    setLoadingPercent(0);
-    setActionLock(false);
-
-    const startGameCmd = `start minecraft:`;
-    child.spawn(startGameCmd, { shell: true })
-  }
 
   return (
-    <div className={`select-none ${actionLock ? "cursor-wait" : ""} h-screen overflow-hidden`}>
-      <MainPanel>
-        <DividedSection>
-          <Dropdown 
-            id="runtime-mod" 
-            options={allRuntimeMods}
-            labelText='Runtime Mod'
-            value={runtimeMod}
-            setValue={setRuntimeMod}
-          />
-        </DividedSection>
+    <div className='h-screen overflow-hidden bg-[#313233]'>
+      <Title />
 
-        <ToggleSection 
-          isChecked={keepLauncherOpen}
-          setIsChecked={setKeepLauncherOpen}
-          text='Keep launcher open'
-          subtext='Prevents the launcher from closing after launching the game.'
-        />
+      {/* Side Panel */}
+      <div className='fixed left-0 top-[48px] h-full bg-[#313233] w-[64px] flex flex-col border-r-[2px] border-r-[#1E1E1F]'>
+        <Link to="/" className='block p-[8px]' draggable={false}>
+          <div className='w-[48px] h-[48px]' style={ location.pathname == "/" ? highlightedIcon : unselectedIcon }>
+            <img src="images/general_icon.png" className='w-full h-full pixelated' />
+          </div>
+        </Link>
+        <Link to="/profiles" className='block p-[8px]' draggable={false}>
+          <div className='w-[48px] h-[48px]' style={location.pathname == "/profiles" ? highlightedIcon : unselectedIcon}>
+            <img src="images/advanced_icon.png" className='w-full h-full pixelated' />
+          </div>
+        </Link>
+        <Link to="/settings" className='block p-[8px]' draggable={false}>
+          <div className='w-[48px] h-[48px]' style={location.pathname == "/settings" ? highlightedIcon : unselectedIcon}>
+            <img src="images/settings_icon.png" className='w-full h-full pixelated' />
+          </div>
+        </Link>
+      </div>
 
-        <ToggleSection 
-          isChecked={developerMode}
-          setIsChecked={setDeveloperMode}
-          text='Developer mode'
-          subtext='Enables hot-reloading and prompting to attach a debugger.'
-        />
-
-        <ModSection actionLock={actionLock} allMods={allMods} activeMods={activeMods} setActiveMods={setActiveMods} />
-
-        <ButtonSection launchGame={installGame} actionLock={actionLock} loadingPercent={loadingPercent} status={status} />
-      </MainPanel>
+      {/* Main View */}
+      <AppStateProvider>
+        <Routes>
+          <Route path='/' element={<LauncherPage />} />
+          <Route path='/profiles' element={<ProfilePage />} />
+          <Route path='/profile-editor' element={<ProfileEditor />} />
+          <Route path='/settings' element={<SettingsPage />} />
+        </Routes>
+      </AppStateProvider>
     </div>
   )
 }
