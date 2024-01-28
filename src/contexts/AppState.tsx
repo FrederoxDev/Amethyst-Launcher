@@ -1,20 +1,7 @@
-import { ReactNode, createContext, useContext, useState } from "react";
+import { ReactNode, createContext, useContext, useEffect, useState } from "react";
 import { Profile } from "../types/Profile";
-
-const defaultProfiles = [
-    {
-        name: "Default Profile",
-        minecraft_version: "1.20.51.1",
-        mods: [],
-        runtime: "Vanilla"
-    },
-    {
-        name: "Second Profile",
-        minecraft_version: "1.20.30.02",
-        mods: [],
-        runtime: "AmethystRuntime@1.2.0"
-    }
-];
+import { getAmethystFolder } from "../versionSwitcher/VersionManager";
+import { findAllProfiles, saveAllProfiles } from "../launcher/Modlist";
 
 interface TAppStateContext {
     allMods: string[];
@@ -39,8 +26,23 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     const [ allMods, setAllMods ] = useState<string[]>(["Mod 1", "Mod 2"]);
     const [ allRuntimes, setAllRuntimes ] = useState<string[]>(["Vanilla", "AmethystRuntime@1.2.0"]);
     const [ allMinecraftVersions, setAllMinecraftVersions ] = useState(["1.20.51.1", "1.20.30.02"]);
-    const [ allProfiles, setAllProfiles ] = useState<Profile[]>(defaultProfiles);
+    const [ allProfiles, setAllProfiles ] = useState<Profile[]>([]);
     const [ selectedProfile, setSelectedProfile ] = useState(0);
+
+    useEffect(() => {
+        setAllProfiles(findAllProfiles());
+    }, [])
+
+    const [ hasInitialized, setHasInitialized ] = useState(false);
+
+    useEffect(() => {
+        if (!hasInitialized) {
+            setHasInitialized(true);
+            return;
+        }
+
+        saveAllProfiles(allProfiles);
+    }, [ allProfiles ])
 
     return (
         <AppStateContext.Provider value={

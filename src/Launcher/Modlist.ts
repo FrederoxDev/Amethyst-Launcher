@@ -1,5 +1,6 @@
-import { getMinecraftFolder } from "../versionSwitcher/VersionManager";
+import { getAmethystFolder, getMinecraftFolder } from "../versionSwitcher/VersionManager";
 import { ModConfig } from "../types/ModConfig";
+import { Profile } from "../types/Profile";
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
 
@@ -51,4 +52,23 @@ export function findAllMods(): Modlist {
     }
 
     return mods;
+}
+
+export function findAllProfiles(): Profile[] {
+    const profilesFile = path.join(getAmethystFolder(), "profiles.json");
+    if (!fs.existsSync(profilesFile)) return [];
+
+    const jsonData = fs.readFileSync(profilesFile, "utf-8");
+    try {
+        const profiles = JSON.parse(jsonData);
+        return profiles;
+    }
+    catch {
+        return [];
+    }
+}
+
+export function saveAllProfiles(profiles: Profile[]) {
+    const profilesFile = path.join(getAmethystFolder(), "profiles.json");
+    fs.writeFileSync(profilesFile, JSON.stringify(profiles, undefined, 4));
 }

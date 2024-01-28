@@ -7,6 +7,7 @@ import Dropdown from "../components/Dropdown";
 import MinecraftButton, { MinecraftButtonStyle } from "../components/MinecraftButton";
 import { useAppState } from "../contexts/AppState";
 import { useNavigate } from "react-router-dom";
+import { saveAllProfiles } from "../launcher/Modlist";
 
 export default function ProfileEditor() {
     const [ profileName, setProfileName ] = useState("");
@@ -14,9 +15,10 @@ export default function ProfileEditor() {
     const [ profileRuntime, setProfileRuntime ] = useState<string>("");
     const [ profileMinecraftVersion, setProfileMinecraftVersion ] = useState<string>("");
 
-    const { allMods, allRuntimes, allMinecraftVersions, allProfiles, selectedProfile } = useAppState()
+    const { allMods, allRuntimes, allMinecraftVersions, allProfiles, setAllProfiles, selectedProfile } = useAppState()
     const navigate = useNavigate();
 
+    if (allProfiles.length == 0) navigate("/");
 
     const toggleModActive = (name: string) => {
         if (profileActiveMods.includes(name)) {
@@ -45,10 +47,10 @@ export default function ProfileEditor() {
 
     const loadProfile = () => {
         const profile = allProfiles[selectedProfile];
-        setProfileName(profile.name);
-        setProfileRuntime(profile.runtime);
-        setProfileActiveMods(profile.mods);
-        setProfileMinecraftVersion(profile.minecraft_version);
+        setProfileName(profile?.name ?? "New Profile");
+        setProfileRuntime(profile?.runtime ?? "Vanilla");
+        setProfileActiveMods(profile?.mods ?? []);
+        setProfileMinecraftVersion(profile?.minecraft_version ?? "1.20.51.1");
     }
 
     const saveProfile = () => {
@@ -57,6 +59,15 @@ export default function ProfileEditor() {
         allProfiles[selectedProfile].mods = profileActiveMods;
         allProfiles[selectedProfile].minecraft_version = profileMinecraftVersion;
         
+        saveAllProfiles(allProfiles);
+        navigate("/");
+    }
+
+    const deleteProfile = () => {
+        const newProfiles = allProfiles;
+        newProfiles.splice(selectedProfile, 1);
+        setAllProfiles(allProfiles);
+        saveAllProfiles(allProfiles);
         navigate("/");
     }
 
@@ -90,13 +101,19 @@ export default function ProfileEditor() {
                 <div className=" w-[50%] h-full flex flex-col">
                     <p className="text-white minecraft-seven">Active Mods</p>
                     <div className="border-[2px] border-[#1E1E1F] bg-[#313233] flex-grow">
-                        {allMods.filter(mod => profileActiveMods.includes(mod)).map(mod => <ModButton name={mod} />)}
+                        {
+                            allMods.length > 0 ? allMods.filter(mod => profileActiveMods.includes(mod))
+                                .map((mod, index) => <ModButton name={mod} key={index} />) : <></>
+                        }
                     </div>
                 </div>
                 <div className=" w-[50%] h-full flex flex-col">
                     <p className="text-white minecraft-seven">Inactive Mods</p>
                     <div className="border-[2px] border-[#1E1E1F] bg-[#313233] flex-grow">
-                        {allMods.filter(mod => !profileActiveMods.includes(mod)).map(mod => <ModButton name={mod} />)}
+                    {
+                            allMods.length > 0 ? allMods.filter(mod => !profileActiveMods.includes(mod))
+                                .map((mod, index) => <ModButton name={mod} key={index} />) : <></>
+                        }
                     </div>
                 </div>
             </DividedSection>
@@ -104,7 +121,7 @@ export default function ProfileEditor() {
             {/* Profile Actions */}
             <DividedSection className="flex justify-around gap-[8px]">
                 <div className="w-[50%]"><MinecraftButton text="Save Profile" onClick={() => saveProfile()} /></div>
-                <div className="w-[50%]"><MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} /></div>
+                <div className="w-[50%]"><MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} onClick={() => deleteProfile()}/></div>
             </DividedSection>
         </MainPanel>
     )
