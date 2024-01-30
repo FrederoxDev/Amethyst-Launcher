@@ -15,7 +15,7 @@ export class SemVersion {
         return `${this.major}.${this.minor}.${this.patch}.${this.build}`;
     }
 
-    static fromString(versionString: string): SemVersion | null {
+    static fromString(versionString: string): SemVersion {
         const versionRegex = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/;
         const match = versionString.match(versionRegex);
     
@@ -24,7 +24,6 @@ export class SemVersion {
           return new SemVersion(major, minor, patch, build);
         }
     
-        console.error('Invalid version string format');
-        return null;
+        throw new Error(`Invalid version string format ${versionString}`)
       }
 }

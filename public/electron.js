@@ -9,7 +9,7 @@ function createWindow () {
       nodeIntegration: true,
       preload: path.join(__dirname, 'preload.js'),
       sandbox: false, // false needed for exposing things like window.require
-      webSecurity: true,
+      webSecurity: false, // tell CORS to shut up lmao
       contextIsolation: false
     }
   });

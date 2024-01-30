@@ -26,6 +26,15 @@ interface TAppStateContext {
     developerMode: boolean;
     setDeveloperMode: React.Dispatch<React.SetStateAction<boolean>>;
 
+    loadingPercent: number;
+    setLoadingPercent: React.Dispatch<React.SetStateAction<number>>;
+
+    isLoading: boolean;
+    setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+
+    status: string;
+    setStatus: React.Dispatch<React.SetStateAction<string>>;
+
     // Expose functions
     saveData: () => void
 }
@@ -40,6 +49,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     const [ selectedProfile, setSelectedProfile ] = useState(0);
     const [ keepLauncherOpen, setKeepLauncherOpen ] = useState(true);
     const [ developerMode, setDeveloperMode ] = useState(false);
+    const [ loadingPercent, setLoadingPercent ] = useState(0.4);
+    const [ isLoading, setIsLoading ] = useState(false);
+    const [ status, setStatus ] = useState("");
  
     // Initialize Data like all mods and existing profiles..
     useEffect(() => {
@@ -83,7 +95,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
             { 
                 allMods, setAllMods, allRuntimes, setAllRuntimes, allMinecraftVersions, 
                 setAllMinecraftVersions, allProfiles, setAllProfiles, selectedProfile, setSelectedProfile,
-                keepLauncherOpen, setKeepLauncherOpen, developerMode, setDeveloperMode, saveData
+                keepLauncherOpen, setKeepLauncherOpen, developerMode, setDeveloperMode, loadingPercent, 
+                setLoadingPercent, isLoading, setIsLoading, status, setStatus, saveData
             }
         }>
             { children }
