@@ -58,6 +58,9 @@ static std::wstring FindRuntimeDllPath()
 
     Config config = loadConfig(configPath);
     std::string rawModName = config.injectedMod;
+
+    // Launching a vanilla profile so exit
+    if (rawModName == "Vanilla") Shutdown();
     
     // Split the runtime mod name by the @ character to find the dllName
     size_t at = rawModName.find("@");

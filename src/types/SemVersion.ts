@@ -16,7 +16,7 @@ export class SemVersion {
     }
 
     static fromString(versionString: string): SemVersion {
-        const versionRegex = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/;
+        const versionRegex = /^(\d+)\.(\d+)\.(\d+)\.(\d+)/;
         const match = versionString.match(versionRegex);
     
         if (match) {

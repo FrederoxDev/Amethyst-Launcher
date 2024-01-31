@@ -111,14 +111,17 @@ export async function getAllMinecraftVersions() {
     const currentTime = new Date();
     const discardOldDataTime = new Date(currentTime.getTime() - 60 * 60 * 1000);
 
+    console.log(lastWriteTime, discardOldDataTime, lastWriteTime < discardOldDataTime);
+
     if (lastWriteTime < discardOldDataTime) {
+        console.log("Fetching minecraft versions from https://mrarm.io/r/w10-vdb");
         const data = await fetch("https://mrarm.io/r/w10-vdb");
 
         if (!data.ok) {
             throw new Error("Failed to fetch minecraft version data from https://mrarm.io/r/w10-vdb");
         }
 
-        fs.writeFileSync(versionCacheFile, await data.text());
+        fs.writeFileSync(versionCacheFile, await data.text(), );
     }
     
     const versionData = fs.readFileSync(versionCacheFile, "utf-8");

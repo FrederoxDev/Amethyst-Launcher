@@ -14,7 +14,12 @@ const toMB = (bytes: number) => {
 
 export function getAmethystFolder() {
   //@ts-ignore
-  return window.env["AppData"] + "\\Amethyst";
+  const amethystFolder = path.join(window.env["AppData"], "Amethyst");
+  if (!fs.existsSync(amethystFolder)) {
+      fs.mkdirSync(amethystFolder, { recursive: true });
+  }
+
+  return amethystFolder;
 }
 
 export function getMinecraftFolder() {
