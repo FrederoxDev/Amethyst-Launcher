@@ -1,8 +1,9 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from "react";
 import { Profile } from "../types/Profile";
 import { getAmethystFolder } from "../versionSwitcher/VersionManager";
-import { findAllMods, findAllProfiles, readLauncherConfig, saveAllProfiles, saveLauncherConfig } from "../launcher/Modlist";
+import { findAllMods, findAllProfiles, getAllMinecraftVersions, readLauncherConfig, saveAllProfiles, saveLauncherConfig } from "../launcher/Modlist";
 import { LauncherConfig } from "../types/LauncherConfig";
+import { MinecraftVersion } from "../types/MinecraftVersion";
 
 interface TAppStateContext {
     allMods: string[];
@@ -11,8 +12,8 @@ interface TAppStateContext {
     allRuntimes: string[];
     setAllRuntimes: React.Dispatch<React.SetStateAction<string[]>>;
 
-    allMinecraftVersions: string[];
-    setAllMinecraftVersions: React.Dispatch<React.SetStateAction<string[]>>;
+    allMinecraftVersions: MinecraftVersion[];
+    setAllMinecraftVersions: React.Dispatch<React.SetStateAction<MinecraftVersion[]>>;
 
     allProfiles: Profile[];
     setAllProfiles: React.Dispatch<React.SetStateAction<Profile[]>>;
@@ -44,7 +45,7 @@ const AppStateContext = createContext<TAppStateContext | undefined>(undefined);
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     const [ allMods, setAllMods ] = useState<string[]>([]);
     const [ allRuntimes, setAllRuntimes ] = useState<string[]>([]);
-    const [ allMinecraftVersions, setAllMinecraftVersions ] = useState(["1.20.51.1", "1.20.30.02"]);
+    const [ allMinecraftVersions, setAllMinecraftVersions ] = useState<MinecraftVersion[]>([]);
     const [ allProfiles, setAllProfiles ] = useState<Profile[]>([]);
     const [ selectedProfile, setSelectedProfile ] = useState(0);
     const [ keepLauncherOpen, setKeepLauncherOpen ] = useState(true);
@@ -64,6 +65,13 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         const readConfig = readLauncherConfig();
         setKeepLauncherOpen(readConfig.keep_open ?? true);
         setDeveloperMode(readConfig.developer_mode ?? false);
+
+        const fetchMinecraftVersions = async () => {
+            const versions = await getAllMinecraftVersions();
+            setAllMinecraftVersions(versions);
+        }
+        
+        fetchMinecraftVersions();
     }, [])
 
     const [ hasInitialized, setHasInitialized ] = useState(false);

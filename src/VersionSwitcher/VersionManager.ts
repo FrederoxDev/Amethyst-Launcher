@@ -207,26 +207,3 @@ export function restoreMinecraftData() {
 
   fs.cpSync(tempDataFolder, minecraftDataFolder, { recursive: true });
 }
-
-export async function getMinecraftVersions() {
-    const data = await fetch("https://mrarm.io/r/w10-vdb");
-
-    if (!data.ok) {
-        throw new Error("Failed to fetch minecraft version data from https://mrarm.io/r/w10-vdb");
-    }
-
-    const rawText = await data.text();
-    const rawJson = JSON.parse(rawText);
-
-    const versions: MinecraftVersion[] = [];
-
-    for (const version of rawJson) {
-        versions.push(new MinecraftVersion(
-            SemVersion.fromString(version[0] as string),
-            version[1],
-            version[2] as unknown as VersionType
-        ));
-    }
-
-    return versions;
-}

@@ -3,14 +3,16 @@ import Dropdown from "../components/Dropdown";
 import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
 import { useAppState } from "../contexts/AppState";
-import { downloadVersion, extractVersion, getMinecraftVersions, isVersionDownloaded } from "../versionSwitcher/VersionManager";
+import { downloadVersion, extractVersion, isVersionDownloaded } from "../versionSwitcher/VersionManager";
 import { MinecraftVersion, VersionType } from "../types/MinecraftVersion";
 import { SemVersion } from "../types/SemVersion";
 
 
 
 export default function LauncherPage() {
-    const { allProfiles, selectedProfile, setSelectedProfile, loadingPercent, status, setStatus, isLoading, setIsLoading, setLoadingPercent} = useAppState();
+    const { allProfiles, selectedProfile, setSelectedProfile, loadingPercent, status, setStatus, isLoading, setIsLoading, 
+        setLoadingPercent, allMinecraftVersions 
+    } = useAppState();
 
     const launchGame = async () => {
         const profile = allProfiles[selectedProfile];
@@ -19,9 +21,8 @@ export default function LauncherPage() {
 
         setIsLoading(true);
 
-        if (!isVersionDownloaded(semVersion)) {
-            const allVersions = await getMinecraftVersions();
-            const minecraftVersion = allVersions.find(version => version.version.toString() == semVersion.toString());
+        if (!isVersionDownloaded(semVersion)) {;
+            const minecraftVersion = allMinecraftVersions.find(version => version.version.toString() == semVersion.toString());
 
             if (minecraftVersion === undefined) {
                 throw new Error(`Failed to find version ${semVersion.toString()}`);

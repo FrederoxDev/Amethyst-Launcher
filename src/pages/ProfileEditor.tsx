@@ -85,7 +85,7 @@ export default function ProfileEditor() {
                     labelText="Minecraft Version" 
                     value={ profileMinecraftVersion }
                     setValue={ setProfileMinecraftVersion }
-                    options={ allMinecraftVersions }
+                    options={ allMinecraftVersions.map(ver => ver.version.toString()) }
                     id="minecraft-version"
                 />
                 <Dropdown 

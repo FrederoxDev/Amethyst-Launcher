@@ -2,6 +2,8 @@ import { getAmethystFolder, getMinecraftFolder } from "../versionSwitcher/Versio
 import { ModConfig } from "../types/ModConfig";
 import { Profile } from "../types/Profile";
 import { LauncherConfig } from "../types/LauncherConfig";
+import { MinecraftVersion, VersionType } from "../types/MinecraftVersion";
+import { SemVersion } from "../types/SemVersion";
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
 
@@ -94,4 +96,42 @@ export function readLauncherConfig(): LauncherConfig {
         mods: data["mods"] ?? [],
         runtime: data["runtime"] ?? "Vanilla"
     }
+}
+
+export async function getAllMinecraftVersions() {
+    const versionCacheFile = path.join(getAmethystFolder(), "cached_versions.json");
+    let lastWriteTime: Date = new Date(0);
+
+    if (fs.existsSync(versionCacheFile)) {
+        const fileInfo = fs.statSync(versionCacheFile);
+        lastWriteTime = fileInfo.mtime;
+    }
+
+    // Only fetch the data every hour
+    const currentTime = new Date();
+    const discardOldDataTime = new Date(currentTime.getTime() - 60 * 60 * 1000);
+
+    if (lastWriteTime < discardOldDataTime) {
+        const data = await fetch("https://mrarm.io/r/w10-vdb");
+
+        if (!data.ok) {
+            throw new Error("Failed to fetch minecraft version data from https://mrarm.io/r/w10-vdb");
+        }
+
+        fs.writeFileSync(versionCacheFile, await data.text());
+    }
+    
+    const versionData = fs.readFileSync(versionCacheFile, "utf-8");
+    const rawJson = JSON.parse(versionData);
+    const versions: MinecraftVersion[] = [];
+
+    for (const version of rawJson) {
+        versions.push(new MinecraftVersion(
+            SemVersion.fromString(version[0] as string),
+            version[1],
+            version[2] as unknown as VersionType
+        ));
+    }
+
+    return versions;
 }
