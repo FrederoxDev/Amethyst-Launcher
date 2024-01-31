@@ -50,7 +50,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     const [ selectedProfile, setSelectedProfile ] = useState(0);
     const [ keepLauncherOpen, setKeepLauncherOpen ] = useState(true);
     const [ developerMode, setDeveloperMode ] = useState(false);
-    const [ loadingPercent, setLoadingPercent ] = useState(0.4);
+    const [ loadingPercent, setLoadingPercent ] = useState(0);
     const [ isLoading, setIsLoading ] = useState(false);
     const [ status, setStatus ] = useState("");
  

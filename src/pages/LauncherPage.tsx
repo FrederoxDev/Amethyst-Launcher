@@ -3,10 +3,10 @@ import Dropdown from "../components/Dropdown";
 import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
 import { useAppState } from "../contexts/AppState";
-import { downloadVersion, extractVersion, isVersionDownloaded } from "../versionSwitcher/VersionManager";
+import { cacheMinecraftData, downloadVersion, extractVersion, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, unregisterExisting } from "../versionSwitcher/VersionManager";
 import { MinecraftVersion, VersionType } from "../types/MinecraftVersion";
 import { SemVersion } from "../types/SemVersion";
-
+const child = window.require('child_process') as typeof import('child_process')
 
 
 export default function LauncherPage() {
@@ -17,13 +17,15 @@ export default function LauncherPage() {
     const launchGame = async () => {
         const profile = allProfiles[selectedProfile];
         const semVersion = SemVersion.fromString(profile.minecraft_version);
-        console.log(semVersion)
+        const minecraftVersion = allMinecraftVersions.find(version => version.version.toString() == semVersion.toString());
+
+        if (minecraftVersion === undefined) {
+            throw new Error("MinecraftVersion was undefined?");
+        }
 
         setIsLoading(true);
 
         if (!isVersionDownloaded(semVersion)) {;
-            const minecraftVersion = allMinecraftVersions.find(version => version.version.toString() == semVersion.toString());
-
             if (minecraftVersion === undefined) {
                 throw new Error(`Failed to find version ${semVersion.toString()}`);
             }
@@ -32,7 +34,26 @@ export default function LauncherPage() {
             await extractVersion(minecraftVersion, setStatus, setLoadingPercent);
         }
 
+        // Only register the game if needed
+        if (!isRegisteredVersionOurs(minecraftVersion)) {
+            setStatus("Copying existing minecraft data")
+            cacheMinecraftData();
+    
+            setStatus("Unregistering existing version");
+            await unregisterExisting();
+    
+            setStatus("Registering downloaded version");
+            await registerVersion(minecraftVersion)
+    
+            setStatus("Restoring existing minecraft data")
+            restoreMinecraftData();
+        } 
+
         setIsLoading(false);
+        setStatus("");
+
+        const startGameCmd = `start minecraft:`;
+        child.spawn(startGameCmd, { shell: true })
     }
 
     return (
