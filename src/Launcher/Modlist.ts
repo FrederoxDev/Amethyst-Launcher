@@ -7,18 +7,19 @@ import { SemVersion } from "../types/SemVersion";
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
 
-type Modlist = {
+type ModList = {
     runtimeMods: string[],
     mods: string[]
 }
 
-export function findAllMods(): Modlist {
-    const mods: Modlist = {
+export function findAllMods(): ModList {
+    const mods: ModList = {
         mods: [],
         runtimeMods: []
     };
 
     const modsFolder = path.join(getMinecraftFolder(), 'AC', 'Amethyst', 'mods');
+    if(!fs.existsSync(modsFolder)) return { mods: [], runtimeMods: [] };
 
     const allModNames = fs.readdirSync(modsFolder, { withFileTypes: true })
         .filter(f => f.isDirectory())
@@ -77,8 +78,10 @@ export function saveAllProfiles(profiles: Profile[]) {
 }
 
 export function saveLauncherConfig(config: LauncherConfig) {
-    const configPath = path.join(getMinecraftFolder(), "AC", "Amethyst", "launcher_config.json");
-    fs.writeFileSync(configPath, JSON.stringify(config, undefined, 4));
+    const configPath = path.join(getMinecraftFolder(), "AC", "Amethyst");
+
+    fs.mkdirSync(configPath, { recursive: true });
+    fs.writeFileSync(configPath + "/launcher_config.json", JSON.stringify(config, undefined, 4));
 }
 
 export function readLauncherConfig(): LauncherConfig {
