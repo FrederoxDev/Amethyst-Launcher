@@ -1,6 +1,6 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from "react";
 import { Profile } from "../types/Profile";
-import { findAllMods, findAllProfiles, getAllMinecraftVersions, readLauncherConfig, saveAllProfiles, saveLauncherConfig } from "../Launcher/ModList";
+import { findAllMods, findAllProfiles, getAllMinecraftVersions, readLauncherConfig, saveAllProfiles, saveLauncherConfig } from "../Launcher/Modlist";
 import { LauncherConfig } from "../types/LauncherConfig";
 import { MinecraftVersion } from "../types/MinecraftVersion";
 
