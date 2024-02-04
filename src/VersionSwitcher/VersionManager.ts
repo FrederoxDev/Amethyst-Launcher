@@ -1,4 +1,4 @@
-import { MinecraftVersion, VersionType } from "../types/MinecraftVersion";
+import { MinecraftVersion } from "../types/MinecraftVersion";
 import { download } from "./MinecraftVersionDownloader";
 import { Extractor } from "./Extractor";
 import { SemVersion } from "../types/SemVersion";
@@ -16,7 +16,7 @@ export function getAmethystFolder() {
   //@ts-ignore
   const amethystFolder = path.join(window.env["AppData"], "Amethyst");
   if (!fs.existsSync(amethystFolder)) {
-      fs.mkdirSync(amethystFolder, { recursive: true });
+    fs.mkdirSync(amethystFolder, { recursive: true });
   }
 
   return amethystFolder;
