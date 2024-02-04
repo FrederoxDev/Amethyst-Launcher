@@ -2,12 +2,10 @@ import { useEffect, useState } from "react";
 import DividedSection from "../components/DividedSection";
 import MainPanel from "../components/MainPanel";
 import TextInput from "../components/TextInput";
-import ModSection from "../components/ModSection";
 import Dropdown from "../components/Dropdown";
 import MinecraftButton, { MinecraftButtonStyle } from "../components/MinecraftButton";
 import { useAppState } from "../contexts/AppState";
 import { useNavigate } from "react-router-dom";
-import { saveAllProfiles } from "../launcher/Modlist";
 import { VersionType } from "../types/MinecraftVersion";
 
 export default function ProfileEditor() {

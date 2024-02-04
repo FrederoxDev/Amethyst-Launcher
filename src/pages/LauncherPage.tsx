@@ -6,6 +6,7 @@ import { useAppState } from "../contexts/AppState";
 import { cacheMinecraftData, downloadVersion, extractVersion, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, unregisterExisting } from "../versionSwitcher/VersionManager";
 import { MinecraftVersion, VersionType } from "../types/MinecraftVersion";
 import { SemVersion } from "../types/SemVersion";
+import { readLauncherConfig, saveLauncherConfig } from "../Launcher/ModList";
 const child = window.require('child_process') as typeof import('child_process')
 
 
@@ -47,6 +48,9 @@ export default function LauncherPage() {
     
             setStatus("Restoring existing minecraft data")
             restoreMinecraftData();
+
+            setStatus("Saving config...");
+            saveLauncherConfig(readLauncherConfig());
         } 
 
         setIsLoading(false);
