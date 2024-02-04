@@ -6,7 +6,7 @@ import { useAppState } from "../contexts/AppState";
 import { cacheMinecraftData, downloadVersion, extractVersion, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, unregisterExisting } from "../versionSwitcher/VersionManager";
 import { MinecraftVersion, VersionType } from "../types/MinecraftVersion";
 import { SemVersion } from "../types/SemVersion";
-import { readLauncherConfig, saveLauncherConfig } from "../Launcher/ModList";
+import { readLauncherConfig, saveLauncherConfig } from "../Launcher/Modlist";
 const child = window.require('child_process') as typeof import('child_process')
 
 
