@@ -48,6 +48,11 @@ void SuspendMinecraftThread()
 	NtSuspendThread(hMcThreadHandle, NULL);
 }
 
+void ResumeMinecraftThread()
+{
+    NtResumeThread(hMcThreadHandle, NULL);
+}
+
 static std::wstring FindRuntimeDllPath()
 {
 	wchar_t buffer[MAX_PATH];
@@ -60,7 +65,7 @@ static std::wstring FindRuntimeDllPath()
     std::string rawModName = config.injectedMod;
 
     // Launching a vanilla profile so exit
-    if (rawModName == "Vanilla") Shutdown();
+    if (rawModName == "Vanilla") return L"Vanilla";
     
     // Split the runtime mod name by the @ character to find the dllName
     size_t at = rawModName.find("@");
@@ -105,8 +110,23 @@ static void Proxy()
 
     NtSuspendThread = (NtSuspendThreadPtr)_NtSuspendThread;
 
+    FARPROC _NtResumeThread = GetProcAddress(ntdllHandle, "NtResumeThread");
+    if (_NtResumeThread == 0) {
+        Log::Error("[AmethystProxy] Could not find ProcAddress of NtResumeThread in ntdll.dll");
+        ShutdownWait();
+        return;
+    }
+
+    NtResumeThread = (NtResumeThreadPtr)_NtResumeThread;
+
     SuspendMinecraftThread();
     std::wstring path = FindRuntimeDllPath();
+    if (path == L"Vanilla") {
+        ResumeMinecraftThread();
+        Log::Info("Playing Vanilla, no mods have been loaded...");
+        return;
+    }
+
     InjectIntoMinecraft(path);
 
     HMODULE amethystHandle = GetModuleHandle(L"AmethystRuntime.dll");

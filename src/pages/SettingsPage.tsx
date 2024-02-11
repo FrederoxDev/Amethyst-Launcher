@@ -1,4 +1,3 @@
-import DividedSection from "../components/DividedSection";
 import MainPanel from "../components/MainPanel";
 import ToggleSection from "../components/ToggleSection";
 import { useAppState } from "../contexts/AppState";
