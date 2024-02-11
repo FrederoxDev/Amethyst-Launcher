@@ -92,12 +92,17 @@ export async function extractVersion(
       setStatus("");
     },
   );
+}
 
-  //@ts-ignore
-  const proxyDllPath = window.native.path.join(window.native.__dirname, "proxy", "dxgi.dll",);
-  const targetDllPath = `${downloadFolder}/${fileName}/dxgi.dll`;
+export function copyProxyToInstalledVer(version: MinecraftVersion) {
+    const downloadFolder = getAmethystFolder() + "/versions";
+    const fileName = `Minecraft-${version.version.toString()}`;
 
-  fs.copyFileSync(proxyDllPath, targetDllPath);
+    //@ts-ignore
+    const proxyDllPath = window.native.path.join(window.native.__dirname, "proxy", "dxgi.dll",);
+    const targetDllPath = `${downloadFolder}/${fileName}/dxgi.dll`;
+  
+    fs.copyFileSync(proxyDllPath, targetDllPath);
 }
 
 export function getCurrentlyInstalledPackageID() {

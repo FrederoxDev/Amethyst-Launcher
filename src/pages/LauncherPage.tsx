@@ -3,7 +3,7 @@ import Dropdown from "../components/Dropdown";
 import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
 import { useAppState } from "../contexts/AppState";
-import { cacheMinecraftData, downloadVersion, extractVersion, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, unregisterExisting } from "../versionSwitcher/VersionManager";
+import { cacheMinecraftData, copyProxyToInstalledVer, downloadVersion, extractVersion, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, unregisterExisting } from "../versionSwitcher/VersionManager";
 import { MinecraftVersion, VersionType } from "../types/MinecraftVersion";
 import { SemVersion } from "../types/SemVersion";
 import { readLauncherConfig, saveLauncherConfig } from "../launcher/Modlist";
@@ -16,6 +16,11 @@ export default function LauncherPage() {
     } = useAppState();
 
     const launchGame = async () => {
+        if (allProfiles.length === 0) {
+            alert("Cannot launch without a profile!");
+            return;
+        }
+
         const profile = allProfiles[selectedProfile];
         const semVersion = SemVersion.fromString(profile.minecraft_version);
         const minecraftVersion = allMinecraftVersions.find(version => version.version.toString() == semVersion.toString());
@@ -55,6 +60,8 @@ export default function LauncherPage() {
 
         setIsLoading(false);
         setStatus("");
+
+        copyProxyToInstalledVer(minecraftVersion);
 
         const startGameCmd = `start minecraft:`;
         child.spawn(startGameCmd, { shell: true })
