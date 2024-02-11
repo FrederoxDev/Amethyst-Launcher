@@ -24,7 +24,7 @@ export class Extractor {
       });
       const allFiles = files.length;
 
-      for await (const [filename, file] of files) {
+      for await (const [filename] of files) {
         try {
           const filePath = path.join(to, filename);
           if (excludes.find((str) => str === filename))

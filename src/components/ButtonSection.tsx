@@ -1,4 +1,4 @@
-import { getAmethystFolder, getMinecraftFolder } from "../VersionSwitcher/VersionManager";
+import { getAmethystFolder, getMinecraftFolder } from "../versionSwitcher/VersionManager";
 import DividedSection from "./DividedSection";
 import MinecraftButton from "./MinecraftButton";
 const child = window.require('child_process') as typeof import('child_process')

@@ -147,7 +147,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>wldp.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(LOCALAPPDATA)/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/AC/Amethyst/lib/AmethystAPI.lib;$(LOCALAPPDATA)/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/AC/Amethyst/lib/fmt.lib;$(LOCALAPPDATA)/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/AC/Amethyst/lib/libMinHook.x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(LOCALAPPDATA)/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/AC/Amethyst/lib/AmethystAPI.lib;$(LOCALAPPDATA)/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/AC/Amethyst/lib/fmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
