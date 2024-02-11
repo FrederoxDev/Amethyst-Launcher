@@ -1,6 +1,6 @@
 {
   "name": "react-launcher",
-  "version": "2.1.0-pre-release",
+  "version": "2.1.1-pre-release",
   "main": "public/electron.js",
   "author": "FrederoxDev",
   "description": "AmethystLauncher",
