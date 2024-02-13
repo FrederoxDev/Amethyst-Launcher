@@ -35,7 +35,14 @@ export default function ProfileEditor() {
 
         return (
             <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)} 
-                onClick={() => toggleModActive(name)}  
+                onClick={() => {
+                    if (profileRuntime == "Vanilla") {
+                        alert("Cannot add mods to a vanilla profile");
+                        return;
+                    }
+
+                    toggleModActive(name);
+                }}  
             >
                 <DividedSection className="cursor-pointer" style={{ backgroundColor: isHovered ? "#5A5B5C" : "#48494A", padding: "1px", paddingLeft: "4px", paddingRight: "4px" }}>
                     <p className="minecraft-seven text-white">{ name }</p>
@@ -99,27 +106,33 @@ export default function ProfileEditor() {
             </DividedSection>
 
             {/* Mod Selection */}
-            <DividedSection className="flex-grow flex justify-around gap-[8px]">
-                <div className=" w-[50%] h-full flex flex-col">
-                    <p className="text-white minecraft-seven">Active Mods</p>
-                    <div className="border-[2px] border-[#1E1E1F] bg-[#313233] flex-grow">
+            {
+                profileRuntime === "Vanilla" 
+                ? <DividedSection className="flex-grow flex justify-around gap-[8px]">
+                    <div className="h-full flex flex-col"></div>
+                </DividedSection>
+                : <DividedSection className="flex-grow flex justify-around gap-[8px]">
+                    <div className=" w-[50%] h-full flex flex-col">
+                        <p className="text-white minecraft-seven">Active Mods</p>
+                        <div className="border-[2px] border-[#1E1E1F] bg-[#313233] flex-grow">
+                            {
+                                allMods.length > 0 ? allMods.filter(mod => profileActiveMods.includes(mod))
+                                    .map((mod, index) => <ModButton name={mod} key={index} />) : <></>
+                            }
+                        </div>
+                    </div>
+                    <div className=" w-[50%] h-full flex flex-col">
+                        <p className="text-white minecraft-seven">Inactive Mods</p>
+                        <div className="border-[2px] border-[#1E1E1F] bg-[#313233] flex-grow">
                         {
-                            allMods.length > 0 ? allMods.filter(mod => profileActiveMods.includes(mod))
-                                .map((mod, index) => <ModButton name={mod} key={index} />) : <></>
-                        }
+                                allMods.length > 0 ? allMods.filter(mod => !profileActiveMods.includes(mod))
+                                    .map((mod, index) => <ModButton name={mod} key={index} />) : <></>
+                            }
+                        </div>
                     </div>
-                </div>
-                <div className=" w-[50%] h-full flex flex-col">
-                    <p className="text-white minecraft-seven">Inactive Mods</p>
-                    <div className="border-[2px] border-[#1E1E1F] bg-[#313233] flex-grow">
-                    {
-                            allMods.length > 0 ? allMods.filter(mod => !profileActiveMods.includes(mod))
-                                .map((mod, index) => <ModButton name={mod} key={index} />) : <></>
-                        }
-                    </div>
-                </div>
-            </DividedSection>
-
+                </DividedSection>
+            }
+            
             {/* Profile Actions */}
             <DividedSection className="flex justify-around gap-[8px]">
                 <div className="w-[50%]"><MinecraftButton text="Save Profile" onClick={() => saveProfile()} /></div>
