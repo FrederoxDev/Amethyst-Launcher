@@ -90,6 +90,11 @@ static void InjectIntoMinecraft(std::wstring& path)
 
 static void Proxy()
 {
+    std::wstring path = FindRuntimeDllPath();
+    if (path == L"Vanilla") {
+        return;
+    }
+
     Log::InitializeConsole();
     Log::Info("[AmethystProxy] Using 'AmethystProxy@{}'", PROXY_VERSION);
     Log::Info("[AmethystProxy] McThreadID: {}, McThreadHandle: {}", dMcThreadID, hMcThreadHandle);
@@ -120,12 +125,7 @@ static void Proxy()
     NtResumeThread = (NtResumeThreadPtr)_NtResumeThread;
 
     SuspendMinecraftThread();
-    std::wstring path = FindRuntimeDllPath();
-    if (path == L"Vanilla") {
-        ResumeMinecraftThread();
-        Log::Info("Playing Vanilla, no mods have been loaded...");
-        return;
-    }
+    
 
     InjectIntoMinecraft(path);
 
