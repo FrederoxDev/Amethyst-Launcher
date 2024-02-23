@@ -3,7 +3,7 @@ export default function Header() {
         <>
             <div className="h-[42px] bg-[#E6E8EB] flex flex-col justify-center items-center">
                 <p className="minecraft-ten block translate-y-[6px]">Amethyst Launcher</p>
-                <p className="minecraft-seven block text-[12px] text-[#464749]">v2.1.2</p>
+                <p className="minecraft-seven block text-[12px] text-[#464749]">v2.2.0</p>
             </div>
 
 
