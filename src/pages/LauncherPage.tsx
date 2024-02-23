@@ -12,63 +12,84 @@ const child = window.require('child_process') as typeof import('child_process')
 
 export default function LauncherPage() {
     const { allProfiles, selectedProfile, setSelectedProfile, loadingPercent, status, setStatus, isLoading, setIsLoading, 
-        setLoadingPercent, allMinecraftVersions 
+        setLoadingPercent, allMinecraftVersions, error, setError
     } = useAppState();
 
     const launchGame = async () => {
-        if (allProfiles.length === 0) {
-            alert("Cannot launch without a profile!");
-            return;
-        }
+        if (isLoading) return;
 
-        const profile = allProfiles[selectedProfile];
-        const semVersion = SemVersion.fromString(profile.minecraft_version);
-        const minecraftVersion = allMinecraftVersions.find(version => version.version.toString() == semVersion.toString());
-
-        if (minecraftVersion === undefined) {
-            throw new Error("MinecraftVersion was undefined?");
-        }
-
-        setIsLoading(true);
-
-        if (!isVersionDownloaded(semVersion)) {;
+        try {
+            if (allProfiles.length === 0) {
+                throw new Error("Cannot launch without a profile!")
+            }
+    
+            const profile = allProfiles[selectedProfile];
+            const semVersion = SemVersion.fromString(profile.minecraft_version);
+            const minecraftVersion = allMinecraftVersions.find(version => version.version.toString() == semVersion.toString())!;
+    
             if (minecraftVersion === undefined) {
-                throw new Error(`Failed to find version ${semVersion.toString()}`);
+                throw new Error(`Failed to find minecraft version ${semVersion.toString()} in the profile in allVersions!`);
+            }
+    
+            setError("");
+            setIsLoading(true);
+
+            if (!isVersionDownloaded(semVersion)) {;
+                console.log("No version downloaded, attempting to download a new version!");
+
+                await downloadVersion(minecraftVersion, setStatus, setLoadingPercent);
+                await extractVersion(minecraftVersion, setStatus, setLoadingPercent);
             }
 
-            await downloadVersion(minecraftVersion, setStatus, setLoadingPercent);
-            await extractVersion(minecraftVersion, setStatus, setLoadingPercent);
+            // Only register the game if needed
+            if (!isRegisteredVersionOurs(minecraftVersion)) {
+                setStatus("Copying existing minecraft data")
+                cacheMinecraftData();
+        
+                setStatus("Unregistering existing version");
+                await unregisterExisting();
+        
+                setStatus("Registering downloaded version");
+                await registerVersion(minecraftVersion)
+        
+                setStatus("Restoring existing minecraft data")
+                restoreMinecraftData();
+
+                setStatus("Saving config...");
+                saveLauncherConfig(readLauncherConfig());
+            } 
+
+            setIsLoading(false);
+            setStatus("");
+
+            copyProxyToInstalledVer(minecraftVersion);
+
+            const startGameCmd = `start minecraft:`;
+            child.spawn(startGameCmd, { shell: true })
         }
 
-        // Only register the game if needed
-        if (!isRegisteredVersionOurs(minecraftVersion)) {
-            setStatus("Copying existing minecraft data")
-            cacheMinecraftData();
-    
-            setStatus("Unregistering existing version");
-            await unregisterExisting();
-    
-            setStatus("Registering downloaded version");
-            await registerVersion(minecraftVersion)
-    
-            setStatus("Restoring existing minecraft data")
-            restoreMinecraftData();
-
-            setStatus("Saving config...");
-            saveLauncherConfig(readLauncherConfig());
-        } 
-
-        setIsLoading(false);
-        setStatus("");
-
-        copyProxyToInstalledVer(minecraftVersion);
-
-        const startGameCmd = `start minecraft:`;
-        child.spawn(startGameCmd, { shell: true })
+        catch (e: unknown) {
+            console.log(e);
+            setError((e as Error).message);
+            setStatus("");
+            setIsLoading(false);
+        }
     }
 
     return (
         <MainPanel>
+            { error == "" ? <></> : (
+                <>
+                    <div className="bg-red-500 w-full">
+                        <p className="minecraft-seven text-[14px]">There was an error while trying to launch the game!</p>
+                        <div className="bg-red-600 h-[2px] w-full min-h-[2px]"></div>
+                        <p className="minecraft-seven text-[13px]">{error}</p>
+                    </div>
+                    <div className="bg-red-600 h-[2px] w-full min-h-[2px]"></div>
+                </>
+            )
+            }
+
             <div className="flex-group">
                 <img src="images/launcher_hero.png" className="object-cover w-full h-full min-h-screen" />
             </div>

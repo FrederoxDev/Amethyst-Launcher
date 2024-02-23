@@ -35,6 +35,9 @@ interface TAppStateContext {
     status: string;
     setStatus: React.Dispatch<React.SetStateAction<string>>;
 
+    error: string;
+    setError: React.Dispatch<React.SetStateAction<string>>;
+
     // Expose functions
     saveData: () => void
 }
@@ -52,6 +55,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     const [ loadingPercent, setLoadingPercent ] = useState(0);
     const [ isLoading, setIsLoading ] = useState(false);
     const [ status, setStatus ] = useState("");
+    const [ error, setError ] = useState("");
  
     // Initialize Data like all mods and existing profiles..
     useEffect(() => {
@@ -103,7 +107,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
                 allMods, setAllMods, allRuntimes, setAllRuntimes, allMinecraftVersions, 
                 setAllMinecraftVersions, allProfiles, setAllProfiles, selectedProfile, setSelectedProfile,
                 keepLauncherOpen, setKeepLauncherOpen, developerMode, setDeveloperMode, loadingPercent, 
-                setLoadingPercent, isLoading, setIsLoading, status, setStatus, saveData
+                setLoadingPercent, isLoading, setIsLoading, status, setStatus, saveData, error, setError
             }
         }>
             { children }

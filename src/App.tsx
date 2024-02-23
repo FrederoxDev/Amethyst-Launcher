@@ -13,6 +13,7 @@ export default function App() {
   const unselectedIcon: CSSProperties = { borderWidth: "2px", borderColor: "#1E1E1F" }
 
   return (
+    <AppStateProvider>
     <div className='h-screen overflow-hidden bg-[#313233]'>
       <Title />
 
@@ -28,7 +29,7 @@ export default function App() {
             <img src="images/advanced_icon.png" className='w-full h-full pixelated' />
           </div>
         </Link>
-        <Link to="/settings" className='block p-[8px]' draggable={false}>
+        <Link to="/settings" className='block p-[8px]' draggable={false} >
           <div className='w-[48px] h-[48px]' style={location.pathname == "/settings" ? highlightedIcon : unselectedIcon}>
             <img src="images/settings_icon.png" className='w-full h-full pixelated' />
           </div>
@@ -36,14 +37,15 @@ export default function App() {
       </div>
 
       {/* Main View */}
-      <AppStateProvider>
+      
         <Routes>
           <Route path='/' element={<LauncherPage />} />
           <Route path='/profiles' element={<ProfilePage />} />
           <Route path='/profile-editor' element={<ProfileEditor />} />
           <Route path='/settings' element={<SettingsPage />} />
         </Routes>
-      </AppStateProvider>
+      
     </div>
+    </AppStateProvider>
   )
 }
