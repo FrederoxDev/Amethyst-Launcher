@@ -3,7 +3,7 @@ import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
 import ToggleSection from "../components/ToggleSection";
 import { useAppState } from "../contexts/AppState";
-import { getMinecraftFolder } from "../versionSwitcher/VersionManager";
+import { getMinecraftFolder } from "../VersionSwitcher/VersionManager";
 const fs = window.require('fs') as typeof import('fs');
 const child = window.require('child_process') as typeof import('child_process')
 

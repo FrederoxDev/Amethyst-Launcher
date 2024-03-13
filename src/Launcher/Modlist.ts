@@ -1,4 +1,4 @@
-import { getAmethystFolder, getMinecraftFolder } from "../versionSwitcher/VersionManager";
+import { getAmethystFolder, getMinecraftFolder } from "../VersionSwitcher/VersionManager";
 import { ModConfig } from "../types/ModConfig";
 import { Profile } from "../types/Profile";
 import { LauncherConfig } from "../types/LauncherConfig";
