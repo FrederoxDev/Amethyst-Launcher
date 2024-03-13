@@ -3,10 +3,10 @@ import Dropdown from "../components/Dropdown";
 import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
 import { useAppState } from "../contexts/AppState";
-import { cacheMinecraftData, copyProxyToInstalledVer, downloadVersion, extractVersion, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, unregisterExisting } from "../VersionSwitcher/VersionManager";
+import { cacheMinecraftData, copyProxyToInstalledVer, downloadVersion, extractVersion, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, unregisterExisting } from "../versionSwitcher/VersionManager";
 import { MinecraftVersion, VersionType } from "../types/MinecraftVersion";
 import { SemVersion } from "../types/SemVersion";
-import { readLauncherConfig, saveLauncherConfig } from "../Launcher/Modlist";
+import { readLauncherConfig, saveLauncherConfig } from "../launcher/Modlist";
 const child = window.require('child_process') as typeof import('child_process')
 
 
