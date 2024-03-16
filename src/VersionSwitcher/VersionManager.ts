@@ -36,8 +36,9 @@ export async function downloadVersion(
   version: MinecraftVersion,
   setStatus: React.Dispatch<React.SetStateAction<string>>,
   setLoadingPercent: React.Dispatch<React.SetStateAction<number>>,
+  customPath?: string,
 ) {
-  const downloadFolder = getAmethystFolder() + "/versions";
+  const downloadFolder = customPath ?? (getAmethystFolder() + "/versions");
   if (!fs.existsSync(downloadFolder)) {
     fs.mkdirSync(downloadFolder, { recursive: true });
   }
@@ -67,8 +68,9 @@ export async function extractVersion(
   version: MinecraftVersion,
   setStatus: React.Dispatch<React.SetStateAction<string>>,
   setLoadingPercent: React.Dispatch<React.SetStateAction<number>>,
+  customPath?: string
 ) {
-  const downloadFolder = getAmethystFolder() + "/versions";
+  const downloadFolder = customPath ?? (getAmethystFolder() + "/versions");
   const fileName = `Minecraft-${version.version.toString()}`;
   const exludes = [
     "AppxMetadata/CodeIntegrity.cat",
@@ -97,13 +99,14 @@ export async function extractVersion(
   );
 }
 
-export function copyProxyToInstalledVer(version: MinecraftVersion) {
-    const downloadFolder = getAmethystFolder() + "/versions";
+export function copyProxyToInstalledVer(version: MinecraftVersion, customPath?: string) {
+    const downloadFolder = customPath ?? (getAmethystFolder() + "/versions");
     const fileName = `Minecraft-${version.version.toString()}`;
+    const folder = `${downloadFolder}/${fileName}`;
 
     //@ts-ignore
     const proxyDllPath = window.native.path.join(window.native.__dirname, "proxy", "dxgi.dll",);
-    const targetDllPath = `${downloadFolder}/${fileName}/dxgi.dll`;
+    const targetDllPath = `${folder}/dxgi.dll`;
   
     fs.copyFileSync(proxyDllPath, targetDllPath);
 }
@@ -140,13 +143,13 @@ export async function unregisterExisting() {
   await sleep(6000);
 }
 
-export async function registerVersion(version: MinecraftVersion) {
+export async function registerVersion(version: MinecraftVersion, customPath?: string) {
   const currentPackageId = getCurrentlyInstalledPackageID();
   if (currentPackageId !== undefined) {
     throw new Error("There is still a version installed!");
   }
 
-  const downloadFolder = getAmethystFolder() + "/versions";
+  const downloadFolder = customPath ?? (getAmethystFolder() + "/versions");
   const fileName = `Minecraft-${version.version.toString()}`;
 
   const registerCmd =
@@ -155,7 +158,7 @@ export async function registerVersion(version: MinecraftVersion) {
   await sleep(6000);
 }
 
-export function isRegisteredVersionOurs(version: MinecraftVersion) {
+export function isRegisteredVersionOurs(version: MinecraftVersion, customPath?: string) {
   const regKey =
     "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages";
   const listed = regedit.listSync(regKey);
@@ -164,6 +167,7 @@ export function isRegisteredVersionOurs(version: MinecraftVersion) {
   const minecraftKey = listed[regKey].keys.find((key) =>
     key.startsWith("Microsoft.MinecraftUWP_")
   );
+
   if (minecraftKey === undefined) return false;
 
   const minecraftValues =
@@ -174,14 +178,14 @@ export function isRegisteredVersionOurs(version: MinecraftVersion) {
 
   const packageRootFolder = minecraftValues.values["PackageRootFolder"]
     .value as string;
-  const downloadFolder = getAmethystFolder() + "\\versions";
+  const downloadFolder = customPath ?? (getAmethystFolder() + "\\versions");
   const fileName = `Minecraft-${version.version.toString()}`;
 
   return packageRootFolder === `${downloadFolder}\\${fileName}`;
 }
 
-export function isVersionDownloaded(version: SemVersion) {
-  const downloadFolder = getAmethystFolder() + "\\versions";
+export function isVersionDownloaded(version: SemVersion, customPath?: string) {
+  const downloadFolder = customPath ?? (getAmethystFolder() + "\\versions");
   const fileName = `Minecraft-${version.toString()}`;
   const folder = `${downloadFolder}\\${fileName}\\`;
   return fs.existsSync(folder);

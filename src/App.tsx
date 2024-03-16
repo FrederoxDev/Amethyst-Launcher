@@ -20,17 +20,17 @@ export default function App() {
       {/* Side Panel */}
       <div className='fixed left-0 top-[48px] h-full bg-[#313233] w-[64px] flex flex-col border-r-[2px] border-r-[#1E1E1F]'>
         <Link to="/" className='block p-[8px]' draggable={false}>
-          <div className='w-[48px] h-[48px]' style={ location.pathname == "/" ? highlightedIcon : unselectedIcon }>
+          <div className='w-[48px] h-[48px]' style={ location.pathname === "/" ? highlightedIcon : unselectedIcon }>
             <img src="images/general_icon.png" className='w-full h-full pixelated' />
           </div>
         </Link>
         <Link to="/profiles" className='block p-[8px]' draggable={false}>
-          <div className='w-[48px] h-[48px]' style={location.pathname == "/profiles" ? highlightedIcon : unselectedIcon}>
+          <div className='w-[48px] h-[48px]' style={location.pathname === "/profiles" ? highlightedIcon : unselectedIcon}>
             <img src="images/advanced_icon.png" className='w-full h-full pixelated' />
           </div>
         </Link>
         <Link to="/settings" className='block p-[8px]' draggable={false} >
-          <div className='w-[48px] h-[48px]' style={location.pathname == "/settings" ? highlightedIcon : unselectedIcon}>
+          <div className='w-[48px] h-[48px]' style={location.pathname === "/settings" ? highlightedIcon : unselectedIcon}>
             <img src="images/settings_icon.png" className='w-full h-full pixelated' />
           </div>
         </Link>

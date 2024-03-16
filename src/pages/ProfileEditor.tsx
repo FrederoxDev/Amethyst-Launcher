@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import DividedSection from "../components/DividedSection";
+import FolderInput from "../components/FolderInput";
 import MainPanel from "../components/MainPanel";
 import TextInput from "../components/TextInput";
 import Dropdown from "../components/Dropdown";
@@ -10,21 +11,21 @@ import { VersionType } from "../types/MinecraftVersion";
 
 export default function ProfileEditor() {
     const [ profileName, setProfileName ] = useState("");
-    const [ profileActiveMods, setProfileActiveMods ] = useState<string[]>([])
-    const [ profileRuntime, setProfileRuntime ] = useState<string>("");
     const [ profileMinecraftVersion, setProfileMinecraftVersion ] = useState<string>("");
+    const [ gamePath, setGamePath ] = useState("");
+    const [ profileRuntime, setProfileRuntime ] = useState<string>("");
+    const [ profileActiveMods, setProfileActiveMods ] = useState<string[]>([]);
 
     const { allMods, allRuntimes, allMinecraftVersions, allProfiles, setAllProfiles, selectedProfile, saveData } = useAppState()
     const navigate = useNavigate();
 
-    if (allProfiles.length == 0) navigate("/profiles");
+    if (allProfiles.length === 0) navigate("/profiles");
 
     const toggleModActive = (name: string) => {
         if (profileActiveMods.includes(name)) {
-            const newActive = profileActiveMods.filter(m => m != name);
+            const newActive = profileActiveMods.filter(m => m !== name);
             setProfileActiveMods(newActive);
-        }
-        else {
+        } else {
             const newActive = [...profileActiveMods, name];
             setProfileActiveMods(newActive)
         }
@@ -36,9 +37,8 @@ export default function ProfileEditor() {
         return (
             <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)} 
                 onClick={() => {
-                    if (profileRuntime == "Vanilla") {
-                        alert("Cannot add mods to a vanilla profile");
-                        return;
+                    if (profileRuntime === "Vanilla") {
+                        return alert("Cannot add mods to a vanilla profile");
                     }
 
                     toggleModActive(name);
@@ -56,7 +56,8 @@ export default function ProfileEditor() {
         setProfileName(profile?.name ?? "New Profile");
         setProfileRuntime(profile?.runtime ?? "Vanilla");
         setProfileActiveMods(profile?.mods ?? []);
-        setProfileMinecraftVersion(profile?.minecraft_version ?? "1.20.51.1");
+        setProfileMinecraftVersion(profile?.minecraft_version ?? "1.20.71.1");
+        setGamePath(profile?.path ?? "");
     }
 
     const saveProfile = () => {
@@ -64,6 +65,7 @@ export default function ProfileEditor() {
         allProfiles[selectedProfile].runtime = profileRuntime;
         allProfiles[selectedProfile].mods = profileActiveMods;
         allProfiles[selectedProfile].minecraft_version = profileMinecraftVersion;
+        allProfiles[selectedProfile].path = gamePath;
         
         saveData();
         navigate("/profiles");
@@ -93,7 +95,7 @@ export default function ProfileEditor() {
                     setValue={ setProfileMinecraftVersion }
                     
                     // we don't support non-release versions right now so only show release lmao 
-                    options={ allMinecraftVersions.filter(ver => ver.versionType == VersionType.Release).map(ver => ver.toString()) }
+                    options={ allMinecraftVersions.filter(ver => ver.versionType === VersionType.Release).map(ver => ver.toString()) }
                     id="minecraft-version"
                 />
                 <Dropdown 
@@ -103,6 +105,7 @@ export default function ProfileEditor() {
                     options={ allRuntimes }
                     id="runtime-mod"
                 />
+                <FolderInput label="Custom Directory" text={gamePath ?? ""} setPath={setGamePath} />
             </DividedSection>
 
             {/* Mod Selection */}
@@ -124,7 +127,7 @@ export default function ProfileEditor() {
                     <div className=" w-[50%] h-full flex flex-col">
                         <p className="text-white minecraft-seven">Inactive Mods</p>
                         <div className="border-[2px] border-[#1E1E1F] bg-[#313233] flex-grow">
-                        {
+                            {
                                 allMods.length > 0 ? allMods.filter(mod => !profileActiveMods.includes(mod))
                                     .map((mod, index) => <ModButton name={mod} key={index} />) : <></>
                             }

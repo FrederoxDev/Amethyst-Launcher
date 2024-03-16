@@ -4,7 +4,6 @@ import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
 import { useAppState } from "../contexts/AppState";
 import { cacheMinecraftData, copyProxyToInstalledVer, downloadVersion, extractVersion, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, unregisterExisting } from "../versionSwitcher/VersionManager";
-import { MinecraftVersion, VersionType } from "../types/MinecraftVersion";
 import { SemVersion } from "../types/SemVersion";
 import { readLauncherConfig, saveLauncherConfig } from "../launcher/Modlist";
 const child = window.require('child_process') as typeof import('child_process')
@@ -25,7 +24,7 @@ export default function LauncherPage() {
     
             const profile = allProfiles[selectedProfile];
             const semVersion = SemVersion.fromString(profile.minecraft_version);
-            const minecraftVersion = allMinecraftVersions.find(version => version.version.toString() == semVersion.toString())!;
+            const minecraftVersion = allMinecraftVersions.find(version => version.version.toString() === semVersion.toString())!;
     
             if (minecraftVersion === undefined) {
                 throw new Error(`Failed to find minecraft version ${semVersion.toString()} in the profile in allVersions!`);
@@ -33,16 +32,16 @@ export default function LauncherPage() {
     
             setError("");
             setIsLoading(true);
-
-            if (!isVersionDownloaded(semVersion)) {;
+            
+            if (!isVersionDownloaded(semVersion, profile.path)) {
                 console.log("No version downloaded, attempting to download a new version!");
 
-                await downloadVersion(minecraftVersion, setStatus, setLoadingPercent);
-                await extractVersion(minecraftVersion, setStatus, setLoadingPercent);
+                await downloadVersion(minecraftVersion, setStatus, setLoadingPercent, profile.path);
+                await extractVersion(minecraftVersion, setStatus, setLoadingPercent, profile.path);
             }
 
             // Only register the game if needed
-            if (!isRegisteredVersionOurs(minecraftVersion)) {
+            if (!isRegisteredVersionOurs(minecraftVersion, profile.path)) {
                 setStatus("Copying existing minecraft data")
                 cacheMinecraftData();
         
@@ -50,22 +49,23 @@ export default function LauncherPage() {
                 await unregisterExisting();
         
                 setStatus("Registering downloaded version");
-                await registerVersion(minecraftVersion)
+                await registerVersion(minecraftVersion, profile.path)
         
                 setStatus("Restoring existing minecraft data")
                 restoreMinecraftData();
-
-                setStatus("Saving config...");
-                saveLauncherConfig(readLauncherConfig());
             } 
 
-            setIsLoading(false);
+            setStatus("Saving config...");
+            saveLauncherConfig(readLauncherConfig());
+            
+            setStatus("Loading Amethyst...");
+            copyProxyToInstalledVer(minecraftVersion, profile.path);
+
+            setStatus("Starting Minecraft...");
+            child.spawn(`start minecraft:`, { shell: true })
+
             setStatus("");
-
-            copyProxyToInstalledVer(minecraftVersion);
-
-            const startGameCmd = `start minecraft:`;
-            child.spawn(startGameCmd, { shell: true })
+            setIsLoading(false);
         }
 
         catch (e: unknown) {
@@ -78,7 +78,7 @@ export default function LauncherPage() {
 
     return (
         <MainPanel>
-            { error == "" ? <></> : (
+            { error === "" ? <></> : (
                 <>
                     <div className="bg-red-500 w-full">
                         <p className="minecraft-seven text-[14px]">There was an error while trying to launch the game!</p>

@@ -1,27 +1,32 @@
-const { app, BrowserWindow } = require('electron')
+const remoteMain = require('@electron/remote/main');
+const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
-function createWindow () {
-  const win = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      nodeIntegration: true,
-      preload: path.join(__dirname, 'preload.js'),
-      sandbox: false, // false needed for exposing things like window.require
-      webSecurity: false, // tell CORS to shut up lmao
-      contextIsolation: false
+remoteMain.initialize();
+
+function createWindow() {
+    const win = new BrowserWindow({
+        width: 800,
+        height: 600,
+        webPreferences: {
+            nodeIntegration: true,
+            preload: path.join(__dirname, 'preload.js'),
+            sandbox: false, // false needed for exposing things like window.require
+            webSecurity: false, // tell CORS to shut up lmao
+            contextIsolation: false
+        }
+    });
+
+    win.setMenuBarVisibility(false)
+
+    if (app.isPackaged) {
+        win.loadURL(`file://${path.join(__dirname, '../build/index.html')}`);
     }
-  });
+    else {
+        win.loadURL('http://localhost:3000');
+    }
 
-  win.setMenuBarVisibility(false)
-
-  if (app.isPackaged) {
-    win.loadURL(`file://${path.join(__dirname, '../build/index.html')}`);
-  }
-  else {
-    win.loadURL('http://localhost:3000');
-  }
+    remoteMain.enable(win.webContents);
 }
 
 app.whenReady().then(createWindow)
