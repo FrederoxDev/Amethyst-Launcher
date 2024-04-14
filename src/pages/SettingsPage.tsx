@@ -3,7 +3,8 @@ import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
 import ToggleSection from "../components/ToggleSection";
 import { useAppState } from "../contexts/AppState";
-import { getMinecraftFolder } from "../versionSwitcher/VersionManager";
+import { SemVersion } from "../types/SemVersion";
+import { getAmethystFolder, getInstalledMinecraftPackagePath, getMinecraftFolder, isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
 const fs = window.require('fs') as typeof import('fs');
 const child = window.require('child_process') as typeof import('child_process')
 
@@ -25,6 +26,26 @@ export default function SettingsPage() {
         child.spawn(startGameCmd, { shell: true })
     }
 
+    const { allProfiles, selectedProfile, allMinecraftVersions } = useAppState();
+
+    const profile = allProfiles[selectedProfile];
+    let minecraftVersion = undefined;
+    let isVerDownloaded = false;
+    let isRegisteredVerOurs = false;
+    let installDir = "";
+    const amethystFolder = getAmethystFolder()
+
+    if (profile) {
+        const semVersion = SemVersion.fromString(profile.minecraft_version);
+        minecraftVersion = allMinecraftVersions.find(version => version.version.toString() == semVersion.toString());
+
+        if (minecraftVersion) {
+            isVerDownloaded = isVersionDownloaded(minecraftVersion.version)
+            isRegisteredVerOurs = isRegisteredVersionOurs(minecraftVersion)
+            installDir = getInstalledMinecraftPackagePath(minecraftVersion) ?? "Could not find installed."
+        }
+    }
+
     return (
         <MainPanel>
             <ToggleSection 
@@ -39,6 +60,14 @@ export default function SettingsPage() {
                 isChecked={developerMode}
                 setIsChecked={setDeveloperMode}
             />
+            <DividedSection className="minecraft-seven text-[#BCBEC0] text-[14px]">
+                <p className="text-white">Debug Info</p>
+                <p>Minecraft Version: {minecraftVersion ? minecraftVersion.toString() : "No version found."}</p>
+                <p>Is version downloaded: { isVerDownloaded ? "true" : "false"}</p>
+                <p>Is Registered Version Ours: { isRegisteredVerOurs ? "true" : "false" }</p>
+                <p>Install path: { installDir }</p>
+                <p>Amethyst Folder: { amethystFolder }</p>
+            </DividedSection>
             <DividedSection className="flex-grow flex justify-around gap-[8px]">
                 <div className="h-full flex flex-col"></div>
             </DividedSection>
