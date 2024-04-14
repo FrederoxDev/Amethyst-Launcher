@@ -15,6 +15,7 @@ const toMB = (bytes: number) => {
 export function getAmethystFolder() {
   //@ts-ignore
   const amethystFolder = path.join(window.env["AppData"], "Amethyst");
+
   if (!fs.existsSync(amethystFolder)) {
     fs.mkdirSync(amethystFolder, { recursive: true });
   }
@@ -24,8 +25,7 @@ export function getAmethystFolder() {
 
 export function getMinecraftFolder() {
   //@ts-ignore
-  return window.env["LocalAppData"] +
-    "\\Packages\\Microsoft.MinecraftUWP_8wekyb3d8bbwe";
+  return window.env["LocalAppData"] + "\\Packages\\Microsoft.MinecraftUWP_8wekyb3d8bbwe";
 }
 
 async function sleep(ms: number) {
@@ -41,7 +41,7 @@ export async function downloadVersion(
   if (!fs.existsSync(downloadFolder)) {
     fs.mkdirSync(downloadFolder, { recursive: true });
   }
-
+  
   const fileName = `Minecraft-${version.version.toString()}.appx`;
 
   await download(
@@ -155,27 +155,32 @@ export async function registerVersion(version: MinecraftVersion) {
   await sleep(6000);
 }
 
-export function isRegisteredVersionOurs(version: MinecraftVersion) {
+export function getInstalledMinecraftPackagePath(version: MinecraftVersion) {
   const regKey =
     "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages";
   const listed = regedit.listSync(regKey);
-  if (!listed[regKey].exists) return false;
+  if (!listed[regKey].exists) return undefined;
 
   const minecraftKey = listed[regKey].keys.find((key) =>
     key.startsWith("Microsoft.MinecraftUWP_")
   );
-  if (minecraftKey === undefined) return false;
+  if (minecraftKey === undefined) return undefined;
 
   const minecraftValues =
     regedit.listSync(
       `${regKey}\\${minecraftKey}`,
     )[`${regKey}\\${minecraftKey}`];
-  if (!minecraftValues.exists) return false;
+  if (!minecraftValues.exists) return undefined;
 
-  const packageRootFolder = minecraftValues.values["PackageRootFolder"]
-    .value as string;
+  return minecraftValues.values["PackageRootFolder"].value as string;
+}
+
+export function isRegisteredVersionOurs(version: MinecraftVersion) {
   const downloadFolder = getAmethystFolder() + "\\versions";
   const fileName = `Minecraft-${version.version.toString()}`;
+
+  const packageRootFolder = getInstalledMinecraftPackagePath(version);
+  if (packageRootFolder === undefined) return false;
 
   return packageRootFolder === `${downloadFolder}\\${fileName}`;
 }
