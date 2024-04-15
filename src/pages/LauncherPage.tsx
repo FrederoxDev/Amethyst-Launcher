@@ -3,7 +3,7 @@ import Dropdown from "../components/Dropdown";
 import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
 import { useAppState } from "../contexts/AppState";
-import { cacheMinecraftData, copyProxyToInstalledVer, downloadVersion, extractVersion, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, unregisterExisting } from "../versionSwitcher/VersionManager";
+import { cacheMinecraftData, cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, unregisterExisting } from "../versionSwitcher/VersionManager";
 import { MinecraftVersion, VersionType } from "../types/MinecraftVersion";
 import { SemVersion } from "../types/SemVersion";
 import { readLauncherConfig, saveLauncherConfig } from "../launcher/Modlist";
@@ -14,6 +14,11 @@ export default function LauncherPage() {
     const { allProfiles, selectedProfile, setSelectedProfile, loadingPercent, status, setStatus, isLoading, setIsLoading, 
         setLoadingPercent, allMinecraftVersions, error, setError
     } = useAppState();
+
+    const log = (msg: string) => {
+        console.log(msg)
+        setStatus(msg)
+    }
 
     const launchGame = async () => {
         if (isLoading) return;
@@ -34,11 +39,24 @@ export default function LauncherPage() {
             setError("");
             setIsLoading(true);
 
-            if (!isVersionDownloaded(semVersion)) {;
-                console.log("No version downloaded, attempting to download a new version!");
+            // We create a lock file when starting the download
+            // if we are doing a launch, and we detect it for the version we are targeting
+            // there is a good chance the previous install/download failed and therefore remove it.
+            const didPreviousDownloadFail = isLockFilePresent(semVersion);
+            if (didPreviousDownloadFail) {
+                log("Detected a .lock file from the previous download attempt, cleaning up.");
+                cleanupFailedInstall(semVersion);
+                log("Removed previous download attempt.");
+            }
 
+            // Check for the folder for the version we are targeting, if not present we need to fetch.
+            if (!isVersionDownloaded(semVersion)) {;
+                log("Target version is not downloaded.");
+                createLockFile(semVersion);
                 await downloadVersion(minecraftVersion, setStatus, setLoadingPercent);
                 await extractVersion(minecraftVersion, setStatus, setLoadingPercent);
+                log("Cleaning up after successful download")
+                cleanupSuccessfulInstall(semVersion);
             }
 
             // Only register the game if needed

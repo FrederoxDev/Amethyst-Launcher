@@ -42,7 +42,7 @@ export async function downloadVersion(
     fs.mkdirSync(downloadFolder, { recursive: true });
   }
   
-  const fileName = `Minecraft-${version.version.toString()}.appx`;
+  const fileName = `Minecraft-${version.version.toString()}.zip`;
 
   await download(
     version.uuid,
@@ -79,7 +79,7 @@ export async function extractVersion(
   ];
 
   await Extractor.extractFile(
-    `${downloadFolder}/${fileName}.appx`,
+    `${downloadFolder}/${fileName}.zip`,
     `${downloadFolder}/${fileName}/`,
     exludes,
     (fileIndex, totalFiles, fileName) => {
@@ -190,6 +190,59 @@ export function isVersionDownloaded(version: SemVersion) {
   const fileName = `Minecraft-${version.toString()}`;
   const folder = `${downloadFolder}\\${fileName}\\`;
   return fs.existsSync(folder);
+}
+
+export function isLockFilePresent(version: SemVersion) {
+  const downloadFolder = getAmethystFolder() + "\\versions";
+  const fileName = `Minecraft-${version.toString()}.lock`;
+  const folder = `${downloadFolder}\\${fileName}`;
+  console.log(folder)
+  return fs.existsSync(folder);
+}
+
+export function createLockFile(version: SemVersion) {
+  const downloadFolder = getAmethystFolder() + "\\versions";
+
+  if (!fs.existsSync(downloadFolder)) {
+    fs.mkdirSync(downloadFolder, { recursive: true })
+  }
+
+  const lockPath = `${downloadFolder}\\Minecraft-${version.toString()}.lock`
+  const handle = fs.openSync(lockPath, "w");
+  fs.close(handle);
+}
+
+export function cleanupSuccessfulInstall(version: SemVersion) {
+  const downloadFolder = getAmethystFolder() + "\\versions";
+  const appxPath = `${downloadFolder}\\Minecraft-${version.toString()}.zip`
+  const lockPath = `${downloadFolder}\\Minecraft-${version.toString()}.lock`
+
+  if (fs.existsSync(appxPath)) {
+    fs.rmSync(appxPath, { recursive: true })
+  }
+
+  if (fs.existsSync(lockPath)) {
+    fs.rmSync(lockPath, { recursive: true })
+  }
+}
+
+export function cleanupFailedInstall(version: SemVersion) {
+  const downloadFolder = getAmethystFolder() + "\\versions";
+  const appxPath = `${downloadFolder}\\Minecraft-${version.toString()}.zip`
+  const lockPath = `${downloadFolder}\\Minecraft-${version.toString()}.lock`
+  const folderPath = `${downloadFolder}\\Minecraft-${version.toString()}\\`
+
+  if (fs.existsSync(appxPath)) {
+    fs.rmSync(appxPath, { recursive: true })
+  }
+
+  if (fs.existsSync(folderPath)) {
+    fs.rmSync(folderPath, { recursive: true })
+  }
+
+  if (fs.existsSync(lockPath)) {
+    fs.rmSync(lockPath, { recursive: true })
+  }
 }
 
 export function cacheMinecraftData() {
