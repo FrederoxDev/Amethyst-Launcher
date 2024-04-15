@@ -3,7 +3,7 @@ import Dropdown from "../components/Dropdown";
 import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
 import { useAppState } from "../contexts/AppState";
-import { cacheMinecraftData, cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, unregisterExisting } from "../versionSwitcher/VersionManager";
+import { cacheMinecraftData, cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isDeveloperModeEnabled, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded, registerVersion, restoreMinecraftData, tryEnableDeveloperMode, unregisterExisting } from "../versionSwitcher/VersionManager";
 import { MinecraftVersion, VersionType } from "../types/MinecraftVersion";
 import { SemVersion } from "../types/SemVersion";
 import { readLauncherConfig, saveLauncherConfig } from "../launcher/Modlist";
@@ -38,6 +38,14 @@ export default function LauncherPage() {
     
             setError("");
             setIsLoading(true);
+
+            // Check that the user has developer mode enabled on windows for the game to be installed through loose files.
+            if (!isDeveloperModeEnabled()) {
+                const couldEnableDev = await tryEnableDeveloperMode();
+                if (!couldEnableDev) {
+                    throw new Error("Failed to enable 'Developer Mode' in windows settings to allow installing the game from loose files, please enable manually or make sure to press 'Yes' to enable automatically.")
+                }
+            }
 
             // We create a lock file when starting the download
             // if we are doing a launch, and we detect it for the version we are targeting
