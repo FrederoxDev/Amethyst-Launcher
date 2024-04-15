@@ -15,19 +15,23 @@
     "@types/react-dom": "^18.2.18",
     "electron-is-dev": "^3.0.1",
     "jszip": "^3.10.1",
+    "path-browserify": "^1.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.3",
     "react-scripts": "5.0.1",
     "regedit-rs": "^1.0.2",
+    "sudo-prompt": "^9.2.1",
     "typescript": "^4.9.5",
+    "util": "^0.12.5",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start-react": "react-scripts start",
     "start-electron": "electron .",
     "build": "react-scripts build && electron-builder",
-    "run-built": "\"./dist/win-unpacked/Amethyst Launcher.exe\""
+    "run-built": "\"./dist/win-unpacked/Amethyst Launcher.exe\"",
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [

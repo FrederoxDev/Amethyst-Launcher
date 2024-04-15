@@ -2,6 +2,8 @@ import { MinecraftVersion } from "../types/MinecraftVersion";
 import { download } from "./MinecraftVersionDownloader";
 import { Extractor } from "./Extractor";
 import { SemVersion } from "../types/SemVersion";
+// import { RegDwordValue, RegSzValue, putValue, putValueSync } from "regedit-rs";
+const sudo = require('sudo-prompt') as typeof import("sudo-prompt");
 const regedit = window.require("regedit-rs") as typeof import("regedit-rs");
 const child = window.require("child_process") as typeof import("child_process");
 const fs = window.require("fs") as typeof import("fs");
@@ -173,6 +175,30 @@ export function getInstalledMinecraftPackagePath(version: MinecraftVersion) {
   if (!minecraftValues.exists) return undefined;
 
   return minecraftValues.values["PackageRootFolder"].value as string;
+}
+
+export function isDeveloperModeEnabled() {
+  const regKey = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock"
+  const listed = regedit.listSync(regKey);
+
+  if (!listed[regKey].exists) return false;
+
+  if ("AllowDevelopmentWithoutDevLicense" in listed[regKey].values) {
+    const value = listed[regKey].values["AllowDevelopmentWithoutDevLicense"].value;
+    return value == 1;
+  }
+
+  return false;
+}
+
+export function tryEnableDeveloperMode(): boolean {
+  const command = `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock" /v "AllowDevelopmentWithoutDevLicense" /t REG_DWORD /d 1 /f`;
+  var options = {
+    name: "Amethyst Launcher"
+  };
+
+  sudo.exec(command)
+  return true;
 }
 
 export function isRegisteredVersionOurs(version: MinecraftVersion) {

@@ -4,7 +4,7 @@ import MinecraftButton from "../components/MinecraftButton";
 import ToggleSection from "../components/ToggleSection";
 import { useAppState } from "../contexts/AppState";
 import { SemVersion } from "../types/SemVersion";
-import { getAmethystFolder, getInstalledMinecraftPackagePath, getMinecraftFolder, isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
+import { tryEnableDeveloperMode, getAmethystFolder, getInstalledMinecraftPackagePath, getMinecraftFolder, isDeveloperModeEnabled, isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
 const fs = window.require('fs') as typeof import('fs');
 const child = window.require('child_process') as typeof import('child_process')
 
@@ -33,7 +33,14 @@ export default function SettingsPage() {
     let isVerDownloaded = false;
     let isRegisteredVerOurs = false;
     let installDir = "";
+
     const amethystFolder = getAmethystFolder()
+    let isWindowsDevModeOn = isDeveloperModeEnabled();
+
+    if (!isWindowsDevModeOn) {
+        const couldEnableDev = tryEnableDeveloperMode();
+        isWindowsDevModeOn = isDeveloperModeEnabled();
+    } 
 
     if (profile) {
         const semVersion = SemVersion.fromString(profile.minecraft_version);
@@ -65,6 +72,7 @@ export default function SettingsPage() {
                 <p>Minecraft Version: {minecraftVersion ? minecraftVersion.toString() : "No version found."}</p>
                 <p>Is version downloaded: { isVerDownloaded ? "true" : "false"}</p>
                 <p>Is Registered Version Ours: { isRegisteredVerOurs ? "true" : "false" }</p>
+                <p>Is windows developer mode: { isWindowsDevModeOn ? "enabled" : "disabled"}</p>
                 <p>Install path: { installDir }</p>
                 <p>Amethyst Folder: { amethystFolder }</p>
             </DividedSection>
