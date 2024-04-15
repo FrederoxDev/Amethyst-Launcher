@@ -3,7 +3,7 @@ import { download } from "./MinecraftVersionDownloader";
 import { Extractor } from "./Extractor";
 import { SemVersion } from "../types/SemVersion";
 // import { RegDwordValue, RegSzValue, putValue, putValueSync } from "regedit-rs";
-const sudo = require('sudo-prompt') as typeof import("sudo-prompt");
+const sudo = require('sudo-prompt');
 const regedit = window.require("regedit-rs") as typeof import("regedit-rs");
 const child = window.require("child_process") as typeof import("child_process");
 const fs = window.require("fs") as typeof import("fs");
@@ -191,15 +191,31 @@ export function isDeveloperModeEnabled() {
   return false;
 }
 
-export function tryEnableDeveloperMode(): boolean {
+export async function tryEnableDeveloperMode(): Promise<boolean> {
   const command = `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock" /v "AllowDevelopmentWithoutDevLicense" /t REG_DWORD /d 1 /f`;
   var options = {
     name: "Amethyst Launcher"
   };
 
-  sudo.exec(command)
-  return true;
+  return new Promise((resolve, reject) => {
+    try {
+      sudo.exec(command, options, (error: any, stdout: any, stderr: any) => {
+        if (error) {
+          console.log(`Error: ${error}`);
+          resolve(false);
+        } else {
+          console.log(`stdout: ${stdout}`);
+          resolve(true);
+        }
+      });
+    }
+    catch (e) {
+      console.log(e)
+      resolve(false);
+    }
+  });
 }
+
 
 export function isRegisteredVersionOurs(version: MinecraftVersion) {
   const downloadFolder = getAmethystFolder() + "\\versions";
