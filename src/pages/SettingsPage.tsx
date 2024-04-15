@@ -37,11 +37,6 @@ export default function SettingsPage() {
     const amethystFolder = getAmethystFolder()
     let isWindowsDevModeOn = isDeveloperModeEnabled();
 
-    if (!isWindowsDevModeOn) {
-        const couldEnableDev = tryEnableDeveloperMode();
-        isWindowsDevModeOn = isDeveloperModeEnabled();
-    } 
-
     if (profile) {
         const semVersion = SemVersion.fromString(profile.minecraft_version);
         minecraftVersion = allMinecraftVersions.find(version => version.version.toString() == semVersion.toString());
