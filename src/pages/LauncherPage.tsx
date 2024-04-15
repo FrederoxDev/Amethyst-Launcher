@@ -42,18 +42,11 @@ export default function LauncherPage() {
             // We create a lock file when starting the download
             // if we are doing a launch, and we detect it for the version we are targeting
             // there is a good chance the previous install/download failed and therefore remove it.
-            try {
             const didPreviousDownloadFail = isLockFilePresent(semVersion);
             if (didPreviousDownloadFail) {
                 log("Detected a .lock file from the previous download attempt, cleaning up.");
                 cleanupFailedInstall(semVersion);
                 log("Removed previous download attempt.");
-            }
-            }
-            catch (e) {
-                console.log("EEEEE")
-                console.log(e)
-                return;
             }
 
             // Check for the folder for the version we are targeting, if not present we need to fetch.
