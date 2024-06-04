@@ -5,6 +5,7 @@ import ToggleSection from "../components/ToggleSection";
 import { useAppState } from "../contexts/AppState";
 import { SemVersion } from "../types/SemVersion";
 import { tryEnableDeveloperMode, getAmethystFolder, getInstalledMinecraftPackagePath, getMinecraftFolder, isDeveloperModeEnabled, isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
+import path from "node:path";
 const fs = window.require('fs') as typeof import('fs');
 const child = window.require('child_process') as typeof import('child_process')
 
@@ -18,7 +19,7 @@ export default function SettingsPage() {
             return;
         }
 
-        const folder = getMinecraftFolder() + "\\AC\\Amethyst\\mods\\";
+        const folder = path.join(getAmethystFolder(), 'mods');
 
         if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true });
 
