@@ -18,7 +18,7 @@ export function findAllMods(): ModList {
         runtimeMods: []
     };
 
-    const modsFolder = path.join(getMinecraftFolder(), 'AC', 'Amethyst', 'mods');
+    const modsFolder = path.join(getAmethystFolder(), 'mods');
     if(!fs.existsSync(modsFolder)) return { mods: [], runtimeMods: [] };
 
     const allModNames = fs.readdirSync(modsFolder, { withFileTypes: true })
