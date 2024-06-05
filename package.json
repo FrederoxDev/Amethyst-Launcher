@@ -23,7 +23,8 @@
     "sudo-prompt": "^9.2.1",
     "typescript": "^4.9.5",
     "util": "^0.12.5",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "electron-updater": "^6.2.1"
   },
   "scripts": {
     "start-react": "react-app-rewired start",
