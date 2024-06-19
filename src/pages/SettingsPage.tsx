@@ -23,10 +23,6 @@ export default function SettingsPage() {
         setKeepLauncherOpen,
         developerMode,
         setDeveloperMode,
-        autoUpdate,
-        setAutoUpdate,
-        notifyOnUpdate,
-        setNotifyOnUpdate
     } = useAppState()
 
     const openModsFolder = () => {
@@ -74,18 +70,6 @@ export default function SettingsPage() {
                 subtext="Prevents the launcher from closing after launching the game."
                 isChecked={keepLauncherOpen}
                 setIsChecked={setKeepLauncherOpen}
-            />
-            <ToggleSection
-                text="Notify Update"
-                subtext="Notifies the user when a new update is found."
-                isChecked={notifyOnUpdate}
-                setIsChecked={setNotifyOnUpdate}
-            />
-            <ToggleSection
-                text="Auto Update"
-                subtext="Allows the launcher to update automatically when a new update is found."
-                isChecked={autoUpdate}
-                setIsChecked={setAutoUpdate}
             />
             <ToggleSection
                 text="Developer mode"

@@ -1,15 +1,13 @@
-import {useAppState} from "../contexts/AppState";
-import {useCallback, useEffect, useState} from "react";
+import { useAppState } from "../contexts/AppState";
+import { useCallback, useEffect, useState } from "react";
 import DividedSection from "../components/DividedSection";
-import MinecraftButton, {MinecraftButtonStyle} from "../components/MinecraftButton";
-import {UpdateInfo} from "electron-updater";
+import MinecraftButton, { MinecraftButtonStyle } from "../components/MinecraftButton";
+import { UpdateInfo } from "electron-updater";
 import LoadingWheel from "../components/LoadingWheel";
 
-const {ipcRenderer} = window.require('electron');
+const { ipcRenderer } = window.require('electron');
 
 export default function UpdatePage() {
-    const {autoUpdate, notifyOnUpdate} = useAppState();
-
     const [updateAvailable, setUpdateAvailable] = useState<boolean>(false);
     const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
     const [popupClosed, setPopupClosed] = useState<boolean>(false);
@@ -19,7 +17,7 @@ export default function UpdatePage() {
     const [appVersion, setAppVersion] = useState('-');
 
     useEffect(() => {
-        ipcRenderer.invoke('set-auto-download', autoUpdate);
+        ipcRenderer.invoke('set-auto-download', true);
         ipcRenderer.invoke('set-auto-install-on-app-quit', true);
         checkForUpdates();
 
@@ -47,12 +45,8 @@ export default function UpdatePage() {
             setUpdateAvailable(false);
             setPopupClosed(true);
             setDownloadActive(false);
-
-            if (!autoUpdate) {
-                alert("Update downloaded, restart the launcher to install the update");
-            }
         });
-    }, [autoUpdate, setUpdateAvailable, setPopupClosed, setDownloadActive, setDownloadPercentage]);
+    }, [setUpdateAvailable, setPopupClosed, setDownloadActive, setDownloadPercentage]);
 
     useEffect(() => {
         ipcRenderer.invoke('get-app-version').then((version) => {
@@ -76,7 +70,7 @@ export default function UpdatePage() {
     }, [setPopupClosed]);
 
     return (
-        <>{!popupClosed && !autoUpdate && notifyOnUpdate && updateAvailable && (
+        <>{!popupClosed && updateAvailable && (
             <>
                 <div className="fixed top-0 left-0 w-full h-full bg-[#000000BB]"></div>
                 {!downloadActive && (
@@ -94,11 +88,11 @@ export default function UpdatePage() {
                             </DividedSection>
                             <DividedSection className="flex justify-around gap-[8px]">
                                 <div className="w-[50%]"><MinecraftButton text="Download"
-                                                                          style={MinecraftButtonStyle.Confirm}
-                                                                          onClick={downloadUpdate}/></div>
+                                    style={MinecraftButtonStyle.Confirm}
+                                    onClick={downloadUpdate} /></div>
                                 <div className="w-[50%]"><MinecraftButton text="Ignore"
-                                                                          style={MinecraftButtonStyle.Warn}
-                                                                          onClick={ignoreUpdate}/></div>
+                                    style={MinecraftButtonStyle.Warn}
+                                    onClick={ignoreUpdate} /></div>
                             </DividedSection>
                         </div>
                     </div>
