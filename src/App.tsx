@@ -6,6 +6,7 @@ import LauncherPage from "./pages/LauncherPage";
 import ProfileEditor from "./pages/ProfileEditor";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
+import UpdatePage from "./pages/UpdatePage";
 
 export default function App() {
   const location = useLocation();
@@ -44,7 +45,10 @@ export default function App() {
           <Route path='/profile-editor' element={<ProfileEditor />} />
           <Route path='/settings' element={<SettingsPage />} />
         </Routes>
-      
+
+      {/*Update Page*/}
+      <UpdatePage></UpdatePage>
+
     </div>
     </AppStateProvider>
   )
