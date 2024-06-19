@@ -68,8 +68,8 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "Adrian8115",
-        "repo": "testrepo_amethystlauncher"
+        "owner": "FrederoxDev",
+        "repo": "Amethyst-Launcher"
       }
     ],
     "fileAssociations": [
