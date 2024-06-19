@@ -3,7 +3,7 @@ type LoadingWheelProps = {
     percentage: number
 }
 
-export default function LoadingWheel({ text, percentage }: LoadingWheelProps) {
+export default function LoadingWheel({text, percentage}: LoadingWheelProps) {
     return (
         <>
             <div className="fixed top-0 left-0 flex flex-col w-full items-center justify-center h-full">

@@ -74,7 +74,9 @@
     ],
     "fileAssociations": [
       {
-        "ext": [".mcmod"],
+        "ext": [
+          ".mcmod"
+        ],
         "name": "Your File Type",
         "role": "Editor"
       }
