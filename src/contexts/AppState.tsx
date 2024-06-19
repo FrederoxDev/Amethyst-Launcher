@@ -1,8 +1,15 @@
-import { ReactNode, createContext, useContext, useEffect, useState } from "react";
-import { Profile } from "../types/Profile";
-import { findAllMods, findAllProfiles, getAllMinecraftVersions, readLauncherConfig, saveAllProfiles, saveLauncherConfig } from "../launcher/Modlist";
-import { LauncherConfig } from "../types/LauncherConfig";
-import { MinecraftVersion } from "../types/MinecraftVersion";
+import {createContext, ReactNode, useContext, useEffect, useState} from "react";
+import {Profile} from "../types/Profile";
+import {
+    findAllMods,
+    findAllProfiles,
+    getAllMinecraftVersions,
+    readLauncherConfig,
+    saveAllProfiles,
+    saveLauncherConfig
+} from "../launcher/Modlist";
+import {LauncherConfig} from "../types/LauncherConfig";
+import {MinecraftVersion} from "../types/MinecraftVersion";
 
 interface TAppStateContext {
     allMods: string[];
@@ -50,21 +57,21 @@ interface TAppStateContext {
 
 const AppStateContext = createContext<TAppStateContext | undefined>(undefined);
 
-export const AppStateProvider = ({ children }: { children: ReactNode }) => {
-    const [ allMods, setAllMods ] = useState<string[]>([]);
-    const [ allRuntimes, setAllRuntimes ] = useState<string[]>([]);
-    const [ allMinecraftVersions, setAllMinecraftVersions ] = useState<MinecraftVersion[]>([]);
-    const [ allProfiles, setAllProfiles ] = useState<Profile[]>([]);
-    const [ selectedProfile, setSelectedProfile ] = useState(0);
-    const [ keepLauncherOpen, setKeepLauncherOpen ] = useState(true);
-    const [ developerMode, setDeveloperMode ] = useState(false);
-    const [ autoUpdate, setAutoUpdate ] = useState(false);
-    const [ notifyOnUpdate, setNotifyOnUpdate ] = useState(true);
-    const [ loadingPercent, setLoadingPercent ] = useState(0);
-    const [ isLoading, setIsLoading ] = useState(false);
-    const [ status, setStatus ] = useState("");
-    const [ error, setError ] = useState("");
- 
+export const AppStateProvider = ({children}: { children: ReactNode }) => {
+    const [allMods, setAllMods] = useState<string[]>([]);
+    const [allRuntimes, setAllRuntimes] = useState<string[]>([]);
+    const [allMinecraftVersions, setAllMinecraftVersions] = useState<MinecraftVersion[]>([]);
+    const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
+    const [selectedProfile, setSelectedProfile] = useState(0);
+    const [keepLauncherOpen, setKeepLauncherOpen] = useState(true);
+    const [developerMode, setDeveloperMode] = useState(false);
+    const [autoUpdate, setAutoUpdate] = useState(false);
+    const [notifyOnUpdate, setNotifyOnUpdate] = useState(true);
+    const [loadingPercent, setLoadingPercent] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
+    const [status, setStatus] = useState("");
+    const [error, setError] = useState("");
+
     // Initialize Data like all mods and existing profiles..
     useEffect(() => {
         setAllProfiles(findAllProfiles());
@@ -81,11 +88,11 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
             const versions = await getAllMinecraftVersions();
             setAllMinecraftVersions(versions);
         }
-        
+
         fetchMinecraftVersions();
     }, [])
 
-    const [ hasInitialized, setHasInitialized ] = useState(false);
+    const [hasInitialized, setHasInitialized] = useState(false);
 
     const saveData = () => {
         saveAllProfiles(allProfiles);
@@ -107,11 +114,11 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         }
 
         saveData();
-    }, [ allProfiles, selectedProfile, keepLauncherOpen, developerMode ])
+    }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode])
 
     return (
         <AppStateContext.Provider value={
-            { 
+            {
                 allMods, setAllMods,
                 allRuntimes, setAllRuntimes,
                 allMinecraftVersions, setAllMinecraftVersions,
@@ -128,7 +135,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
                 error, setError
             }
         }>
-            { children }
+            {children}
         </AppStateContext.Provider>
     )
 }

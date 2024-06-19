@@ -1,9 +1,10 @@
-import { getAmethystFolder, getMinecraftFolder } from "../versionSwitcher/VersionManager";
-import { ModConfig } from "../types/ModConfig";
-import { Profile } from "../types/Profile";
-import { LauncherConfig } from "../types/LauncherConfig";
-import { MinecraftVersion, VersionType } from "../types/MinecraftVersion";
-import { SemVersion } from "../types/SemVersion";
+import {getAmethystFolder, getMinecraftFolder} from "../versionSwitcher/VersionManager";
+import {ModConfig} from "../types/ModConfig";
+import {Profile} from "../types/Profile";
+import {LauncherConfig} from "../types/LauncherConfig";
+import {MinecraftVersion, VersionType} from "../types/MinecraftVersion";
+import {SemVersion} from "../types/SemVersion";
+
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
 
@@ -19,9 +20,9 @@ export function findAllMods(): ModList {
     };
 
     const modsFolder = path.join(getAmethystFolder(), 'mods');
-    if(!fs.existsSync(modsFolder)) return { mods: [], runtimeMods: [] };
+    if (!fs.existsSync(modsFolder)) return {mods: [], runtimeMods: []};
 
-    const allModNames = fs.readdirSync(modsFolder, { withFileTypes: true })
+    const allModNames = fs.readdirSync(modsFolder, {withFileTypes: true})
         .filter(f => f.isDirectory())
         .map(dir => dir.name);
 
@@ -40,8 +41,7 @@ export function findAllMods(): ModList {
         try {
             const jsonData = fs.readFileSync(modConfigPath, "utf-8");
             configData = JSON.parse(jsonData);
-        }
-        catch {
+        } catch {
             console.error(`Failed to read/parse the config for ${modName}`);
             continue;
         }
@@ -49,8 +49,7 @@ export function findAllMods(): ModList {
         // This is a runtime mod!
         if (configData?.meta?.is_runtime) {
             mods.runtimeMods.push(modName);
-        }
-        else {
+        } else {
             mods.mods.push(modName)
         }
     }
@@ -66,8 +65,7 @@ export function findAllProfiles(): Profile[] {
     try {
         const profiles = JSON.parse(jsonData);
         return profiles;
-    }
-    catch {
+    } catch {
         return [];
     }
 }
@@ -80,18 +78,19 @@ export function saveAllProfiles(profiles: Profile[]) {
 export function saveLauncherConfig(config: LauncherConfig) {
     const configPath = path.join(getMinecraftFolder(), "AC", "Amethyst");
 
-    fs.mkdirSync(configPath, { recursive: true });
+    fs.mkdirSync(configPath, {recursive: true});
     fs.writeFileSync(configPath + "/launcher_config.json", JSON.stringify(config, undefined, 4));
 }
 
 export function readLauncherConfig(): LauncherConfig {
     const configPath = path.join(getMinecraftFolder(), "AC", "Amethyst", "launcher_config.json");
     let data: LauncherConfig = {};
-    
+
     try {
-      const jsonData = fs.readFileSync(configPath, 'utf-8');
-      data = JSON.parse(jsonData);
-    } catch {}
+        const jsonData = fs.readFileSync(configPath, 'utf-8');
+        data = JSON.parse(jsonData);
+    } catch {
+    }
 
     return {
         developer_mode: data["developer_mode"] ?? false,
@@ -124,9 +123,9 @@ export async function getAllMinecraftVersions() {
             throw new Error("Failed to fetch minecraft version data from https://mrarm.io/r/w10-vdb");
         }
 
-        fs.writeFileSync(versionCacheFile, await data.text(), );
+        fs.writeFileSync(versionCacheFile, await data.text(),);
     }
-    
+
     const versionData = fs.readFileSync(versionCacheFile, "utf-8");
     const rawJson = JSON.parse(versionData);
     const versions: MinecraftVersion[] = [];

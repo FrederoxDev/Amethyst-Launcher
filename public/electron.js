@@ -1,10 +1,10 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const {app, BrowserWindow, ipcMain} = require('electron');
 const path = require('path');
-const { autoUpdater } = require("electron-updater");
+const {autoUpdater} = require("electron-updater");
 
 let mainWindow = null;
 
-function createWindow () {
+function createWindow() {
     const win = new BrowserWindow({
         width: 800,
         height: 600,
@@ -44,7 +44,8 @@ ipcMain.handle('get-app-version', (event) => {
 });
 
 ipcMain.handle('check-for-updates', (event) => {
-    autoUpdater.checkForUpdates().then(r => {});
+    autoUpdater.checkForUpdates().then(r => {
+    });
 });
 
 ipcMain.handle('set-auto-download', (event, bool) => {
@@ -56,7 +57,8 @@ ipcMain.handle('set-auto-install-on-app-quit', (event, bool) => {
 });
 
 ipcMain.handle('update-download', (event) => {
-    return autoUpdater.downloadUpdate().then(r => {});
+    return autoUpdater.downloadUpdate().then(r => {
+    });
 });
 
 autoUpdater.on('update-available', (info) => {

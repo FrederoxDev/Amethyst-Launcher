@@ -4,10 +4,11 @@ import DividedSection from "../components/DividedSection";
 import MinecraftButton, {MinecraftButtonStyle} from "../components/MinecraftButton";
 import {UpdateInfo} from "electron-updater";
 import LoadingWheel from "../components/LoadingWheel";
-const { ipcRenderer } = window.require('electron');
+
+const {ipcRenderer} = window.require('electron');
 
 export default function UpdatePage() {
-    const { autoUpdate, notifyOnUpdate } = useAppState();
+    const {autoUpdate, notifyOnUpdate} = useAppState();
 
     const [updateAvailable, setUpdateAvailable] = useState<boolean>(false);
     const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
@@ -87,12 +88,17 @@ export default function UpdatePage() {
                             <DividedSection>
                                 <p className="minecraft-seven text-[#BCBEC0] text-[12px]">Version: {updateInfo ? updateInfo.version : "undefined"} (current: {appVersion})</p>
                                 <p className="minecraft-seven text-[#BCBEC0] text-[12px]">Path: {updateInfo ? updateInfo.path : "undefined"}</p>
-                                <p className="minecraft-seven text-[#BCBEC0] text-[12px]">Release Date: {updateInfo ? updateInfo.releaseDate : "undefined"}</p>
+                                <p className="minecraft-seven text-[#BCBEC0] text-[12px]">Release
+                                    Date: {updateInfo ? updateInfo.releaseDate : "undefined"}</p>
                                 <p className="minecraft-seven text-[#BCBEC0] text-[12px]">Sha512: {updateInfo ? updateInfo.sha512 : "undefined"}</p>
                             </DividedSection>
                             <DividedSection className="flex justify-around gap-[8px]">
-                                <div className="w-[50%]"><MinecraftButton text="Download" style={MinecraftButtonStyle.Confirm} onClick={downloadUpdate}/></div>
-                                <div className="w-[50%]"><MinecraftButton text="Ignore" style={MinecraftButtonStyle.Warn} onClick={ignoreUpdate}/></div>
+                                <div className="w-[50%]"><MinecraftButton text="Download"
+                                                                          style={MinecraftButtonStyle.Confirm}
+                                                                          onClick={downloadUpdate}/></div>
+                                <div className="w-[50%]"><MinecraftButton text="Ignore"
+                                                                          style={MinecraftButtonStyle.Warn}
+                                                                          onClick={ignoreUpdate}/></div>
                             </DividedSection>
                         </div>
                     </div>

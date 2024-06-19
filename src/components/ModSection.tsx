@@ -7,14 +7,13 @@ type ModSectionProps = {
     setActiveMods: React.Dispatch<React.SetStateAction<string[]>>
 }
 
-export default function ModSection({ actionLock, allMods, activeMods, setActiveMods }: ModSectionProps) {
+export default function ModSection({actionLock, allMods, activeMods, setActiveMods}: ModSectionProps) {
     const toggleMod = (name: string) => {
         let newActiveMods = activeMods;
 
         if (newActiveMods.includes(name)) {
             newActiveMods = newActiveMods.filter(modName => modName != name);
-        } 
-        else {
+        } else {
             newActiveMods = [...newActiveMods, name];
         }
 
@@ -27,7 +26,7 @@ export default function ModSection({ actionLock, allMods, activeMods, setActiveM
                 <p className="minecraft-seven text-white">Active Mods</p>
                 <div className="box-border border-[2px] border-[#1E1E1F] bg-[#313233] min-h-[95%]">
                     {allMods.filter(m => activeMods.includes(m)).map(m => (
-                        <div 
+                        <div
                             className="flex bg-[#48494A] box-border border-b-[#5A5B5C] border-b-[2px] hover:bg-[#5A5B5C] cursor-pointer"
                             onClick={() => toggleMod(m)}
                             key={m}
@@ -41,7 +40,7 @@ export default function ModSection({ actionLock, allMods, activeMods, setActiveM
                 <p className="minecraft-seven text-white">Inactive Mods</p>
                 <div className="box-border border-[2px] border-[#1E1E1F] bg-[#313233] min-h-[95%]">
                     {allMods.filter(m => !activeMods.includes(m)).map(m => (
-                        <div 
+                        <div
                             className="flex bg-[#48494A] box-border border-b-[#5A5B5C] border-b-[2px] hover:bg-[#5A5B5C] cursor-pointer"
                             onClick={() => toggleMod(m)}
                             key={m}
