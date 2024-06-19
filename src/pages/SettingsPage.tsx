@@ -10,7 +10,7 @@ const fs = window.require('fs') as typeof import('fs');
 const child = window.require('child_process') as typeof import('child_process')
 
 export default function SettingsPage() {
-    const { keepLauncherOpen, setKeepLauncherOpen, developerMode, setDeveloperMode } = useAppState()
+    const { keepLauncherOpen, setKeepLauncherOpen, developerMode, setDeveloperMode, autoUpdate, setAutoUpdate, notifyOnUpdate, setNotifyOnUpdate } = useAppState()
 
     const openModsFolder = () => {
         // Don't reveal in explorer unless there is an existing minecraft folder
@@ -36,6 +36,7 @@ export default function SettingsPage() {
     let installDir = "";
 
     const amethystFolder = getAmethystFolder()
+    const minecraftFolder = getMinecraftFolder()
     let isWindowsDevModeOn = isDeveloperModeEnabled();
 
     if (profile) {
@@ -57,11 +58,23 @@ export default function SettingsPage() {
                 isChecked={keepLauncherOpen}
                 setIsChecked={setKeepLauncherOpen}
             />
-            <ToggleSection 
-                text="Developer mode"
-                subtext="Enables hot-reloading and prompting to attach a debugger."
-                isChecked={developerMode}
-                setIsChecked={setDeveloperMode}
+            <ToggleSection
+              text="Notify Update"
+              subtext="Notifies the user when a new update is found."
+              isChecked={notifyOnUpdate}
+              setIsChecked={setNotifyOnUpdate}
+            />
+            <ToggleSection
+                text="Auto Update"
+                subtext="Allows the launcher to update automatically when a new update is found."
+                isChecked={autoUpdate}
+                setIsChecked={setAutoUpdate}
+            />
+            <ToggleSection
+              text="Developer mode"
+              subtext="Enables hot-reloading and prompting to attach a debugger."
+              isChecked={developerMode}
+              setIsChecked={setDeveloperMode}
             />
             <DividedSection className="minecraft-seven text-[#BCBEC0] text-[14px]">
                 <p className="text-white">Debug Info</p>
@@ -71,6 +84,7 @@ export default function SettingsPage() {
                 <p>Is windows developer mode: { isWindowsDevModeOn ? "enabled" : "disabled"}</p>
                 <p>Install path: { installDir }</p>
                 <p>Amethyst Folder: { amethystFolder }</p>
+                <p>Minecraft Folder: { minecraftFolder }</p>
             </DividedSection>
             <DividedSection className="flex-grow flex justify-around gap-[8px]">
                 <div className="h-full flex flex-col"></div>

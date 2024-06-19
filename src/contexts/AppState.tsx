@@ -26,6 +26,12 @@ interface TAppStateContext {
     developerMode: boolean;
     setDeveloperMode: React.Dispatch<React.SetStateAction<boolean>>;
 
+    autoUpdate: boolean;
+    setAutoUpdate: React.Dispatch<React.SetStateAction<boolean>>;
+
+    notifyOnUpdate: boolean;
+    setNotifyOnUpdate: React.Dispatch<React.SetStateAction<boolean>>;
+
     loadingPercent: number;
     setLoadingPercent: React.Dispatch<React.SetStateAction<number>>;
 
@@ -52,6 +58,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     const [ selectedProfile, setSelectedProfile ] = useState(0);
     const [ keepLauncherOpen, setKeepLauncherOpen ] = useState(true);
     const [ developerMode, setDeveloperMode ] = useState(false);
+    const [ autoUpdate, setAutoUpdate ] = useState(false);
+    const [ notifyOnUpdate, setNotifyOnUpdate ] = useState(true);
     const [ loadingPercent, setLoadingPercent ] = useState(0);
     const [ isLoading, setIsLoading ] = useState(false);
     const [ status, setStatus ] = useState("");
@@ -104,10 +112,20 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     return (
         <AppStateContext.Provider value={
             { 
-                allMods, setAllMods, allRuntimes, setAllRuntimes, allMinecraftVersions, 
-                setAllMinecraftVersions, allProfiles, setAllProfiles, selectedProfile, setSelectedProfile,
-                keepLauncherOpen, setKeepLauncherOpen, developerMode, setDeveloperMode, loadingPercent, 
-                setLoadingPercent, isLoading, setIsLoading, status, setStatus, saveData, error, setError
+                allMods, setAllMods,
+                allRuntimes, setAllRuntimes,
+                allMinecraftVersions, setAllMinecraftVersions,
+                allProfiles, setAllProfiles,
+                selectedProfile, setSelectedProfile,
+                keepLauncherOpen, setKeepLauncherOpen,
+                developerMode, setDeveloperMode,
+                autoUpdate, setAutoUpdate,
+                notifyOnUpdate, setNotifyOnUpdate,
+                loadingPercent, setLoadingPercent,
+                isLoading, setIsLoading,
+                status, setStatus,
+                saveData,
+                error, setError
             }
         }>
             { children }
