@@ -58,7 +58,6 @@ ipcMain.handle('set-auto-install-on-app-quit', (event, bool) => {
 
 ipcMain.handle('update-download', async (event) => {
     await autoUpdater.downloadUpdate();
-    autoUpdater.quitAndInstall();
 });
 
 autoUpdater.on('update-available', (info) => {
@@ -79,6 +78,7 @@ autoUpdater.on('download-progress', (info) => {
 
 autoUpdater.on('update-downloaded', (info) => {
     mainWindow.webContents.send('update-downloaded', info);
+    autoUpdater.quitAndInstall();
 });
 
 autoUpdater.on('error', (error) => {
