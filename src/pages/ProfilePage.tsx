@@ -36,7 +36,7 @@ export default function ProfilePage() {
             <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)} onClick={() => {
                 const defaultProfile: Profile = {
                     name: "New Profile",
-                    minecraft_version: "1.20.72.1",
+                    minecraft_version: "1.21.0.3",
                     mods: [],
                     runtime: "Vanilla"
                 } 
