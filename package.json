@@ -1,9 +1,9 @@
 {
-  "name": "react-launcher",
-  "version": "2.4.3",
+  "name": "amethyst-launcher",
+  "version": "2.4.0",
   "main": "public/electron.js",
   "author": "FrederoxDev, Adrian8115",
-  "description": "AmethystLauncher",
+  "description": "Amethyst Launcher",
   "dependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@testing-library/jest-dom": "^5.17.0",
@@ -76,9 +76,9 @@
     "fileAssociations": [
       {
         "ext": [
-          ".mcmod"
+          ".amethyst"
         ],
-        "name": "Your File Type",
+        "name": "Amethyst Mod",
         "role": "Editor"
       }
     ]
