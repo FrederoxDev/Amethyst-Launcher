@@ -57,7 +57,7 @@ export default function ProfileEditor() {
         setProfileName(profile?.name ?? "New Profile");
         setProfileRuntime(profile?.runtime ?? "Vanilla");
         setProfileActiveMods(profile?.mods ?? []);
-        setProfileMinecraftVersion(profile?.minecraft_version ?? "1.20.72.1");
+        setProfileMinecraftVersion(profile?.minecraft_version ?? "1.21.0.3");
     }
 
     const saveProfile = () => {
