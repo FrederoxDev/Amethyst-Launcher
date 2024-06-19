@@ -47,7 +47,7 @@
     "tailwindcss": "^3.4.1"
   },
   "build": {
-    "productName": "Amethyst Launcher",
+    "productName": "Amethyst-Launcher",
     "appId": "com.frederoxdev.amethystlauncher",
     "directories": {
       "output": "dist",
@@ -63,13 +63,14 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "${productName}-${version}.exe"
     },
     "publish": [
       {
         "provider": "github",
         "owner": "FrederoxDev",
-        "repo": "Amethyst-Launcher"
+        "repo": "test-launcher-releases"
       }
     ],
     "fileAssociations": [
