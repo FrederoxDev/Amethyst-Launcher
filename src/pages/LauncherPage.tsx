@@ -3,25 +3,11 @@ import Dropdown from "../components/Dropdown";
 import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
 import {useAppState} from "../contexts/AppState";
-import {
-    cacheMinecraftData,
-    cleanupFailedInstall,
-    cleanupSuccessfulInstall,
-    copyProxyToInstalledVer,
-    createLockFile,
-    downloadVersion,
-    extractVersion,
-    isDeveloperModeEnabled,
-    isLockFilePresent,
-    isRegisteredVersionOurs,
-    isVersionDownloaded,
-    registerVersion,
-    restoreMinecraftData,
-    tryEnableDeveloperMode,
-    unregisterExisting
-} from "../versionSwitcher/VersionManager";
 import {SemVersion} from "../types/SemVersion";
 import {readLauncherConfig, saveLauncherConfig} from "../launcher/Modlist";
+import { isDeveloperModeEnabled, tryEnableDeveloperMode } from "../versionSwitcher/DeveloperMode";
+import { registerVersion, unregisterExisting } from "../versionSwitcher/AppRegistry";
+import { cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
 
 const child = window.require('child_process') as typeof import('child_process')
 
@@ -76,7 +62,6 @@ export default function LauncherPage() {
 
             // Check for the folder for the version we are targeting, if not present we need to fetch.
             if (!isVersionDownloaded(semVersion)) {
-                ;
                 log("Target version is not downloaded.");
                 createLockFile(semVersion);
                 await downloadVersion(minecraftVersion, setStatus, setLoadingPercent);
@@ -87,8 +72,8 @@ export default function LauncherPage() {
 
             // Only register the game if needed
             if (!isRegisteredVersionOurs(minecraftVersion)) {
-                setStatus("Copying existing minecraft data")
-                cacheMinecraftData();
+                // setStatus("Copying existing minecraft data")
+                // cacheMinecraftData();
 
                 setStatus("Unregistering existing version");
                 await unregisterExisting();
@@ -96,10 +81,10 @@ export default function LauncherPage() {
                 setStatus("Registering downloaded version");
                 await registerVersion(minecraftVersion)
 
-                setStatus("Restoring existing minecraft data")
-                restoreMinecraftData();
+                // setStatus("Restoring existing minecraft data")
+                // restoreMinecraftData();
 
-                setStatus("Saving config...");
+                // setStatus("Saving config...");
                 saveLauncherConfig(readLauncherConfig());
             }
 

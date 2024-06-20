@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import DividedSection from "../components/DividedSection";
 import MainPanel from "../components/MainPanel";
-import { useAppState } from "../contexts/AppState";
-import { getAmethystFolder, getMinecraftFolder } from "../versionSwitcher/VersionManager";
 import MinecraftButton from "../components/MinecraftButton";
+import { getAmethystFolder, getMinecraftFolder } from "../versionSwitcher/AmethystPaths";
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');

@@ -1,4 +1,4 @@
-import {getMinecraftFolder} from "../versionSwitcher/VersionManager";
+import { getMinecraftFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
 import DividedSection from "./DividedSection";
 import MinecraftButton from "./MinecraftButton";
 
@@ -20,7 +20,7 @@ export default function ButtonSection({launchGame, actionLock, loadingPercent, s
             return;
         }
 
-        const folder = getMinecraftFolder() + "\\AC\\Amethyst\\mods\\";
+        const folder = getModsFolder();
 
         if (!fs.existsSync(folder)) fs.mkdirSync(folder, {recursive: true});
 
