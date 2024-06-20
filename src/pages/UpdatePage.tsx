@@ -64,10 +64,12 @@ export default function UpdatePage() {
             console.log('Download download:', lls);
         });
         setDownloadActive(true);
+        ipcRenderer.invoke('set-auto-install-on-app-quit', true);
     }, [setDownloadActive]);
 
     const ignoreUpdate = useCallback(() => {
         setPopupClosed(true);
+        ipcRenderer.invoke('set-auto-install-on-app-quit', false);
     }, [setPopupClosed]);
 
     return (
