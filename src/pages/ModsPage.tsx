@@ -26,7 +26,7 @@ function getAllMods(): ModErrorInfo[] {
 
         // Validate that the mod is in the naming scheme
         if (!modIdentifier.includes("@")) {
-            modErrors.push(`folder named '${modIdentifier}' must include a version number`);
+            modErrors.push(`Folder named '${modIdentifier}' must include a version number`);
         }
 
         // Validate that it has a config file
@@ -112,20 +112,24 @@ export default function ModsPage() {
             <div className="fixed top-0 left-0 w-full h-full bg-[#000000BB]" onClick={() => setSelectedReport(undefined)}></div>
 
             <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center">
-                <DividedSection>
+                <DividedSection className="w-[500px]">
                     <div className="flex">
-                        <p className="minecraft-seven text-white text-[14px]">Name: {selectedReport.modIdentifier}</p>
+                        <p className="minecraft-seven text-white text-[12px] max-w-[400px]">{selectedReport.modIdentifier}</p>
                         <p className="minecraft-seven text-[#BCBEC0] text-[12px] text-right ml-auto cursor-pointer" onClick={() => setSelectedReport(undefined)}>X</p>
                     </div>
 
                     <p className="minecraft-seven text-[#BCBEC0] text-[12px] max-w-[400px]">{selectedReport.description ?? ""}</p>
-                    <p className="minecraft-seven text-white text-[14px] pt-[6px]">Errors:</p>
-                    <ul>
-                        {selectedReport.modErrors.map(err => (
-                            <li className="minecraft-seven text-[#BCBEC0] text-[12px]" key={err}>{err}</li>
-                        ))}
-                    </ul>
                 </DividedSection>
+                {selectedReport.modErrors.length > 0 && (
+                    <DividedSection className="w-[500px]">    
+                        <p className="minecraft-seven text-white text-[12px] pt-[6px]">Errors:</p>
+                        <ul>
+                            {selectedReport.modErrors.map(err => (
+                                <li className="minecraft-seven text-red-400 text-[12px]" key={err}>- {err}</li>
+                            ))}
+                        </ul>
+                    </DividedSection>
+                )}
             </div>
         </>)}
         </>
