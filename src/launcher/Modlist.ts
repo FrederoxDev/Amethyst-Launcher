@@ -1,9 +1,9 @@
-import {getAmethystFolder, getMinecraftFolder} from "../versionSwitcher/VersionManager";
 import {ModConfig} from "../types/ModConfig";
 import {Profile} from "../types/Profile";
 import {LauncherConfig} from "../types/LauncherConfig";
 import {MinecraftVersion, VersionType} from "../types/MinecraftVersion";
 import {SemVersion} from "../types/SemVersion";
+import { getAmethystFolder, getLauncherConfig, getMinecraftFolder } from "../versionSwitcher/AmethystPaths";
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
@@ -83,7 +83,7 @@ export function saveLauncherConfig(config: LauncherConfig) {
 }
 
 export function readLauncherConfig(): LauncherConfig {
-    const configPath = path.join(getMinecraftFolder(), "AC", "Amethyst", "launcher_config.json");
+    const configPath = getLauncherConfig();
     let data: LauncherConfig = {};
 
     try {
