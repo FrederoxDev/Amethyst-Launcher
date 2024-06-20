@@ -40,6 +40,7 @@ export default function UpdatePage() {
 
         ipcRenderer.on("update-downloaded", (event, info) => {
             console.log('Update downloaded:', info);
+            console.log("restart now?")
 
             setDownloadPercentage(100);
             setUpdateAvailable(false);

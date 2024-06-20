@@ -7,6 +7,7 @@ import ProfileEditor from "./pages/ProfileEditor";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import UpdatePage from "./pages/UpdatePage";
+import ModsPage from "./pages/ModsPage";
 
 export default function App() {
     const location = useLocation();
@@ -33,7 +34,13 @@ export default function App() {
                             <img src="images/advanced_icon.png" className='w-full h-full pixelated'/>
                         </div>
                     </Link>
-                    <Link to="/settings" className='block p-[8px]' draggable={false}>
+                    <Link to="/mods" className='block p-[8px]' draggable={false}>
+                        <div className='w-[48px] h-[48px]'
+                             style={location.pathname == "/mods" ? highlightedIcon : unselectedIcon}>
+                            <img src="images/advanced_icon.png" className='w-full h-full pixelated'/>
+                        </div>
+                    </Link>
+                    <Link to="/settings" className='block p-[8px] mt-auto mb-[48px]' draggable={false}>
                         <div className='w-[48px] h-[48px]'
                              style={location.pathname == "/settings" ? highlightedIcon : unselectedIcon}>
                             <img src="images/settings_icon.png" className='w-full h-full pixelated'/>
@@ -47,6 +54,7 @@ export default function App() {
                     <Route path='/' element={<LauncherPage/>}/>
                     <Route path='/profiles' element={<ProfilePage/>}/>
                     <Route path='/profile-editor' element={<ProfileEditor/>}/>
+                    <Route path='/mods' element={<ModsPage/>}/>
                     <Route path='/settings' element={<SettingsPage/>}/>
                 </Routes>
 

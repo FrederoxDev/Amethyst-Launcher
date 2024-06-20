@@ -78,7 +78,7 @@ autoUpdater.on('download-progress', (info) => {
 
 autoUpdater.on('update-downloaded', (info) => {
     mainWindow.webContents.send('update-downloaded', info);
-    autoUpdater.quitAndInstall();
+    // autoUpdater.quitAndInstall();
 });
 
 autoUpdater.on('error', (error) => {

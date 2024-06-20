@@ -15,7 +15,7 @@ import {
 import path from "node:path";
 
 const fs = window.require('fs') as typeof import('fs');
-const child = window.require('child_process') as typeof import('child_process')
+
 
 export default function SettingsPage() {
     const {
@@ -24,21 +24,6 @@ export default function SettingsPage() {
         developerMode,
         setDeveloperMode,
     } = useAppState()
-
-    const openModsFolder = () => {
-        // Don't reveal in explorer unless there is an existing minecraft folder
-        if (!fs.existsSync(getMinecraftFolder())) {
-            alert("Minecraft is not currently installed");
-            return;
-        }
-
-        const folder = path.join(getAmethystFolder(), 'mods');
-
-        if (!fs.existsSync(folder)) fs.mkdirSync(folder, {recursive: true});
-
-        const startGameCmd = `explorer "${folder}"`;
-        child.spawn(startGameCmd, {shell: true})
-    }
 
     const {allProfiles, selectedProfile, allMinecraftVersions} = useAppState();
 
@@ -89,9 +74,6 @@ export default function SettingsPage() {
             </DividedSection>
             <DividedSection className="flex-grow flex justify-around gap-[8px]">
                 <div className="h-full flex flex-col"></div>
-            </DividedSection>
-            <DividedSection>
-                <MinecraftButton text="Open Mods Folder" onClick={openModsFolder}/>
             </DividedSection>
         </MainPanel>
     )
