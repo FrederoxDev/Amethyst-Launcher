@@ -1,10 +1,10 @@
 import "./SemVersion"
-import { SemVersion } from "./SemVersion"
+import {SemVersion} from "./SemVersion"
 
 export enum VersionType {
     Release = 0,
     Beta = 1,
-    Preview = 2   
+    Preview = 2
 };
 
 export class MinecraftVersion {

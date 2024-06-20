@@ -4,7 +4,7 @@ type MinecraftToggleProps = {
     id: string
 }
 
-export default function MinecraftToggle({ isChecked, setIsChecked, id }: MinecraftToggleProps) {
+export default function MinecraftToggle({isChecked, setIsChecked, id}: MinecraftToggleProps) {
     const handleCheckboxChange = () => {
         setIsChecked(!isChecked);
     }
@@ -12,14 +12,16 @@ export default function MinecraftToggle({ isChecked, setIsChecked, id }: Minecra
     return (
         <label htmlFor={id} className="flex select-none cursor-pointer w-fit group">
             {/* Hidden input checkbox */}
-            <input id={id} type="checkbox" className="hidden" onChange={handleCheckboxChange} checked={isChecked} />
+            <input id={id} type="checkbox" className="hidden" onChange={handleCheckboxChange} checked={isChecked}/>
 
             {/* Grey/Green sides */}
             <div className="w-[60px] h-[28px] box-border border-[2px] border-[#1E1E1F] flex">
-                <div className="w-[30px] h-[24px] box-border border-[2px] border-r-0 border-[#639D52] bg-[#3C8527] flex items-center justify-center">
+                <div
+                    className="w-[30px] h-[24px] box-border border-[2px] border-r-0 border-[#639D52] bg-[#3C8527] flex items-center justify-center">
                     <p className="minecraft-seven text-[#242425]">|</p>
                 </div>
-                <div className="w-[30px] h-[24px] box-border border-[2px] border-l-0 border-[#A3A4A6] bg-[#8C8D90] flex items-center justify-center">
+                <div
+                    className="w-[30px] h-[24px] box-border border-[2px] border-l-0 border-[#A3A4A6] bg-[#8C8D90] flex items-center justify-center">
                     <p className="minecraft-seven text-[#242425]">O</p>
                 </div>
             </div>

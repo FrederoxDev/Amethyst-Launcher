@@ -1,9 +1,9 @@
 {
-  "name": "react-launcher",
-  "version": "2.3.0",
+  "name": "amethyst-launcher",
+  "version": "2.4.0",
   "main": "public/electron.js",
-  "author": "FrederoxDev",
-  "description": "AmethystLauncher",
+  "author": "FrederoxDev, Adrian8115",
+  "description": "Amethyst Launcher",
   "dependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@testing-library/jest-dom": "^5.17.0",
@@ -23,7 +23,8 @@
     "sudo-prompt": "^9.2.1",
     "typescript": "^4.9.5",
     "util": "^0.12.5",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "electron-updater": "^6.2.1"
   },
   "scripts": {
     "start-react": "react-app-rewired start",
@@ -46,7 +47,7 @@
     "tailwindcss": "^3.4.1"
   },
   "build": {
-    "productName": "Amethyst Launcher",
+    "productName": "Amethyst-Launcher",
     "appId": "com.frederoxdev.amethystlauncher",
     "directories": {
       "output": "dist",
@@ -62,8 +63,25 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    }
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "${productName}-${version}.exe"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "FrederoxDev",
+        "repo": "test-launcher-releases"
+      }
+    ],
+    "fileAssociations": [
+      {
+        "ext": [
+          ".amethyst"
+        ],
+        "name": "Amethyst Mod",
+        "role": "Editor"
+      }
+    ]
   },
   "browserslist": {
     "production": [
