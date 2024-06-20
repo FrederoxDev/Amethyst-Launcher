@@ -64,8 +64,6 @@ NOTE: Not all mods will be updated to work with the latest runtime and/or Minecr
 * Minecraft should now launch... **with mods!**
 * Anytime you want to change what mods are active, what runtime is being used, or what version of Minecraft is active, you will need to use the Amethyst Launcher. Otherwise, you can launch Minecraft like you normally do, and the last used profile will be used automatically.
 
-# To Do:
+# Amethyst Launcher (Windows)
 
-- [ ] Allow mods to specify exact versions of the game that they want to be compatible with explicitly
-
-- [x] Make the launcher replace the proxy when the launcher version is changed  
+This is the launcher for using Amethyst on Windows
