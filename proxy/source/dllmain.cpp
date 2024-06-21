@@ -1,4 +1,10 @@
 #include "dllmain.h"
+#include <filesystem>
+#include <winrt/Windows.Storage.h>
+#include <amethyst/Utility.hpp>
+namespace fs = std::filesystem;
+using namespace winrt;
+using namespace Windows::Storage;
 
 // Define the NtSuspendThread function signature
 typedef NTSTATUS(NTAPI* NtSuspendThreadPtr)(HANDLE ThreadHandle, PULONG PreviousSuspendCount);
@@ -6,7 +12,7 @@ typedef NTSTATUS(NTAPI* NtSuspendThreadPtr)(HANDLE ThreadHandle, PULONG Previous
 typedef NTSTATUS(NTAPI* NtResumeThreadPtr)(HANDLE ThreadHandle, PULONG PreviousSuspendCount);
 
 // Define the Amethyst Init function signature
-typedef void(__cdecl* AmethystInitPtr)(DWORD dMcThreadID, HANDLE hMcThreadHandle);
+typedef void(__cdecl* RuntimeInitPtr)(DWORD dMcThreadID, HANDLE hMcThreadHandle);
 
 // Remove this line if you aren't proxying any functions.
 HMODULE hProxied = LoadLibrary(L"C:\\Windows\\System32\\dxgi.dll");
@@ -18,7 +24,7 @@ HANDLE hMcThreadHandle = NULL;
 
 NtSuspendThreadPtr NtSuspendThread = NULL; // NtSuspendThread function pointer
 NtResumeThreadPtr NtResumeThread = NULL; // NtResumeThread function pointer
-AmethystInitPtr AmethystInit = NULL; // Amethyst Init function pointer
+RuntimeInitPtr RuntimeInit = NULL; // Amethyst Init function pointer
 
 static Config loadConfig(const std::wstring& path)
 {
@@ -55,11 +61,8 @@ void ResumeMinecraftThread()
 
 static std::wstring FindRuntimeDllPath()
 {
-	wchar_t buffer[MAX_PATH];
-    size_t pathLength = GetEnvironmentVariable(L"LOCALAPPDATA", buffer, MAX_PATH);
-
-    std::wstring appdataPath(buffer, pathLength);
-    std::wstring configPath = appdataPath + L"\\Amethyst\\launcher_config.json";
+    fs::path minecraftFolder = GetMinecraftFolder();
+    fs::path configPath = minecraftFolder / L"Amethyst" / L"Launcher" / L"launcher_config.json";
 
     Config config = loadConfig(configPath);
     std::string rawModName = config.injectedMod;
@@ -79,8 +82,8 @@ static std::wstring FindRuntimeDllPath()
     std::wstring versionlessName(modName.begin(), modName.end());
     std::wstring versionedName(rawModName.begin(), rawModName.end());
 
-    std::wstring dllPath = appdataPath + L"\\Amethyst\\mods\\" + versionedName + L"\\" + versionlessName + L".dll";
-    return dllPath;
+    fs::path dllPath = minecraftFolder / L"Amethyst" / L"Mods" / versionedName / std::wstring(versionlessName + L".dll");
+    return dllPath.generic_wstring();
 }
 
 static void InjectIntoMinecraft(std::wstring& path)
@@ -90,14 +93,27 @@ static void InjectIntoMinecraft(std::wstring& path)
 
 static void Proxy()
 {
-    std::wstring path = FindRuntimeDllPath();
-    if (path == L"Vanilla") {
+    /*if (path == L"Vanilla") {
         return;
-    }
+    }*/
 
     Log::InitializeConsole();
+
     Log::Info("[AmethystProxy] Using 'AmethystProxy@{}'", PROXY_VERSION);
     Log::Info("[AmethystProxy] McThreadID: {}, McThreadHandle: {}", dMcThreadID, hMcThreadHandle);
+
+    fs::path minecraftFolder = GetMinecraftFolder();
+    fs::path configPath = minecraftFolder / L"Amethyst" / L"Launcher" / L"launcher_config.json";
+
+    std::wcout << configPath.generic_wstring() << std::endl;
+
+    //Log::Info(L"{}", roamingFolder.Path().c_str());
+    //std::wcout << folder.get << std::endl;x
+
+    ShutdownWait();
+    return;
+
+    /*return;
 
     HMODULE ntdllHandle = GetModuleHandle(L"ntdll.dll");
     if (ntdllHandle == 0) {
@@ -125,26 +141,27 @@ static void Proxy()
     NtResumeThread = (NtResumeThreadPtr)_NtResumeThread;
 
     SuspendMinecraftThread();
-    
-
     InjectIntoMinecraft(path);
+    
+    fs::path runtimeLibName = fs::path(path).filename();
+    Log::Info("[AmethystProxy] Loading: {}", runtimeLibName.string());
 
-    HMODULE amethystHandle = GetModuleHandle(L"AmethystRuntime.dll");
-    if (amethystHandle == 0) {
-        Log::Error("[AmethystProxy] Could not get AmethystRuntime.dll");
+    HMODULE runtimeHandle = GetModuleHandle(runtimeLibName.c_str());
+    if (runtimeHandle == 0) {
+        Log::Error("[AmethystProxy] Could not get {}", runtimeLibName.string());
         ShutdownWait();
         return;
     }
 
-    FARPROC _AmethystInit = GetProcAddress(amethystHandle, "Init");
-    if (_AmethystInit == 0) {
-        Log::Error("[AmethystProxy] Could not find ProcAddress of Init in AmethystRuntime.dll");
+    FARPROC _RuntimeInit = GetProcAddress(runtimeHandle, "Init");
+    if (runtimeHandle == 0) {
+        Log::Error("[AmethystProxy] Could not find ProcAddress of Init in {}", runtimeLibName.string());
         ShutdownWait();
         return;
     }
 
-    AmethystInit = (AmethystInitPtr)_AmethystInit;
-    AmethystInit(dMcThreadID, hMcThreadHandle);
+    RuntimeInit = (RuntimeInitPtr)_RuntimeInit;
+    RuntimeInit(dMcThreadID, hMcThreadHandle);*/
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
