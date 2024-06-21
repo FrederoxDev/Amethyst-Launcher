@@ -3,7 +3,7 @@ const path = window.require("path") as typeof import("path");
 
 export function getAmethystFolder() {
     //@ts-ignore
-    const amethystFolder = path.join(window.env["AppData"], "Amethyst");
+    const amethystFolder = path.join(window.env["AppData"], "Amethyst", "Amethyst");
 
     if (!fs.existsSync(amethystFolder)) {
         fs.mkdirSync(amethystFolder, {recursive: true});
@@ -22,9 +22,9 @@ export function getVersionsFolder() {
 }
 
 export function getModsFolder() {
-    return path.join(getMinecraftFolder(), "AC", "Amethyst", "mods");
+    return path.join(getAmethystFolder(), "mods");
 }
 
 export function getLauncherConfig() {
-    return path.join(getMinecraftFolder(), "AC", "Amethyst", "launcher_config.json")
+    return path.join(getAmethystFolder(), "launcher_config.json")
 }
