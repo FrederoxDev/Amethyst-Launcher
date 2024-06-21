@@ -53,7 +53,7 @@ export async function unregisterExisting() {
     if (packageId === undefined) return;
 
     const unregisterCmd = `powershell -ExecutionPolicy Bypass -Command "& { Remove-AppxPackage -Package "${packageId}" -PreserveApplicationData }"`;
-    child.exec(unregisterCmd);
+    child.execSync(unregisterCmd);
 }
 
 export async function registerVersion(version: MinecraftVersion) {
@@ -77,7 +77,7 @@ export async function registerVersion(version: MinecraftVersion) {
     const appxManifest = path.join(versionsFolder, `Minecraft-${version.version.toString()}`, "AppxManifest.xml");
 
     const registerCmd = `powershell -ExecutionPolicy Bypass -Command "& { Add-AppxPackage -Path "${appxManifest}" -Register }"`;
-    child.exec(registerCmd);
+    child.execSync(registerCmd);
 
     i = 0;
     // wait for it to finish registering

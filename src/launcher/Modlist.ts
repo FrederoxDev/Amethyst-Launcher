@@ -3,7 +3,7 @@ import {Profile} from "../types/Profile";
 import {LauncherConfig} from "../types/LauncherConfig";
 import {MinecraftVersion, VersionType} from "../types/MinecraftVersion";
 import {SemVersion} from "../types/SemVersion";
-import { getAmethystFolder, getLauncherConfig, getMinecraftFolder } from "../versionSwitcher/AmethystPaths";
+import { getAmethystFolder, getLauncherConfig, getLauncherFolder, getMinecraftFolder } from "../versionSwitcher/AmethystPaths";
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
@@ -58,7 +58,7 @@ export function findAllMods(): ModList {
 }
 
 export function findAllProfiles(): Profile[] {
-    const profilesFile = path.join(getAmethystFolder(), "profiles.json");
+    const profilesFile = path.join(getLauncherFolder(), "profiles.json");
     if (!fs.existsSync(profilesFile)) return [];
 
     const jsonData = fs.readFileSync(profilesFile, "utf-8");
@@ -71,15 +71,15 @@ export function findAllProfiles(): Profile[] {
 }
 
 export function saveAllProfiles(profiles: Profile[]) {
-    const profilesFile = path.join(getAmethystFolder(), "profiles.json");
+    const profilesFile = path.join(getLauncherFolder(), "profiles.json");
     fs.writeFileSync(profilesFile, JSON.stringify(profiles, undefined, 4));
 }
 
 export function saveLauncherConfig(config: LauncherConfig) {
-    const configPath = path.join(getMinecraftFolder(), "AC", "Amethyst");
+    const configPath = getLauncherConfig();
 
-    fs.mkdirSync(configPath, {recursive: true});
-    fs.writeFileSync(configPath + "/launcher_config.json", JSON.stringify(config, undefined, 4));
+    fs.mkdirSync(path.dirname(configPath), {recursive: true});
+    fs.writeFileSync(configPath, JSON.stringify(config, undefined, 4));
 }
 
 export function readLauncherConfig(): LauncherConfig {
@@ -101,7 +101,7 @@ export function readLauncherConfig(): LauncherConfig {
 }
 
 export async function getAllMinecraftVersions() {
-    const versionCacheFile = path.join(getAmethystFolder(), "cached_versions.json");
+    const versionCacheFile = path.join(getLauncherFolder(), "cached_versions.json");
     let lastWriteTime: Date = new Date(0);
 
     if (fs.existsSync(versionCacheFile)) {
