@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import DividedSection from "../components/DividedSection";
 import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
-import { getAmethystFolder, getMinecraftFolder } from "../versionSwitcher/AmethystPaths";
+import { getAmethystFolder, getMinecraftFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
@@ -13,7 +13,7 @@ type ModErrorInfo = { modIdentifier: string, description?: string, modErrors: st
 function getAllMods(): ModErrorInfo[] {
     const results: ModErrorInfo[] = [];
 
-    const modsFolder = path.join(getAmethystFolder(), 'mods');
+    const modsFolder = getModsFolder();
     if (!fs.existsSync(modsFolder)) return results;
 
     const allModNames = fs.readdirSync(modsFolder, {withFileTypes: true})
@@ -62,7 +62,7 @@ const openModsFolder = () => {
         return;
     }
 
-    const folder = path.join(getAmethystFolder(), 'mods');
+    const folder = getModsFolder();
 
     if (!fs.existsSync(folder)) fs.mkdirSync(folder, {recursive: true});
 

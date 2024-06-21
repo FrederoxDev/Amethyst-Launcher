@@ -54,6 +54,7 @@ export default function LauncherPage() {
             // if we are doing a launch, and we detect it for the version we are targeting
             // there is a good chance the previous install/download failed and therefore remove it.
             const didPreviousDownloadFail = isLockFilePresent(semVersion);
+            
             if (didPreviousDownloadFail) {
                 log("Detected a .lock file from the previous download attempt, cleaning up.");
                 cleanupFailedInstall(semVersion);
@@ -72,19 +73,12 @@ export default function LauncherPage() {
 
             // Only register the game if needed
             if (!isRegisteredVersionOurs(minecraftVersion)) {
-                // setStatus("Copying existing minecraft data")
-                // cacheMinecraftData();
-
                 setStatus("Unregistering existing version");
                 await unregisterExisting();
 
                 setStatus("Registering downloaded version");
                 await registerVersion(minecraftVersion)
 
-                // setStatus("Restoring existing minecraft data")
-                // restoreMinecraftData();
-
-                // setStatus("Saving config...");
                 saveLauncherConfig(readLauncherConfig());
             }
 
@@ -94,7 +88,7 @@ export default function LauncherPage() {
             copyProxyToInstalledVer(minecraftVersion);
 
             const startGameCmd = `start minecraft:`;
-            child.spawn(startGameCmd, {shell: true})
+            child.exec(startGameCmd)
         } catch (e: unknown) {
             console.log(e);
             setError((e as Error).message);
