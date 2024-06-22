@@ -8,7 +8,6 @@ import {readLauncherConfig, saveLauncherConfig} from "../launcher/Modlist";
 import { isDeveloperModeEnabled, tryEnableDeveloperMode } from "../versionSwitcher/DeveloperMode";
 import { registerVersion, unregisterExisting } from "../versionSwitcher/AppRegistry";
 import { cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
-import { getAmethystFolder, getMinecraftUWPFolder } from "../versionSwitcher/AmethystPaths";
 
 const child = window.require('child_process') as typeof import('child_process')
 const fs = window.require("fs") as typeof import("fs");
@@ -50,27 +49,6 @@ export default function LauncherPage() {
                     throw new Error("Failed to enable 'Developer Mode' in windows settings to allow installing the game from loose files, please enable manually or make sure to press 'Yes' to enable automatically.")
                 }
             }
-
-            const originalAppdataFolder = getMinecraftUWPFolder();
-            const symlinkedNewFolder = getAmethystFolder()
-
-            console.log(originalAppdataFolder)
-            console.log(symlinkedNewFolder)
-
-            // return;
-
-            // if (fs.existsSync(originalAppdataFolder)) {
-            //     // if it exists but is not a symlink, we need to move all of the data to a new dir
-            // }
-            // else {
-            //     fs.symlinkSync(originalAppdataFolder, symlinkedNewFolder);
-            //     console.log("Made new symlink!")
-            // }
-
-            // const fileInfo = fs.lstatSync(originalAppdataFolder);
-
-            // temp
-            // return;
 
             // We create a lock file when starting the download
             // if we are doing a launch, and we detect it for the version we are targeting

@@ -16,6 +16,7 @@ export default function App() {
 
     return (
         <AppStateProvider>
+            <link rel="preload" href="images/launcher_hero.png" as="image"></link>
             <div className='h-screen overflow-hidden bg-[#313233]'>
                 <Title/>
 
@@ -37,13 +38,16 @@ export default function App() {
                     <Link to="/mods" className='block p-[8px]' draggable={false}>
                         <div className='w-[48px] h-[48px]'
                              style={location.pathname == "/mods" ? highlightedIcon : unselectedIcon}>
-                            <img src="images/advanced_icon.png" className='w-full h-full pixelated'/>
+                            <img src="images/mods_icon.png" className='w-full h-full pixelated'/>
                         </div>
                     </Link>
-                    <Link to="/settings" className='block p-[8px] mt-auto mb-[48px]' draggable={false}>
-                        <div className='w-[48px] h-[48px]'
-                             style={location.pathname == "/settings" ? highlightedIcon : unselectedIcon}>
-                            <img src="images/settings_icon.png" className='w-full h-full pixelated'/>
+                    <Link to="/settings" className='block p-[12px] mt-auto mb-[48px]' draggable={false}>
+                        <div className='relative w-[40px] h-[40px]'>
+                            <img src="images/settings_icon.png" className="absolute top-0 left-0 w-full h-full pixelated" />
+                            {location.pathname == "/settings" ? 
+                                <img src="images/settings_icon_unselected.png" className="absolute top-0 left-0 w-full h-full pixelated" /> 
+                                : <></>
+                            }
                         </div>
                     </Link>
                 </div>
