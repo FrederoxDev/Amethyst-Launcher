@@ -40,3 +40,9 @@ export function getLauncherConfig() {
 export function getLauncherFolder() {
     return path.join(getAmethystFolder(), "Launcher")
 }
+
+
+export function ensureDirectoryExists(filePath: string) {
+    const dirname = path.dirname(filePath);
+    fs.mkdirSync(dirname, {recursive: true});
+}
