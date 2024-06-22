@@ -88,7 +88,7 @@ export default function SettingsPage() {
             </DividedSection>
 
             <DividedSection>
-                <ReadOnlyTextBox text={launcherCfg ?? " "} label="Config"/>
+                <ReadOnlyTextBox text={launcherCfg ?? " "} label="Launcher Config"/>
             </DividedSection>
 
             <DividedSection className="flex-grow flex justify-around gap-[8px]">
