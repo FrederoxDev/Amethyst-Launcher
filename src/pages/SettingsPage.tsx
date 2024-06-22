@@ -5,8 +5,10 @@ import {useAppState} from "../contexts/AppState";
 import {SemVersion} from "../types/SemVersion";
 import { isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
 import { getInstalledMinecraftPackagePath } from "../versionSwitcher/AppRegistry";
-import { getAmethystFolder, getMinecraftUWPFolder } from "../versionSwitcher/AmethystPaths";
+import { getAmethystFolder, getLauncherConfig, getMinecraftUWPFolder } from "../versionSwitcher/AmethystPaths";
 import { isDeveloperModeEnabled } from "../versionSwitcher/DeveloperMode";
+import ReadOnlyTextBox from "../components/ReadOnlyTextBox";
+import { useEffect, useState } from "react";
 
 const fs = window.require('fs') as typeof import('fs');
 
@@ -20,6 +22,7 @@ export default function SettingsPage() {
     } = useAppState()
 
     const {allProfiles, selectedProfile, allMinecraftVersions} = useAppState();
+    const [launcherCfg, setLauncherCfg] = useState<string>(""); 
 
     const profile = allProfiles[selectedProfile];
     let minecraftVersion = undefined;
@@ -41,6 +44,23 @@ export default function SettingsPage() {
             installDir = getInstalledMinecraftPackagePath(minecraftVersion) ?? "Could not find installed."
         }
     }
+
+    const updateCfgText = () => {
+        const configFile = getLauncherConfig();
+
+        if (!fs.existsSync(configFile)) {
+            setLauncherCfg("Launcher config does not exist...");
+            return;
+        }
+
+        const data = fs.readFileSync(configFile, 'utf-8');
+        setLauncherCfg(data)
+    }
+
+    useEffect(() => {
+        const timer = setTimeout(updateCfgText, 0);
+        return () => clearTimeout(timer);
+    }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode])
 
     return (
         <MainPanel>
@@ -66,6 +86,11 @@ export default function SettingsPage() {
                 <p>Amethyst Folder: {amethystFolder}</p>
                 <p>Minecraft Folder: {minecraftFolder}</p>
             </DividedSection>
+
+            <DividedSection>
+                <ReadOnlyTextBox text={launcherCfg ?? " "} label="Config"/>
+            </DividedSection>
+
             <DividedSection className="flex-grow flex justify-around gap-[8px]">
                 <div className="h-full flex flex-col"></div>
             </DividedSection>

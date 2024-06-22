@@ -47,7 +47,7 @@ function getAllMods(): ModErrorInfo[] {
 
         results.push({
             modIdentifier,
-            description: "wow this is a description yap yap yap yap yap. bla bla bla wow this is a description yap yap yap",
+            description: "",
             modErrors
         }) 
     }
@@ -98,10 +98,10 @@ export default function ModsPage() {
                 </div>
             </DividedSection>
             <DividedSection className="flex justify-around gap-[8px]">
-                <div className="w-[50%]">
+                {/* <div className="w-[50%]">
                     <MinecraftButton text="Import Mod" onClick={openModsFolder}/>
-                </div>
-                <div className="w-[50%]">
+                </div> */}
+                <div className="w-[100%]">
                     <MinecraftButton text="Open Mods Folder" onClick={openModsFolder}/>
                 </div>
             </DividedSection>
