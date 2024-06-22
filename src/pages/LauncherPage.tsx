@@ -8,7 +8,7 @@ import {readLauncherConfig, saveLauncherConfig} from "../launcher/Modlist";
 import { isDeveloperModeEnabled, tryEnableDeveloperMode } from "../versionSwitcher/DeveloperMode";
 import { registerVersion, unregisterExisting } from "../versionSwitcher/AppRegistry";
 import { cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
-import { getAmethystFolder, getMinecraftFolder } from "../versionSwitcher/AmethystPaths";
+import { getAmethystFolder, getMinecraftUWPFolder } from "../versionSwitcher/AmethystPaths";
 
 const child = window.require('child_process') as typeof import('child_process')
 const fs = window.require("fs") as typeof import("fs");
@@ -51,7 +51,7 @@ export default function LauncherPage() {
                 }
             }
 
-            const originalAppdataFolder = getMinecraftFolder();
+            const originalAppdataFolder = getMinecraftUWPFolder();
             const symlinkedNewFolder = getAmethystFolder()
 
             console.log(originalAppdataFolder)

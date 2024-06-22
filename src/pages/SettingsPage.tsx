@@ -5,7 +5,7 @@ import {useAppState} from "../contexts/AppState";
 import {SemVersion} from "../types/SemVersion";
 import { isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
 import { getInstalledMinecraftPackagePath } from "../versionSwitcher/AppRegistry";
-import { getAmethystFolder, getMinecraftFolder } from "../versionSwitcher/AmethystPaths";
+import { getAmethystFolder, getMinecraftUWPFolder } from "../versionSwitcher/AmethystPaths";
 import { isDeveloperModeEnabled } from "../versionSwitcher/DeveloperMode";
 
 const fs = window.require('fs') as typeof import('fs');
@@ -28,7 +28,7 @@ export default function SettingsPage() {
     let installDir = "";
 
     const amethystFolder = getAmethystFolder()
-    const minecraftFolder = getMinecraftFolder()
+    const minecraftFolder = getMinecraftUWPFolder()
     let isWindowsDevModeOn = isDeveloperModeEnabled();
 
     if (profile) {

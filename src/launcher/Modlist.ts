@@ -3,7 +3,7 @@ import {Profile} from "../types/Profile";
 import {LauncherConfig} from "../types/LauncherConfig";
 import {MinecraftVersion, VersionType} from "../types/MinecraftVersion";
 import {SemVersion} from "../types/SemVersion";
-import { getAmethystFolder, getLauncherConfig, getLauncherFolder, getMinecraftFolder } from "../versionSwitcher/AmethystPaths";
+import { getAmethystFolder, getLauncherConfig, getLauncherFolder, getMinecraftUWPFolder } from "../versionSwitcher/AmethystPaths";
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
