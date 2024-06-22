@@ -17,7 +17,7 @@ export default function UpdatePage() {
     const [appVersion, setAppVersion] = useState('-');
 
     useEffect(() => {
-        ipcRenderer.invoke('set-auto-download', true);
+        ipcRenderer.invoke('set-auto-download', false);
         ipcRenderer.invoke('set-auto-install-on-app-quit', true);
         checkForUpdates();
 
