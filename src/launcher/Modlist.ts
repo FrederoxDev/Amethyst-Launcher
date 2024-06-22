@@ -3,7 +3,7 @@ import {Profile} from "../types/Profile";
 import {LauncherConfig} from "../types/LauncherConfig";
 import {MinecraftVersion, VersionType} from "../types/MinecraftVersion";
 import {SemVersion} from "../types/SemVersion";
-import { getAmethystFolder, getLauncherConfig, getLauncherFolder, getMinecraftUWPFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
+import { ensureDirectoryExists, getAmethystFolder, getLauncherConfig, getLauncherFolder, getMinecraftUWPFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
@@ -72,6 +72,7 @@ export function findAllProfiles(): Profile[] {
 
 export function saveAllProfiles(profiles: Profile[]) {
     const profilesFile = path.join(getLauncherFolder(), "profiles.json");
+    ensureDirectoryExists(profilesFile);
     fs.writeFileSync(profilesFile, JSON.stringify(profiles, undefined, 4));
 }
 
@@ -102,6 +103,7 @@ export function readLauncherConfig(): LauncherConfig {
 
 export async function getAllMinecraftVersions() {
     const versionCacheFile = path.join(getLauncherFolder(), "cached_versions.json");
+    ensureDirectoryExists(versionCacheFile);
     let lastWriteTime: Date = new Date(0);
 
     if (fs.existsSync(versionCacheFile)) {
