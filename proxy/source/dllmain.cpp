@@ -1,120 +1,28 @@
-#include "dllmain.h"
+#include "dllmain.hpp"
 #include <filesystem>
 #include <winrt/Windows.Storage.h>
 #include <amethyst/Utility.hpp>
-namespace fs = std::filesystem;
-using namespace winrt;
-using namespace Windows::Storage;
+#include "AmethystProxy.hpp"
 
-// Define the NtSuspendThread function signature
 typedef NTSTATUS(NTAPI* NtSuspendThreadPtr)(HANDLE ThreadHandle, PULONG PreviousSuspendCount);
-// Define the NtResumeThread function signature
 typedef NTSTATUS(NTAPI* NtResumeThreadPtr)(HANDLE ThreadHandle, PULONG PreviousSuspendCount);
 
 // Define the Amethyst Init function signature
 typedef void(__cdecl* RuntimeInitPtr)(DWORD dMcThreadID, HANDLE hMcThreadHandle);
-
-// Remove this line if you aren't proxying any functions.
-HMODULE hProxied = LoadLibrary(L"C:\\Windows\\System32\\dxgi.dll");
-HMODULE hAmethyst = NULL;
 
 HMODULE hClientModule = NULL;
 DWORD dMcThreadID = NULL;
 HANDLE hMcThreadHandle = NULL;
 
 NtSuspendThreadPtr NtSuspendThread = NULL; // NtSuspendThread function pointer
-NtResumeThreadPtr NtResumeThread = NULL; // NtResumeThread function pointer
 RuntimeInitPtr RuntimeInit = NULL; // Amethyst Init function pointer
-
-static Config loadConfig(const std::wstring& path)
-{
-    // Read the config file and make sure that if exists
-    std::ifstream configStream(path);
-    if (!configStream.good()) {
-        std::wcout << "[AmethystProxy] Failed to open '" << path << "'" << std::endl;
-        std::wcout << L"Error" << std::strerror(errno) << std::endl;
-        ShutdownWait();
-    }
-
-    // Read the configs content and close the config file
-    std::string rawConfigJson((std::istreambuf_iterator<char>(configStream)), std::istreambuf_iterator<char>());
-    configStream.close();
-
-    try {
-        return Config(rawConfigJson);
-    }
-    catch (...) {
-        Log::Error("[AmethystProxy] Failed to parse the config file");
-        ShutdownWait();
-    }
-}
 
 void SuspendMinecraftThread()
 {
 	NtSuspendThread(hMcThreadHandle, NULL);
 }
 
-void ResumeMinecraftThread()
-{
-    NtResumeThread(hMcThreadHandle, NULL);
-}
-
-static std::wstring FindRuntimeDllPath()
-{
-    fs::path minecraftFolder = GetMinecraftFolder();
-    fs::path configPath = minecraftFolder / L"Amethyst" / L"Launcher" / L"launcher_config.json";
-
-    Config config = loadConfig(configPath);
-    std::string rawModName = config.injectedMod;
-
-    // Launching a vanilla profile so exit
-    if (rawModName == "Vanilla") return L"Vanilla";
-    
-    // Split the runtime mod name by the @ character to find the dllName
-    size_t at = rawModName.find("@");
-    if (at == std::string::npos) {
-        Log::Error("[AmethystProxy] Invalid runtime name, no versioning: '{}'", rawModName);
-        ShutdownWait();
-    }
-
-    // Mod name before the versioning
-    std::string modName = rawModName.substr(0, at);
-    std::wstring versionlessName(modName.begin(), modName.end());
-    std::wstring versionedName(rawModName.begin(), rawModName.end());
-
-    fs::path dllPath = minecraftFolder / L"Amethyst" / L"Mods" / versionedName / std::wstring(versionlessName + L".dll");
-    return dllPath.generic_wstring();
-}
-
-static void InjectIntoMinecraft(std::wstring& path)
-{
-    LoadLibrary(path.c_str());
-}
-
-static void Proxy()
-{
-    /*if (path == L"Vanilla") {
-        return;
-    }*/
-
-    Log::InitializeConsole();
-
-    Log::Info("[AmethystProxy] Using 'AmethystProxy@{}'", PROXY_VERSION);
-    Log::Info("[AmethystProxy] McThreadID: {}, McThreadHandle: {}", dMcThreadID, hMcThreadHandle);
-
-    fs::path minecraftFolder = GetMinecraftFolder();
-    fs::path configPath = minecraftFolder / L"Amethyst" / L"Launcher" / L"launcher_config.json";
-
-    std::wcout << configPath.generic_wstring() << std::endl;
-
-    //Log::Info(L"{}", roamingFolder.Path().c_str());
-    //std::wcout << folder.get << std::endl;x
-
-    ShutdownWait();
-    return;
-
-    /*return;
-
+void LoadNtdll() {
     HMODULE ntdllHandle = GetModuleHandle(L"ntdll.dll");
     if (ntdllHandle == 0) {
         Log::Error("[AmethystProxy] Could not get ntdll.dll");
@@ -130,38 +38,58 @@ static void Proxy()
     }
 
     NtSuspendThread = (NtSuspendThreadPtr)_NtSuspendThread;
+}
 
-    FARPROC _NtResumeThread = GetProcAddress(ntdllHandle, "NtResumeThread");
-    if (_NtResumeThread == 0) {
-        Log::Error("[AmethystProxy] Could not find ProcAddress of NtResumeThread in ntdll.dll");
-        ShutdownWait();
+HMODULE InjectIntoMinecraft(std::wstring& path)
+{
+    return LoadLibraryW(path.c_str());
+}
+
+void Proxy()
+{
+    Log::InitializeConsole();
+
+    Log::Info("[AmethystProxy] Using 'AmethystProxy@{}'", PROXY_VERSION);
+    Log::Info("[AmethystProxy] McThreadID: {}, McThreadHandle: {}", dMcThreadID, hMcThreadHandle);
+
+    AmethystProxy proxy;
+    bool loadedConfig = proxy.LoadLauncherConfig();
+    if (!loadedConfig) return ShutdownWait();
+
+    std::string runtimeName = proxy.mConfig->injectedMod;
+
+    // Handle vanilla profiles
+    if (runtimeName == "Vanilla") {
+        Log::HideConsole();
         return;
     }
 
-    NtResumeThread = (NtResumeThreadPtr)_NtResumeThread;
-
+    // Load ntdll.dll and use it to suspend minecraft to allow the runtime to take control.
+    LoadNtdll();
     SuspendMinecraftThread();
-    InjectIntoMinecraft(path);
-    
-    fs::path runtimeLibName = fs::path(path).filename();
-    Log::Info("[AmethystProxy] Loading: {}", runtimeLibName.string());
 
-    HMODULE runtimeHandle = GetModuleHandle(runtimeLibName.c_str());
-    if (runtimeHandle == 0) {
-        Log::Error("[AmethystProxy] Could not get {}", runtimeLibName.string());
-        ShutdownWait();
-        return;
+    fs::path runtimePath;
+    bool foundRuntimePath = proxy.GetRuntimePath(runtimePath);
+    if (!foundRuntimePath) return ShutdownWait();
+
+    Log::Info("[AmethystProxy] Injecting runtime '{}'", runtimeName);
+
+    std::wstring widePath = runtimePath.wstring();
+    HMODULE runtimeHandle = InjectIntoMinecraft(widePath);
+
+    if (runtimeHandle == NULL) {
+        Log::Error("[AmethystProxy] Could not get handle to injected runtime {}", runtimeName);
+        return ShutdownWait();
     }
 
     FARPROC _RuntimeInit = GetProcAddress(runtimeHandle, "Init");
-    if (runtimeHandle == 0) {
-        Log::Error("[AmethystProxy] Could not find ProcAddress of Init in {}", runtimeLibName.string());
-        ShutdownWait();
-        return;
+    if (_RuntimeInit == NULL) {
+        Log::Error("[AmethystProxy] The proxy expects function 'void Init(DWORD dMcThreadID, HANDLE hMcThreadHandle)' to be exported and was unable to find it.");
+        return ShutdownWait();
     }
 
     RuntimeInit = (RuntimeInitPtr)_RuntimeInit;
-    RuntimeInit(dMcThreadID, hMcThreadHandle);*/
+    RuntimeInit(dMcThreadID, hMcThreadHandle);
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)

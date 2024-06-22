@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 23)
 
 file(GLOB_RECURSE ProxyAll
     "source/*.cpp" 
-    "source/*.hpp" 
+    "source/*.hpp"   
 )
 set(CMAKE_CONFIGURATION_TYPES "Release;RelWithDebInfo" CACHE STRING "" FORCE)
 add_library(AmethystProxy SHARED ${ProxyAll})
