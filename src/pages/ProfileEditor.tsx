@@ -75,6 +75,14 @@ export default function ProfileEditor() {
 
     const saveProfile = () => {
         allProfiles[selectedProfile].name = profileName;
+
+        // Verify the vanilla runtime still exists
+        if (!(profileRuntime in allRuntimes)) setProfileRuntime("Vanilla");
+
+        // Ensure all mods still exist
+        const newMods = profileActiveMods.filter(mod => allMods.includes(mod));
+        setAllMods(newMods);
+
         allProfiles[selectedProfile].runtime = profileRuntime;
         allProfiles[selectedProfile].mods = profileActiveMods;
         allProfiles[selectedProfile].minecraft_version = profileMinecraftVersion;
