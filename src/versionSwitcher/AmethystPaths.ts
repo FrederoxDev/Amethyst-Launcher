@@ -30,7 +30,7 @@ export function getVersionsFolder() {
 }
 
 export function getModsFolder() {
-    return path.join(getAmethystUWPFolder(), "Mods");
+    return path.join(getAmethystUWPFolder(), "mods");
 }
 
 export function getLauncherConfig() {
