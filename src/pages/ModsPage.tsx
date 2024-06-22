@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import DividedSection from "../components/DividedSection";
 import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
-import { getAmethystFolder, getMinecraftFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
+import { getAmethystFolder, getMinecraftUWPFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
@@ -57,7 +57,7 @@ function getAllMods(): ModErrorInfo[] {
 
 const openModsFolder = () => {
     // Don't reveal in explorer unless there is an existing minecraft folder
-    if (!fs.existsSync(getMinecraftFolder())) {
+    if (!fs.existsSync(getMinecraftUWPFolder())) {
         alert("Minecraft is not currently installed");
         return;
     }

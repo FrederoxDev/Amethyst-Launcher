@@ -12,9 +12,17 @@ export function getAmethystFolder() {
     return amethystFolder;
 }
 
-export function getMinecraftFolder() {
+export function getMinecraftUWPFolder() {
     /**@ts-ignore */ 
     return path.join(window.env["LocalAppData"], "Packages", "Microsoft.MinecraftUWP_8wekyb3d8bbwe");
+}
+
+export function getComMojangFolder() {
+    return path.join(getMinecraftUWPFolder(), "LocalState", "games", "com.mojang");
+}
+
+export function getAmethystUWPFolder() {
+    return path.join(getComMojangFolder(), "amethyst");
 }
 
 export function getVersionsFolder() {
@@ -22,13 +30,13 @@ export function getVersionsFolder() {
 }
 
 export function getModsFolder() {
-    return path.join(getAmethystFolder(), "Mods");
-}
-
-export function getLauncherFolder() {
-    return path.join(getAmethystFolder(), "Launcher");
+    return path.join(getAmethystUWPFolder(), "Mods");
 }
 
 export function getLauncherConfig() {
-    return path.join(getLauncherFolder(), "launcher_config.json")
+    return path.join(getAmethystUWPFolder(), "launcher_config.json")
+}
+
+export function getLauncherFolder() {
+    return path.join(getAmethystFolder(), "Launcher")
 }

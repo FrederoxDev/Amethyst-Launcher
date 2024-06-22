@@ -1,4 +1,4 @@
-import { getMinecraftFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
+import { getMinecraftUWPFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
 import DividedSection from "./DividedSection";
 import MinecraftButton from "./MinecraftButton";
 
@@ -15,7 +15,7 @@ interface ButtonSectionProps {
 export default function ButtonSection({launchGame, actionLock, loadingPercent, status}: ButtonSectionProps) {
     const openModsFolder = () => {
         // Don't reveal in explorer unless there is an existing minecraft folder
-        if (!fs.existsSync(getMinecraftFolder())) {
+        if (!fs.existsSync(getMinecraftUWPFolder())) {
             alert("Minecraft is not currently installed");
             return;
         }
