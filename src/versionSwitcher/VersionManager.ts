@@ -1,4 +1,3 @@
-
 import { getAmethystFolder, getVersionsFolder } from "./AmethystPaths";
 import { getInstalledMinecraftPackagePath } from "./AppRegistry";
 import { download } from "./backend/MinecraftVersionDownloader";
