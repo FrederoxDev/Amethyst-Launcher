@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import DividedSection from "../components/DividedSection";
 import MainPanel from "../components/MainPanel";
 import TextInput from "../components/TextInput";
@@ -45,7 +45,7 @@ export default function ProfileEditor() {
         return (
             <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}
                  onClick={() => {
-                     if (profileRuntime == "Vanilla") {
+                     if (profileRuntime === "Vanilla") {
                          alert("Cannot add mods to a vanilla profile");
                          return;
                      }
@@ -65,13 +65,13 @@ export default function ProfileEditor() {
         )
     }
 
-    const loadProfile = () => {
+    const loadProfile = useCallback(() => {
         const profile = allProfiles[selectedProfile];
         setProfileName(profile?.name ?? "New Profile");
         setProfileRuntime(profile?.runtime ?? "Vanilla");
         setProfileActiveMods(profile?.mods ?? []);
         setProfileMinecraftVersion(profile?.minecraft_version ?? "1.21.0.3");
-    }
+    }, [allProfiles, selectedProfile])
 
     const saveProfile = () => {
         allProfiles[selectedProfile].name = profileName;
@@ -100,20 +100,20 @@ export default function ProfileEditor() {
         navigate("/profiles");
     }
 
-    useEffect(() => {
-        loadProfile();
-    }, []);
-
-    const fetchMods = () => {
+    const fetchMods = useCallback(() => {
         const {mods} = findAllMods();
         setAllMods(mods);
-    };
+    }, [setAllMods])
+
+    useEffect(() => {
+        loadProfile();
+    }, [loadProfile]);
 
     useEffect(() => {
         const intervalId = setInterval(fetchMods, 500); // Fetch every 5 seconds
 
         return () => clearInterval(intervalId); // Cleanup interval on component unmount
-    }, [setAllMods]);
+    }, [setAllMods, fetchMods]);
 
     return (
         <MainPanel>
@@ -126,7 +126,7 @@ export default function ProfileEditor() {
                     setValue={setProfileMinecraftVersion}
 
                     // we don't support non-release versions right now so only show release lmao
-                    options={allMinecraftVersions.filter(ver => ver.versionType == VersionType.Release).map(ver => ver.toString())}
+                    options={allMinecraftVersions.filter(ver => ver.versionType === VersionType.Release).map(ver => ver.toString())}
                     id="minecraft-version"
                 />
                 <Dropdown
