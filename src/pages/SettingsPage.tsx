@@ -36,7 +36,7 @@ export default function SettingsPage() {
 
     if (profile) {
         const semVersion = SemVersion.fromString(profile.minecraft_version);
-        minecraftVersion = allMinecraftVersions.find(version => version.version.toString() == semVersion.toString());
+        minecraftVersion = allMinecraftVersions.find(version => version.version.toString() === semVersion.toString());
 
         if (minecraftVersion) {
             isVerDownloaded = isVersionDownloaded(minecraftVersion.version)
