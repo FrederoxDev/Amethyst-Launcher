@@ -1,22 +1,32 @@
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import DividedSection from "../components/DividedSection";
 import FolderInput from "../components/FolderInput";
 import MainPanel from "../components/MainPanel";
 import TextInput from "../components/TextInput";
 import Dropdown from "../components/Dropdown";
-import MinecraftButton, { MinecraftButtonStyle } from "../components/MinecraftButton";
-import { useAppState } from "../contexts/AppState";
-import { useNavigate } from "react-router-dom";
-import { VersionType } from "../types/MinecraftVersion";
+import MinecraftButton, {MinecraftButtonStyle} from "../components/MinecraftButton";
+import {useAppState} from "../contexts/AppState";
+import {useNavigate} from "react-router-dom";
+import {findAllMods} from "../launcher/Modlist";
+import {VersionType} from "../types/MinecraftVersion";
 
 export default function ProfileEditor() {
-    const [ profileName, setProfileName ] = useState("");
-    const [ profileMinecraftVersion, setProfileMinecraftVersion ] = useState<string>("");
+    const [profileName, setProfileName] = useState("");
+    const [profileActiveMods, setProfileActiveMods] = useState<string[]>([])
+    const [profileRuntime, setProfileRuntime] = useState<string>("");
+    const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<string>("");
     const [ gamePath, setGamePath ] = useState("");
-    const [ profileRuntime, setProfileRuntime ] = useState<string>("");
-    const [ profileActiveMods, setProfileActiveMods ] = useState<string[]>([]);
 
-    const { allMods, allRuntimes, allMinecraftVersions, allProfiles, setAllProfiles, selectedProfile, saveData } = useAppState()
+    const {
+        allMods,
+        allRuntimes,
+        allMinecraftVersions,
+        allProfiles,
+        setAllProfiles,
+        selectedProfile,
+        saveData,
+        setAllMods
+    } = useAppState();
     const navigate = useNavigate();
 
     if (allProfiles.length === 0) navigate("/profiles");
@@ -27,12 +37,12 @@ export default function ProfileEditor() {
             setProfileActiveMods(newActive);
         } else {
             const newActive = [...profileActiveMods, name];
-            setProfileActiveMods(newActive)
+            setProfileActiveMods(newActive);
         }
     }
 
-    const ModButton = ({ name }: { name: string }) => {
-        const [ isHovered, setIsHovered ] = useState(false);
+    const ModButton = ({name}: { name: string }) => {
+        const [isHovered, setIsHovered] = useState(false);
 
         return (
             <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)} 
@@ -44,8 +54,13 @@ export default function ProfileEditor() {
                     toggleModActive(name);
                 }}  
             >
-                <DividedSection className="cursor-pointer" style={{ backgroundColor: isHovered ? "#5A5B5C" : "#48494A", padding: "1px", paddingLeft: "4px", paddingRight: "4px" }}>
-                    <p className="minecraft-seven text-white">{ name }</p>
+                <DividedSection className="cursor-pointer" style={{
+                    backgroundColor: isHovered ? "#5A5B5C" : "#48494A",
+                    padding: "1px",
+                    paddingLeft: "4px",
+                    paddingRight: "4px"
+                }}>
+                    <p className="minecraft-seven text-white">{name}</p>
                 </DividedSection>
             </div>
         )
@@ -56,12 +71,20 @@ export default function ProfileEditor() {
         setProfileName(profile?.name ?? "New Profile");
         setProfileRuntime(profile?.runtime ?? "Vanilla");
         setProfileActiveMods(profile?.mods ?? []);
-        setProfileMinecraftVersion(profile?.minecraft_version ?? "1.20.71.1");
+        setProfileMinecraftVersion(profile?.minecraft_version ?? "1.21.0.3");
         setGamePath(profile?.path ?? "");
     }
 
     const saveProfile = () => {
         allProfiles[selectedProfile].name = profileName;
+
+        // Verify the vanilla runtime still exists
+        if (!(profileRuntime in allRuntimes)) setProfileRuntime("Vanilla");
+
+        // Ensure all mods still exist
+        const newMods = profileActiveMods.filter(mod => allMods.includes(mod));
+        setAllMods(newMods);
+
         allProfiles[selectedProfile].runtime = profileRuntime;
         allProfiles[selectedProfile].mods = profileActiveMods;
         allProfiles[selectedProfile].minecraft_version = profileMinecraftVersion;
@@ -75,14 +98,25 @@ export default function ProfileEditor() {
         const newProfiles = allProfiles;
         newProfiles.splice(selectedProfile, 1);
         setAllProfiles(allProfiles);
-        
+
         saveData();
         navigate("/profiles");
     }
 
     useEffect(() => {
-        loadProfile()
+        loadProfile();
     }, []);
+
+    const fetchMods = () => {
+        const {mods} = findAllMods();
+        setAllMods(mods);
+    };
+
+    useEffect(() => {
+        const intervalId = setInterval(fetchMods, 500); // Fetch every 5 seconds
+
+        return () => clearInterval(intervalId); // Cleanup interval on component unmount
+    }, [setAllMods]);
 
     return (
         <MainPanel>
@@ -98,11 +132,11 @@ export default function ProfileEditor() {
                     options={ allMinecraftVersions.filter(ver => ver.versionType === VersionType.Release).map(ver => ver.toString()) }
                     id="minecraft-version"
                 />
-                <Dropdown 
-                    labelText="Runtime" 
-                    value={ profileRuntime }
-                    setValue={ setProfileRuntime }
-                    options={ allRuntimes }
+                <Dropdown
+                    labelText="Runtime"
+                    value={profileRuntime}
+                    setValue={setProfileRuntime}
+                    options={allRuntimes}
                     id="runtime-mod"
                 />
                 <FolderInput label="Custom Directory" text={gamePath ?? ""} setPath={setGamePath} />
@@ -110,36 +144,37 @@ export default function ProfileEditor() {
 
             {/* Mod Selection */}
             {
-                profileRuntime === "Vanilla" 
-                ? <DividedSection className="flex-grow flex justify-around gap-[8px]">
-                    <div className="h-full flex flex-col"></div>
-                </DividedSection>
-                : <DividedSection className="flex-grow flex justify-around gap-[8px]">
-                    <div className=" w-[50%] h-full flex flex-col">
-                        <p className="text-white minecraft-seven">Active Mods</p>
-                        <div className="border-[2px] border-[#1E1E1F] bg-[#313233] flex-grow">
-                            {
-                                allMods.length > 0 ? allMods.filter(mod => profileActiveMods.includes(mod))
-                                    .map((mod, index) => <ModButton name={mod} key={index} />) : <></>
-                            }
+                profileRuntime === "Vanilla"
+                    ? <DividedSection className="flex-grow flex justify-around gap-[8px]">
+                        <div className="h-full flex flex-col"></div>
+                    </DividedSection>
+                    : <DividedSection className="flex-grow flex justify-around gap-[8px]">
+                        <div className=" w-[50%] h-full flex flex-col">
+                            <p className="text-white minecraft-seven">Active Mods</p>
+                            <div className="border-[2px] border-[#1E1E1F] bg-[#313233] flex-grow">
+                                {
+                                    allMods.length > 0 ? allMods.filter(mod => profileActiveMods.includes(mod))
+                                        .map((mod, index) => <ModButton name={mod} key={index}/>) : <></>
+                                }
+                            </div>
                         </div>
-                    </div>
-                    <div className=" w-[50%] h-full flex flex-col">
-                        <p className="text-white minecraft-seven">Inactive Mods</p>
-                        <div className="border-[2px] border-[#1E1E1F] bg-[#313233] flex-grow">
-                            {
-                                allMods.length > 0 ? allMods.filter(mod => !profileActiveMods.includes(mod))
-                                    .map((mod, index) => <ModButton name={mod} key={index} />) : <></>
-                            }
+                        <div className=" w-[50%] h-full flex flex-col">
+                            <p className="text-white minecraft-seven">Inactive Mods</p>
+                            <div className="border-[2px] border-[#1E1E1F] bg-[#313233] flex-grow">
+                                {
+                                    allMods.length > 0 ? allMods.filter(mod => !profileActiveMods.includes(mod))
+                                        .map((mod, index) => <ModButton name={mod} key={index}/>) : <></>
+                                }
+                            </div>
                         </div>
-                    </div>
-                </DividedSection>
+                    </DividedSection>
             }
-            
+
             {/* Profile Actions */}
             <DividedSection className="flex justify-around gap-[8px]">
-                <div className="w-[50%]"><MinecraftButton text="Save Profile" onClick={() => saveProfile()} /></div>
-                <div className="w-[50%]"><MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} onClick={() => deleteProfile()}/></div>
+                <div className="w-[50%]"><MinecraftButton text="Save Profile" onClick={() => saveProfile()}/></div>
+                <div className="w-[50%]"><MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn}
+                                                          onClick={() => deleteProfile()}/></div>
             </DividedSection>
         </MainPanel>
     )
