@@ -1,0 +1,64 @@
+name: Build and Distribute
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Bump version
+        run: |
+          npm run bump-version
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json
+          git commit -m "Bump version to $(jq -r .version < package.json)"
+          git push origin HEAD:main
+
+      - name: Build the app
+        run: npm run build
+
+      - name: Remove win-unpacked directory
+        run: rm -rf dist/win-unpacked
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: amethyst-launcher
+          path: |
+            dist/**
+          exclude: |
+            dist/win-unpacked/**
+
+      - name: Get the version from package.json
+        id: get_version
+        run: echo "VERSION=$(jq -r .version < package.json)" >> $GITHUB_ENV
+
+      - name: Publish to GitHub Releases
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: v${{ env.VERSION }}
+          name: "Release v${{ env.VERSION }}"
+          files: |
+            dist/**
+          draft: false
+          prerelease: false
