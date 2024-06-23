@@ -75,6 +75,7 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
         const readConfig = readLauncherConfig();
         setKeepLauncherOpen(readConfig.keep_open ?? true);
         setDeveloperMode(readConfig.developer_mode ?? false);
+        setSelectedProfile(readConfig.selected_profile ?? 0);
 
         const fetchMinecraftVersions = async () => {
             const versions = await getAllMinecraftVersions();
@@ -93,7 +94,8 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
             developer_mode: developerMode,
             keep_open: keepLauncherOpen,
             mods: allProfiles[selectedProfile]?.mods ?? [],
-            runtime: allProfiles[selectedProfile]?.runtime ?? ""
+            runtime: allProfiles[selectedProfile]?.runtime ?? "",
+            selected_profile: selectedProfile,
         };
 
         saveLauncherConfig(launcherConfig);
