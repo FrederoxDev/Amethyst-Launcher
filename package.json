@@ -30,10 +30,10 @@
     "start-react": "react-app-rewired start",
     "start-electron": "electron .",
     "build-react": "react-app-rewired build",
-    "build": "react-app-rewired build && electron-builder",
+    "build": "react-app-rewired build && electron-builder --win",
     "run-built": "start ./dist/win-unpacked/Amethyst-Launcher.exe",
     "eject": "react-scripts eject",
-    "bump-version": "npm version minor --no-git-tag-version"
+    "bump-version": "npm version patch --no-git-tag-version"
   },
   "eslintConfig": {
     "extends": [

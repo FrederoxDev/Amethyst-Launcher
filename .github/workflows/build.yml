@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     strategy:
       matrix:
@@ -24,17 +24,23 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Bump version
+      - name: Bump version and push changes
         run: |
-          npm run bump-version
+          $json = Get-Content package.json | ConvertFrom-Json
+          $version = $json.version
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          npm version patch --no-git-tag-version
           git add package.json
-          git commit -m "Bump version to $(jq -r .version < package.json)"
-          git push origin HEAD:main
+          git commit -m "Bump version to $version"
+          git push https://github.com/${{ github.repository }} HEAD:main
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
 
       - name: Build the app
-        run: npm run build
+        run: |
+          $env:CI="false"
+          npm run build
 
       - name: Remove win-unpacked directory
         run: rm -rf dist/win-unpacked
@@ -55,7 +61,7 @@ jobs:
       - name: Publish to GitHub Releases
         uses: ncipollo/release-action@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           tag: v${{ env.VERSION }}
           name: "Release v${{ env.VERSION }}"
           files: |
