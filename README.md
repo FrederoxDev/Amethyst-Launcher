@@ -11,7 +11,7 @@
 * Download the latest **`Amethyst.Launcher.Setup.biggest.version.number.exe`** file from here: https://github.com/FrederoxDev/Amethyst-Launcher/releases/
 * Run the `.exe` and go through the installation steps
 * If the launcher is not already opened, open it
-* Click the **furnace icon** on the left sidebar, then click **Create New Profile**
+* Click the **chest icon** on the left sidebar, then click **Create New Profile**
 * The values in the input boxes should be set as follows:  
 **\- Profile Name:** The name of the profile (Just pick whatever you want)  
 **\- Minecraft Version:** The latest Minecraft version that Amethyst supports (Currently `1.21.0.3`. **This may change**)  
@@ -54,8 +54,8 @@ Is GOOD
 NOTE: Not all mods will be updated to work with the latest runtime and/or Minecraft version
 
 **Loading the Mods:**  
-* Now that you have all the mods you want installed into the **mods folder**, reboot the Amethyst Launcher (Close and open it again).
-* Click the **furnace icon** on the left sidebar, then click **the profile you made earlier**
+* Now that you have all the mods you want installed into the **mods folder**, restart the Amethyst Launcher (Close and open it again).
+* Click the **chest icon** on the left sidebar, then click **the profile you made earlier**
 * Now click the **runtime dropdown** and select **`AmethystRuntime@version.number`**
 * A new UI should appear with **Active Mods** and **Inactive Mods** boxes.
 * In the **Inactive Mods** box, click on **all the mods you want to use**. They should now appear in the **Active Mods** box.
