@@ -24,17 +24,16 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Bump version
+      - name: Bump version and push changes
         run: |
           npm run bump-version
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add package.json
           git commit -m "Bump version to $(jq -r .version < package.json)"
-          # Replace the following line:
-          # git push origin HEAD:main
-          # with:
-          git push https://${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }} HEAD:main
+          git push https://github.com/${{ github.repository }} HEAD:main
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
 
       - name: Build the app
         run: npm run build
