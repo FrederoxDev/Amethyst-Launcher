@@ -1,8 +1,9 @@
-import { MinecraftVersion } from "../types/MinecraftVersion";
+import type { MinecraftVersion } from "../types/MinecraftVersion";
 import { getVersionsFolder } from "./AmethystPaths";
+import type { Profile } from "../types/Profile";
 
-const regedit = window.require("regedit-rs") as typeof import("regedit-rs");
 const child = window.require("child_process") as typeof import("child_process");
+const regedit = window.require("regedit-rs") as typeof import("regedit-rs");
 const path = window.require("path") as typeof import("path");
 
 async function sleep(ms: number) {
@@ -56,7 +57,7 @@ export async function unregisterExisting() {
     child.execSync(unregisterCmd);
 }
 
-export async function registerVersion(version: MinecraftVersion) {
+export async function registerVersion(version: MinecraftVersion, profile: Profile) {
     let currentPackageId = getCurrentlyInstalledPackageID();
     let i = 0;
 
@@ -73,8 +74,7 @@ export async function registerVersion(version: MinecraftVersion) {
         throw new Error("There is still a version installed!");
     }
 
-    const versionsFolder = getVersionsFolder();
-    const appxManifest = path.join(versionsFolder, `Minecraft-${version.version.toString()}`, "AppxManifest.xml");
+    const appxManifest = path.join(profile.path, `Minecraft-${version.version.toString()}`, "AppxManifest.xml");
 
     const registerCmd = `powershell -ExecutionPolicy Bypass -Command "& { Add-AppxPackage -Path "${appxManifest}" -Register }"`;
     child.execSync(registerCmd);

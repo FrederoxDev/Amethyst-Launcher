@@ -1,3 +1,5 @@
+import { getVersionsFolder } from '../versionSwitcher/AmethystPaths';
+
 const remote = window.require("@electron/remote") as typeof import('@electron/remote');
 
 export type FolderInputProps = {
@@ -27,7 +29,8 @@ export default function FolderInput({ label, text, setPath }: FolderInputProps) 
                         if(text !== "") return setPath("");
 
                         const showDialog = await remote.dialog.showOpenDialog({
-                            properties: ['openDirectory']
+                            properties: ['openDirectory'],
+                            defaultPath: getVersionsFolder()
                         });
 
                         const directory = showDialog.filePaths[0];

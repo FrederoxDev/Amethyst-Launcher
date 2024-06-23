@@ -1,79 +1,75 @@
-import { getAmethystFolder, getVersionsFolder } from "./AmethystPaths";
+import type { MinecraftVersion } from "../types/MinecraftVersion";
 import { getInstalledMinecraftPackagePath } from "./AppRegistry";
 import { download } from "./backend/MinecraftVersionDownloader";
-import { MinecraftVersion } from "../types/MinecraftVersion";
-import { SemVersion } from "../types/SemVersion";
+import type { SemVersion } from "../types/SemVersion";
+import type { Profile } from "../types/Profile";
 import { Extractor } from "./backend/Extractor";
 
 const path = window.require("path") as typeof import("path");
 const fs = window.require("fs") as typeof import("fs");
 
-export function isVersionDownloaded(version: SemVersion) {
-    return fs.existsSync(path.join(getVersionsFolder(), `Minecraft-${version.toString()}`));
+export function isVersionDownloaded(version: SemVersion, profile: Profile) {
+    return fs.existsSync(path.join(profile.path, `Minecraft-${version.toString()}`));
 }
 
-export function createLockFile(version: SemVersion) {
-    const versionsFolder = getVersionsFolder();
-    const lockPath = path.join(versionsFolder, `Minecraft-${version.toString()}.lock`);
+export function createLockFile(version: SemVersion, profile: Profile) {
+    const lockPath = path.join(profile.path, `Minecraft-${version.toString()}.lock`);
 
-    if (!fs.existsSync(versionsFolder)) {
-        fs.mkdirSync(versionsFolder, {recursive: true})
+    if (!fs.existsSync(profile.path)) {
+        fs.mkdirSync(profile.path, { recursive: true });
     }
 
     const handle = fs.openSync(lockPath, "w");
     fs.close(handle);
 }
 
-export function isLockFilePresent(version: SemVersion) {
-    const versionsFolder = getVersionsFolder();
-    const lockPath = path.join(versionsFolder, `Minecraft-${version.toString()}.lock`);
+export function isLockFilePresent(version: SemVersion, profile: Profile) {
+    const lockPath = path.join(profile.path, `Minecraft-${version.toString()}.lock`);
     return fs.existsSync(lockPath);
 }
 
-export function cleanupSuccessfulInstall(version: SemVersion) {
-    const versionsFolder = getVersionsFolder();
-    const appxPath = path.join(versionsFolder, `Minecraft-${version.toString()}.zip`);
-    const lockPath = path.join(versionsFolder, `Minecraft-${version.toString()}.lock`);
+export function cleanupSuccessfulInstall(version: SemVersion, profile: Profile) {
+    const appxPath = path.join(profile.path, `Minecraft-${version.toString()}.zip`);
+    const lockPath = path.join(profile.path, `Minecraft-${version.toString()}.lock`);
 
     if (fs.existsSync(appxPath)) {
-        fs.rmSync(appxPath, {recursive: true})
+        fs.rmSync(appxPath, { recursive: true });
     }
 
     if (fs.existsSync(lockPath)) {
-        fs.rmSync(lockPath, {recursive: true})
+        fs.rmSync(lockPath, { recursive: true });
     }
 }
 
-export function cleanupFailedInstall(version: SemVersion) {
-    const versionsFolder = getVersionsFolder();
-    const appxPath = path.join(versionsFolder, `Minecraft-${version.toString()}.zip`);
-    const lockPath = path.join(versionsFolder, `Minecraft-${version.toString()}.lock`);
-    const folderPath = path.join(versionsFolder, `Minecraft-${version.toString()}`);
+export function cleanupFailedInstall(version: SemVersion, profile: Profile) {
+    const appxPath = path.join(profile.path, `Minecraft-${version.toString()}.zip`);
+    const lockPath = path.join(profile.path, `Minecraft-${version.toString()}.lock`);
+    const folderPath = path.join(profile.path, `Minecraft-${version.toString()}`);
     
     if (fs.existsSync(appxPath)) {
-        fs.rmSync(appxPath, {recursive: true})
+        fs.rmSync(appxPath, { recursive: true });
     }
 
     if (fs.existsSync(folderPath)) {
-        fs.rmSync(folderPath, {recursive: true})
+        fs.rmSync(folderPath, { recursive: true });
     }
 
     if (fs.existsSync(lockPath)) {
-        fs.rmSync(lockPath, {recursive: true})
+        fs.rmSync(lockPath, { recursive: true });
     }
 }
 
 export async function downloadVersion(
     version: MinecraftVersion,
+    profile: Profile,
     setStatus: React.Dispatch<React.SetStateAction<string>>,
     setLoadingPercent: React.Dispatch<React.SetStateAction<number>>,
 ) {
-    const versionsFolder = getVersionsFolder();
-    if (!fs.existsSync(versionsFolder)) {
-        fs.mkdirSync(versionsFolder, {recursive: true});
+    if (!fs.existsSync(profile.path)) {
+        fs.mkdirSync(profile.path, { recursive: true });
     }
 
-    const outputFile = path.join(versionsFolder, `Minecraft-${version.version.toString()}.zip`);
+    const outputFile = path.join(profile.path, `Minecraft-${version.version.toString()}.zip`);
 
     const toMB = (bytes: number) => {
         let mb = bytes / (1024 * 1024);
@@ -101,12 +97,12 @@ export async function downloadVersion(
 
 export async function extractVersion(
     version: MinecraftVersion,
+    profile: Profile,
     setStatus: React.Dispatch<React.SetStateAction<string>>,
     setLoadingPercent: React.Dispatch<React.SetStateAction<number>>,
 ) {
-    const versionsFolder = getVersionsFolder();
-    const appxPath = path.join(versionsFolder, `Minecraft-${version.toString()}.zip`);
-    const folderPath = path.join(versionsFolder, `Minecraft-${version.toString()}`);
+    const appxPath = path.join(profile.path, `Minecraft-${version.toString()}.zip`);
+    const folderPath = path.join(profile.path, `Minecraft-${version.toString()}`);
 
     const exludes = [
         "AppxMetadata/CodeIntegrity.cat",
@@ -135,23 +131,21 @@ export async function extractVersion(
     );
 }
 
-export function copyProxyToInstalledVer(version: MinecraftVersion) {
-    const versionsFolder = getVersionsFolder();
-    const versionFolder = path.join(versionsFolder, `Minecraft-${version.toString()}`);
+export function copyProxyToInstalledVer(version: MinecraftVersion, profile: Profile) {
+    const directory = path.join(profile.path, `Minecraft-${version.toString()}`);
 
     //@ts-ignore
     const proxyDllPath = window.native.path.join(window.native.__dirname, "proxy", "dxgi.dll",);
-    const targetDllPath = path.join(versionFolder, "dxgi.dll")
+    const targetDllPath = path.join(directory, "dxgi.dll")
 
     fs.copyFileSync(proxyDllPath, targetDllPath);
 }
 
-export function isRegisteredVersionOurs(version: MinecraftVersion) {
-    const versionsFolder = getVersionsFolder();
+export function isRegisteredVersionOurs(version: MinecraftVersion, profile: Profile) {
     const fileName = `Minecraft-${version.version.toString()}`;
 
     const packageRootFolder = getInstalledMinecraftPackagePath(version);
     if (packageRootFolder === undefined) return false;
 
-    return packageRootFolder === `${versionsFolder}\\${fileName}`;
+    return packageRootFolder === `${profile.path}\\${fileName}`;
 }

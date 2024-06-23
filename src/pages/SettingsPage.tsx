@@ -12,7 +12,6 @@ import { useEffect, useState } from "react";
 
 const fs = window.require('fs') as typeof import('fs');
 
-
 export default function SettingsPage() {
     const {
         keepLauncherOpen,
@@ -39,8 +38,8 @@ export default function SettingsPage() {
         minecraftVersion = allMinecraftVersions.find(version => version.version.toString() == semVersion.toString());
 
         if (minecraftVersion) {
-            isVerDownloaded = isVersionDownloaded(minecraftVersion.version)
-            isRegisteredVerOurs = isRegisteredVersionOurs(minecraftVersion)
+            isVerDownloaded = isVersionDownloaded(minecraftVersion.version, profile)
+            isRegisteredVerOurs = isRegisteredVersionOurs(minecraftVersion, profile)
             installDir = getInstalledMinecraftPackagePath(minecraftVersion) ?? "Could not find installed."
         }
     }

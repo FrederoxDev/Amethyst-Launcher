@@ -1,16 +1,15 @@
-import DividedSection from "../components/DividedSection";
-import Dropdown from "../components/Dropdown";
-import MainPanel from "../components/MainPanel";
-import MinecraftButton from "../components/MinecraftButton";
-import {useAppState} from "../contexts/AppState";
-import {SemVersion} from "../types/SemVersion";
-import {readLauncherConfig, saveLauncherConfig} from "../launcher/Modlist";
+import { cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
 import { isDeveloperModeEnabled, tryEnableDeveloperMode } from "../versionSwitcher/DeveloperMode";
 import { registerVersion, unregisterExisting } from "../versionSwitcher/AppRegistry";
-import { cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
+import { readLauncherConfig, saveLauncherConfig } from "../launcher/Modlist";
+import MinecraftButton from "../components/MinecraftButton";
+import DividedSection from "../components/DividedSection";
+import { useAppState } from "../contexts/AppState";
+import { SemVersion } from "../types/SemVersion";
+import MainPanel from "../components/MainPanel";
+import Dropdown from "../components/Dropdown";
 
-const child = window.require('child_process') as typeof import('child_process')
-const fs = window.require("fs") as typeof import("fs");
+const child = window.require('child_process') as typeof import('child_process');
 
 export default function LauncherPage() {
     const {
@@ -53,31 +52,31 @@ export default function LauncherPage() {
             // We create a lock file when starting the download
             // if we are doing a launch, and we detect it for the version we are targeting
             // there is a good chance the previous install/download failed and therefore remove it.
-            const didPreviousDownloadFail = isLockFilePresent(semVersion);
+            const didPreviousDownloadFail = isLockFilePresent(semVersion, profile);
             
             if (didPreviousDownloadFail) {
                 log("Detected a .lock file from the previous download attempt, cleaning up.");
-                cleanupFailedInstall(semVersion);
+                cleanupFailedInstall(semVersion, profile);
                 log("Removed previous download attempt.");
             }
 
             // Check for the folder for the version we are targeting, if not present we need to fetch.
-            if (!isVersionDownloaded(semVersion)) {
+            if (!isVersionDownloaded(semVersion, profile)) {
                 log("Target version is not downloaded.");
-                createLockFile(semVersion);
-                await downloadVersion(minecraftVersion, setStatus, setLoadingPercent);
-                await extractVersion(minecraftVersion, setStatus, setLoadingPercent);
+                createLockFile(semVersion, profile);
+                await downloadVersion(minecraftVersion, profile, setStatus, setLoadingPercent);
+                await extractVersion(minecraftVersion, profile, setStatus, setLoadingPercent);
                 log("Cleaning up after successful download")
-                cleanupSuccessfulInstall(semVersion);
+                cleanupSuccessfulInstall(semVersion, profile);
             }
 
             // Only register the game if needed
-            if (!isRegisteredVersionOurs(minecraftVersion)) {
+            if (!isRegisteredVersionOurs(minecraftVersion, profile)) {
                 setStatus("Unregistering existing version");
                 await unregisterExisting();
 
                 setStatus("Registering downloaded version");
-                await registerVersion(minecraftVersion)
+                await registerVersion(minecraftVersion, profile);
 
                 saveLauncherConfig(readLauncherConfig());
             }
@@ -86,13 +85,15 @@ export default function LauncherPage() {
             saveLauncherConfig(readLauncherConfig());
             
             setStatus("Loading Amethyst...");
-            copyProxyToInstalledVer(minecraftVersion, profile.path);
+            copyProxyToInstalledVer(minecraftVersion, profile);
 
             setStatus("Starting Minecraft...");
             child.spawn(`start minecraft:`, { shell: true })
 
             const startGameCmd = `start minecraft:`;
-            child.exec(startGameCmd)
+            child.exec(startGameCmd);
+
+            setStatus("");
         } catch (e: unknown) {
             console.log(e);
             setError((e as Error).message);

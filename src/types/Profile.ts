@@ -3,5 +3,5 @@ export type Profile = {
     runtime: string,
     mods: string[]
     minecraft_version: string,
-    path?: string
+    path: string
 };
