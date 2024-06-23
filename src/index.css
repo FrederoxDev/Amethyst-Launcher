@@ -8,23 +8,23 @@
 
 @font-face {
     font-family: 'Minecraft-Ten';
-    src: url('../public/fonts/Minecraft-Ten.otf') format('opentype');
+    src: url('../public/fonts/Minecraft-Ten.ttf') format('truetype');
 }
 
 @font-face {
     font-family: 'Minecraft-Seven';
-    src: url('../public/fonts/Minecraft-Seven.otf') format('opentype');
+    src: url('../public/fonts/Minecraft-Seven.ttf') format('truetype');
 }
 
 .minecraft-seven {
     font-family: "Minecraft-Seven";
-    image-rendering: pixelated;
+    image-rendering: crisp-edges;
     letter-spacing: .5px;
 }
 
 .minecraft-ten {
     font-family: "Minecraft-Ten";
-    image-rendering: pixelated;
+    image-rendering: crisp-edges;
     letter-spacing: .1px;
 }
 

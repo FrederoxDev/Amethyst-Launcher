@@ -28,7 +28,13 @@ export function findAllMods(): ModList {
 
     for (const modName of allModNames) {
         const itemPath = path.join(modsFolder, modName);
-        let configData: ModConfig = {};
+        let configData: ModConfig = {
+            meta: {
+                author: "",
+                name: "",
+                version: ""
+            }
+        };
 
         // The mod has no versioning in its name so continue
         if (!modName.includes("@")) continue;
@@ -85,19 +91,20 @@ export function saveLauncherConfig(config: LauncherConfig) {
 
 export function readLauncherConfig(): LauncherConfig {
     const configPath = getLauncherConfig();
-    let data: LauncherConfig = {};
+    let data: Partial<LauncherConfig> = {};
 
     try {
-        const jsonData = fs.readFileSync(configPath, 'utf-8');
+        const jsonData = fs.readFileSync(configPath, "utf-8");
         data = JSON.parse(jsonData);
-    } catch {
-    }
+    } catch {}
 
     return {
-        developer_mode: data["developer_mode"] ?? false,
-        keep_open: data["keep_open"] ?? true,
-        mods: data["mods"] ?? [],
-        runtime: data["runtime"] ?? "Vanilla"
+        developer_mode: false,
+        keep_open: true,
+        mods: [],
+        runtime: "Vanilla",
+        selected_profile: 0,
+        ...data,
     }
 }
 

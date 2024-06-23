@@ -33,7 +33,7 @@ export default function LauncherPage() {
             const profile = allProfiles[selectedProfile];
             const semVersion = SemVersion.fromString(profile.minecraft_version);
             const minecraftVersion = allMinecraftVersions.find(version => version.version.toString() === semVersion.toString())!;
-    
+
             if (minecraftVersion === undefined) {
                 throw new Error(`Failed to find minecraft version ${semVersion.toString()} in the profile in allVersions!`);
             }
@@ -118,7 +118,7 @@ export default function LauncherPage() {
             }
 
             <div className="flex-group">
-                <img src="images/launcher_hero.png" className="object-cover w-full h-full min-h-screen"/>
+                <img src="images/launcher_hero.png" className="object-cover w-full h-full min-h-screen" alt="" />
             </div>
             <div className="fixed bottom-0 right-0 left-[64px]">
                 {/* Not affliated disclaimer */}
