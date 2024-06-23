@@ -31,7 +31,10 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add package.json
           git commit -m "Bump version to $(jq -r .version < package.json)"
-          git push origin HEAD:main
+          # Replace the following line:
+          # git push origin HEAD:main
+          # with:
+          git push https://${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }} HEAD:main
 
       - name: Build the app
         run: npm run build
@@ -55,7 +58,7 @@ jobs:
       - name: Publish to GitHub Releases
         uses: ncipollo/release-action@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           tag: v${{ env.VERSION }}
           name: "Release v${{ env.VERSION }}"
           files: |
