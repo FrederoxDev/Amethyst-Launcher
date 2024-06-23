@@ -1,4 +1,4 @@
-import { useAppState } from "../contexts/AppState";
+// import { useAppState } from "../contexts/AppState";
 import { useCallback, useEffect, useState } from "react";
 import DividedSection from "../components/DividedSection";
 import MinecraftButton, { MinecraftButtonStyle } from "../components/MinecraftButton";
@@ -15,6 +15,23 @@ export default function UpdatePage() {
     const [downloadPercentage, setDownloadPercentage] = useState<number>(0);
 
     const [appVersion, setAppVersion] = useState('-');
+
+    const checkForUpdates = useCallback(() => {
+        ipcRenderer.invoke('check-for-updates');
+    }, []);
+
+    const downloadUpdate = useCallback(() => {
+        ipcRenderer.invoke('update-download').then((lls) => {
+            console.log('Download download:', lls);
+        });
+        setDownloadActive(true);
+        ipcRenderer.invoke('set-auto-install-on-app-quit', true);
+    }, [setDownloadActive]);
+
+    const ignoreUpdate = useCallback(() => {
+        setPopupClosed(true);
+        ipcRenderer.invoke('set-auto-install-on-app-quit', false);
+    }, [setPopupClosed]);
 
     useEffect(() => {
         ipcRenderer.invoke('set-auto-download', false);
@@ -47,30 +64,13 @@ export default function UpdatePage() {
             setPopupClosed(true);
             setDownloadActive(false);
         });
-    }, [setUpdateAvailable, setPopupClosed, setDownloadActive, setDownloadPercentage]);
+    }, [setUpdateAvailable, setPopupClosed, setDownloadActive, setDownloadPercentage, checkForUpdates]);
 
     useEffect(() => {
         ipcRenderer.invoke('get-app-version').then((version) => {
             setAppVersion(version);
         });
     }, []);
-
-    const checkForUpdates = useCallback(() => {
-        ipcRenderer.invoke('check-for-updates');
-    }, []);
-
-    const downloadUpdate = useCallback(() => {
-        ipcRenderer.invoke('update-download').then((lls) => {
-            console.log('Download download:', lls);
-        });
-        setDownloadActive(true);
-        ipcRenderer.invoke('set-auto-install-on-app-quit', true);
-    }, [setDownloadActive]);
-
-    const ignoreUpdate = useCallback(() => {
-        setPopupClosed(true);
-        ipcRenderer.invoke('set-auto-install-on-app-quit', false);
-    }, [setPopupClosed]);
 
     return (
         <>{!popupClosed && updateAvailable && (

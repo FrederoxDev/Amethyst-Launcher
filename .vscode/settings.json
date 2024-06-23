@@ -64,5 +64,6 @@
     "xstring": "cpp",
     "xtr1common": "cpp",
     "xutility": "cpp"
-  }
+  },
+  "cmake.configureOnOpen": false
 }
