@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import DividedSection from "../components/DividedSection";
 import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
-import { /** getAmethystFolder, */ getMinecraftUWPFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
+import { getAmethystFolder, getMinecraftUWPFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
@@ -36,8 +36,8 @@ function getAllMods(): ModErrorInfo[] {
 
         else {
             try {
-                // const configData = fs.readFileSync(modConfigPath, "utf-8");
-                // const configParsed = JSON.parse(configData);
+                const configData = fs.readFileSync(modConfigPath, "utf-8");
+                const configParsed = JSON.parse(configData);
                 // validateConfig(configParsed, modErrors)
             }
             catch {
