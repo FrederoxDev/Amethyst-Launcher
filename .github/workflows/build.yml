@@ -48,8 +48,7 @@ jobs:
           name: amethyst-launcher
           path: |
             dist/**
-          exclude: |
-            dist/win-unpacked/**
+            -dist/win-unpacked/**
 
       - name: Get the version from package.json
         id: get_version
@@ -64,7 +63,5 @@ jobs:
           token: ${{ secrets.PAT_TOKEN }}
           tag: v${{ env.VERSION }}
           name: "Release v${{ env.VERSION }}"
-          files: |
-            dist/**
           draft: false
           prerelease: false
