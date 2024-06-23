@@ -2,13 +2,64 @@ import { useEffect, useState } from "react";
 import DividedSection from "../components/DividedSection";
 import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
-import { /** getAmethystFolder, */ getMinecraftUWPFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
+import { getAmethystFolder, getMinecraftUWPFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
+import { ModConfig } from "../types/ModConfig";
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
 const child = window.require('child_process') as typeof import('child_process')
 
 type ModErrorInfo = { modIdentifier: string, description?: string, modErrors: string[] }
+
+function validateConfig(config: Record<any, any>, outErrors: string[]) {
+    let name = "";
+    let description = "";
+    let version = "";
+    let author = "";
+
+    if ("meta" in config && typeof(config["meta"]) === 'object' && config["meta"] != null) {
+        const meta = config["meta"];
+
+        if (!("name" in meta && typeof(meta["name"]) === 'string')) {
+            outErrors.push(`object 'meta' should have field 'name' of type 'string'`)
+        }
+
+        if (!("version" in meta && typeof(meta["version"]) === 'string')) {
+            outErrors.push(`object 'meta' should have field 'version' of type 'string'`)
+        }
+        
+        if (!("author" in meta && typeof(meta["author"]) === 'string')) {
+            outErrors.push(`object 'meta' should have field 'author' of type 'string'`)
+        }
+        
+        if ("description" in meta) {
+            if (typeof(meta["description"]) !== 'string') {
+                outErrors.push(`key 'description?' in 'meta' should be of type 'string'`)
+            }
+        }
+
+        if ("is_runtime" in meta && typeof(meta["is_runtime"]) !== "boolean") {
+            outErrors.push("key 'is_runtime?' in 'meta' should be of type 'boolean'")
+        }
+
+        name = meta["name"] ?? "";
+        description = meta["description"] ?? "";
+        version = meta["version"] ?? "";
+        author = meta["author"] ?? "";
+    }
+    else {
+        outErrors.push(`mod.json should have field 'meta' of type 'object'`);
+    }
+
+    return {
+        meta: {
+            name,
+            version,
+            author,
+            description
+        }
+    }
+}
 
 function getAllMods(): ModErrorInfo[] {
     const results: ModErrorInfo[] = [];
@@ -28,17 +79,28 @@ function getAllMods(): ModErrorInfo[] {
             modErrors.push(`Folder named '${modIdentifier}' must include a version number`);
         }
 
+        // Config data
+        let modConfig: ModConfig = {
+            meta: {
+                author: "",
+                name: "",
+                version: ""
+            }
+        };
+
         // Validate that it has a config file
         const modConfigPath = path.join(modsFolder, modIdentifier, "mod.json");
+
         if (!fs.existsSync(modConfigPath)) {
             modErrors.push(`Missing mod.json configuration file inside mod folder.`);
         }
 
         else {
             try {
-                // const configData = fs.readFileSync(modConfigPath, "utf-8");
-                // const configParsed = JSON.parse(configData);
-                // validateConfig(configParsed, modErrors)
+                const configData = fs.readFileSync(modConfigPath, "utf-8");
+                const configParsed = JSON.parse(configData);
+                modConfig = validateConfig(configParsed, modErrors);
+                console.log(modConfig)
             }
             catch {
                 modErrors.push(`Failed to parse the mod.json configuration file, invalid json?`);
@@ -47,7 +109,7 @@ function getAllMods(): ModErrorInfo[] {
 
         results.push({
             modIdentifier,
-            description: "",
+            description: modConfig.meta.description ?? "",
             modErrors
         }) 
     }
@@ -91,6 +153,7 @@ export default function ModsPage() {
                         <div onClick={() => {setSelectedReport(report)}} key={report.modIdentifier}>
                             <DividedSection className="cursor-pointer">
                                 <p className="minecraft-seven text-white text-[14px] px-[4px]">{report.modIdentifier}</p>
+                                <p className="minecraft-seven text-[#BCBEC0] text-[14px] px-[4px]">{report.description}</p>
                                 {report.modErrors.length > 0 && (<p className="minecraft-seven text-red-400 text-[14px] px-[4px]">{report.modErrors.length} Errors!</p>)}
                             </DividedSection>
                         </div>
