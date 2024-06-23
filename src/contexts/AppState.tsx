@@ -1,4 +1,4 @@
-import {createContext, ReactNode, useContext, useEffect, useState} from "react";
+import {createContext, ReactNode, useCallback, useContext, useEffect, useState} from "react";
 import {Profile} from "../types/Profile";
 import {
     findAllMods,
@@ -86,7 +86,7 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
 
     const [hasInitialized, setHasInitialized] = useState(false);
 
-    const saveData = () => {
+    const saveData = useCallback(() => {
         saveAllProfiles(allProfiles);
 
         const launcherConfig: LauncherConfig = {
@@ -97,7 +97,7 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
         };
 
         saveLauncherConfig(launcherConfig);
-    }
+    }, [allProfiles, developerMode, keepLauncherOpen, selectedProfile])
 
     useEffect(() => {
         if (!hasInitialized) {
@@ -106,7 +106,7 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
         }
 
         saveData();
-    }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode])
+    }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode, hasInitialized, saveData])
 
     return (
         <AppStateContext.Provider value={

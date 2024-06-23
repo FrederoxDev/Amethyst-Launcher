@@ -25,27 +25,27 @@ export default function App() {
                     className='fixed left-0 top-[48px] h-full bg-[#313233] w-[64px] flex flex-col border-r-[2px] border-r-[#1E1E1F]'>
                     <Link to="/" className='block p-[8px]' draggable={false}>
                         <div className='w-[48px] h-[48px]'
-                             style={location.pathname == "/" ? highlightedIcon : unselectedIcon}>
-                            <img src="images/general_icon.png" className='w-full h-full pixelated'/>
+                             style={location.pathname === "/" ? highlightedIcon : unselectedIcon}>
+                            <img src="images/general_icon.png" className='w-full h-full pixelated' alt=''/>
                         </div>
                     </Link>
                     <Link to="/profiles" className='block p-[8px]' draggable={false}>
                         <div className='w-[48px] h-[48px]'
-                             style={location.pathname == "/profiles" ? highlightedIcon : unselectedIcon}>
-                            <img src="images/advanced_icon.png" className='w-full h-full pixelated'/>
+                             style={location.pathname === "/profiles" ? highlightedIcon : unselectedIcon}>
+                            <img src="images/advanced_icon.png" className='w-full h-full pixelated' alt=''/>
                         </div>
                     </Link>
                     <Link to="/mods" className='block p-[8px]' draggable={false}>
                         <div className='w-[48px] h-[48px]'
-                             style={location.pathname == "/mods" ? highlightedIcon : unselectedIcon}>
-                            <img src="images/mods_icon.png" className='w-full h-full pixelated'/>
+                             style={location.pathname === "/mods" ? highlightedIcon : unselectedIcon}>
+                            <img src="images/mods_icon.png" className='w-full h-full pixelated' alt=''/>
                         </div>
                     </Link>
                     <Link to="/settings" className='block p-[12px] mt-auto mb-[48px]' draggable={false}>
                         <div className='relative w-[40px] h-[40px]'>
-                            <img src="images/settings_icon.png" className="absolute top-0 left-0 w-full h-full pixelated" />
-                            {location.pathname == "/settings" ? 
-                                <img src="images/settings_icon_unselected.png" className="absolute top-0 left-0 w-full h-full pixelated" /> 
+                            <img src="images/settings_icon.png" className="absolute top-0 left-0 w-full h-full pixelated" alt=''/>
+                            {location.pathname === "/settings" ? 
+                                <img src="images/settings_icon_unselected.png" className="absolute top-0 left-0 w-full h-full pixelated" alt=''/> 
                                 : <></>
                             }
                         </div>
