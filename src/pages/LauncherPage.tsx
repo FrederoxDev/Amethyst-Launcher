@@ -10,7 +10,6 @@ import { registerVersion, unregisterExisting } from "../versionSwitcher/AppRegis
 import { cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
 
 const child = window.require('child_process') as typeof import('child_process')
-/** const fs = window.require("fs") as typeof import("fs"); */
 
 export default function LauncherPage() {
     const {
@@ -99,7 +98,7 @@ export default function LauncherPage() {
 
     return (
         <MainPanel>
-            {error === "" ? <></> : (
+            {error ==== "" ? <></> : (
                 <>
                     <div className="bg-red-500 w-full">
                         <p className="minecraft-seven text-[14px]">There was an error while trying to launch the
@@ -113,7 +112,7 @@ export default function LauncherPage() {
             }
 
             <div className="flex-group">
-                <img src="images/launcher_hero.png" className="object-cover w-full h-full min-h-screen" alt=''/>
+                <img src="images/launcher_hero.png" className="object-cover w-full h-full min-h-screen" alt="" />
             </div>
             <div className="fixed bottom-0 right-0 left-[64px]">
                 {/* Not affliated disclaimer */}

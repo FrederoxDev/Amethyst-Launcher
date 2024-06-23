@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import DividedSection from "../components/DividedSection";
 import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
-import { getAmethystFolder, getMinecraftUWPFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
+import { getMinecraftUWPFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
 import { ModConfig } from "../types/ModConfig";
 
 const fs = window.require('fs') as typeof import('fs');
