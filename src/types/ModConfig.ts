@@ -1,7 +1,9 @@
 export type ModConfig = {
-    meta?: {
+    meta: {
+        name: string,
+        version: string,
+        author: string,
         description?: string,
-        author?: string,
         is_runtime?: boolean
     }
 };
