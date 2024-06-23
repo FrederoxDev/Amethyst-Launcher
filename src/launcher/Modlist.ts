@@ -28,7 +28,13 @@ export function findAllMods(): ModList {
 
     for (const modName of allModNames) {
         const itemPath = path.join(modsFolder, modName);
-        let configData: ModConfig = {};
+        let configData: ModConfig = {
+            meta: {
+                author: "",
+                name: "",
+                version: ""
+            }
+        };
 
         // The mod has no versioning in its name so continue
         if (!modName.includes("@")) continue;
