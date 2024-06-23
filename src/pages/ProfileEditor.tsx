@@ -1,19 +1,24 @@
-import {useEffect, useState} from "react";
+import MinecraftButton, { MinecraftButtonStyle } from "../components/MinecraftButton";
+import { getVersionsFolder } from "../versionSwitcher/AmethystPaths";
 import DividedSection from "../components/DividedSection";
+import { VersionType } from "../types/MinecraftVersion";
+import FolderInput from "../components/FolderInput";
+import { useAppState } from "../contexts/AppState";
+import { findAllMods } from "../launcher/Modlist";
 import MainPanel from "../components/MainPanel";
 import TextInput from "../components/TextInput";
+import { useNavigate } from "react-router-dom";
 import Dropdown from "../components/Dropdown";
-import MinecraftButton, {MinecraftButtonStyle} from "../components/MinecraftButton";
-import {useAppState} from "../contexts/AppState";
-import {useNavigate} from "react-router-dom";
-import {findAllMods} from "../launcher/Modlist";
-import {VersionType} from "../types/MinecraftVersion";
+import { useEffect, useState } from "react";
+
+const fs = window.require('fs') as typeof import('fs');
 
 export default function ProfileEditor() {
     const [profileName, setProfileName] = useState("");
     const [profileActiveMods, setProfileActiveMods] = useState<string[]>([])
     const [profileRuntime, setProfileRuntime] = useState<string>("");
     const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<string>("");
+    const [ gamePath, setGamePath ] = useState("");
 
     const {
         allMods,
@@ -23,7 +28,9 @@ export default function ProfileEditor() {
         setAllProfiles,
         selectedProfile,
         saveData,
-        setAllMods
+        setAllMods,
+        error,
+        setError
     } = useAppState();
     const navigate = useNavigate();
 
@@ -43,15 +50,14 @@ export default function ProfileEditor() {
         const [isHovered, setIsHovered] = useState(false);
 
         return (
-            <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}
-                 onClick={() => {
-                     if (profileRuntime == "Vanilla") {
-                         alert("Cannot add mods to a vanilla profile");
-                         return;
-                     }
+            <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)} 
+                onClick={() => {
+                    if (profileRuntime === "Vanilla") {
+                        return alert("Cannot add mods to a vanilla profile");
+                    }
 
-                     toggleModActive(name);
-                 }}
+                    toggleModActive(name);
+                }}  
             >
                 <DividedSection className="cursor-pointer" style={{
                     backgroundColor: isHovered ? "#5A5B5C" : "#48494A",
@@ -71,9 +77,14 @@ export default function ProfileEditor() {
         setProfileRuntime(profile?.runtime ?? "Vanilla");
         setProfileActiveMods(profile?.mods ?? []);
         setProfileMinecraftVersion(profile?.minecraft_version ?? "1.21.0.3");
+        setGamePath(profile?.path ?? getVersionsFolder());
     }
 
     const saveProfile = () => {
+        const regex = /^(?:[a-zA-Z]\:)?(?:[\\\/][^<>:"\/\\|?*\x00-\x1F]+)+[\\\/]?$/;
+        if(!regex.test(gamePath))
+            return setError("The given install directory is not valid!");
+
         allProfiles[selectedProfile].name = profileName;
 
         // Verify the vanilla runtime still exists
@@ -86,8 +97,10 @@ export default function ProfileEditor() {
         allProfiles[selectedProfile].runtime = profileRuntime;
         allProfiles[selectedProfile].mods = profileActiveMods;
         allProfiles[selectedProfile].minecraft_version = profileMinecraftVersion;
-
+        allProfiles[selectedProfile].path = gamePath;
+        
         saveData();
+        setError("");
         navigate("/profiles");
     }
 
@@ -105,7 +118,7 @@ export default function ProfileEditor() {
     }, []);
 
     const fetchMods = () => {
-        const {mods} = findAllMods();
+        const { mods } = findAllMods();
         setAllMods(mods);
     };
 
@@ -117,16 +130,25 @@ export default function ProfileEditor() {
 
     return (
         <MainPanel>
+            { error === "" ? <></> : (
+                <>
+                    <div className="bg-red-500 w-full">
+                        <p className="minecraft-seven text-[13px]">{error}</p>
+                    </div>
+                    <div className="bg-red-600 h-[2px] w-full min-h-[2px]"></div>
+                </>
+            )
+            }
             {/* Settings */}
             <DividedSection>
-                <TextInput label="Profile Name" text={profileName} setText={setProfileName}/>
-                <Dropdown
-                    labelText="Minecraft Version"
-                    value={profileMinecraftVersion}
-                    setValue={setProfileMinecraftVersion}
-
-                    // we don't support non-release versions right now so only show release lmao
-                    options={allMinecraftVersions.filter(ver => ver.versionType == VersionType.Release).map(ver => ver.toString())}
+                <TextInput label="Profile Name" text={profileName} setText={setProfileName} />
+                <Dropdown 
+                    labelText="Minecraft Version" 
+                    value={ profileMinecraftVersion }
+                    setValue={ setProfileMinecraftVersion }
+                    
+                    // we don't support non-release versions right now so only show release lmao 
+                    options={ allMinecraftVersions.filter(ver => ver.versionType === VersionType.Release).map(ver => ver.toString()) }
                     id="minecraft-version"
                 />
                 <Dropdown
@@ -136,6 +158,7 @@ export default function ProfileEditor() {
                     options={allRuntimes}
                     id="runtime-mod"
                 />
+                <FolderInput label="Install Directory" text={gamePath ?? ""} setPath={setGamePath} />
             </DividedSection>
 
             {/* Mod Selection */}

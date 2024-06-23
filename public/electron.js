@@ -1,7 +1,9 @@
-const {app, BrowserWindow, ipcMain} = require('electron');
-const path = require('path');
+const { app, BrowserWindow, ipcMain } = require('electron');
+const remoteMain = require('@electron/remote/main');
 const {autoUpdater} = require("electron-updater");
+const path = require('path');
 
+remoteMain.initialize();
 let mainWindow = null;
 
 function createWindow() {
@@ -28,6 +30,8 @@ function createWindow() {
     } else {
         win.loadURL('http://localhost:3000');
     }
+
+    remoteMain.enable(win.webContents);
 }
 
 app.whenReady().then(createWindow);

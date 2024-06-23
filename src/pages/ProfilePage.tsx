@@ -1,9 +1,10 @@
-import {useNavigate} from "react-router-dom";
+import { getVersionsFolder } from "../versionSwitcher/AmethystPaths";
 import DividedSection from "../components/DividedSection";
+import { useAppState } from "../contexts/AppState";
+import { useNavigate } from "react-router-dom";
 import MainPanel from "../components/MainPanel";
-import {Profile} from "../types/Profile";
-import {useState} from "react";
-import {useAppState} from "../contexts/AppState";
+import { Profile } from "../types/Profile";
+import { useState } from "react";
 
 const ProfileButton = ({profile, index}: { profile: Profile, index: number }) => {
     const [isHovered, setIsHovered] = useState(false);
@@ -39,7 +40,8 @@ export default function ProfilePage() {
                     name: "New Profile",
                     minecraft_version: "1.21.0.3",
                     mods: [],
-                    runtime: "Vanilla"
+                    runtime: "Vanilla",
+                    path: getVersionsFolder(),
                 }
 
                 const newProfiles = [...allProfiles, defaultProfile];
