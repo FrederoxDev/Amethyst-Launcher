@@ -18,7 +18,7 @@ export default function MinecraftButton({text, onClick, disabled = false, style}
     let topHoverCol = "#2A641C";
     let sideCol = "#1D4D13";
 
-    if (style === MinecraftButtonStyle.Warn) {
+    if (style == MinecraftButtonStyle.Warn) {
         topCol = "#CA3636";
         topBorderCol = "#CF4A4A";
         topHoverCol = "#C02D2D";

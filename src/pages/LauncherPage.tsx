@@ -10,7 +10,7 @@ import { registerVersion, unregisterExisting } from "../versionSwitcher/AppRegis
 import { cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
 
 const child = window.require('child_process') as typeof import('child_process')
-/** const fs = window.require("fs") as typeof import("fs"); */
+const fs = window.require("fs") as typeof import("fs");
 
 export default function LauncherPage() {
     const {
@@ -33,7 +33,7 @@ export default function LauncherPage() {
 
             const profile = allProfiles[selectedProfile];
             const semVersion = SemVersion.fromString(profile.minecraft_version);
-            const minecraftVersion = allMinecraftVersions.find(version => version.version.toString() === semVersion.toString())!;
+            const minecraftVersion = allMinecraftVersions.find(version => version.version.toString() == semVersion.toString())!;
 
             if (minecraftVersion === undefined) {
                 throw new Error(`Failed to find minecraft version ${semVersion.toString()} in the profile in allVersions!`);
@@ -99,7 +99,7 @@ export default function LauncherPage() {
 
     return (
         <MainPanel>
-            {error === "" ? <></> : (
+            {error == "" ? <></> : (
                 <>
                     <div className="bg-red-500 w-full">
                         <p className="minecraft-seven text-[14px]">There was an error while trying to launch the
@@ -113,7 +113,7 @@ export default function LauncherPage() {
             }
 
             <div className="flex-group">
-                <img src="images/launcher_hero.png" className="object-cover w-full h-full min-h-screen" alt=''/>
+                <img src="images/launcher_hero.png" className="object-cover w-full h-full min-h-screen"/>
             </div>
             <div className="fixed bottom-0 right-0 left-[64px]">
                 {/* Not affliated disclaimer */}
@@ -140,7 +140,7 @@ export default function LauncherPage() {
                             options={allProfiles?.map(profile => profile.name)}
                             value={allProfiles[selectedProfile]?.name}
                             setValue={(value) => {
-                                setSelectedProfile(allProfiles.map(profile => profile.name).findIndex(e => e === value));
+                                setSelectedProfile(allProfiles.map(profile => profile.name).findIndex(e => e == value));
                             }}
                             id="profile-select"
                         />
