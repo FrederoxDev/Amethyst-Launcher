@@ -64,5 +64,6 @@
     "xstring": "cpp",
     "xtr1common": "cpp",
     "xutility": "cpp"
-  }
+  },
+  "cmake.sourceDirectory": "C:/Users/tamaspapp/Documents/Amethyst-Launcher/proxy"
 }
