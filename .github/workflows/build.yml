@@ -30,9 +30,9 @@ jobs:
           $version = $json.version
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          npm version patch --no-git-tag-version  # Bump the version in package.json
+          npm version patch --no-git-tag-version
           git add package.json
-          git commit -m "Bump version to $(jq -r .version < package.json)"
+          git commit -m "Bump version to $version"
           git push https://github.com/${{ github.repository }} HEAD:main
         env:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
