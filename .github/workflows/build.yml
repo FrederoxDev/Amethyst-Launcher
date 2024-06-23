@@ -43,7 +43,7 @@ jobs:
           npm run build
 
       - name: Remove win-unpacked directory
-        run: rm -rf dist/win-unpacked
+        run: Remove-Item -Path dist/win-unpacked -Recurse -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
