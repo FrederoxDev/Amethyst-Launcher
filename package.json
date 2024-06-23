@@ -1,6 +1,6 @@
 {
   "name": "amethyst-launcher",
-  "version": "2.4.3",
+  "version": "2.4.2",
   "main": "public/electron.js",
   "author": "FrederoxDev, Adrian8115",
   "description": "Amethyst Launcher",
@@ -29,7 +29,7 @@
   "scripts": {
     "start-react": "react-app-rewired start",
     "start-electron": "electron .",
-    "build": "react-app-rewired build && electron-builder",
+    "build": "CI=false react-app-rewired build && electron-builder",
     "run-built": "\"./dist/win-unpacked/Amethyst Launcher.exe\"",
     "eject": "react-scripts eject",
     "bump-version": "npm version patch --no-git-tag-version"
