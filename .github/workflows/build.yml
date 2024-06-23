@@ -65,4 +65,4 @@ jobs:
           name: "Release v${{ env.VERSION }}"
           draft: false
           prerelease: false
-          artifacts: "dist/latest.yml,dist/builder-effective-config.yaml,dist/builder-debug.yml,dist/*.exe,dist/*.exe.blockmap"
+          artifacts: "dist/*.exe,dist/*.exe.blockmap"
