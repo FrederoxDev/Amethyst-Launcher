@@ -42,9 +42,6 @@ jobs:
           $env:CI="false"
           npm run build
 
-      - name: Remove win-unpacked directory
-        run: Remove-Item -Path dist/win-unpacked -Recurse -Force
-
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
@@ -61,6 +58,7 @@ jobs:
           echo "VERSION=$version" >> $env:GITHUB_ENV
 
       - name: Publish to GitHub Releases
+        id: publish_release
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.PAT_TOKEN }}
