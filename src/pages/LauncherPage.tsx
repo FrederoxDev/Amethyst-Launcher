@@ -92,14 +92,13 @@ export default function LauncherPage() {
 
             const startGameCmd = `start minecraft:`;
             child.exec(startGameCmd);
-
-            setStatus("");
         } catch (e: unknown) {
             console.log(e);
             setError((e as Error).message);
-            setStatus("");
-            setIsLoading(false);
         }
+
+        setStatus("");
+        setIsLoading(false);
     }
 
     return (
