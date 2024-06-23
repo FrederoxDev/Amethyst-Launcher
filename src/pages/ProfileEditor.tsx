@@ -158,7 +158,7 @@ export default function ProfileEditor() {
                     options={allRuntimes}
                     id="runtime-mod"
                 />
-                <FolderInput label="Custom Directory" text={gamePath ?? ""} setPath={setGamePath} />
+                <FolderInput label="Install Directory" text={gamePath ?? ""} setPath={setGamePath} />
             </DividedSection>
 
             {/* Mod Selection */}
