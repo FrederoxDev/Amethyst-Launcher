@@ -29,7 +29,7 @@
   "scripts": {
     "start-react": "react-app-rewired start",
     "start-electron": "electron .",
-    "build": "CI=false react-app-rewired build && electron-builder --win",
+    "build": "set CI=false && react-app-rewired build && electron-builder --win",
     "run-built": "\"./dist/win-unpacked/Amethyst Launcher.exe\"",
     "eject": "react-scripts eject",
     "bump-version": "npm version patch --no-git-tag-version"
