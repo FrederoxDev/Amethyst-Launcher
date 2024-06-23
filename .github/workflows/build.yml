@@ -1,0 +1,68 @@
+name: Build and Distribute
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Bump version and push changes
+        run: |
+          $json = Get-Content package.json | ConvertFrom-Json
+          $version = $json.version
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          npm version patch --no-git-tag-version
+          git add package.json
+          git commit -m "Bump version"
+          git push https://github.com/${{ github.repository }} HEAD:main
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+      - name: Build the app
+        run: |
+          $env:CI="false"
+          npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: amethyst-launcher
+          path: |
+            dist/**
+            !dist/win-unpacked/**
+
+      - name: Get the version from package.json
+        id: get_version
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Publish to GitHub Releases
+        id: publish_release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          tag: v${{ env.VERSION }}
+          name: "Release v${{ env.VERSION }}"
+          draft: false
+          prerelease: false
+          artifacts: "dist/*.exe,dist/*.exe.blockmap,dist/*.yml,dist/*.yaml"
