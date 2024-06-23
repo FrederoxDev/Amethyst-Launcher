@@ -31,7 +31,8 @@
     "start-electron": "electron .",
     "build": "react-app-rewired build && electron-builder",
     "run-built": "\"./dist/win-unpacked/Amethyst Launcher.exe\"",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "bump-version": "npm version minor --no-git-tag-version"
   },
   "eslintConfig": {
     "extends": [
