@@ -48,7 +48,7 @@ jobs:
           name: amethyst-launcher
           path: |
             dist/**
-            -dist/win-unpacked/**
+            !dist/win-unpacked/**
 
       - name: Get the version from package.json
         id: get_version
