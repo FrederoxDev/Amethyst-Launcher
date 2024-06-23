@@ -37,7 +37,9 @@ jobs:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
 
       - name: Build the app
-        run: npm run build
+        run: 
+          $env:CI="false"
+          npm run build
 
       - name: Remove win-unpacked directory
         run: rm -rf dist/win-unpacked
