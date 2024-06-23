@@ -14,7 +14,6 @@
     "@types/react": "^18.2.47",
     "@types/react-dom": "^18.2.18",
     "electron-is-dev": "^3.0.1",
-    "electron-updater": "^6.2.1",
     "jszip": "^3.10.1",
     "path-browserify": "^1.0.1",
     "react": "^18.2.0",
@@ -24,14 +23,14 @@
     "sudo-prompt": "^9.2.1",
     "typescript": "^4.9.5",
     "util": "^0.12.5",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "electron-updater": "^6.2.1"
   },
   "scripts": {
     "start-react": "react-app-rewired start",
     "start-electron": "electron .",
-    "build-react": "react-app-rewired build",
     "build": "react-app-rewired build && electron-builder",
-    "run-built": "start ./dist/win-unpacked/Amethyst-Launcher.exe",
+    "run-built": "\"./dist/win-unpacked/Amethyst Launcher.exe\"",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
