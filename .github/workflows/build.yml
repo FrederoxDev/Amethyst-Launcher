@@ -65,3 +65,4 @@ jobs:
           name: "Release v${{ env.VERSION }}"
           draft: false
           prerelease: false
+          artifacts: "amethyst-launcher"
