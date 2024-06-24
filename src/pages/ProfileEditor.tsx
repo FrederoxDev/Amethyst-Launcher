@@ -118,7 +118,7 @@ export default function ProfileEditor() {
     return (
         <MainPanel>
             {/* Settings */}
-            <DividedSection>
+            <div className="border-y-[2px] border-t-0 pt-1 border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
                 <TextInput label="Profile Name" text={profileName} setText={setProfileName}/>
                 <Dropdown
                     labelText="Minecraft Version"
@@ -136,15 +136,20 @@ export default function ProfileEditor() {
                     options={allRuntimes}
                     id="runtime-mod"
                 />
-            </DividedSection>
+            </div>
 
             {/* Mod Selection */}
             {
                 profileRuntime === "Vanilla"
-                    ? <DividedSection className="flex-grow flex justify-around gap-[8px]">
+                    ? 
+                    
+                    <div className="flex-grow flex justify-around gap-[8px] border-y-[2px] border-t-0 border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
                         <div className="h-full flex flex-col"></div>
-                    </DividedSection>
-                    : <DividedSection className="flex-grow flex justify-around gap-[8px]">
+                    </div>
+
+                    : 
+                    
+                    <div className="flex-grow flex justify-around gap-[8px] border-y-[2px] border-t-0 border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
                         <div className=" w-[50%] h-full flex flex-col">
                             <p className="text-white minecraft-seven">Active Mods</p>
                             <div className="border-[2px] border-[#1E1E1F] bg-[#313233] flex-grow">
@@ -163,15 +168,14 @@ export default function ProfileEditor() {
                                 }
                             </div>
                         </div>
-                    </DividedSection>
+                    </div>
             }
 
             {/* Profile Actions */}
-            <DividedSection className="flex justify-around gap-[8px]">
+            <div className="flex justify-around gap-[8px] border-y-[0px] pb-1 border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
                 <div className="w-[50%]"><MinecraftButton text="Save Profile" onClick={() => saveProfile()}/></div>
-                <div className="w-[50%]"><MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn}
-                                                          onClick={() => deleteProfile()}/></div>
-            </DividedSection>
+                <div className="w-[50%]"><MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} onClick={() => deleteProfile()}/></div>
+            </div>
         </MainPanel>
     )
 }
