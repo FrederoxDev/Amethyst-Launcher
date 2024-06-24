@@ -134,7 +134,7 @@ export default function LauncherPage() {
                 </div>
 
                 {/* Profile Selector & Play Button */}
-                <DividedSection className="flex gap-[8px] border-b-0 pb-1 border-t-[#1E1E1F]">
+                <div className="flex gap-[8px] border-b-[0px] pb-1 border-t-[#1E1E1F] border-y-[2px] border-solid border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
                     <div className="w-[30%] translate-y-[-1px]">
                         <Dropdown
                             labelText="Profile"
@@ -151,7 +151,7 @@ export default function LauncherPage() {
                         <MinecraftButton text="Launch Game" onClick={launchGame}/>
                     </div>
 
-                </DividedSection>
+                </div>
             </div>
 
         </MainPanel>
