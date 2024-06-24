@@ -98,7 +98,7 @@ export default function LauncherPage() {
 
     return (
         <MainPanel>
-            {error ==== "" ? <></> : (
+            {error === "" ? <></> : (
                 <>
                     <div className="bg-red-500 w-full">
                         <p className="minecraft-seven text-[14px]">There was an error while trying to launch the
