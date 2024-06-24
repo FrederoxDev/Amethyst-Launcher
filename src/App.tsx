@@ -11,7 +11,7 @@ import ModsPage from "./pages/ModsPage";
 
 export default function App() {
     const location = useLocation();
-    const highlightedIcon: CSSProperties = {borderWidth: "4px", borderColor: "#FFFFFF"};
+    const highlightedIcon: CSSProperties = {borderWidth: "2px", borderColor: "#FFFFFF"};
     const unselectedIcon: CSSProperties = {borderWidth: "2px", borderColor: "#1E1E1F"}
 
     return (
