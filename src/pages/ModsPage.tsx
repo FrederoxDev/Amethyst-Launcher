@@ -147,7 +147,7 @@ export default function ModsPage() {
     return (
         <>
         <MainPanel>
-            <div className="h-full border-t-0 border-y-[2px] border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
+            <div className="h-full border-t-[#1E1E1F] border-y-[2px] border-solid border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
                 <div className="border-[2px] border-[#1E1E1F] bg-[#313233] h-full overflow-hidden">
                     { allReports.map((report) => 
                         <div onClick={() => {setSelectedReport(report)}} key={report.modIdentifier}>
