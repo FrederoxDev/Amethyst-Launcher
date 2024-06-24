@@ -60,7 +60,7 @@ export default function ProfilePage() {
 
     return (
         <MainPanel>
-            <div className="border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A] h-full border-y-[0px]">
+            <div className="border-t-[2px] border-t-[#1E1E1F] p-[8px] bg-[#48494A] h-full">
                 <div className="border-[2px] border-[#1E1E1F] bg-[#313233] h-full overflow-hidden">
                     <NewButton/>
 

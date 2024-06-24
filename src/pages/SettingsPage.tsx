@@ -9,6 +9,7 @@ import { getAmethystFolder, getLauncherConfig, getMinecraftUWPFolder } from "../
 import { isDeveloperModeEnabled } from "../versionSwitcher/DeveloperMode";
 import ReadOnlyTextBox from "../components/ReadOnlyTextBox";
 import { useEffect, useState } from "react";
+import MinecraftToggle from "../components/MinecraftToggle"
 
 const fs = window.require('fs') as typeof import('fs');
 
@@ -64,12 +65,18 @@ export default function SettingsPage() {
 
     return (
         <MainPanel>
-            <ToggleSection
-                text="Keep launcher open"
-                subtext="Prevents the launcher from closing after launching the game."
-                isChecked={keepLauncherOpen}
-                setIsChecked={setKeepLauncherOpen}
-            />
+            <div className="border-y-[2px] border-solid border-y-[#1E1E1F] p-[8px] bg-[#48494A]">
+                <div className="flex items-center justify-center">
+                    <div>
+                        <p className="minecraft-seven text-white text-[14px]">{"Keep launcher open"}</p>
+                        <p className="minecraft-seven text-[#BCBEC0] text-[12px]">{"Prevents the launcher from closing after launching the game."}</p>
+                    </div>
+                    <div className="ml-auto">
+                        <MinecraftToggle id={"Keep launcher open"} isChecked={keepLauncherOpen} setIsChecked={setKeepLauncherOpen}/>
+                    </div>
+                </div>
+            </div>
+
             <ToggleSection
                 text="Developer mode"
                 subtext="Enables hot-reloading and prompting to attach a debugger."
