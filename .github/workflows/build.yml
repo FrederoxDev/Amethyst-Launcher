@@ -32,7 +32,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           npm version patch --no-git-tag-version
           git add package.json
-          git commit -m "Bump version to $version"
+          git commit -m "Bump version"
           git push https://github.com/${{ github.repository }} HEAD:main
         env:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
@@ -42,29 +42,27 @@ jobs:
           $env:CI="false"
           npm run build
 
-      - name: Remove win-unpacked directory
-        run: rm -rf dist/win-unpacked
-
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: amethyst-launcher
           path: |
             dist/**
-          exclude: |
-            dist/win-unpacked/**
+            !dist/win-unpacked/**
 
       - name: Get the version from package.json
         id: get_version
-        run: echo "VERSION=$(jq -r .version < package.json)" >> $GITHUB_ENV
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          echo "VERSION=$version" >> $env:GITHUB_ENV
 
       - name: Publish to GitHub Releases
+        id: publish_release
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.PAT_TOKEN }}
           tag: v${{ env.VERSION }}
           name: "Release v${{ env.VERSION }}"
-          files: |
-            dist/**
           draft: false
           prerelease: false
+          artifacts: "dist/*.exe,dist/*.exe.blockmap,dist/*.yml,dist/*.yaml"
