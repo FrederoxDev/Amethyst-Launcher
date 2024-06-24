@@ -147,7 +147,7 @@ export default function ModsPage() {
     return (
         <>
         <MainPanel>
-            <DividedSection className="h-full">
+            <DividedSection className="h-full border-t-0">
                 <div className="border-[2px] border-[#1E1E1F] bg-[#313233] h-full overflow-hidden">
                     { allReports.map((report) => 
                         <div onClick={() => {setSelectedReport(report)}} key={report.modIdentifier}>
@@ -160,7 +160,7 @@ export default function ModsPage() {
                     )}
                 </div>
             </DividedSection>
-            <DividedSection className="flex justify-around gap-[8px]">
+            <DividedSection className="flex justify-around gap-[8px] border-y-0 pb-1">
                 {/* <div className="w-[50%]">
                     <MinecraftButton text="Import Mod" onClick={openModsFolder}/>
                 </div> */}

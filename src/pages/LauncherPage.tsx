@@ -134,8 +134,8 @@ export default function LauncherPage() {
                 </div>
 
                 {/* Profile Selector & Play Button */}
-                <DividedSection className="flex gap-[8px]">
-                    <div className="w-[30%]">
+                <DividedSection className="flex gap-[8px] border-b-0 pb-1 border-t-[#1E1E1F]">
+                    <div className="w-[30%] translate-y-[-1px]">
                         <Dropdown
                             labelText="Profile"
                             options={allProfiles?.map(profile => profile.name)}
