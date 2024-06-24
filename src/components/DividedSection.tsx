@@ -9,7 +9,7 @@ type DividedSectionProps = {
 export default function DividedSection({children, className, style}: DividedSectionProps) {
     return (
         <div
-            className={`border-y-[2px] border-solid border-t-[#5A5B5C] border-b-[#000] p-[8px] bg-[#48494A] ${className}`}
+            className={`border-y-[2px] border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A] ${className}`}
             style={style}>
             {children}
         </div>
