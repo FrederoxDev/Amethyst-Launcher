@@ -5,6 +5,7 @@
   "author": "FrederoxDev, Adrian8115",
   "description": "Amethyst Launcher",
   "dependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "electron-updater": "^6.2.1",
@@ -23,6 +24,7 @@
     "build-react": "react-app-rewired build",
     "build": "react-app-rewired build && electron-builder --win",
     "run-built": "start ./dist/win-unpacked/Amethyst-Launcher.exe",
+    "dev": "set BROWSER=none&& start react-app-rewired start && start electron .",
     "eject": "react-scripts eject",
     "bump-version": "npm version patch --no-git-tag-version"
   },
