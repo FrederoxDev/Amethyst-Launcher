@@ -51,7 +51,7 @@ export default function ProfilePage() {
                 <DividedSection className="flex h-[40px] align-middle cursor-pointer"
                                 style={{backgroundColor: isHovered ? "#5A5B5C" : "#48494A"}}>
                     <div>
-                        <p className="minecraft-seven text-white">Create New Profile</p>
+                        <p className="minecraft-seven text-white translate-y-[-2px]">Create New Profile</p>
                     </div>
                 </DividedSection>
             </div>
@@ -60,7 +60,7 @@ export default function ProfilePage() {
 
     return (
         <MainPanel>
-            <DividedSection className="h-full">
+            <DividedSection className="h-full border-y-0">
                 <div className="border-[2px] border-[#1E1E1F] bg-[#313233] h-full overflow-hidden">
                     <NewButton/>
 
