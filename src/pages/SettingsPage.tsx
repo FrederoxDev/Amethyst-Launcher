@@ -65,7 +65,7 @@ export default function SettingsPage() {
 
     return (
         <MainPanel>
-            <div className="border-y-[2px] border-solid border-y-[#1E1E1F] p-[8px] bg-[#48494A]">
+            <div className="border-b-[2px] border-solid border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
                 <div className="flex items-center justify-center">
                     <div>
                         <p className="minecraft-seven text-white text-[14px]">{"Keep launcher open"}</p>

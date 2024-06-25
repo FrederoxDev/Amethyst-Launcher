@@ -1,4 +1,3 @@
-import DividedSection from "../components/DividedSection";
 import Dropdown from "../components/Dropdown";
 import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";

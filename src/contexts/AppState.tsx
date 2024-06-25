@@ -27,6 +27,9 @@ interface TAppStateContext {
     selectedProfile: number;
     setSelectedProfile: React.Dispatch<React.SetStateAction<number>>;
 
+    UITheme: string;
+    setUITheme: React.Dispatch<React.SetStateAction<string>>;
+
     keepLauncherOpen: boolean;
     setKeepLauncherOpen: React.Dispatch<React.SetStateAction<boolean>>;
 
@@ -57,6 +60,7 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
     const [allMinecraftVersions, setAllMinecraftVersions] = useState<MinecraftVersion[]>([]);
     const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
     const [selectedProfile, setSelectedProfile] = useState(0);
+    const [UITheme, setUITheme] = useState("System");
     const [keepLauncherOpen, setKeepLauncherOpen] = useState(true);
     const [developerMode, setDeveloperMode] = useState(false);
     const [loadingPercent, setLoadingPercent] = useState(0);
@@ -76,6 +80,7 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
         setKeepLauncherOpen(readConfig.keep_open ?? true);
         setDeveloperMode(readConfig.developer_mode ?? false);
         setSelectedProfile(readConfig.selected_profile ?? 0);
+        setUITheme(readConfig.ui_theme ?? true);
 
         const fetchMinecraftVersions = async () => {
             const versions = await getAllMinecraftVersions();
@@ -96,10 +101,11 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
             mods: allProfiles[selectedProfile]?.mods ?? [],
             runtime: allProfiles[selectedProfile]?.runtime ?? "",
             selected_profile: selectedProfile,
+            ui_theme: UITheme
         };
 
         saveLauncherConfig(launcherConfig);
-    }, [allProfiles, developerMode, keepLauncherOpen, selectedProfile])
+    }, [allProfiles, developerMode, keepLauncherOpen, selectedProfile, UITheme])
 
     useEffect(() => {
         if (!hasInitialized) {
@@ -118,6 +124,7 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
                 allMinecraftVersions, setAllMinecraftVersions,
                 allProfiles, setAllProfiles,
                 selectedProfile, setSelectedProfile,
+                UITheme, setUITheme,
                 keepLauncherOpen, setKeepLauncherOpen,
                 developerMode, setDeveloperMode,
                 loadingPercent, setLoadingPercent,

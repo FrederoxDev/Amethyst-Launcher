@@ -18,13 +18,13 @@
 
 .minecraft-seven {
     font-family: "Minecraft-Seven";
-    image-rendering: crisp-edges;
+    image-rendering: auto;
     letter-spacing: .5px;
 }
 
 .minecraft-ten {
     font-family: "Minecraft-Ten";
-    image-rendering: crisp-edges;
+    image-rendering: auto;
     letter-spacing: .1px;
 }
 
@@ -40,4 +40,8 @@ img {
     -webkit-user-drag: none;
     -moz-user-drag: none;
     -o-user-drag: none;
+}
+
+.webkit-drag {
+    -webkit-app-region: drag;
 }
