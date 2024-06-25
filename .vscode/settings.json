@@ -65,6 +65,6 @@
     "xtr1common": "cpp",
     "xutility": "cpp",
 
-    "*.css": "tailwindcss"
+    // "*.css": "tailwindcss"
   }
 }
