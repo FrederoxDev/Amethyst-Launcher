@@ -8,15 +8,21 @@ function createWindow() {
     const win = new BrowserWindow({
         width: 800,
         height: 600,
-        minWidth: 800,
-        minHeight: 600,
-        backgroundColor: "#FFF",
+        minWidth: 600,
+        minHeight: 400,
+        backgroundColor: "#1E1E1F",
         webPreferences: {
             nodeIntegration: true,
             preload: path.join(__dirname, 'preload.js'),
             sandbox: false, // false needed for exposing things like window.require
             webSecurity: false, // tell CORS to shut up lmao
             contextIsolation: false
+        },
+        titleBarStyle: "hidden",
+        titleBarOverlay: {
+            color: "#1E1E1F",
+            symbolColor: "#FFFFFF",
+            height: 40
         }
     });
 

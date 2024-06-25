@@ -24,7 +24,7 @@
     "build-react": "react-app-rewired build",
     "build": "react-app-rewired build && electron-builder --win",
     "run-built": "start ./dist/win-unpacked/Amethyst-Launcher.exe",
-    "dev": "set BROWSER=none&& start react-app-rewired start && start electron .",
+    "dev": "set BROWSER=none&& start react-app-rewired start & start electron .",
     "eject": "react-scripts eject",
     "bump-version": "npm version patch --no-git-tag-version"
   },

@@ -147,8 +147,8 @@ export default function ModsPage() {
     return (
         <>
         <MainPanel>
-            <div className="h-full border-t-[#1E1E1F] border-y-[2px] border-solid border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
-                <div className="border-[2px] border-[#1E1E1F] bg-[#313233] h-full overflow-hidden">
+            <div className="flex flex-col h-full p-[8px] bg-[#48494A]">
+                <div className="h-full border-[2px] border-[#1E1E1F] bg-[#313233] overflow-hidden">
                     { allReports.map((report) => 
                         <div onClick={() => {setSelectedReport(report)}} key={report.modIdentifier}>
                             <DividedSection className="cursor-pointer">
@@ -159,12 +159,7 @@ export default function ModsPage() {
                         </div>
                     )}
                 </div>
-            </div>
-            <div className="flex justify-around gap-[8px] border-y-0 pb-1 border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
-                {/* <div className="w-[50%]">
-                    <MinecraftButton text="Import Mod" onClick={openModsFolder}/>
-                </div> */}
-                <div className="w-[100%]">
+                <div className= "w-full h-fit pt-[4px] translate-y-[4px]">
                     <MinecraftButton text="Open Mods Folder" onClick={openModsFolder}/>
                 </div>
             </div>

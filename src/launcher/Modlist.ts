@@ -104,6 +104,7 @@ export function readLauncherConfig(): LauncherConfig {
         mods: [],
         runtime: "Vanilla",
         selected_profile: 0,
+        ui_theme: "System",
         ...data,
     }
 }

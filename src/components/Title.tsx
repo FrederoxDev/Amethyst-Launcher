@@ -13,14 +13,19 @@ export default function Header() {
 
     return (
         <>
-            <div className="h-[42px] bg-[#E6E8EB] flex flex-col justify-center items-center">
-                <p className="minecraft-ten block translate-y-[6px]">Amethyst Launcher</p>
-                <p className="minecraft-seven block text-[12px] text-[#464749]">{appVersion}</p>
+            <div className="flex flex-row webkit-drag h-[62px] w-full bg-[#1E1E1F]">
+                <div className="flex-shrink-0 h-[64px] w-[66px] p-[8px]  bg-[#1E1E1F] border-[#131415] border-b-[2px]">
+                    <div className="block w-[48px] h-[48px]">
+                        <img src="logo192.png" className="w-full h-full pixelated"/>
+                    </div>
+                </div>
+                <div className="relative flex flex-col justify-center items-center w-full h-full">
+                    <p className="absolute minecraft-ten text-white text-[24px] block translate-y-[-4px]">Amethyst Launcher</p>
+                    <p className="absolute minecraft-seven block text-[12px] text-[#BCBEC0] translate-y-[16px]">{appVersion}</p>
+                </div>
+                <div className="flex-shrink-0 h-[64px] w-[66px]"/>
             </div>
-
-            {/* Shadow/Highlight */}
-            <div className="bg-[#EBEDEF] h-[2px]"></div>
-            <div className="bg-[#B1B2B5] h-[4px]"></div>
+            <div className="h-[2px] w-full bg-[#131415]"/>
         </>
     )
 }
