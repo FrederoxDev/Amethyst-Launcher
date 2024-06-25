@@ -1,3 +1,5 @@
+@import url("styles/titlebar.css");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -14,6 +16,11 @@
 @font-face {
     font-family: 'Minecraft-Seven';
     src: url('../public/fonts/Minecraft-Seven.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'Minecraft-Five';
+    src: url('../public/fonts/extra/Minecraft-Five.otf') format('opentype');
 }
 
 .minecraft-seven {
@@ -40,8 +47,4 @@ img {
     -webkit-user-drag: none;
     -moz-user-drag: none;
     -o-user-drag: none;
-}
-
-.webkit-drag {
-    -webkit-app-region: drag;
 }
