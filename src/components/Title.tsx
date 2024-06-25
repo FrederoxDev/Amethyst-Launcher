@@ -11,21 +11,41 @@ export default function Header() {
         });
     }, []);
 
+    function ToggleMaximized() { ipcRenderer.send('TITLE_BAR_ACTION', 'TOGGLE_MAXIMIZED') }
+    function Minimize() { ipcRenderer.send('TITLE_BAR_ACTION', 'MINIMIZE') }
+    function Close() { ipcRenderer.send('TITLE_BAR_ACTION', 'CLOSE') }
+
     return (
         <>
-            <div className="flex flex-row webkit-drag h-[62px] w-full bg-[#1E1E1F]">
-                <div className="flex-shrink-0 h-[64px] w-[66px] p-[8px]  bg-[#1E1E1F] border-[#131415] border-b-[2px]">
-                    <div className="block w-[48px] h-[48px]">
-                        <img src="logo192.png" className="w-full h-full pixelated"/>
+            <div id="titlebar">
+
+                <div id="title_panel">
+                    <p id="title_text_main" className="minecraft-ten">Amethyst Launcher</p>
+                    <p id="title_text_sub" className="minecraft-seven">{appVersion}</p>
+                </div>
+
+                <div id="window_button_panel">
+                    <div id="window_button" className="window_button_hover adaptive" tabIndex={-1} onClick={Minimize}>
+                        <svg width="18" height="18" viewBox="0 0 12 12">
+                            <rect id="window_button_svg" width="10" height="1" x="1" y="6"/>
+                        </svg>
+                    </div>
+
+                    <div id="window_button" className="window_button_hover adaptive" tabIndex={-1} onClick={ToggleMaximized}>
+                        <svg width="18" height="18" viewBox="0 0 12 12">
+                            <rect id="window_button_svg_box" width="9" height="9" x="1.5" y="1.5"/>
+                        </svg>
+                    </div>
+
+                    <div id="window_button" className="close_button_hover adaptive" tabIndex={-1} onClick={Close}>
+                        <svg width="18" height="18" viewBox="0 0 12 12">
+                            <polygon id="window_button_svg" fill-rule="evenodd" points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"/>
+                        </svg>
                     </div>
                 </div>
-                <div className="relative flex flex-col justify-center items-center w-full h-full">
-                    <p className="absolute minecraft-ten text-white text-[24px] block translate-y-[-4px]">Amethyst Launcher</p>
-                    <p className="absolute minecraft-seven block text-[12px] text-[#BCBEC0] translate-y-[16px]">{appVersion}</p>
-                </div>
-                <div className="flex-shrink-0 h-[64px] w-[66px]"/>
             </div>
-            <div className="h-[2px] w-full bg-[#131415]"/>
+
+            <div id="titlebar_highlight"/>
         </>
     )
 }

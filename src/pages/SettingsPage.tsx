@@ -10,16 +10,16 @@ import { isDeveloperModeEnabled } from "../versionSwitcher/DeveloperMode";
 import ReadOnlyTextBox from "../components/ReadOnlyTextBox";
 import { useEffect, useState } from "react";
 import MinecraftToggle from "../components/MinecraftToggle"
+import Dropdown from "../components/Dropdown";
 
 const fs = window.require('fs') as typeof import('fs');
 
 
 export default function SettingsPage() {
     const {
-        keepLauncherOpen,
-        setKeepLauncherOpen,
-        developerMode,
-        setDeveloperMode,
+        keepLauncherOpen, setKeepLauncherOpen,
+        developerMode, setDeveloperMode,
+        UITheme, setUITheme
     } = useAppState()
 
     const {allProfiles, selectedProfile, allMinecraftVersions} = useAppState();
@@ -61,7 +61,7 @@ export default function SettingsPage() {
     useEffect(() => {
         const timer = setTimeout(updateCfgText, 0);
         return () => clearTimeout(timer);
-    }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode])
+    }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode, UITheme])
 
     return (
         <MainPanel>
@@ -73,6 +73,19 @@ export default function SettingsPage() {
                     </div>
                     <div className="ml-auto">
                         <MinecraftToggle id={"Keep launcher open"} isChecked={keepLauncherOpen} setIsChecked={setKeepLauncherOpen}/>
+                    </div>
+                </div>
+            </div>
+            <div className="border-b-[2px] border-solid border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
+                <div className="flex items-center justify-center">
+                    <div className="ml-auto">
+                        <Dropdown
+                        labelText="UI Theme"
+                        value={UITheme}
+                        setValue={setUITheme}
+                        options={["Light", "Dark", "System"]}
+                        id="runtime-mod"
+                        />
                     </div>
                 </div>
             </div>

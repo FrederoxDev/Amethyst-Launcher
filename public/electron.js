@@ -1,7 +1,8 @@
-const {app, BrowserWindow, ipcMain} = require('electron');
+const {app, BrowserWindow, ipcMain, ipcRenderer, nativeTheme} = require('electron');
 const path = require('path');
 const {autoUpdater} = require("electron-updater");
 
+/** @type {BrowserWindow} */
 let mainWindow = null;
 
 function createWindow() {
@@ -18,12 +19,7 @@ function createWindow() {
             webSecurity: false, // tell CORS to shut up lmao
             contextIsolation: false
         },
-        titleBarStyle: "hidden",
-        titleBarOverlay: {
-            color: "#1E1E1F",
-            symbolColor: "#FFFFFF",
-            height: 40
-        }
+        frame: false
     });
 
     mainWindow = win;
@@ -35,6 +31,37 @@ function createWindow() {
         win.loadURL('http://localhost:3000');
     }
 }
+
+ipcMain.on('TITLE_BAR_ACTION', (event, args) => {
+    if (args == 'TOGGLE_MAXIMIZED') {
+        mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize()
+    }
+
+    else if (args == 'MINIMIZE') {
+        mainWindow.minimize()
+    }
+
+    else if (args == 'CLOSE') {
+        mainWindow.close()
+    }
+})
+
+ipcMain.on('WINDOW_UI_THEME', (event, args) => {
+    switch (args) {
+        case "Light":
+            nativeTheme.themeSource = "light";
+            break;
+        case "Dark":
+            nativeTheme.themeSource = "dark";
+            break;
+        case "System":
+            nativeTheme.themeSource = "system";
+            break;
+        default:
+            nativeTheme.themeSource = "system";
+            break;
+    }
+})
 
 app.whenReady().then(createWindow);
 

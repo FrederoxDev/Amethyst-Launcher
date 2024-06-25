@@ -10,6 +10,7 @@ import {
 } from "../launcher/Modlist";
 import {LauncherConfig} from "../types/LauncherConfig";
 import {MinecraftVersion} from "../types/MinecraftVersion";
+import { ipcRenderer } from "electron";
 
 interface TAppStateContext {
     allMods: string[];
@@ -80,7 +81,7 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
         setKeepLauncherOpen(readConfig.keep_open ?? true);
         setDeveloperMode(readConfig.developer_mode ?? false);
         setSelectedProfile(readConfig.selected_profile ?? 0);
-        setUITheme(readConfig.ui_theme ?? true);
+        setUITheme(readConfig.ui_theme ?? "System");
 
         const fetchMinecraftVersions = async () => {
             const versions = await getAllMinecraftVersions();
@@ -115,6 +116,10 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
 
         saveData();
     }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode, hasInitialized, saveData])
+
+    useEffect(() => {
+        ipcRenderer.send('WINDOW_UI_THEME', UITheme)
+    }, [UITheme])
 
     return (
         <AppStateContext.Provider value={
