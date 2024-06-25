@@ -1,5 +1,4 @@
 @import url("styles/titlebar.css");
-@import url("styles/toggle.css");
 
 @tailwind base;
 @tailwind components;
