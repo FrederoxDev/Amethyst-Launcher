@@ -33,16 +33,18 @@ function createWindow() {
 }
 
 ipcMain.on('TITLE_BAR_ACTION', (event, args) => {
-    if (args == 'TOGGLE_MAXIMIZED') {
-        mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize()
-    }
-
-    else if (args == 'MINIMIZE') {
-        mainWindow.minimize()
-    }
-
-    else if (args == 'CLOSE') {
-        mainWindow.close()
+    switch (args) {
+        case "TOGGLE_MAXIMIZED":
+            mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize();
+            break;
+        case "MINIMIZE":
+            mainWindow.minimize()
+            break;
+        case "CLOSE":
+            mainWindow.close()
+            break;
+        default:
+            break;
     }
 })
 

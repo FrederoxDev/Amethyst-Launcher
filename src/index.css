@@ -1,4 +1,5 @@
 @import url("styles/titlebar.css");
+@import url("styles/toggle.css");
 
 @tailwind base;
 @tailwind components;
@@ -39,8 +40,67 @@
     image-rendering: pixelated;
 }
 
-.toggle-transform {
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+.toggle-anim-on, .toggle-anim-off {
+    animation-duration: 250ms;
+    animation-fill-mode: forwards;
+    animation-iteration-count: 1;
+    animation-timing-function: step-start
+}
+
+.toggle-anim-on {
+    animation-name: anim-on
+}
+
+.toggle-anim-off {
+    animation-name: anim-off
+}
+
+@keyframes anim-on {
+    0% {
+        left: 0px
+    }
+
+    25% {
+        left: 10px;
+        width: 48px
+    }
+
+    50% {
+        left: 35px;
+        width: 44px
+    }
+
+    75% {
+        left: 32px
+    }
+
+    to {
+        left: 35px
+    }
+}
+
+@keyframes anim-off {
+    0% {
+        right: 0px
+    }
+
+    25% {
+        right: 10px;
+        width: 48px
+    }
+
+    50% {
+        right: 35px;
+        width: 44px
+    }
+
+    75% {
+        right: 32px
+    }
+
+    to {
+        right: 35px
+    }
 }
 
 img {
