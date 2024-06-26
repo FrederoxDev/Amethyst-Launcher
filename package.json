@@ -19,12 +19,19 @@
     "typescript": "^4.9.5"
   },
   "scripts": {
-    "start-react": "react-app-rewired start",
+    "start-react": "set BROWSER=none&& react-app-rewired start",
     "start-electron": "electron .",
+
+    "build": "npm run build-react && npm run build-electron",
+    "postbuild": "npm run built",
+    
     "build-react": "react-app-rewired build",
-    "build": "react-app-rewired build && electron-builder --win",
-    "run-built": "start ./dist/win-unpacked/Amethyst-Launcher.exe",
-    "dev": "set BROWSER=none&& start electron . & react-app-rewired start",
+    "build-electron": "electron-builder --win",
+
+    "built": "start ./dist/win-unpacked/Amethyst-Launcher.exe",
+    "run-built": "npm run built",
+    "exe": "npm run built",
+    
     "bump-version": "npm version patch --no-git-tag-version"
   },
   "eslintConfig": {
