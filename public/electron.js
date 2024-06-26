@@ -1,4 +1,4 @@
-const {app, BrowserWindow, ipcMain, ipcRenderer, nativeTheme} = require('electron');
+const {app, Menu, BrowserWindow, ipcMain, nativeTheme} = require('electron');
 const path = require('path');
 const {autoUpdater} = require("electron-updater");
 
@@ -25,16 +25,14 @@ function createWindow() {
     mainWindow = win;
     win.setMenuBarVisibility(false);
 
-    mainWindow.webContents.on('did-finish-load', () => {
-        
-    })
-
     if (app.isPackaged) {
         win.loadURL(`file://${path.join(__dirname, '../build/index.html')}`);
     } else {
         win.loadURL('http://localhost:3000');
     }
 }
+
+Menu.setApplicationMenu(null);
 
 ipcMain.on('TITLE_BAR_ACTION', (event, args) => {
     switch (args) {
