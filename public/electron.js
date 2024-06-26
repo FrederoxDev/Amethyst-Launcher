@@ -25,6 +25,10 @@ function createWindow() {
     mainWindow = win;
     win.setMenuBarVisibility(false);
 
+    mainWindow.webContents.on('did-finish-load', () => {
+        
+    })
+
     if (app.isPackaged) {
         win.loadURL(`file://${path.join(__dirname, '../build/index.html')}`);
     } else {
