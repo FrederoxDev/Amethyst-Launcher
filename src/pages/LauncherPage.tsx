@@ -7,7 +7,11 @@ import {readLauncherConfig, saveLauncherConfig} from "../launcher/Modlist";
 import { isDeveloperModeEnabled, tryEnableDeveloperMode } from "../versionSwitcher/DeveloperMode";
 import { registerVersion, unregisterExisting } from "../versionSwitcher/AppRegistry";
 import { cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
+import { unzip, unzipSync } from "fflate"
+import { getModsFolder } from "../versionSwitcher/AmethystPaths"
 
+const fs = window.require('fs') as typeof import('fs')
+const path = window.require('path') as typeof import('path')
 const child = window.require('child_process') as typeof import('child_process')
 
 export default function LauncherPage() {
@@ -47,6 +51,45 @@ export default function LauncherPage() {
                     throw new Error("Failed to enable 'Developer Mode' in windows settings to allow installing the game from loose files, please enable manually or make sure to press 'Yes' to enable automatically.")
                 }
             }
+
+            log('Unzipping mods.')
+
+            const modsFolder = getModsFolder()
+
+            if (!fs.existsSync(modsFolder)) throw new Error("Failed to unzip mods. The mods folder does not exist!")
+
+	        const allEntries = await fs.readdirSync(modsFolder, { withFileTypes: true })
+
+            for(const modEntry of allEntries) {
+                if(modEntry.isDirectory()) continue
+
+                log(`Unzipping ${modEntry.name}`)
+
+                const modPath = path.join(modsFolder, modEntry.name)
+                const modFolderPath = path.join(modsFolder, path.basename(modEntry.name, path.extname(modEntry.name)))
+
+                if(fs.existsSync(modFolderPath)) fs.unlinkSync(modFolderPath)
+
+                fs.mkdirSync(modFolderPath)
+
+                const zipBuffer = await fs.readFileSync(modPath)
+
+                const unzippedMod = unzipSync(new Uint8Array(zipBuffer))
+                
+                for(const [filePath, fileContent] of Object.entries(unzippedMod)) {
+                    const absoluteFilePath = path.join(modFolderPath, filePath)
+
+                    fs.mkdirSync(path.dirname(absoluteFilePath), { recursive: true })
+
+                    fs.writeFileSync(absoluteFilePath, fileContent)
+                }
+
+                fs.unlinkSync(modPath)
+            }
+
+            // await unzip()
+
+            log('Unzipped mods')
 
             // We create a lock file when starting the download
             // if we are doing a launch, and we detect it for the version we are targeting
