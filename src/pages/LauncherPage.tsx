@@ -112,7 +112,7 @@ export default function LauncherPage() {
             }
 
             <div className="flex-group">
-                <img src="images/art/snow.png" className="object-cover w-full h-full min-h-screen" alt="" />
+                <img src="images/art/launcher_hero.png" className="object-cover w-full h-full min-h-screen" alt="" />
             </div>
 
             <div className="fixed bottom-0 right-0 left-[66px]">
