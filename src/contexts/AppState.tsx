@@ -81,7 +81,7 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
         setKeepLauncherOpen(readConfig.keep_open ?? true);
         setDeveloperMode(readConfig.developer_mode ?? false);
         setSelectedProfile(readConfig.selected_profile ?? 0);
-        setUITheme(readConfig.ui_theme ?? "System");
+        setUITheme(readConfig.ui_theme ?? "Light");
 
         const fetchMinecraftVersions = async () => {
             const versions = await getAllMinecraftVersions();
