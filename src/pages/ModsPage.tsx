@@ -148,6 +148,7 @@ export default function ModsPage() {
         <>
         <MainPanel>
             <div className="flex flex-col h-full p-[8px] bg-[#48494A]">
+                <p className="minecraft-seven text-white text-[14px] px-[4px]">Mod Manager</p>
                 <div className="h-full border-[2px] border-[#1E1E1F] bg-[#313233] overflow-hidden">
                     { allReports.map((report) => 
                         <div onClick={() => {setSelectedReport(report)}} key={report.modIdentifier}>
@@ -155,6 +156,7 @@ export default function ModsPage() {
                                 <p className="minecraft-seven text-white text-[14px] px-[4px]">{report.modIdentifier}</p>
                                 <p className="minecraft-seven text-[#BCBEC0] text-[14px] px-[4px]">{report.description}</p>
                                 {report.modErrors.length > 0 && (<p className="minecraft-seven text-red-400 text-[14px] px-[4px]">{report.modErrors.length} Errors!</p>)}
+                                {report.modErrors.length === 0 && <p className="minecraft-seven text-[#BCBEC0] text-[14px] px-[4px]">No Errors</p>}
                             </DividedSection>
                         </div>
                     )}
@@ -177,16 +179,23 @@ export default function ModsPage() {
 
                     <p className="minecraft-seven text-[#BCBEC0] text-[12px] max-w-[400px]">{selectedReport.description ?? ""}</p>
                 </DividedSection>
-                {selectedReport.modErrors.length > 0 && (
-                    <DividedSection className="w-[500px]">    
-                        <p className="minecraft-seven text-white text-[12px] pt-[6px]">Errors:</p>
-                        <ul>
-                            {selectedReport.modErrors.map(err => (
-                                <li className="minecraft-seven text-red-400 text-[12px]" key={err}>- {err}</li>
-                            ))}
-                        </ul>
+                {selectedReport.modErrors.length > 0 
+                    ? (
+                        <DividedSection className="w-[500px]">    
+                            <p className="minecraft-seven text-white text-[12px] pt-[6px]">Errors:</p>
+                            <ul>
+                                {selectedReport.modErrors.map(err => (
+                                    <li className="minecraft-seven text-red-400 text-[12px]" key={err}>- {err}</li>
+                                ))}
+                            </ul>
+                        </DividedSection>
+                    )
+                : (
+                    <DividedSection className="w-[500px]">
+                        <p className="minecraft-seven text-white text-[12px] pt-[6px]">No issues detected!</p>
                     </DividedSection>
-                )}
+                )
+            }
             </div>
         </>)}
         </>

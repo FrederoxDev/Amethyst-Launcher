@@ -33,7 +33,8 @@ export default function ProfilePage() {
     return (
         <MainPanel>
             <div className="flex flex-col h-full p-[8px] bg-[#48494A] overflow-hidden">
-
+                <p className="minecraft-seven text-white text-[14px] px-[4px]">Profile Editor</p>
+                
                 <div className="border-[2px] border-[#1E1E1F] h-full p-[4px] bg-[#313233] overflow-y-auto" style={{scrollbarWidth: "none", scrollbarColor: "#48494A #313233"}}>
                     {
                         allProfiles.map((profile, index) => {
