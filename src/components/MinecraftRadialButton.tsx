@@ -6,7 +6,7 @@ type RadialButtonProperties = {
 
 export default function MinecraftRadialButton({text, selected, onChange}: RadialButtonProperties) {
     return (
-        <div className="w-full h-full m-[8px]">
+        <div className="w-full h-full m-[4px]">
             <div className="h-[51px]" onClick={() => onChange(text)}>
 
                 <div className={`border-[3px] border-[#1E1E1F] cursor-pointer ${selected ? "translate-y-[4px] h-[46px]" : "h-full" }`}>
