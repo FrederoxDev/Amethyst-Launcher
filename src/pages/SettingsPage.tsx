@@ -72,7 +72,7 @@ export default function SettingsPage() {
                         <p className="minecraft-seven text-[#BCBEC0] text-[12px]">{"Prevents the launcher from closing after launching the game."}</p>
                     </div>
                     <div className="ml-auto">
-                        <MinecraftToggle id={"Keep launcher open"} isChecked={keepLauncherOpen} setIsChecked={setKeepLauncherOpen}/>
+                        <MinecraftToggle isChecked={keepLauncherOpen} setIsChecked={setKeepLauncherOpen}/>
                     </div>
                 </div>
             </div>
