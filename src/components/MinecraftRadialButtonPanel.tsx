@@ -17,7 +17,7 @@ export default function MinecraftRadialButtonPanel() {
     return (
         <div className="w-full h-full flex items-center justify-center">
             <MinecraftRadialButton text="Light" onChange={(text) => {handleSelectionChange(text)}} selected={selectedValue == 'Light'}></MinecraftRadialButton>
-            <MinecraftRadialButton text="Dark" onChange={(text) => {handleSelectionChange(text)}} selected={selectedValue == 'Dark'}></MinecraftRadialButton>
+            <MinecraftRadialButton className="mx-[8px]" text="Dark" onChange={(text) => {handleSelectionChange(text)}} selected={selectedValue == 'Dark'}></MinecraftRadialButton>
             <MinecraftRadialButton text="System" onChange={(text) => {handleSelectionChange(text)}} selected={selectedValue == 'System'}></MinecraftRadialButton>
         </div>
     )
