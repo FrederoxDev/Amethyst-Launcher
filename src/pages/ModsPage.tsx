@@ -4,6 +4,7 @@ import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
 import { getMinecraftUWPFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
 import { ModConfig } from "../types/ModConfig";
+import { unzipSync } from 'fflate'
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
@@ -67,16 +68,16 @@ function getAllMods(): ModErrorInfo[] {
     const modsFolder = getModsFolder();
     if (!fs.existsSync(modsFolder)) return results;
 
-    const allModNames = fs.readdirSync(modsFolder, {withFileTypes: true})
-        .filter(f => f.isDirectory())
-        .map(dir => dir.name);
+    const modEntries = fs.readdirSync(modsFolder, {withFileTypes: true})
 
-    for (const modIdentifier of allModNames) {
+    for (const modEntry of modEntries) {
         const modErrors: string[] = []
+
+        const modIdentifier = modEntry.isDirectory() ? modEntry.name : path.basename(modEntry.name, path.extname(modEntry.name))
 
         // Validate that the mod is in the naming scheme
         if (!modIdentifier.includes("@")) {
-            modErrors.push(`Folder named '${modIdentifier}' must include a version number`);
+            modErrors.push(`Mod named '${modIdentifier}' must include a version number`);
         }
 
         // Config data
@@ -89,15 +90,30 @@ function getAllMods(): ModErrorInfo[] {
         };
 
         // Validate that it has a config file
-        const modConfigPath = path.join(modsFolder, modIdentifier, "mod.json");
+        const modPath = path.join(modsFolder, modEntry.name);
+        const modConfigPath = path.join(modPath, "mod.json");
 
-        if (!fs.existsSync(modConfigPath)) {
+        if (modEntry.isDirectory() && !fs.existsSync(modConfigPath)) {
             modErrors.push(`Missing mod.json configuration file inside mod folder.`);
         }
 
         else {
             try {
-                const configData = fs.readFileSync(modConfigPath, "utf-8");
+                let configData = ''
+                
+                if(modEntry.isDirectory()) {
+                    configData = fs.readFileSync(modConfigPath, "utf-8");
+                } else {
+                    const zipBuffer = fs.readFileSync(modPath)
+                    const unzippedMod = unzipSync(new Uint8Array(zipBuffer))
+
+                    for(const [filePath, fileContent] of Object.entries(unzippedMod)) {
+                        if(filePath == 'mod.json') {
+                            configData = new TextDecoder().decode(fileContent)
+                        }
+                    }
+                }
+                
                 const configParsed = JSON.parse(configData);
                 modConfig = validateConfig(configParsed, modErrors);
                 console.log(modConfig)
