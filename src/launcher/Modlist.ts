@@ -3,7 +3,7 @@ import {Profile} from "../types/Profile";
 import {LauncherConfig} from "../types/LauncherConfig";
 import {MinecraftVersion, VersionType} from "../types/MinecraftVersion";
 import {SemVersion} from "../types/SemVersion";
-import { ensureDirectoryExists, getAmethystFolder, getLauncherConfig, getLauncherFolder, getMinecraftUWPFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
+import { /** getAmethystFolder, getMinecraftUWPFolder, */ ensureDirectoryExists, getLauncherConfig, getLauncherFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
@@ -104,6 +104,7 @@ export function readLauncherConfig(): LauncherConfig {
         mods: [],
         runtime: "Vanilla",
         selected_profile: 0,
+        ui_theme: "System",
         ...data,
     }
 }

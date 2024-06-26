@@ -17,7 +17,7 @@ export default function ToggleSection({text, subtext, isChecked, setIsChecked}: 
                     <p className="minecraft-seven text-[#BCBEC0] text-[12px]">{subtext}</p>
                 </div>
                 <div className="ml-auto">
-                    <MinecraftToggle id={text} isChecked={isChecked} setIsChecked={setIsChecked}/>
+                    <MinecraftToggle isChecked={isChecked} setIsChecked={setIsChecked}/>
                 </div>
             </div>
         </DividedSection>
