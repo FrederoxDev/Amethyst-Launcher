@@ -86,8 +86,8 @@ export default function SettingsPage() {
                 setIsChecked={setDeveloperMode}
             />
 
-            <div className="w-full border-y-[2px] border-solid border-b-[#1E1E1F] border-t-[#5A5B5C] p-[8px] bg-[#48494A] flex flex-col justify-center items-center">
-                <p className="minecraft-seven text-white text-[16px] p-[8px]">UI Theme</p>
+            <div className="w-full border-y-[2px] border-solid border-b-[#1E1E1F] border-t-[#5A5B5C] p-[8px] bg-[#48494A]">
+                <p className="minecraft-seven text-white text-[14px]">UI Theme</p>
                 <MinecraftRadialButtonPanel></MinecraftRadialButtonPanel>
             </div>
 
