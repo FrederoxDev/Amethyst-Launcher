@@ -2,7 +2,7 @@ import {useState} from "react";
 
 type MinecraftButtonProps = {
     text: string,
-    disabled?: boolean
+    disabled?: boolean,
     onClick?: () => void,
     style?: MinecraftButtonStyle
 }
