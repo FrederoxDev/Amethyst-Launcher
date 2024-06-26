@@ -10,7 +10,6 @@ import { isDeveloperModeEnabled } from "../versionSwitcher/DeveloperMode";
 import ReadOnlyTextBox from "../components/ReadOnlyTextBox";
 import { useEffect, useState } from "react";
 import MinecraftToggle from "../components/MinecraftToggle"
-import MinecraftRadialButton from "../components/MinecraftRadialButton";
 import MinecraftRadialButtonPanel from "../components/MinecraftRadialButtonPanel";
 
 const fs = window.require('fs') as typeof import('fs');
@@ -88,7 +87,7 @@ export default function SettingsPage() {
 
             <div className="w-full border-y-[2px] border-solid border-b-[#1E1E1F] border-t-[#5A5B5C] p-[8px] bg-[#48494A]">
                 <p className="minecraft-seven text-white text-[14px]">UI Theme</p>
-                <MinecraftRadialButtonPanel></MinecraftRadialButtonPanel>
+                <MinecraftRadialButtonPanel elements={[{text: "Light", value: "Light"}, {text: "Dark", value: "Dark"}, {text:"System", value:"System"}]} default_selected_value={UITheme} onChange={(value => { setUITheme(value) })}/>
             </div>
 
             <DividedSection className="minecraft-seven text-[#BCBEC0] text-[14px]">
