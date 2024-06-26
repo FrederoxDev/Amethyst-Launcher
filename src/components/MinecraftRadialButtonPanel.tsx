@@ -1,24 +1,35 @@
 import { useState } from "react";
 import MinecraftRadialButton from "./MinecraftRadialButton";
-import { useAppState } from "../contexts/AppState";
 
-export default function MinecraftRadialButtonPanel() {
-    const {UITheme, setUITheme} = useAppState();
+type RadialButtonPanelProperties = {
+    elements: {
+        text: string,
+        value: string,
+        className?: string,
+    }[]
 
-    const [selectedValue, setSelectedValue] = useState(UITheme);
+    default_selected_value?: string,
 
+    onChange: (selected_value: string) => void,
+}
 
-    function handleSelectionChange(text: string) {
-        setSelectedValue(text)
+export default function MinecraftRadialButtonPanel({elements, default_selected_value, onChange}: RadialButtonPanelProperties) {
+    const [selected_value, setSelectedValue] = useState(default_selected_value);
 
-        setUITheme(text)
+    function handleSelect(value: string) {
+        setSelectedValue(value)
+        onChange(value)
     }
 
     return (
-        <div className="w-full h-full flex items-center justify-center">
-            <MinecraftRadialButton text="Light" onChange={(text) => {handleSelectionChange(text)}} selected={selectedValue == 'Light'}></MinecraftRadialButton>
-            <MinecraftRadialButton className="mx-[8px]" text="Dark" onChange={(text) => {handleSelectionChange(text)}} selected={selectedValue == 'Dark'}></MinecraftRadialButton>
-            <MinecraftRadialButton text="System" onChange={(text) => {handleSelectionChange(text)}} selected={selectedValue == 'System'}></MinecraftRadialButton>
-        </div>
+        <>
+            <div className="flex items-center justify-center">
+                {
+                    elements.map(element => {
+                        return <MinecraftRadialButton text={element.text} value={element.value} selected={selected_value === element.value} className={element.className} onChange={handleSelect}/>
+                    })
+                }
+            </div>
+        </>
     )
 }

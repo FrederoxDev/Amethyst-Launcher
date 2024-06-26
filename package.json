@@ -19,6 +19,8 @@
     "typescript": "^4.9.5"
   },
   "scripts": {
+    "react": "npm run start-react",
+    "electron": "npm run start-electron",
     "start-react": "set BROWSER=none&& react-app-rewired start",
     "start-electron": "electron .",
 
