@@ -11,6 +11,7 @@ import ReadOnlyTextBox from "../components/ReadOnlyTextBox";
 import { useEffect, useState } from "react";
 import MinecraftToggle from "../components/MinecraftToggle"
 import Dropdown from "../components/Dropdown";
+import MinecraftButton from "../components/MinecraftButton";
 
 const fs = window.require('fs') as typeof import('fs');
 
@@ -65,6 +66,7 @@ export default function SettingsPage() {
 
     return (
         <MainPanel>
+
             <div className="border-b-[2px] border-solid border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
                 <div className="flex items-center justify-center">
                     <div>
@@ -76,19 +78,6 @@ export default function SettingsPage() {
                     </div>
                 </div>
             </div>
-            <div className="border-b-[2px] border-solid border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
-                <div className="flex items-center justify-center">
-                    <div className="ml-auto">
-                        <Dropdown
-                        labelText="UI Theme"
-                        value={UITheme}
-                        setValue={setUITheme}
-                        options={["Light", "Dark", "System"]}
-                        id="runtime-mod"
-                        />
-                    </div>
-                </div>
-            </div>
 
             <ToggleSection
                 text="Developer mode"
@@ -96,6 +85,57 @@ export default function SettingsPage() {
                 isChecked={developerMode}
                 setIsChecked={setDeveloperMode}
             />
+
+            <div className="border-y-[2px] border-solid border-b-[#1E1E1F] border-t-[#5A5B5C] p-[8px] bg-[#48494A]">
+                <div className="flex items-center justify-center">
+                    <div className="w-full h-full mr-[8px]">
+
+                        <div className="h-[48px]" onClick={() => setUITheme("Light")}>
+                            <div className="border-[2px] border-[#1E1E1F] h-[48px] cursor-pointer active:translate-y-[4px] active:h-[44px] group">
+
+                                <div className="border-[2px] h-[40px] box-border flex items-center justify-center border-[#4F913C] bg-[#3C8527] hover:bg-[#2A641C]">
+                                    <p className="minecraft-seven text-[16px] text-white">Light</p>
+                                </div>
+
+                                <div className="h-[4px] box-border minecraft-button-shadow group-active:h-[0px] bg-[#1D4D13]"/>
+
+                            </div>
+                        </div>
+
+                    </div>
+                    <div className="w-full h-full">
+                       
+                        <div className="h-[48px]" onClick={() => setUITheme("Dark")}>
+                            <div className="border-[2px] border-[#1E1E1F] h-[48px] cursor-pointer active:translate-y-[4px] active:h-[44px] group">
+
+                                <div className="border-[2px] h-[40px] box-border flex items-center justify-center border-[#4F913C] bg-[#3C8527] hover:bg-[#2A641C]">
+                                    <p className="minecraft-seven text-[16px] text-white">Dark</p>
+                                </div>
+
+                                <div className="h-[4px] box-border minecraft-button-shadow group-active:h-[0px] bg-[#1D4D13]"/>
+
+                            </div>
+                        </div>
+
+                    </div>
+                    <div className="w-full h-full ml-[8px]">
+                       
+                        <div className="h-[48px]" onClick={() => setUITheme("System")}>
+                            <div className="border-[2px] border-[#1E1E1F] h-[48px] cursor-pointer active:translate-y-[4px] active:h-[44px] group">
+
+                                <div className="border-[2px] h-[40px] box-border flex items-center justify-center border-[#4F913C] bg-[#3C8527] hover:bg-[#2A641C]">
+                                    <p className="minecraft-seven text-[16px] text-white">System</p>
+                                </div>
+
+                                <div className="h-[4px] box-border minecraft-button-shadow group-active:h-[0px] bg-[#1D4D13]"/>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
             <DividedSection className="minecraft-seven text-[#BCBEC0] text-[14px]">
                 <p className="text-white">Debug Info</p>
                 <p>Minecraft Version: {minecraftVersion ? minecraftVersion.toString() : "No version found."}</p>
