@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import DividedSection from "../components/DividedSection";
 import MainPanel from "../components/MainPanel";
 import TextInput from "../components/TextInput";
@@ -45,7 +45,7 @@ export default function ProfileEditor() {
         return (
             <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}
                  onClick={() => {
-                     if (profileRuntime == "Vanilla") {
+                     if (profileRuntime === "Vanilla") {
                          alert("Cannot add mods to a vanilla profile");
                          return;
                      }
@@ -65,13 +65,13 @@ export default function ProfileEditor() {
         )
     }
 
-    const loadProfile = () => {
+    const loadProfile = useCallback(() => {
         const profile = allProfiles[selectedProfile];
         setProfileName(profile?.name ?? "New Profile");
         setProfileRuntime(profile?.runtime ?? "Vanilla");
         setProfileActiveMods(profile?.mods ?? []);
         setProfileMinecraftVersion(profile?.minecraft_version ?? "1.21.0.3");
-    }
+    }, [allProfiles, selectedProfile])
 
     const saveProfile = () => {
         allProfiles[selectedProfile].name = profileName;
@@ -100,25 +100,25 @@ export default function ProfileEditor() {
         navigate("/profiles");
     }
 
-    useEffect(() => {
-        loadProfile();
-    }, []);
-
-    const fetchMods = () => {
+    const fetchMods = useCallback(() => {
         const {mods} = findAllMods();
         setAllMods(mods);
-    };
+    }, [setAllMods])
+
+    useEffect(() => {
+        loadProfile();
+    }, [loadProfile]);
 
     useEffect(() => {
         const intervalId = setInterval(fetchMods, 500); // Fetch every 5 seconds
 
         return () => clearInterval(intervalId); // Cleanup interval on component unmount
-    }, [setAllMods]);
+    }, [setAllMods, fetchMods]);
 
     return (
         <MainPanel>
             {/* Settings */}
-            <DividedSection>
+            <div className="border-y-[2px] border-t-0 pt-1 border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
                 <TextInput label="Profile Name" text={profileName} setText={setProfileName}/>
                 <Dropdown
                     labelText="Minecraft Version"
@@ -126,7 +126,7 @@ export default function ProfileEditor() {
                     setValue={setProfileMinecraftVersion}
 
                     // we don't support non-release versions right now so only show release lmao
-                    options={allMinecraftVersions.filter(ver => ver.versionType == VersionType.Release).map(ver => ver.toString())}
+                    options={allMinecraftVersions.filter(ver => ver.versionType === VersionType.Release).map(ver => ver.toString())}
                     id="minecraft-version"
                 />
                 <Dropdown
@@ -136,15 +136,20 @@ export default function ProfileEditor() {
                     options={allRuntimes}
                     id="runtime-mod"
                 />
-            </DividedSection>
+            </div>
 
             {/* Mod Selection */}
             {
                 profileRuntime === "Vanilla"
-                    ? <DividedSection className="flex-grow flex justify-around gap-[8px]">
+                    ? 
+                    
+                    <div className="flex-grow flex justify-around gap-[8px] border-y-[2px] border-t-0 border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
                         <div className="h-full flex flex-col"></div>
-                    </DividedSection>
-                    : <DividedSection className="flex-grow flex justify-around gap-[8px]">
+                    </div>
+
+                    : 
+                    
+                    <div className="flex-grow flex justify-around gap-[8px] border-y-[2px] border-t-0 border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
                         <div className=" w-[50%] h-full flex flex-col">
                             <p className="text-white minecraft-seven">Active Mods</p>
                             <div className="border-[2px] border-[#1E1E1F] bg-[#313233] flex-grow">
@@ -163,15 +168,14 @@ export default function ProfileEditor() {
                                 }
                             </div>
                         </div>
-                    </DividedSection>
+                    </div>
             }
 
             {/* Profile Actions */}
-            <DividedSection className="flex justify-around gap-[8px]">
+            <div className="flex justify-around gap-[8px] border-y-[0px] pb-1 border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
                 <div className="w-[50%]"><MinecraftButton text="Save Profile" onClick={() => saveProfile()}/></div>
-                <div className="w-[50%]"><MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn}
-                                                          onClick={() => deleteProfile()}/></div>
-            </DividedSection>
+                <div className="w-[50%]"><MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} onClick={() => deleteProfile()}/></div>
+            </div>
         </MainPanel>
     )
 }

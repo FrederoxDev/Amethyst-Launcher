@@ -10,49 +10,65 @@ import UpdatePage from "./pages/UpdatePage";
 import ModsPage from "./pages/ModsPage";
 
 export default function App() {
+    
     const location = useLocation();
-    const highlightedIcon: CSSProperties = {borderWidth: "4px", borderColor: "#FFFFFF"};
+
+    const highlightedIcon: CSSProperties = {borderWidth: "2px", borderColor: "#FFFFFF"};
     const unselectedIcon: CSSProperties = {borderWidth: "2px", borderColor: "#1E1E1F"}
 
     return (
-        <AppStateProvider>
-            <link rel="preload" href="images/launcher_hero.png" as="image"></link>
-            <div className='h-screen overflow-hidden bg-[#313233]'>
-                <Title/>
 
+        <AppStateProvider>
+            <link rel="preload" href="images/art/launcher_hero.png" as="image"></link>
+            <link rel="preload" href="images/art/snow.png" as="image"></link>
+
+
+            <div className='h-screen overflow-hidden bg-[#313233]'>
+                
                 {/* Side Panel */}
-                <div
-                    className='fixed left-0 top-[48px] h-full bg-[#313233] w-[64px] flex flex-col border-r-[2px] border-r-[#1E1E1F]'>
-                    <Link to="/" className='block p-[8px]' draggable={false}>
-                        <div className='w-[48px] h-[48px]'
-                             style={location.pathname == "/" ? highlightedIcon : unselectedIcon}>
-                            <img src="images/general_icon.png" className='w-full h-full pixelated'/>
-                        </div>
-                    </Link>
-                    <Link to="/profiles" className='block p-[8px]' draggable={false}>
-                        <div className='w-[48px] h-[48px]'
-                             style={location.pathname == "/profiles" ? highlightedIcon : unselectedIcon}>
-                            <img src="images/advanced_icon.png" className='w-full h-full pixelated'/>
-                        </div>
-                    </Link>
-                    <Link to="/mods" className='block p-[8px]' draggable={false}>
-                        <div className='w-[48px] h-[48px]'
-                             style={location.pathname == "/mods" ? highlightedIcon : unselectedIcon}>
-                            <img src="images/mods_icon.png" className='w-full h-full pixelated'/>
-                        </div>
-                    </Link>
-                    <Link to="/settings" className='block p-[12px] mt-auto mb-[48px]' draggable={false}>
-                        <div className='relative w-[40px] h-[40px]'>
-                            <img src="images/settings_icon.png" className="absolute top-0 left-0 w-full h-full pixelated" />
-                            {location.pathname == "/settings" ? 
-                                <img src="images/settings_icon_unselected.png" className="absolute top-0 left-0 w-full h-full pixelated" /> 
-                                : <></>
-                            }
-                        </div>
-                    </Link>
+
+                <div className="fixed left-0 top-[62px] bottom-[0px]">
+                    <div
+                        className='h-full bg-[#313233] w-[66px] flex flex-col border-r-[2px] border-r-[#1E1E1F]'>
+
+                        <Link to="/" className='block p-[8px]' draggable={false}>
+                            <div className='w-[48px] h-[48px]'
+                                style={location.pathname === "/" ? highlightedIcon : unselectedIcon}>
+                                <img src="images/icons/crafting-icon.png" className='w-full h-full pixelated' alt=''/>
+                            </div>
+                        </Link>
+
+                        <Link to="/profiles" className='block p-[8px]' draggable={false}>
+                            <div className='w-[48px] h-[48px]'
+                                style={location.pathname === "/profiles" ? highlightedIcon : unselectedIcon}>
+                                <img src="images/icons/chest-icon.png" className='w-full h-full pixelated' alt=''/>
+                            </div>
+                        </Link>
+
+                        <Link to="/mods" className='block p-[8px]' draggable={false}>
+                            <div className='w-[48px] h-[48px]'
+                                style={location.pathname === "/mods" ? highlightedIcon : unselectedIcon}>
+                                <img src="images/icons/shulker-icon.png" className='w-full h-full pixelated' alt=''/>
+                            </div>
+                        </Link>
+                        <Link to="/settings" className='block p-[18px] mt-auto bottom-0' draggable={false}>
+                            <div className='relative w-[24px] h-[24px]'>
+                                <img src="images/icons/settings-icon.png" className="absolute top-0 left-0 w-full h-full pixelated" alt=''/>
+                                {location.pathname === "/settings" ? 
+                                    <img src="images/icons/settings-icon.png" className="absolute top-0 left-0 w-full h-full pixelated" alt=''/> 
+                                    : <></>
+                                }
+                            </div>
+                        </Link>
+
+                    </div>
                 </div>
+                
+                
 
                 {/* Main View */}
+
+                <Title/>
 
                 <Routes>
                     <Route path='/' element={<LauncherPage/>}/>

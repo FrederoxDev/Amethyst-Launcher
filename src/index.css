@@ -1,3 +1,6 @@
+@import url("styles/titlebar.css");
+@import url("styles/switch.css");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -16,15 +19,20 @@
     src: url('../public/fonts/Minecraft-Seven.ttf') format('truetype');
 }
 
+@font-face {
+    font-family: 'Minecraft-Five';
+    src: url('../public/fonts/extra/Minecraft-Five.otf') format('opentype');
+}
+
 .minecraft-seven {
     font-family: "Minecraft-Seven";
-    image-rendering: crisp-edges;
+    image-rendering: auto;
     letter-spacing: .5px;
 }
 
 .minecraft-ten {
     font-family: "Minecraft-Ten";
-    image-rendering: crisp-edges;
+    image-rendering: auto;
     letter-spacing: .1px;
 }
 
@@ -32,12 +40,7 @@
     image-rendering: pixelated;
 }
 
-.toggle-transform {
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
 img {
-    user-drag: none;
     -webkit-user-drag: none;
     -moz-user-drag: none;
     -o-user-drag: none;
