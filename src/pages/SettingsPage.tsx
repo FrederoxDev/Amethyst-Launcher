@@ -9,16 +9,18 @@ import { getAmethystFolder, getLauncherConfig, getMinecraftUWPFolder } from "../
 import { isDeveloperModeEnabled } from "../versionSwitcher/DeveloperMode";
 import ReadOnlyTextBox from "../components/ReadOnlyTextBox";
 import { useEffect, useState } from "react";
+import MinecraftToggle from "../components/MinecraftToggle"
+import MinecraftRadialButton from "../components/MinecraftRadialButton";
+import MinecraftRadialButtonPanel from "../components/MinecraftRadialButtonPanel";
 
 const fs = window.require('fs') as typeof import('fs');
 
 
 export default function SettingsPage() {
     const {
-        keepLauncherOpen,
-        setKeepLauncherOpen,
-        developerMode,
-        setDeveloperMode,
+        keepLauncherOpen, setKeepLauncherOpen,
+        developerMode, setDeveloperMode,
+        UITheme, setUITheme
     } = useAppState()
 
     const {allProfiles, selectedProfile, allMinecraftVersions} = useAppState();
@@ -36,7 +38,7 @@ export default function SettingsPage() {
 
     if (profile) {
         const semVersion = SemVersion.fromString(profile.minecraft_version);
-        minecraftVersion = allMinecraftVersions.find(version => version.version.toString() == semVersion.toString());
+        minecraftVersion = allMinecraftVersions.find(version => version.version.toString() === semVersion.toString());
 
         if (minecraftVersion) {
             isVerDownloaded = isVersionDownloaded(minecraftVersion.version)
@@ -60,22 +62,35 @@ export default function SettingsPage() {
     useEffect(() => {
         const timer = setTimeout(updateCfgText, 0);
         return () => clearTimeout(timer);
-    }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode])
+    }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode, UITheme])
 
     return (
         <MainPanel>
-            <ToggleSection
-                text="Keep launcher open"
-                subtext="Prevents the launcher from closing after launching the game."
-                isChecked={keepLauncherOpen}
-                setIsChecked={setKeepLauncherOpen}
-            />
+
+            <div className="border-b-[2px] border-solid border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
+                <div className="flex items-center justify-center">
+                    <div>
+                        <p className="minecraft-seven text-white text-[14px]">{"Keep launcher open"}</p>
+                        <p className="minecraft-seven text-[#BCBEC0] text-[12px]">{"Prevents the launcher from closing after launching the game."}</p>
+                    </div>
+                    <div className="ml-auto">
+                        <MinecraftToggle isChecked={keepLauncherOpen} setIsChecked={setKeepLauncherOpen}/>
+                    </div>
+                </div>
+            </div>
+
             <ToggleSection
                 text="Developer mode"
                 subtext="Enables hot-reloading and prompting to attach a debugger."
                 isChecked={developerMode}
                 setIsChecked={setDeveloperMode}
             />
+
+            <div className="w-full border-y-[2px] border-solid border-b-[#1E1E1F] border-t-[#5A5B5C] p-[8px] bg-[#48494A]">
+                <p className="minecraft-seven text-white text-[14px]">UI Theme</p>
+                <MinecraftRadialButtonPanel></MinecraftRadialButtonPanel>
+            </div>
+
             <DividedSection className="minecraft-seven text-[#BCBEC0] text-[14px]">
                 <p className="text-white">Debug Info</p>
                 <p>Minecraft Version: {minecraftVersion ? minecraftVersion.toString() : "No version found."}</p>

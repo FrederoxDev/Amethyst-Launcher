@@ -147,27 +147,24 @@ export default function ModsPage() {
     return (
         <>
         <MainPanel>
-            <DividedSection className="h-full">
-                <div className="border-[2px] border-[#1E1E1F] bg-[#313233] h-full overflow-hidden">
+            <div className="flex flex-col h-full p-[8px] bg-[#48494A]">
+                <p className="minecraft-seven text-white text-[14px] px-[4px]">Mod Manager</p>
+                <div className="h-full border-[2px] border-[#1E1E1F] bg-[#313233] overflow-hidden">
                     { allReports.map((report) => 
                         <div onClick={() => {setSelectedReport(report)}} key={report.modIdentifier}>
                             <DividedSection className="cursor-pointer">
                                 <p className="minecraft-seven text-white text-[14px] px-[4px]">{report.modIdentifier}</p>
                                 <p className="minecraft-seven text-[#BCBEC0] text-[14px] px-[4px]">{report.description}</p>
                                 {report.modErrors.length > 0 && (<p className="minecraft-seven text-red-400 text-[14px] px-[4px]">{report.modErrors.length} Errors!</p>)}
+                                {report.modErrors.length === 0 && <p className="minecraft-seven text-[#BCBEC0] text-[14px] px-[4px]">No Errors</p>}
                             </DividedSection>
                         </div>
                     )}
                 </div>
-            </DividedSection>
-            <DividedSection className="flex justify-around gap-[8px]">
-                {/* <div className="w-[50%]">
-                    <MinecraftButton text="Import Mod" onClick={openModsFolder}/>
-                </div> */}
-                <div className="w-[100%]">
+                <div className= "w-full h-fit pt-[4px] translate-y-[4px]">
                     <MinecraftButton text="Open Mods Folder" onClick={openModsFolder}/>
                 </div>
-            </DividedSection>
+            </div>
         </MainPanel>
 
         {selectedReport && (<>
@@ -182,16 +179,23 @@ export default function ModsPage() {
 
                     <p className="minecraft-seven text-[#BCBEC0] text-[12px] max-w-[400px]">{selectedReport.description ?? ""}</p>
                 </DividedSection>
-                {selectedReport.modErrors.length > 0 && (
-                    <DividedSection className="w-[500px]">    
-                        <p className="minecraft-seven text-white text-[12px] pt-[6px]">Errors:</p>
-                        <ul>
-                            {selectedReport.modErrors.map(err => (
-                                <li className="minecraft-seven text-red-400 text-[12px]" key={err}>- {err}</li>
-                            ))}
-                        </ul>
+                {selectedReport.modErrors.length > 0 
+                    ? (
+                        <DividedSection className="w-[500px]">    
+                            <p className="minecraft-seven text-white text-[12px] pt-[6px]">Errors:</p>
+                            <ul>
+                                {selectedReport.modErrors.map(err => (
+                                    <li className="minecraft-seven text-red-400 text-[12px]" key={err}>- {err}</li>
+                                ))}
+                            </ul>
+                        </DividedSection>
+                    )
+                : (
+                    <DividedSection className="w-[500px]">
+                        <p className="minecraft-seven text-white text-[12px] pt-[6px]">No issues detected!</p>
                     </DividedSection>
-                )}
+                )
+            }
             </div>
         </>)}
         </>

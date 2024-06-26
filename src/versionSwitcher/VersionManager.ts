@@ -1,6 +1,6 @@
 import { MinecraftVersion } from "../types/MinecraftVersion";
 import { SemVersion } from "../types/SemVersion";
-import { getAmethystFolder, getVersionsFolder } from "./AmethystPaths";
+import { /** getAmethystFolder, */ getVersionsFolder } from "./AmethystPaths";
 import { getInstalledMinecraftPackagePath } from "./AppRegistry";
 import { Extractor } from "./backend/Extractor";
 import { download } from "./backend/MinecraftVersionDownloader";
