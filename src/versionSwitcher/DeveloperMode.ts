@@ -9,7 +9,7 @@ export function isDeveloperModeEnabled() {
 
     if ("AllowDevelopmentWithoutDevLicense" in listed[regKey].values) {
         const value = listed[regKey].values["AllowDevelopmentWithoutDevLicense"].value;
-        return value == 1;
+        return value === 1;
     }
 
     return false;

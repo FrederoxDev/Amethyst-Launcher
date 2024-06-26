@@ -1,23 +1,25 @@
-const {app, BrowserWindow, ipcMain} = require('electron');
+const {app, BrowserWindow, ipcMain, ipcRenderer, nativeTheme} = require('electron');
 const path = require('path');
 const {autoUpdater} = require("electron-updater");
 
+/** @type {BrowserWindow} */
 let mainWindow = null;
 
 function createWindow() {
     const win = new BrowserWindow({
         width: 800,
         height: 600,
-        minWidth: 800,
-        minHeight: 600,
-        backgroundColor: "#FFF",
+        minWidth: 600,
+        minHeight: 400,
+        backgroundColor: "#1E1E1F",
         webPreferences: {
             nodeIntegration: true,
             preload: path.join(__dirname, 'preload.js'),
             sandbox: false, // false needed for exposing things like window.require
             webSecurity: false, // tell CORS to shut up lmao
             contextIsolation: false
-        }
+        },
+        frame: false
     });
 
     mainWindow = win;
@@ -29,6 +31,39 @@ function createWindow() {
         win.loadURL('http://localhost:3000');
     }
 }
+
+ipcMain.on('TITLE_BAR_ACTION', (event, args) => {
+    switch (args) {
+        case "TOGGLE_MAXIMIZED":
+            mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize();
+            break;
+        case "MINIMIZE":
+            mainWindow.minimize()
+            break;
+        case "CLOSE":
+            mainWindow.close()
+            break;
+        default:
+            break;
+    }
+})
+
+ipcMain.on('WINDOW_UI_THEME', (event, args) => {
+    switch (args) {
+        case "Light":
+            nativeTheme.themeSource = "light";
+            break;
+        case "Dark":
+            nativeTheme.themeSource = "dark";
+            break;
+        case "System":
+            nativeTheme.themeSource = "system";
+            break;
+        default:
+            nativeTheme.themeSource = "system";
+            break;
+    }
+})
 
 app.whenReady().then(createWindow);
 
