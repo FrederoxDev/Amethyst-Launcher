@@ -19,11 +19,6 @@ export default function App() {
     return (
 
         <AppStateProvider>
-            <link rel="preload" href="images/art/lush_cave.png" as="image"/>
-            <link rel="preload" href="images/art/swamp.png" as="image"/>
-            <link rel="preload" href="images/art/snow.png" as="image"/>
-
-
             <div className='h-screen overflow-hidden bg-[#313233]'>
                 
                 {/* Side Panel */}

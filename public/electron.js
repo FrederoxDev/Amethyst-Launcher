@@ -1,6 +1,10 @@
 const {app, Menu, BrowserWindow, ipcMain, nativeTheme, MenuItem} = require('electron');
+const electron = require('electron')
 const path = require('path');
 const {autoUpdater} = require("electron-updater");
+
+const fs = require('fs');
+const child = require('child_process');
 
 /** @type {BrowserWindow} */
 let mainWindow = null;
@@ -69,17 +73,29 @@ ipcMain.on('WINDOW_UI_THEME', (event, args) => {
     }
 })
 
-app.whenReady().then(createWindow);
-
-app.on('window-all-closed', () => {
-    app.quit();
-});
-
-app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+// Other window is open, so don't create a new one
+if (hasSingleInstanceLock === false) {
+	return app.quit();
+}
+// No window is open so create new
+else {
+    app.on('ready', () => {
         createWindow();
-    }
-});
+    })
+
+    app.on('second-instance', (event, argv, dir) => {
+        // When second instance is started, restore and focus on existing one.
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.focus();
+        }
+
+        if (process.argv.length >= 2) {
+            const file_path = process.argv[1]
+        }
+    })
+}
 
 ipcMain.handle('get-app-version', (event) => {
     return app.getVersion();

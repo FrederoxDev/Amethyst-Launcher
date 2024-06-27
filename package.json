@@ -78,10 +78,12 @@
     "fileAssociations": [
       {
         "ext": [
-          ".amethyst"
+          ".amethyst",
+          ".amth"
         ],
         "name": "Amethyst Mod",
-        "role": "Editor"
+        "role": "Editor",
+        "icon": "favicon.ico"
       }
     ]
   },
