@@ -134,14 +134,14 @@
 }
 
 #switch_toggle_side.large {
-    height: 6px;
-    width: 36px;
+    height: 5px;
+    width: 35px;
     background-color: #58585A;
 }
 
 #switch_toggle_side {
-    height: 6px;
-    width: 26px;
+    height: 5px;
+    width: 25px;
     background-color: #58585A;
 }
 
