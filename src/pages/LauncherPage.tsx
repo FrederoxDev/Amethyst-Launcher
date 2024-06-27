@@ -7,6 +7,9 @@ import {readLauncherConfig, saveLauncherConfig} from "../launcher/Modlist";
 import { isDeveloperModeEnabled, tryEnableDeveloperMode } from "../versionSwitcher/DeveloperMode";
 import { registerVersion, unregisterExisting } from "../versionSwitcher/AppRegistry";
 import { cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
+import { useState } from "react";
+
+
 
 const child = window.require('child_process') as typeof import('child_process')
 
@@ -95,6 +98,8 @@ export default function LauncherPage() {
         }
     }
 
+    const [image_test, setImageTest] = useState(true);
+
     return (
         <MainPanel>
 
@@ -111,8 +116,8 @@ export default function LauncherPage() {
                 )
             }
 
-            <div className="flex-group">
-                <img src="images/art/launcher_hero.png" className="object-cover w-full h-full min-h-screen" alt="" />
+            <div className="flex-group" onClick={() => {setImageTest(!image_test)}}>
+                <div id="background_image" style={(image_test ? {backgroundImage: `url(/images/art/lush_cave.png)`} : {backgroundImage: `url(/images/art/swamp.png)`})}/>
             </div>
 
             <div className="fixed bottom-0 right-0 left-[66px]">
