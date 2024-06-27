@@ -33,7 +33,7 @@ function createWindow() {
 }
 
 const windowMenu = new Menu()
-windowMenu.append(new MenuItem({ label: "Inspect", role:"toggleDevTools"}))
+windowMenu.append(new MenuItem({role:"toggleDevTools"}))
 Menu.setApplicationMenu(windowMenu);
 
 ipcMain.on('TITLE_BAR_ACTION', (event, args) => {
