@@ -1,4 +1,4 @@
-const {app, BrowserWindow, ipcMain, ipcRenderer, nativeTheme} = require('electron');
+const {app, Menu, BrowserWindow, ipcMain, nativeTheme, MenuItem} = require('electron');
 const path = require('path');
 const {autoUpdater} = require("electron-updater");
 
@@ -31,6 +31,10 @@ function createWindow() {
         win.loadURL('http://localhost:3000');
     }
 }
+
+const windowMenu = new Menu()
+windowMenu.append(new MenuItem({role:"toggleDevTools"}))
+Menu.setApplicationMenu(windowMenu);
 
 ipcMain.on('TITLE_BAR_ACTION', (event, args) => {
     switch (args) {
