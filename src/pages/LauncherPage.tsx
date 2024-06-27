@@ -117,7 +117,7 @@ export default function LauncherPage() {
             }
 
             <div className="flex-group" onClick={() => {setImageTest(!image_test)}}>
-                <div id="background_image" style={(image_test ? {backgroundImage: `url(/images/art/lush_cave.png)`} : {backgroundImage: `url(/images/art/swamp.png)`})}/>
+                <div id="background_image" style={(image_test ? {backgroundImage: `url(images/art/lush_cave.png)`} : {backgroundImage: `url(images/art/swamp.png)`})}/>
             </div>
 
             <div className="fixed bottom-0 right-0 left-[66px]">
