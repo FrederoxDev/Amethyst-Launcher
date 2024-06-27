@@ -67,3 +67,4 @@ NOTE: Not all mods will be updated to work with the latest runtime and/or Minecr
 # Amethyst Launcher (Windows)
 
 This is the launcher for using Amethyst on Windows
+# Amethyst-Launcher_ER
