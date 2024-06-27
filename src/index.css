@@ -1,5 +1,6 @@
 @import url("styles/titlebar.css");
 @import url("styles/switch.css");
+@import url("styles/background_image.css");
 
 @tailwind base;
 @tailwind components;
