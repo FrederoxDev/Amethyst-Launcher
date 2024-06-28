@@ -1,5 +1,7 @@
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
+const GIVE_SIZE_REPORT = true;
+
 module.exports = function override(config, env) {
     // Set the target to 'electron-renderer'
     config.target = 'electron-renderer';
@@ -42,13 +44,16 @@ module.exports = function override(config, env) {
 
         // Minimize and remove source maps
         config.devtool = false; // Disable source maps
-        config.plugins.push(
-            new BundleAnalyzerPlugin({
-              analyzerMode: 'static',
-              openAnalyzer: true,
-              reportFilename: 'bundle-report.html',
-            })
-        )
+
+        if (GIVE_SIZE_REPORT) {
+            config.plugins.push(
+                new BundleAnalyzerPlugin({
+                  analyzerMode: 'static',
+                  openAnalyzer: true,
+                  reportFilename: 'bundle-report.html',
+                })
+            )
+        }
     }
 
     return config;

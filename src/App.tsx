@@ -20,8 +20,6 @@ export default function App() {
 
         <AppStateProvider>
             <link rel="preload" href="images/art/launcher_hero.jpg" as="image"></link>
-            <link rel="preload" href="images/art/snow.png" as="image"></link>
-
 
             <div className='h-screen overflow-hidden bg-[#313233]'>
                 

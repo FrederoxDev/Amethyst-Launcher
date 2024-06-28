@@ -5,18 +5,13 @@
   "author": "FrederoxDev, Adrian8115",
   "description": "Amethyst Launcher",
   "dependencies": {
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
     "electron-updater": "^6.2.1",
-    "eslint-config-react-app": "^7.0.1",
     "jszip": "^3.10.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.23.1",
     "regedit-rs": "^1.0.2",
-    "sudo-prompt": "^9.2.1",
-    "typescript": "^4.9.5"
+    "sudo-prompt": "^9.2.1"
   },
   "scripts": {
     "start-react": "set BROWSER=none && react-app-rewired start",
@@ -31,12 +26,17 @@
     ]
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
     "customize-cra": "^1.0.0",
     "electron": "^31.0.2",
     "electron-builder": "^24.13.3",
     "react-app-rewired": "^2.2.1",
     "react-scripts": "^5.0.1",
-    "webpack-bundle-analyzer": "^4.10.2"
+    "webpack-bundle-analyzer": "^4.10.2",
+    "typescript": "^4.9.5",
+    "eslint-config-react-app": "^7.0.1"
   },
   "build": {
     "productName": "Amethyst-Launcher",
