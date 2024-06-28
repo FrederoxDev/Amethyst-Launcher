@@ -19,7 +19,7 @@ export default function App() {
     return (
 
         <AppStateProvider>
-            <link rel="preload" href="images/art/launcher_hero.png" as="image"></link>
+            <link rel="preload" href="images/art/launcher_hero.jpg" as="image"></link>
             <link rel="preload" href="images/art/snow.png" as="image"></link>
 
 
