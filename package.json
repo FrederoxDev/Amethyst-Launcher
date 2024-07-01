@@ -9,10 +9,10 @@
     "start-vite": "vite --port 3000",
     "start-electron": "electron .",
     "build": "npm run build:vite && npm run build:electron",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview",
     "build:vite": "tsc -b && vite build",
-    "build:electron": "electron-builder -w"
+    "build:electron": "electron-builder -w",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "bump-version": "npm version patch --no-git-tag-version"
   },
   "dependencies": {
     "electron-updater": "^6.2.1",
