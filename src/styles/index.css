@@ -1,6 +1,6 @@
-@import url("styles/titlebar.css");
-@import url("styles/switch.css");
-@import url("styles/background_image.css");
+@import url("./titlebar.css");
+@import url("./switch.css");
+@import url("./background_image.css");
 
 @tailwind base;
 @tailwind components;
@@ -12,17 +12,17 @@
 
 @font-face {
     font-family: 'Minecraft-Ten';
-    src: url('../public/fonts/Minecraft-Ten.ttf') format('truetype');
+    src: url('/fonts/Minecraft-Ten.ttf') format('truetype');
 }
 
 @font-face {
     font-family: 'Minecraft-Seven';
-    src: url('../public/fonts/Minecraft-Seven.ttf') format('truetype');
+    src: url('/fonts/Minecraft-Seven.ttf') format('truetype');
 }
 
 @font-face {
     font-family: 'Minecraft-Five';
-    src: url('../public/fonts/extra/Minecraft-Five.otf') format('opentype');
+    src: url('/fonts/extra/Minecraft-Five.otf') format('opentype');
 }
 
 .minecraft-seven {
