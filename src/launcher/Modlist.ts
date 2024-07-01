@@ -5,8 +5,8 @@ import {MinecraftVersion, VersionType} from "../types/MinecraftVersion";
 import {SemVersion} from "../types/SemVersion";
 import { /** getAmethystFolder, getMinecraftUWPFolder, */ ensureDirectoryExists, getLauncherConfig, getLauncherFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
 
-const fs = window.require('fs') as typeof import ('fs');
-const path = window.require('path') as typeof import ('path');
+const fs = window.require('fs') as typeof import('fs');
+const path = window.require('path') as typeof import('path');
 
 type ModList = {
     runtimeMods: string[],
