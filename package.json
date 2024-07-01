@@ -52,6 +52,7 @@
     "files": [
       "build/**/*",
       "electron/main.cjs",
+      "electron/preload.cjs",
       "node_modules/**/*",
       "package.json"
     ],
