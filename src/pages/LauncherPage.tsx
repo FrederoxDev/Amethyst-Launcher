@@ -7,9 +7,6 @@ import {readLauncherConfig, saveLauncherConfig} from "../launcher/Modlist";
 import { isDeveloperModeEnabled, tryEnableDeveloperMode } from "../versionSwitcher/DeveloperMode";
 import { registerVersion, unregisterExisting } from "../versionSwitcher/AppRegistry";
 import { cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
-import { useState } from "react";
-
-
 
 const child = window.require('child_process') as typeof import('child_process')
 
@@ -97,8 +94,6 @@ export default function LauncherPage() {
             setIsLoading(false);
         }
     }
-
-    const [image_test, setImageTest] = useState(true);
 
     return (
         <MainPanel>
