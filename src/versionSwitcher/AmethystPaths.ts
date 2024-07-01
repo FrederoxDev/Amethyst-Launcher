@@ -14,31 +14,45 @@ export function getAmethystFolder() {
 
 export function getMinecraftUWPFolder() {
     /**@ts-ignore */ 
-    return path.join(window.env["LocalAppData"], "Packages", "Microsoft.MinecraftUWP_8wekyb3d8bbwe");
+    const folder = path.join(window.env["LocalAppData"], "Packages", "Microsoft.MinecraftUWP_8wekyb3d8bbwe");
+    ensureDirectoryExists(folder);
+    return folder;
 }
 
 export function getComMojangFolder() {
-    return path.join(getMinecraftUWPFolder(), "LocalState", "games", "com.mojang");
+    const folder = path.join(getMinecraftUWPFolder(), "LocalState", "games", "com.mojang");
+    ensureDirectoryExists(folder);
+    return folder;
 }
 
 export function getAmethystUWPFolder() {
-    return path.join(getComMojangFolder(), "amethyst");
+    const folder = path.join(getComMojangFolder(), "amethyst");
+    ensureDirectoryExists(folder);
+    return folder;
 }
 
 export function getVersionsFolder() {
-    return path.join(getAmethystFolder(), "Versions");
+    const folder = path.join(getAmethystFolder(), "Versions");
+    ensureDirectoryExists(folder);
+    return folder;
 }
 
 export function getModsFolder() {
-    return path.join(getAmethystUWPFolder(), "mods");
+    const folder = path.join(getAmethystUWPFolder(), "mods");
+    ensureDirectoryExists(folder);
+    return folder;
 }
 
 export function getLauncherConfig() {
-    return path.join(getAmethystUWPFolder(), "launcher_config.json")
+    const folder = path.join(getAmethystUWPFolder(), "launcher_config.json")
+    ensureDirectoryExists(folder);
+    return folder;
 }
 
 export function getLauncherFolder() {
-    return path.join(getAmethystFolder(), "Launcher")
+    const folder = path.join(getAmethystFolder(), "Launcher")
+    ensureDirectoryExists(folder);
+    return folder;
 }
 
 
