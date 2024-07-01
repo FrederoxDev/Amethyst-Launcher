@@ -1,6 +1,8 @@
 {
   "name": "amethyst-launcher",
-  "author": "FrederoxDev, Adrian8115, OmniacDev",
+  "version": "2.4.7",
+  "main": "public/electron.js",
+  "author": "FrederoxDev, Adrian8115",
   "description": "Amethyst Launcher",
   "version": "2.4.5",
   "private": true,
