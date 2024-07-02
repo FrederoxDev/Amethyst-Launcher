@@ -26,7 +26,7 @@ export default function MinecraftRadialButtonPanel({elements, default_selected_v
             <div className="flex items-center justify-center">
                 {
                     elements.map(element => {
-                        return <MinecraftRadialButton text={element.text} value={element.value} selected={selected_value === element.value} className={element.className} onChange={handleSelect}/>
+                        return <MinecraftRadialButton key={element.value} text={element.text} value={element.value} selected={selected_value === element.value} className={element.className} onChange={handleSelect}/>
                     })
                 }
             </div>
