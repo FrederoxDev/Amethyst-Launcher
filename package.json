@@ -1,6 +1,6 @@
 {
   "name": "amethyst-launcher",
-  "version": "2.4.7",
+  "version": "2.4.8",
   "author": "FrederoxDev, Adrian8115",
   "description": "Amethyst Launcher",
   "main": "electron/main.cjs",
