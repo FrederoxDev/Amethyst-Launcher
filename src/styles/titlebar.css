@@ -1,5 +1,5 @@
 
-#title_panel {
+.title_panel {
     position: absolute;
     display: flex;
     flex-direction: column;
@@ -10,17 +10,16 @@
     height: 100%;
 }
 
-#window_button_panel {
+.window_button_panel {
     position: absolute;
     display: flex;
     justify-content: center;
     align-items: center;
     margin: 8px;
-    margin-top: 11px;
     right: 0;
 }
 
-#window_button {
+.window_button {
     -webkit-app-region: no-drag;
 
     position: relative;
@@ -31,16 +30,16 @@
     display: flex;
     flex-shrink: 0;
     width: 40px;
-    height: 32px;
+    height: 40px;
     pointer-events: auto;
 
-    border-radius: 2px;
+    border-radius: 4px;
 
     margin: 2px;
 }
 
 @media (prefers-color-scheme: dark) {
-    #titlebar {
+    .titlebar {
         position: relative;
         -webkit-app-region: drag;
     
@@ -50,7 +49,7 @@
         height: 56px;
     }
 
-    #title_text_main {
+    .title_text_main {
         position: absolute;
         display: block;
         
@@ -60,7 +59,7 @@
         transform: translateY(-4px);
     }
     
-    #title_text_sub {
+    .title_text_sub {
         position: absolute;
         display: block;
         
@@ -70,7 +69,7 @@
         transform: translateY(16px);
     }
     
-    #titlebar_highlight {
+    .titlebar_highlight {
         width: 100%;
         height: 8px;
     
@@ -80,11 +79,11 @@
         background-color: #1f1f1f;
     }
 
-    #window_button_svg {
+    .window_button_svg {
         fill: #FFFFFF;
     }
 
-    #window_button_svg_box {
+    .window_button_svg_box {
         fill: none;
         stroke: #FFFFFF;
     }
@@ -98,16 +97,16 @@
     }
 
     .close_button_hover:hover {
-        background-color: rgb(255, 0, 0);
+        background-color: rgb(255, 0, 0, 0.5);
     }
 
     .close_button_hover:active {
-        background-color: rgb(255, 0, 0, 0.5);
+        background-color: rgb(255, 0, 0, 0.3);
     }
 }
 
 @media (prefers-color-scheme: light) {
-    #titlebar {
+    .titlebar {
         position: relative;
         -webkit-app-region: drag;
     
@@ -117,7 +116,7 @@
         height: 56px;
     }
 
-    #title_text_main {
+    .title_text_main {
         position: absolute;
         display: block;
         
@@ -127,7 +126,7 @@
         transform: translateY(-4px);
     }
     
-    #title_text_sub {
+    .title_text_sub {
         position: absolute;
         display: block;
         
@@ -137,7 +136,7 @@
         transform: translateY(16px);
     }
     
-    #titlebar_highlight {
+    .titlebar_highlight {
         width: 100%;
         height: 8px;
     
@@ -147,11 +146,11 @@
         background-color: #b1b2b5;
     }
 
-    #window_button_svg {
+    .window_button_svg {
         fill: #000000;
     }
 
-    #window_button_svg_box {
+    .window_button_svg_box {
         fill: none;
         stroke: #000000;
     }
