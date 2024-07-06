@@ -117,64 +117,66 @@ export default function ProfileEditor() {
 
     return (
         <MainPanel>
-            {/* Settings */}
-            <div className="border-y-[2px] border-t-0 pt-1 border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
-                <TextInput label="Profile Name" text={profileName} setText={setProfileName}/>
-                <Dropdown
-                    labelText="Minecraft Version"
-                    value={profileMinecraftVersion}
-                    setValue={setProfileMinecraftVersion}
+            <div className="relative w-full h-full flex flex-col gap-[8px] border-[3px] border-[#313233] p-[8px] bg-[#48494A]">
+                {/* Settings */}
+                <div>
+                    <TextInput label="Profile Name" text={profileName} setText={setProfileName}/>
+                    <Dropdown
+                        labelText="Minecraft Version"
+                        value={profileMinecraftVersion}
+                        setValue={setProfileMinecraftVersion}
 
-                    // we don't support non-release versions right now so only show release lmao
-                    options={allMinecraftVersions.filter(ver => ver.versionType === VersionType.Release).map(ver => ver.toString())}
-                    id="minecraft-version"
-                />
-                <Dropdown
-                    labelText="Runtime"
-                    value={profileRuntime}
-                    setValue={setProfileRuntime}
-                    options={allRuntimes}
-                    id="runtime-mod"
-                />
-            </div>
+                        // we don't support non-release versions right now so only show release lmao
+                        options={allMinecraftVersions.filter(ver => ver.versionType === VersionType.Release).map(ver => ver.toString())}
+                        id="minecraft-version"
+                    />
+                    <Dropdown
+                        labelText="Runtime"
+                        value={profileRuntime}
+                        setValue={setProfileRuntime}
+                        options={allRuntimes}
+                        id="runtime-mod"
+                    />
+                </div>
 
-            {/* Mod Selection */}
-            {
-                profileRuntime === "Vanilla"
-                    ? 
-                    
-                    <div className="flex-grow flex justify-around gap-[8px] border-y-[2px] border-t-0 border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
-                        <div className="h-full flex flex-col"></div>
-                    </div>
+                {/* Mod Selection */}
+                {
+                    profileRuntime === "Vanilla"
+                        ? 
+                        
+                        <div className="flex-grow flex justify-around">
+                            <div className="h-full flex flex-col"></div>
+                        </div>
 
-                    : 
-                    
-                    <div className="flex-grow flex justify-around gap-[8px] border-y-[2px] border-t-0 border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
-                        <div className=" w-[50%] h-full flex flex-col">
-                            <p className="text-white minecraft-seven">Active Mods</p>
-                            <div className="border-[2px] border-[#1E1E1F] bg-[#313233] flex-grow">
-                                {
-                                    allMods.length > 0 ? allMods.filter(mod => profileActiveMods.includes(mod))
-                                        .map((mod, index) => <ModButton name={mod} key={index}/>) : <></>
-                                }
+                        : 
+                        
+                        <div className="flex-grow flex justify-around gap-[8px]">
+                            <div className=" w-[50%] h-full flex flex-col">
+                                <p className="text-white minecraft-seven text-[14px]">Active Mods</p>
+                                <div className="border-[3px] border-[#1E1E1F] bg-[#313233] flex-grow">
+                                    {
+                                        allMods.length > 0 ? allMods.filter(mod => profileActiveMods.includes(mod))
+                                            .map((mod, index) => <ModButton name={mod} key={index}/>) : <></>
+                                    }
+                                </div>
+                            </div>
+                            <div className=" w-[50%] h-full flex flex-col">
+                                <p className="text-white minecraft-seven text-[14px]">Inactive Mods</p>
+                                <div className="border-[3px] border-[#1E1E1F] bg-[#313233] flex-grow">
+                                    {
+                                        allMods.length > 0 ? allMods.filter(mod => !profileActiveMods.includes(mod))
+                                            .map((mod, index) => <ModButton name={mod} key={index}/>) : <></>
+                                    }
+                                </div>
                             </div>
                         </div>
-                        <div className=" w-[50%] h-full flex flex-col">
-                            <p className="text-white minecraft-seven">Inactive Mods</p>
-                            <div className="border-[2px] border-[#1E1E1F] bg-[#313233] flex-grow">
-                                {
-                                    allMods.length > 0 ? allMods.filter(mod => !profileActiveMods.includes(mod))
-                                        .map((mod, index) => <ModButton name={mod} key={index}/>) : <></>
-                                }
-                            </div>
-                        </div>
-                    </div>
-            }
+                }
 
-            {/* Profile Actions */}
-            <div className="flex justify-around gap-[8px] border-y-[0px] pb-1 border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
-                <div className="w-[50%]"><MinecraftButton text="Save Profile" onClick={() => saveProfile()}/></div>
-                <div className="w-[50%]"><MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} onClick={() => deleteProfile()}/></div>
+                {/* Profile Actions */}
+                <div className="flex justify-around gap-[8px]">
+                    <div className="w-[50%]"><MinecraftButton text="Save Profile" onClick={() => saveProfile()}/></div>
+                    <div className="w-[50%]"><MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} onClick={() => deleteProfile()}/></div>
+                </div>
             </div>
         </MainPanel>
     )

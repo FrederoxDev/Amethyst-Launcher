@@ -23,13 +23,13 @@ export default function Header() {
                     <p className="title_text_sub minecraft-seven">{appVersion}</p>
                 </div>
                 <div className="window_button_panel">
-                    <div className="window_button window_button_hover adaptive" tabIndex={-1} onClick={Minimize}>
+                    <div className="window_button window_button_hover" tabIndex={-1} onClick={Minimize}>
                         <svg width="20" height="20" viewBox="0 0 12 12">
                             <rect className="window_button_svg" width="10" height="1" x="1" y="5.5"/>
                         </svg>
                     </div>
 
-                    <div className="window_button window_button_hover adaptive" tabIndex={-1} onClick={ToggleMaximized}>
+                    <div className="window_button window_button_hover" tabIndex={-1} onClick={ToggleMaximized}>
                         <svg width="20" height="20" viewBox="0 0 12 12">
                             <rect className="window_button_svg_box" width="10" height="10" x="1" y="1"/>
                         </svg>
