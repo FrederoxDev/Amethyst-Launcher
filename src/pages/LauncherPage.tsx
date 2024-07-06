@@ -96,8 +96,7 @@ export default function LauncherPage() {
     }
 
     return (
-        <MainPanel>
-            <link rel="preload" href="images/art/lush_cave.png" as="image"/>
+        <div className="relative w-full h-full">
 
             {error === "" ? <></> : (
                     <>
@@ -112,12 +111,15 @@ export default function LauncherPage() {
                 )
             }
 
-            <div className="fixed bottom-0 right-0 left-[66px]">
+            
+
+            <div className="absolute bottom-0 w-full">
                 {/* Not affliated disclaimer */}
-                <div className="bg-[#0c0c0cc5] w-fit ml-auto">
+                <div className="bg-[#0c0c0cc5] w-fit ml-auto rounded-t-[3px]">
                     <p className="minecraft-seven text-white px-[4px] text-[13px]">Not approved by or associated with
                         Mojang or Microsoft</p>
                 </div>
+
 
                 {/* Loading bar */}
                 <div
@@ -130,8 +132,8 @@ export default function LauncherPage() {
                 </div>
 
                 {/* Profile Selector & Play Button */}
-                <div className="flex gap-[8px] border-b-[0px] pb-1 border-t-[#1E1E1F] border-y-[2px] border-solid border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
-                    <div className="w-[30%] translate-y-[-1px]">
+                <div className="flex gap-[8px] border-[#313233] border-[3px] p-[8px] bg-[#48494A]">
+                    <div className="w-[30%] translate-y-[5px]">
                         <Dropdown
                             labelText="Profile"
                             options={allProfiles?.map(profile => profile.name)}
@@ -150,6 +152,6 @@ export default function LauncherPage() {
                 </div>
             </div>
 
-        </MainPanel>
+        </div>
     )
 }

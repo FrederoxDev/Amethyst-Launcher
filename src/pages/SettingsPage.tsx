@@ -65,49 +65,51 @@ export default function SettingsPage() {
 
     return (
         <MainPanel>
-
-            <div className="border-b-[2px] border-solid border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
-                <div className="flex items-center justify-center">
-                    <div>
-                        <p className="minecraft-seven text-white text-[14px]">{"Keep launcher open"}</p>
-                        <p className="minecraft-seven text-[#BCBEC0] text-[12px]">{"Prevents the launcher from closing after launching the game."}</p>
-                    </div>
-                    <div className="ml-auto">
-                        <MinecraftToggle isChecked={keepLauncherOpen} setIsChecked={setKeepLauncherOpen}/>
+            <div className="flex flex-col gap-[8px] h-full p-[8px] border-[3px] border-[#1E1E1F] bg-[#313233] overflow-hidden">
+                <div className="border-[3px] border-[#48494A] bg-[#58585A] p-[8px]">
+                    <div className="flex items-center justify-center">
+                        <div>
+                            <p className="minecraft-seven text-white text-[14px]">{"Keep launcher open"}</p>
+                            <p className="minecraft-seven text-[#BCBEC0] text-[12px]">{"Prevents the launcher from closing after launching the game."}</p>
+                        </div>
+                        <div className="ml-auto">
+                            <MinecraftToggle isChecked={keepLauncherOpen} setIsChecked={setKeepLauncherOpen}/>
+                        </div>
                     </div>
                 </div>
+
+                <div className="border-[3px] border-[#48494A] bg-[#58585A] p-[8px]">
+                    <div className="flex items-center justify-center">
+                        <div>
+                            <p className="minecraft-seven text-white text-[14px]">{"Developer mode"}</p>
+                            <p className="minecraft-seven text-[#BCBEC0] text-[12px]">{"Enables hot-reloading and prompting to attach a debugger."}</p>
+                        </div>
+                        <div className="ml-auto">
+                            <MinecraftToggle isChecked={developerMode} setIsChecked={setDeveloperMode}/>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="border-[3px] border-[#48494A] bg-[#58585A] p-[8px]">
+                    <p className="minecraft-seven text-white text-[14px]">UI Theme</p>
+                    <MinecraftRadialButtonPanel elements={[{text: "Light", value: "Light"}, {text: "Dark", value: "Dark"}, {text:"System", value:"System"}]} default_selected_value={UITheme} onChange={(value => { setUITheme(value) })}/>
+                </div>
+
+                <div className="border-[3px] border-[#48494A] bg-[#58585A] p-[8px] minecraft-seven text-[#BCBEC0] text-[14px] shrink-0 overflow-x-auto">
+                    <p className="text-white">Debug Info</p>
+                    <p>Minecraft Version: {minecraftVersion ? minecraftVersion.toString() : "No version found."}</p>
+                    <p>Is version downloaded: {isVerDownloaded ? "true" : "false"}</p>
+                    <p>Is Registered Version Ours: {isRegisteredVerOurs ? "true" : "false"}</p>
+                    <p>Is windows developer mode: {isWindowsDevModeOn ? "enabled" : "disabled"}</p>
+                    <p>Install path: {installDir}</p>
+                    <p>Amethyst Folder: {amethystFolder}</p>
+                    <p>Minecraft Folder: {minecraftFolder}</p>
+                </div>
+
+                <div className="border-[3px] border-[#48494A] bg-[#58585A] p-[8px]">
+                    <ReadOnlyTextBox text={launcherCfg ?? " "} label="Launcher Config"/>
+                </div>
             </div>
-
-            <ToggleSection
-                text="Developer mode"
-                subtext="Enables hot-reloading and prompting to attach a debugger."
-                isChecked={developerMode}
-                setIsChecked={setDeveloperMode}
-            />
-
-            <div className="w-full border-y-[2px] border-solid border-b-[#1E1E1F] border-t-[#5A5B5C] p-[8px] bg-[#48494A]">
-                <p className="minecraft-seven text-white text-[14px]">UI Theme</p>
-                <MinecraftRadialButtonPanel elements={[{text: "Light", value: "Light"}, {text: "Dark", value: "Dark"}, {text:"System", value:"System"}]} default_selected_value={UITheme} onChange={(value => { setUITheme(value) })}/>
-            </div>
-
-            <DividedSection className="minecraft-seven text-[#BCBEC0] text-[14px]">
-                <p className="text-white">Debug Info</p>
-                <p>Minecraft Version: {minecraftVersion ? minecraftVersion.toString() : "No version found."}</p>
-                <p>Is version downloaded: {isVerDownloaded ? "true" : "false"}</p>
-                <p>Is Registered Version Ours: {isRegisteredVerOurs ? "true" : "false"}</p>
-                <p>Is windows developer mode: {isWindowsDevModeOn ? "enabled" : "disabled"}</p>
-                <p>Install path: {installDir}</p>
-                <p>Amethyst Folder: {amethystFolder}</p>
-                <p>Minecraft Folder: {minecraftFolder}</p>
-            </DividedSection>
-
-            <DividedSection>
-                <ReadOnlyTextBox text={launcherCfg ?? " "} label="Launcher Config"/>
-            </DividedSection>
-
-            <DividedSection className="flex-grow flex justify-around gap-[8px]">
-                <div className="h-full flex flex-col"></div>
-            </DividedSection>
         </MainPanel>
     )
 }
