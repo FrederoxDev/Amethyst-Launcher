@@ -8,7 +8,6 @@ import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import UpdatePage from "./pages/UpdatePage";
 import ModsPage from "./pages/ModsPage";
-import DropWindow from "./components/DropWindow";
 
 export default function App() {
     
@@ -81,8 +80,6 @@ export default function App() {
                 <UpdatePage></UpdatePage>
 
             </div>
-
-            <DropWindow />
         </AppStateProvider>
     )
 }
