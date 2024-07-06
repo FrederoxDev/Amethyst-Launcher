@@ -1,5 +1,5 @@
-const fs = window.require("fs") as typeof import("fs");
-const path = window.require("path") as typeof import("path");
+const fs = window.require('fs') as typeof import('fs')
+const path = window.require('path') as typeof import('path')
 
 export function getAmethystFolder() {
     //@ts-ignore

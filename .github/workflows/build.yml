@@ -47,8 +47,8 @@ jobs:
         with:
           name: amethyst-launcher
           path: |
-            dist/**
-            !dist/win-unpacked/**
+            release/**
+            !release/win-unpacked/**
 
       - name: Get the version from package.json
         id: get_version
@@ -65,4 +65,4 @@ jobs:
           name: "Release v${{ env.VERSION }}"
           draft: false
           prerelease: false
-          artifacts: "dist/*.exe,dist/*.exe.blockmap,dist/*.yml,dist/*.yaml"
+          artifacts: "release/*.exe,release/*.exe.blockmap,release/*.yml"
