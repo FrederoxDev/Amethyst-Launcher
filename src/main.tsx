@@ -6,7 +6,7 @@ import { HashRouter } from 'react-router-dom'
 
 import './styles/index.css'
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+ReactDOM.createRoot(document.getElementById('app') as HTMLElement).render(
   <HashRouter>
     <App/>
   </HashRouter>
