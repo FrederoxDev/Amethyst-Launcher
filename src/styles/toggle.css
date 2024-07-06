@@ -1,18 +1,18 @@
-#switch_panel.large {
+.toggle_panel.large {
     position: relative;
     width: 76px;
     height: 36px;
     cursor: pointer;
 }
 
-#switch_panel {
+.toggle_panel {
     position: relative;
     width: 56px;
     height: 26px;
     cursor: pointer;
 }
 
-#switch_base {
+.toggle_base {
     position: absolute;
     display: flex;
     width: 100%;
@@ -21,7 +21,7 @@
     border-color: #1E1E1F;
 }
 
-#switch_base_off.large, #switch_base_on.large {
+.toggle_base_off.large, .toggle_base_on.large {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -32,7 +32,7 @@
     border-width: 3px;
 }
 
-#switch_base_off, #switch_base_on {
+.toggle_base_off, .toggle_base_on {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -43,28 +43,28 @@
     border-width: 3px;
 }
 
-#switch_base_off {
+.toggle_base_off {
     background-color: #8C8D90;
     border-color: #A3A4A6;
 
     border-left-color: #1E1E1F;
 }
 
-#switch_base_on {
+.toggle_base_on {
     background-color: #3C8527;
     border-color: #639D52;
 
     border-right-color: #1E1E1F;
 }
 
-#switch_base_off_image.large {
+.toggle_base_off_image.large {
     width: 14px;
     height: 14px;
 
     image-rendering: pixelated;
 }
 
-#switch_base_off_image {
+.toggle_base_off_image {
     width: 8px;
     height: 8px;
 
@@ -72,14 +72,14 @@
     display: none;
 }
 
-#switch_base_on_image.large {
+.toggle_base_on_image.large {
     width: var(--base2scale);
     height: 14px;
 
     image-rendering: pixelated;
 }
 
-#switch_base_on_image {
+.toggle_base_on_image {
     width: var(--base2scale);
     height: 8px;
 
@@ -87,7 +87,7 @@
     display: none;
 }
 
-#switch_toggle.large {
+.toggle.large {
     position: absolute;
     width: 41px;
     height: 41px;
@@ -100,7 +100,7 @@
     transform: translateY(-5px);
 }
 
-#switch_toggle {
+.toggle {
     position: absolute;
     width: 31px;
     height: 31px;
@@ -113,7 +113,7 @@
     transform: translateY(-5px);
 }
 
-#switch_toggle_top.large {
+.toggle_top.large {
     width: 35px;
     height: 30px;
 
@@ -121,7 +121,7 @@
     border-width: 3px;
 }
 
-#switch_toggle_top {
+.toggle_top {
     width: 25px;
     height: 20px;
 
@@ -129,17 +129,17 @@
     border-width: 3px;
 }
 
-#switch_toggle_top:hover {
+.toggle_top:hover {
     background-color: #B1B2B5;
 }
 
-#switch_toggle_side.large {
+.toggle_side.large {
     height: 5px;
     width: 35px;
     background-color: #58585A;
 }
 
-#switch_toggle_side {
+.toggle_side {
     height: 5px;
     width: 25px;
     background-color: #58585A;

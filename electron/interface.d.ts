@@ -1,6 +1,5 @@
 declare global {
     interface Window {
-
         native: {
             path: path.PlatformPath;
             __dirname: string;

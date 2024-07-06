@@ -97,6 +97,7 @@ export default function LauncherPage() {
 
     return (
         <MainPanel>
+            <link rel="preload" href="images/art/lush_cave.png" as="image"/>
 
             {error === "" ? <></> : (
                     <>
@@ -110,10 +111,6 @@ export default function LauncherPage() {
                     </>
                 )
             }
-
-            <div className="flex-group">
-                <img src="images/art/lush_cave.png" className="object-cover w-full h-full min-h-screen" alt="" />
-            </div>
 
             <div className="fixed bottom-0 right-0 left-[66px]">
                 {/* Not affliated disclaimer */}

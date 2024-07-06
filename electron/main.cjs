@@ -14,11 +14,10 @@ function createWindow() {
         minHeight: 400,
         backgroundColor: "#1E1E1F",
         webPreferences: {
-            nodeIntegration: true,
             preload: join(app.getAppPath(), '/electron/preload.cjs'),
-            sandbox: false, // false needed for exposing things like window.require
-            webSecurity: false, // tell CORS to shut up lmao
-            contextIsolation: false
+            nodeIntegration: true,
+            webSecurity: true,
+            contextIsolation: false,
         },
         frame: false
     });
