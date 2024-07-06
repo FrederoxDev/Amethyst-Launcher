@@ -1,6 +1,8 @@
 @import url("./titlebar.css");
-@import url("./switch.css");
+@import url("./toggle.css");
 @import url("./background_image.css");
+@import url("./radial_button.css");
+@import url("./button.css");
 
 @tailwind base;
 @tailwind components;
@@ -39,6 +41,14 @@
 
 .pixelated {
     image-rendering: pixelated;
+}
+
+.container {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #313233;
 }
 
 img {
