@@ -1,4 +1,3 @@
-// import { useAppState } from "../contexts/AppState";
 import { useCallback, useEffect, useState } from "react";
 import DividedSection from "../components/DividedSection";
 import MinecraftButton, { MinecraftButtonStyle } from "../components/MinecraftButton";
