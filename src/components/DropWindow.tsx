@@ -1,12 +1,15 @@
 import { unzipSync } from 'fflate'
 import { useEffect, useState } from 'react'
 import { getModsFolder } from '../versionSwitcher/AmethystPaths'
+import { useAppState } from '../contexts/AppState'
 
 const fs = window.require('fs') as typeof import('fs')
 const path = window.require('path') as typeof import('path')
 
 export default function DropWindow() {
 	const [hovered, setHovered] = useState(false)
+
+	const { setStatus, setError, setErrorType } = useAppState()
 
 	let dragCount = 0
 
@@ -54,94 +57,171 @@ export default function DropWindow() {
 		}
 
 		function importZip(file: FileSystemFileEntry) {
-			file.file((blob) => {
-				const reader = new FileReader()
+			try {
+				file.file((blob) => {
+					try {
+						const reader = new FileReader()
 
-				reader.onload = (event) => {
-					const data = new Uint8Array(reader.result as ArrayBuffer)
+						reader.onload = (event) => {
+							try {
+								const data = new Uint8Array(
+									reader.result as ArrayBuffer
+								)
 
-					const unzipped = unzipSync(data)
+								const unzipped = unzipSync(data)
 
-					const modsFolderPath = getModsFolder()
-					const modFolderPath = path.join(
-						modsFolderPath,
-						path.basename(file.name, path.extname(file.name))
-					)
+								const modsFolderPath = getModsFolder()
+								const modFolderPath = path.join(
+									modsFolderPath,
+									path.basename(
+										file.name,
+										path.extname(file.name)
+									)
+								)
 
-					for (const [filePath, fileContent] of Object.entries(
-						unzipped
-					)) {
-						const absoluteFilePath = path.join(
-							modFolderPath,
-							filePath
-						)
+								if (fs.existsSync(modFolderPath))
+									fs.rmSync(modFolderPath, {
+										recursive: true,
+									})
 
-						if (!fs.existsSync(path.dirname(absoluteFilePath)))
-							fs.mkdirSync(path.dirname(absoluteFilePath), {
-								recursive: true,
-							})
+								for (const [
+									filePath,
+									fileContent,
+								] of Object.entries(unzipped)) {
+									const absoluteFilePath = path.join(
+										modFolderPath,
+										filePath
+									)
 
-						if (absoluteFilePath.endsWith('\\')) {
-							fs.mkdirSync(absoluteFilePath)
-						} else {
-							fs.writeFileSync(absoluteFilePath, fileContent)
+									if (
+										!fs.existsSync(
+											path.dirname(absoluteFilePath)
+										)
+									)
+										fs.mkdirSync(
+											path.dirname(absoluteFilePath),
+											{
+												recursive: true,
+											}
+										)
+
+									if (absoluteFilePath.endsWith('\\')) {
+										fs.mkdirSync(absoluteFilePath)
+									} else {
+										fs.writeFileSync(
+											absoluteFilePath,
+											fileContent
+										)
+									}
+								}
+							} catch (error) {
+								setError((error as Error).message)
+								setErrorType('import')
+								setStatus('')
+							}
 						}
-					}
-				}
 
-				reader.readAsArrayBuffer(blob)
-			})
+						reader.readAsArrayBuffer(blob)
+					} catch (error) {
+						setError((error as Error).message)
+						setErrorType('import')
+						setStatus('')
+					}
+				})
+			} catch (error) {
+				setError((error as Error).message)
+				setErrorType('import')
+				setStatus('')
+			}
 		}
 
 		function importFolder(folder: FileSystemDirectoryEntry) {
-			const modsFolderPath = getModsFolder()
-			const modPath = path.join(modsFolderPath, folder.name)
+			try {
+				const modsFolderPath = getModsFolder()
+				const modPath = path.join(modsFolderPath, folder.name)
 
-			if (fs.existsSync(modPath))
-				fs.rmdirSync(modPath, { recursive: true })
+				if (fs.existsSync(modPath))
+					fs.rmSync(modPath, { recursive: true })
 
-			fs.mkdirSync(modPath)
+				fs.mkdirSync(modPath)
 
-			saveFolderTo(modPath, folder)
+				saveFolderTo(modPath, folder)
+			} catch (error) {
+				setError((error as Error).message)
+				setErrorType('import')
+				setStatus('')
+			}
 		}
 
 		function saveFolderTo(
 			destination: string,
 			folder: FileSystemDirectoryEntry
 		) {
-			const reader = folder.createReader()
+			try {
+				const reader = folder.createReader()
 
-			reader.readEntries((entries) => {
-				for (const entry of entries) {
-					if (entry.isFile) {
-						;(entry as FileSystemFileEntry).file((blob) => {
-							const reader = new FileReader()
+				reader.readEntries((entries) => {
+					try {
+						for (const entry of entries) {
+							if (entry.isFile) {
+								;(entry as FileSystemFileEntry).file((blob) => {
+									try {
+										const reader = new FileReader()
 
-							reader.onload = (event) => {
-								const data = new Uint8Array(
-									reader.result as ArrayBuffer
+										reader.onload = (event) => {
+											try {
+												const data = new Uint8Array(
+													reader.result as ArrayBuffer
+												)
+
+												fs.writeFileSync(
+													path.join(
+														destination,
+														entry.name
+													),
+													data
+												)
+											} catch (error) {
+												setError(
+													(error as Error).message
+												)
+												setErrorType('import')
+												setStatus('')
+											}
+										}
+
+										reader.readAsArrayBuffer(blob)
+									} catch (error) {
+										setError((error as Error).message)
+										setErrorType('import')
+										setStatus('')
+									}
+								})
+							} else {
+								const folderPath = path.join(
+									destination,
+									entry.name
 								)
 
-								fs.writeFileSync(
-									path.join(destination, entry.name),
-									data
+								fs.mkdirSync(folderPath)
+
+								saveFolderTo(
+									folderPath,
+									entry as FileSystemDirectoryEntry
 								)
 							}
-
-							reader.readAsArrayBuffer(blob)
-						})
-					} else {
-						const folderPath = path.join(destination, entry.name)
-
-						fs.mkdirSync(folderPath)
-
-						saveFolderTo(
-							folderPath,
-							entry as FileSystemDirectoryEntry
-						)
+						}
+					} catch (error) {
+						setError((error as Error).message)
+						setErrorType('import')
+						setStatus('')
 					}
-				}
-			})
+				})
+			} catch (error) {
+				setError((error as Error).message)
+				setErrorType('import')
+				setStatus('')
+			}
 		}
 
 		window.addEventListener('dragover', dragOver)
