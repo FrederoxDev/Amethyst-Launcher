@@ -22,7 +22,7 @@ export class Extractor {
 
             let extracted = 0;
 
-            const files = Object.entries(zip.files).filter(([filename, file]) => {
+            const files = Object.entries(zip.files).filter(([, file]) => {
                 return !file.dir;
             });
             const allFiles = files.length;

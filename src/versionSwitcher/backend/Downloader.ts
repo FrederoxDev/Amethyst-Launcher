@@ -16,15 +16,17 @@ export class Downloader {
         const maxLength = parseInt(response.headers.get('Content-Length') || '0', 10);
         if (inStream) {
             const stream = inStream.getReader();
-            let outStream;
-            outStream = fs.createWriteStream(to);
+            const outStream = fs.createWriteStream(to);
 
             let downloadProgress = 0;
             try {
-                while (true) {
+                let finished = false;
+                while (!finished) {
                     const {done, value} = await stream.read();
-                    if (done)
+                    if (done) {
+                        finished = done;
                         break;
+                    }
                     downloadProgress += value.length;
                     onProgress(downloadProgress, maxLength);
                     if (outStream) {

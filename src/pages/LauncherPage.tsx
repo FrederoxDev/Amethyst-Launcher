@@ -1,5 +1,4 @@
 import Dropdown from "../components/Dropdown";
-import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
 import {useAppState} from "../contexts/AppState";
 import {SemVersion} from "../types/SemVersion";

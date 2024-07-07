@@ -1,6 +1,3 @@
-import DividedSection from "../components/DividedSection";
-import MainPanel from "../components/MainPanel";
-import ToggleSection from "../components/ToggleSection";
 import {useAppState} from "../contexts/AppState";
 import {SemVersion} from "../types/SemVersion";
 import { isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
@@ -33,7 +30,7 @@ export default function SettingsPage() {
 
     const amethystFolder = getAmethystFolder()
     const minecraftFolder = getMinecraftUWPFolder()
-    let isWindowsDevModeOn = isDeveloperModeEnabled();
+    const isWindowsDevModeOn = isDeveloperModeEnabled();
 
     if (profile) {
         const semVersion = SemVersion.fromString(profile.minecraft_version);
