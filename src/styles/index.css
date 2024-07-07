@@ -3,6 +3,7 @@
 @import url("./background_image.css");
 @import url("./radial_button.css");
 @import url("./button.css");
+@import url("./scrollbar.css");
 
 @tailwind base;
 @tailwind components;

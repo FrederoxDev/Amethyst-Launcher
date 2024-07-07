@@ -147,7 +147,7 @@ export default function ModsPage() {
     return (
         <>
         <MainPanel>
-            <div className="flex flex-col gap-[8px] h-full p-[8px] bg-[#48494A] border-[3px] border-[#313233]">
+            <div className="flex flex-col gap-[8px] h-full p-[8px] bg-[#48494A] border-[3px] border-[#1E1E1F]">
                 <p className="minecraft-seven text-white text-[14px]">Mod Manager</p>
                 <div className="h-full border-[3px] border-[#1E1E1F] bg-[#313233] overflow-hidden">
                     { allReports.map((report) => 

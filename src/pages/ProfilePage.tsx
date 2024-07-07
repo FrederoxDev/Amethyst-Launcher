@@ -29,9 +29,9 @@ export default function ProfilePage() {
 
     return (
         <MainPanel>
-            <div className="flex flex-col gap-[8px] h-full p-[8px] bg-[#48494A] border-[#313233] border-[3px] overflow-hidden">
+            <div className="flex flex-col gap-[8px] h-full p-[8px] bg-[#48494A] border-[#1E1E1F] border-[3px] overflow-hidden">
                 <p className="minecraft-seven text-white text-[14px]">Profile Editor</p>
-                <div className="flex flex-col gap-[8px] border-[3px] border-[#1E1E1F] h-full p-[8px] bg-[#313233] overflow-y-auto" style={{scrollbarWidth: "none", scrollbarColor: "#48494A #313233"}}>
+                <div className="flex flex-col gap-[3px] border-[3px] border-[#1E1E1F] h-full p-[3px] bg-[#313233] overflow-y-auto scrollbar">
                     
                     {
                         allProfiles.map((profile, index) => {
