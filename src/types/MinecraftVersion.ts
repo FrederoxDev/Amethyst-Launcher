@@ -5,7 +5,7 @@ export enum VersionType {
     Release = 0,
     Beta = 1,
     Preview = 2
-};
+}
 
 export class MinecraftVersion {
     version: SemVersion;

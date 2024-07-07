@@ -1,5 +1,3 @@
-import {useState} from "react";
-
 type MinecraftButtonProps = {
     text: string,
     disabled?: boolean,

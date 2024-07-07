@@ -1,3 +1,4 @@
+import { ipcRenderer } from "electron";
 import { MinecraftVersion } from "../types/MinecraftVersion";
 import { SemVersion } from "../types/SemVersion";
 import { /** getAmethystFolder, */ getVersionsFolder } from "./AmethystPaths";
@@ -76,7 +77,7 @@ export async function downloadVersion(
     const outputFile = path.join(versionsFolder, `Minecraft-${version.version.toString()}.zip`);
 
     const toMB = (bytes: number) => {
-        let mb = bytes / (1024 * 1024);
+        const mb = bytes / (1024 * 1024);
         return `${mb.toFixed(1)}MB`;
     };
 
@@ -139,11 +140,12 @@ export function copyProxyToInstalledVer(version: MinecraftVersion) {
     const versionsFolder = getVersionsFolder();
     const versionFolder = path.join(versionsFolder, `Minecraft-${version.toString()}`);
 
-    //@ts-ignore
-    const proxyDllPath = window.native.path.join(window.native.__dirname, "proxy", "dxgi.dll",);
-    const targetDllPath = path.join(versionFolder, "dxgi.dll")
+    ipcRenderer.invoke('get-app-path').then(apppath => {
+        const proxyDllPath = path.join(apppath, "build/proxy/dxgi.dll",);
+        const targetDllPath = path.join(versionFolder, "dxgi.dll")
 
-    fs.copyFileSync(proxyDllPath, targetDllPath);
+        fs.copyFileSync(proxyDllPath, targetDllPath);
+    })
 }
 
 export function isRegisteredVersionOurs(version: MinecraftVersion) {

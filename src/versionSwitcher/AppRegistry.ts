@@ -9,7 +9,7 @@ async function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function getInstalledMinecraftPackagePath(version: MinecraftVersion) {
+export function getInstalledMinecraftPackagePath(_version: MinecraftVersion) {
     const regKey = "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages";
     const listed = regedit.listSync(regKey);
     if (!listed[regKey].exists) return undefined;
@@ -57,10 +57,11 @@ export async function unregisterExisting() {
 }
 
 export async function registerVersion(version: MinecraftVersion) {
+    const maxAttempts = 100;
     let currentPackageId = getCurrentlyInstalledPackageID();
-    let i = 0;
 
-    while (true) {
+    let i = 0;
+    while (i < maxAttempts) {
         if (currentPackageId === undefined) break;
         await unregisterExisting();
 
@@ -81,7 +82,7 @@ export async function registerVersion(version: MinecraftVersion) {
 
     i = 0;
     // wait for it to finish registering
-    while (true) {
+    while (i < maxAttempts) {
         currentPackageId = getCurrentlyInstalledPackageID();
         if (currentPackageId !== undefined) return;
         await sleep(1000);

@@ -170,7 +170,7 @@ class Protocol {
         const namespaceManager = new XPathEvaluator().createNSResolver(
             doc.documentElement,
         );
-        //@ts-ignore
+        
         namespaceManager.lookupNamespaceURI = (prefix: string) => {
             switch (prefix) {
                 case "s":

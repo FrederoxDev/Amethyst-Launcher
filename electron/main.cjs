@@ -69,6 +69,10 @@ ipcMain.on('WINDOW_UI_THEME', (event, args) => {
     }
 })
 
+ipcMain.handle("get-app-path", (event) => {
+    return app.getAppPath()
+})
+
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 // Other window is open, so don't create a new one
 if (hasSingleInstanceLock === false) {

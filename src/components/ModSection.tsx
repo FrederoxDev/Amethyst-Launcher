@@ -7,7 +7,7 @@ type ModSectionProps = {
     setActiveMods: React.Dispatch<React.SetStateAction<string[]>>
 }
 
-export default function ModSection({actionLock, allMods, activeMods, setActiveMods}: ModSectionProps) {
+export default function ModSection({allMods, activeMods, setActiveMods}: ModSectionProps) {
     const toggleMod = (name: string) => {
         let newActiveMods = activeMods;
 

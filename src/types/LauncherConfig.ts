@@ -5,4 +5,4 @@ export interface LauncherConfig {
     keep_open: boolean,
     selected_profile: number,
     ui_theme: string
-};
+}
