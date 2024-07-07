@@ -117,7 +117,7 @@ export default function ProfileEditor() {
 
     return (
         <MainPanel>
-            <div className="relative w-full h-full flex flex-col gap-[8px] border-[3px] border-[#313233] p-[8px] bg-[#48494A]">
+            <div className="relative w-full h-full flex flex-col gap-[8px] border-[3px] border-[#1E1E1F] p-[8px] bg-[#48494A]">
                 {/* Settings */}
                 <div>
                     <TextInput label="Profile Name" text={profileName} setText={setProfileName}/>

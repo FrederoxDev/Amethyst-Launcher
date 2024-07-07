@@ -44,6 +44,7 @@ export default function Header() {
             </div>
 
             <div className="titlebar_highlight"/>
+            <div className="titlebar_shadow"/>
         </div>
     )
 }

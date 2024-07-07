@@ -19,27 +19,18 @@
 .radial_button_top {
     height: calc(100% - 5px);
     border-width: 3px;
-    border-color: #E3E3E5;
-    background-color: #D0D1D4;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.radial_button_top:hover {
-    background-color: #B1B2B5;
-}
-
 .radial_button_top.selected {
     height: 100%;
-    border-color: #4F913C;
-    background-color: #3C8527;
 }
 
 .radial_button_text {
     font-family: "Minecraft-Seven";
     font-size: 16px;
-    color: #1E1E1F;
 }
 
 .radial_button_text.selected {
@@ -47,9 +38,77 @@
 }
 
 .radial_button_side {
-    background-color: #58585A;
     height: 5px;
 }
 .radial_button_side.selected {
     height: 0px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .radial_button_top {
+        border-top-color: #6D6D6E;
+        border-left-color: #6D6D6E;
+        border-right-color: #5A5B5C;
+        border-bottom-color: #5A5B5C;
+        background-color: #48494A;
+    }
+
+    .radial_button_side {
+        background-color: #313233;
+    }
+
+    .radial_button_text {
+        color: #FFFFFF;
+    }
+
+    .radial_button_top:hover {
+        border-color: #68686A;
+        background-color: #58585A;
+    }
+
+    .radial_button_top.selected {
+        border-top-color: #5A5B5C;
+        border-left-color: #5A5B5C;
+        border-right-color: #454647;
+        border-bottom-color: #454647;
+
+        background-color: #313233;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    .radial_button_top {
+        border-top-color: #ECEDEE;
+        border-left-color: #ECEDEE;
+        border-right-color: #E3E3E5;
+        border-bottom-color: #E3E3E5;
+
+        background-color: #D0D1D4;
+    }
+
+    .radial_button_side {
+        background-color: #58585A;
+    }
+
+    .radial_button_text {
+        color: #1E1E1F;
+    }
+
+    .radial_button_top:hover {
+        border-top-color: #EFF0F0;
+        border-left-color: #EFF0F0;
+        border-right-color: #E0E0E1;
+        border-bottom-color: #E0E0E1;
+
+        background-color: #B1B2B5;
+    }
+
+    .radial_button_top.selected {
+        border-top-color: #639D52;
+        border-left-color: #639D52;
+        border-right-color: #4F913C;
+        border-bottom-color: #4F913C;
+
+        background-color: #3C8527;
+    }
 }

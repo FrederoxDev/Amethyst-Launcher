@@ -132,7 +132,7 @@ export default function LauncherPage() {
                 </div>
 
                 {/* Profile Selector & Play Button */}
-                <div className="flex gap-[8px] border-[#313233] border-[3px] p-[8px] bg-[#48494A]">
+                <div className="flex gap-[8px] border-[#1E1E1F] border-[3px] p-[8px] bg-[#48494A]">
                     <div className="w-[30%] translate-y-[5px]">
                         <Dropdown
                             labelText="Profile"
