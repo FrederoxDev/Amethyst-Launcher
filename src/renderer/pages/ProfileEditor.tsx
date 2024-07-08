@@ -6,8 +6,8 @@ import Dropdown from "../components/Dropdown";
 import MinecraftButton, {MinecraftButtonStyle} from "../components/MinecraftButton";
 import {useAppState} from "../contexts/AppState";
 import {useNavigate} from "react-router-dom";
-import {findAllMods} from "../launcher/Modlist";
 import {VersionType} from "../types/MinecraftVersion";
+import {getModList} from "../scripts/Mods";
 
 export default function ProfileEditor() {
     const [profileName, setProfileName] = useState("");
@@ -101,7 +101,7 @@ export default function ProfileEditor() {
     }
 
     const fetchMods = useCallback(() => {
-        const {mods} = findAllMods();
+        const {mods} = getModList();
         setAllMods(mods);
     }, [setAllMods])
 

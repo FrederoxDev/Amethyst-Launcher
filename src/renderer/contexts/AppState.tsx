@@ -1,7 +1,6 @@
 import {createContext, ReactNode, useCallback, useContext, useEffect, useState} from "react";
 import {Profile} from "../types/Profile";
 import {
-    findAllMods,
     findAllProfiles,
     getAllMinecraftVersions,
     readLauncherConfig,
@@ -11,6 +10,7 @@ import {
 import {LauncherConfig} from "../types/LauncherConfig";
 import {MinecraftVersion} from "../types/MinecraftVersion";
 import { ipcRenderer } from "electron";
+import {getModList} from "../scripts/Mods";
 
 interface TAppStateContext {
     allMods: string[];
@@ -73,7 +73,7 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
     useEffect(() => {
         setAllProfiles(findAllProfiles());
 
-        const modList = findAllMods();
+        const modList = getModList();
         setAllRuntimes(["Vanilla", ...modList.runtimeMods]);
         setAllMods(modList.mods);
 
