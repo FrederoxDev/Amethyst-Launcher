@@ -14,8 +14,8 @@
         background-clip: content-box;
         border-left-width: 5px;
         border-right-width: 5px;
-        border-top-width: 0px;
-        border-bottom-width: 0px;
+        border-top-width: 0;
+        border-bottom-width: 0;
         border-color: transparent;
         border-style: solid;
     }
@@ -37,8 +37,8 @@
         background-clip: content-box;
         border-left-width: 5px;
         border-right-width: 5px;
-        border-top-width: 0px;
-        border-bottom-width: 0px;
+        border-top-width: 0;
+        border-bottom-width: 0;
         border-color: transparent;
         border-style: solid;
     }

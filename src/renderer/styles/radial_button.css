@@ -29,7 +29,7 @@
 }
 
 .radial_button_text {
-    font-family: "Minecraft-Seven";
+    font-family: "Minecraft-Seven", sans-serif;
     font-size: 16px;
 }
 
@@ -41,7 +41,7 @@
     height: 5px;
 }
 .radial_button_side.selected {
-    height: 0px;
+    height: 0;
 }
 
 @media (prefers-color-scheme: dark) {
