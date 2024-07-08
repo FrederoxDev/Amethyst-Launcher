@@ -62,7 +62,7 @@ export default function App() {
                             </Link>
                         </div>
                     </div>
-                    <div className="view_container w-[calc(100%-66px)]">
+                    <div className="view_container w-[calc(100%-84px)]">
                         <Routes>
                             <Route path='/' element={<LauncherPage/>}/>
                             <Route path='/profiles' element={<ProfilePage/>}/>
