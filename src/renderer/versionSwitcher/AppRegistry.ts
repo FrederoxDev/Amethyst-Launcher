@@ -57,7 +57,7 @@ export async function unregisterExisting() {
 }
 
 export async function registerVersion(version: MinecraftVersion) {
-    const maxAttempts = 100;
+    const maxAttempts = 30;
     let currentPackageId = getCurrentlyInstalledPackageID();
 
     let i = 0;
