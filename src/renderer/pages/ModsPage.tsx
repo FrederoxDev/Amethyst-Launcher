@@ -3,7 +3,8 @@ import DividedSection from "../components/DividedSection";
 import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
 import { getMinecraftUWPFolder, getModsFolder } from "../versionSwitcher/AmethystPaths";
-import { ModConfig } from "../types/ModConfig";
+
+import { validateModConfig, ModConfig } from "../scripts/Mods";
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
@@ -11,55 +12,7 @@ const child = window.require('child_process') as typeof import('child_process')
 
 type ModErrorInfo = { modIdentifier: string, description?: string, modErrors: string[] }
 
-function validateConfig(config: Record<any, any>, outErrors: string[]) {
-    let name = "";
-    let description = "";
-    let version = "";
-    let author = "";
 
-    if ("meta" in config && typeof(config["meta"]) === 'object' && config["meta"] != null) {
-        const meta = config["meta"];
-
-        if (!("name" in meta && typeof(meta["name"]) === 'string')) {
-            outErrors.push(`object 'meta' should have field 'name' of type 'string'`)
-        }
-
-        if (!("version" in meta && typeof(meta["version"]) === 'string')) {
-            outErrors.push(`object 'meta' should have field 'version' of type 'string'`)
-        }
-        
-        if (!("author" in meta && typeof(meta["author"]) === 'string')) {
-            outErrors.push(`object 'meta' should have field 'author' of type 'string'`)
-        }
-        
-        if ("description" in meta) {
-            if (typeof(meta["description"]) !== 'string') {
-                outErrors.push(`key 'description?' in 'meta' should be of type 'string'`)
-            }
-        }
-
-        if ("is_runtime" in meta && typeof(meta["is_runtime"]) !== "boolean") {
-            outErrors.push("key 'is_runtime?' in 'meta' should be of type 'boolean'")
-        }
-
-        name = meta["name"] ?? "";
-        description = meta["description"] ?? "";
-        version = meta["version"] ?? "";
-        author = meta["author"] ?? "";
-    }
-    else {
-        outErrors.push(`mod.json should have field 'meta' of type 'object'`);
-    }
-
-    return {
-        meta: {
-            name,
-            version,
-            author,
-            description
-        }
-    }
-}
 
 function getAllMods(): ModErrorInfo[] {
     const results: ModErrorInfo[] = [];
@@ -74,10 +27,6 @@ function getAllMods(): ModErrorInfo[] {
     for (const modIdentifier of allModNames) {
         const modErrors: string[] = []
 
-        // Validate that the mod is in the naming scheme
-        if (!modIdentifier.includes("@")) {
-            modErrors.push(`Folder named '${modIdentifier}' must include a version number`);
-        }
 
         // Config data
         let modConfig: ModConfig = {
@@ -99,7 +48,7 @@ function getAllMods(): ModErrorInfo[] {
             try {
                 const configData = fs.readFileSync(modConfigPath, "utf-8");
                 const configParsed = JSON.parse(configData);
-                modConfig = validateConfig(configParsed, modErrors);
+                modConfig = validateModConfig(configParsed, modErrors);
                 console.log(modConfig)
             }
             catch {
@@ -108,7 +57,7 @@ function getAllMods(): ModErrorInfo[] {
         }
 
         results.push({
-            modIdentifier,
+            modIdentifier: modConfig.meta.name,
             description: modConfig.meta.description ?? "",
             modErrors
         }) 
@@ -133,7 +82,7 @@ const openModsFolder = () => {
 }
  
 export default function ModsPage() {
-    /** Page which will display information about each folder in the mods directory. */
+    /** Page which will display information about each folder in the 'mods' directory. */
     /** Will report any errors and why they are not valid to select etc */
     /** Todo make this popup a panel after a more info button is pressed or something */
     

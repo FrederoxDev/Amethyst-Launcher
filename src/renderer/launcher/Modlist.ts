@@ -1,4 +1,4 @@
-import {ModConfig} from "../types/ModConfig";
+import {ModConfig} from "../scripts/Mods";
 import {Profile} from "../types/Profile";
 import {LauncherConfig} from "../types/LauncherConfig";
 import {MinecraftVersion, VersionType} from "../types/MinecraftVersion";
@@ -35,9 +35,6 @@ export function findAllMods(): ModList {
                 version: ""
             }
         };
-
-        // The mod has no versioning in its name so continue
-        if (!modName.includes("@")) continue;
 
         // Ignore any folders without a mod.json file
         const modConfigPath = path.join(itemPath, "mod.json");
