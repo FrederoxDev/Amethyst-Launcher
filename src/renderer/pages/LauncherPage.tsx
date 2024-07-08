@@ -71,7 +71,7 @@ export default function LauncherPage() {
             // Only register the game if needed
             if (!isRegisteredVersionOurs(minecraftVersion)) {
                 setStatus("Unregistering existing version");
-                unregisterExisting();
+                await unregisterExisting();
 
                 setStatus("Registering downloaded version");
                 await registerVersion(minecraftVersion)

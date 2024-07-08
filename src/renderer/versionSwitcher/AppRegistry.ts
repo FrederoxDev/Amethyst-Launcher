@@ -47,13 +47,14 @@ export function getCurrentlyInstalledPackageID() {
     return packageId;
 }
 
-export function unregisterExisting() {
+export async function unregisterExisting() {
     const packageId = getCurrentlyInstalledPackageID();
     console.log("Currently installed packageId", packageId);
     if (packageId === undefined) return;
 
     const unregisterCmd = `powershell -ExecutionPolicy Bypass -Command "& { Remove-AppxPackage -Package "${packageId}" -PreserveApplicationData }"`;
-    child.execSync(unregisterCmd);
+    await execAsync(unregisterCmd)
+    console.log("Unregistered")
 }
 
 export async function registerVersion(version: MinecraftVersion) {
@@ -63,7 +64,7 @@ export async function registerVersion(version: MinecraftVersion) {
     let i = 0;
     while (i < maxAttempts) {
         if (currentPackageId === undefined) break;
-        unregisterExisting();
+        await unregisterExisting();
 
         currentPackageId = getCurrentlyInstalledPackageID()
         await sleep(1000)
@@ -78,14 +79,25 @@ export async function registerVersion(version: MinecraftVersion) {
     const appxManifest = path.join(versionsFolder, `Minecraft-${version.version.toString()}`, "AppxManifest.xml");
 
     const registerCmd = `powershell -ExecutionPolicy Bypass -Command "& { Add-AppxPackage -Path "${appxManifest}" -Register }"`;
-    child.execSync(registerCmd);
+    await execAsync(registerCmd)
+    console.log('Registered')
 
     i = 0;
     // wait for it to finish registering
     while (i < maxAttempts) {
         currentPackageId = getCurrentlyInstalledPackageID();
         if (currentPackageId !== undefined) break;
-        await sleep(1000);
         console.log(`waiting for registration attempt ${i++}`)
+        await sleep(1000);
     }
+}
+
+function execAsync(cmd: string) {
+    return new Promise((resolved) => {
+        const exec_proc = child.exec(cmd)
+
+        exec_proc.on('exit', (exit_code) => {
+            resolved(exit_code)
+        })
+    })
 }
