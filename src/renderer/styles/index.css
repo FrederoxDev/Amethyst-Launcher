@@ -13,29 +13,32 @@
     user-select: none;
 }
 
+/*noinspection CssUnknownTarget*/
 @font-face {
     font-family: 'Minecraft-Ten';
     src: url('/fonts/Minecraft-Ten.ttf') format('truetype');
 }
 
+/*noinspection CssUnknownTarget*/
 @font-face {
     font-family: 'Minecraft-Seven';
     src: url('/fonts/Minecraft-Seven.ttf') format('truetype');
 }
 
+/*noinspection CssUnknownTarget*/
 @font-face {
     font-family: 'Minecraft-Five';
     src: url('/fonts/extra/Minecraft-Five.otf') format('opentype');
 }
 
 .minecraft-seven {
-    font-family: "Minecraft-Seven";
+    font-family: "Minecraft-Seven", sans-serif;
     image-rendering: auto;
     letter-spacing: .5px;
 }
 
 .minecraft-ten {
-    font-family: "Minecraft-Ten";
+    font-family: "Minecraft-Ten", sans-serif;
     image-rendering: auto;
     letter-spacing: .1px;
 }
@@ -54,6 +57,4 @@
 
 img {
     -webkit-user-drag: none;
-    -moz-user-drag: none;
-    -o-user-drag: none;
 }

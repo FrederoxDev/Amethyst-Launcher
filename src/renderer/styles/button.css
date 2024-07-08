@@ -19,7 +19,7 @@
     }
 
     .button_side {
-        height: 0px;
+        height: 0;
     }
 }
 
@@ -49,7 +49,7 @@
 }
 
 .button_text {
-    font-family: "Minecraft-Seven";
+    font-family: "Minecraft-Seven", sans-serif;
     font-size: 16px;
     color: #FFFFFF;
 }

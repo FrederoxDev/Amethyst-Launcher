@@ -73,14 +73,12 @@
 }
 
 .toggle_base_on_image.large {
-    width: var(--base2scale);
     height: 14px;
 
     image-rendering: pixelated;
 }
 
 .toggle_base_on_image {
-    width: var(--base2scale);
     height: 8px;
 
     image-rendering: pixelated;
@@ -170,7 +168,7 @@
 
 @keyframes anim-on-large {
     0% {
-        left: 0px
+        left: 0
     }
 
     25% {
@@ -194,7 +192,7 @@
 
 @keyframes anim-on {
     0% {
-        left: 0px
+        left: 0
     }
 
     25% {
@@ -218,7 +216,7 @@
 
 @keyframes anim-off-large {
     0% {
-        right: 0px
+        right: 0
     }
 
     25% {
@@ -242,7 +240,7 @@
 
 @keyframes anim-off {
     0% {
-        right: 0px
+        right: 0
     }
 
     25% {

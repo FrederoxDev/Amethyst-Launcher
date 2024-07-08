@@ -58,7 +58,7 @@
 .window_button {
     -webkit-app-region: no-drag;
     position: relative;
-    top: 0px;
+    top: 0;
     cursor: pointer;
     justify-content: center;
     align-items: center;
