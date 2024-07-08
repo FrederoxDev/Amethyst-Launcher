@@ -47,7 +47,7 @@ export function getCurrentlyInstalledPackageID() {
     return packageId;
 }
 
-export async function unregisterExisting() {
+export function unregisterExisting() {
     const packageId = getCurrentlyInstalledPackageID();
     console.log("Currently installed packageId", packageId);
     if (packageId === undefined) return;
@@ -63,7 +63,7 @@ export async function registerVersion(version: MinecraftVersion) {
     let i = 0;
     while (i < maxAttempts) {
         if (currentPackageId === undefined) break;
-        await unregisterExisting();
+        unregisterExisting();
 
         currentPackageId = getCurrentlyInstalledPackageID()
         await sleep(1000)
@@ -84,7 +84,7 @@ export async function registerVersion(version: MinecraftVersion) {
     // wait for it to finish registering
     while (i < maxAttempts) {
         currentPackageId = getCurrentlyInstalledPackageID();
-        if (currentPackageId !== undefined) return;
+        if (currentPackageId !== undefined) break;
         await sleep(1000);
         console.log(`waiting for registration attempt ${i++}`)
     }
