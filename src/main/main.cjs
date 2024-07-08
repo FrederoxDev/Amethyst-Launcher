@@ -14,7 +14,7 @@ function createWindow() {
         minHeight: 400,
         backgroundColor: "#1E1E1F",
         webPreferences: {
-            preload: join(app.getAppPath(), '/electron/preload.cjs'),
+            preload: join(app.getAppPath(), '/src/preload/preload.cjs'),
             nodeIntegration: true,
             webSecurity: true,
             contextIsolation: false,
@@ -26,7 +26,7 @@ function createWindow() {
     win.setMenuBarVisibility(false);
 
     if (app.isPackaged) {
-        win.loadURL(`file://${join(app.getAppPath(), '/build/index.html')}`);
+        win.loadURL(`file://${join(app.getAppPath(), '/build/public/index.html')}`);
     } else {
         win.loadURL('http://localhost:3000');
     }

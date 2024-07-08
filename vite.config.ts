@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'
+import react from '@vitejs/plugin-react'
 import renderer from "vite-plugin-electron-renderer"
 
 export default defineConfig({
@@ -14,6 +14,6 @@ export default defineConfig({
     
   },
   build: {
-    outDir: 'build'
+    outDir: 'build/public'
   }
 })
