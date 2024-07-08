@@ -91,7 +91,7 @@ export default function SettingsPage() {
                 <MinecraftRadialButtonPanel elements={[{text: "Light", value: "Light"}, {text: "Dark", value: "Dark"}, {text:"System", value:"System"}]} default_selected_value={UITheme} onChange={(value => { setUITheme(value) })}/>
             </div>
 
-            <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px] minecraft-seven text-[#BCBEC0] text-[14px] shrink-0 overflow-x-auto">
+            <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px] minecraft-seven text-[#BCBEC0] text-[14px] shrink-0 overflow-x-hidden">
                 <p className="text-white">Debug Info</p>
                 <p>Minecraft Version: {minecraftVersion ? minecraftVersion.toString() : "No version found."}</p>
                 <p>Is version downloaded: {isVerDownloaded ? "true" : "false"}</p>
