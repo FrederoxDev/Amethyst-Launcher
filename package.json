@@ -3,7 +3,7 @@
   "version": "2.4.7",
   "author": "FrederoxDev, Adrian8115",
   "description": "Amethyst Launcher",
-  "main": "electron/main.cjs",
+  "main": "src/main/main.cjs",
   "type": "module",
   "scripts": {
     "start-vite": "vite --port 3000",
@@ -29,7 +29,7 @@
     "@types/react-router-dom": "^5.3.3",
     "@typescript-eslint/eslint-plugin": "^7.13.1",
     "@typescript-eslint/parser": "^7.13.1",
-    "@vitejs/plugin-react-swc": "^3.5.0",
+    "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
     "electron": "^31.1.0",
     "electron-builder": "^24.13.3",
@@ -47,14 +47,12 @@
     "appId": "com.frederoxdev.amethystlauncher",
     "directories": {
       "output": "release",
-      "buildResources": "build"
+      "buildResources": "build/public"
     },
     "files": [
       "build/**/*",
-      "electron/main.cjs",
-      "electron/preload.cjs",
-      "node_modules/**/*",
-      "package.json"
+      "src/main/main.cjs",
+      "src/preload/preload.cjs"
     ],
     "win": {
       "target": "nsis",

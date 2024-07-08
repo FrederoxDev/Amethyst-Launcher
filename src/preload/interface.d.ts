@@ -1,3 +1,5 @@
+import path from "path";
+
 declare global {
     interface Window {
         native: {
