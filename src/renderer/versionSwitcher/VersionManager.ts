@@ -141,7 +141,7 @@ export function copyProxyToInstalledVer(version: MinecraftVersion) {
     const versionFolder = path.join(versionsFolder, `Minecraft-${version.toString()}`);
 
     ipcRenderer.invoke('get-app-path').then(appPath => {
-        const proxyDllPath = path.join(appPath, "build/proxy/dxgi.dll",);
+        const proxyDllPath = path.join(appPath, "build/public/proxy/dxgi.dll",);
         const targetDllPath = path.join(versionFolder, "dxgi.dll")
 
         fs.copyFileSync(proxyDllPath, targetDllPath);
