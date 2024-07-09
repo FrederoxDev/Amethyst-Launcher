@@ -1,72 +1,41 @@
+import { ipcRenderer } from "electron";
+
 const fs = window.require('fs') as typeof import('fs')
 const path = window.require('path') as typeof import('path')
 
-export const AmethystFolder: string = getAmethystFolder();
-export const AmethystUWPFolder: string = getAmethystUWPFolder();
-export const MinecraftUWPFolder: string = getMinecraftUWPFolder();
+const AppDataPath: string = await ipcRenderer.invoke("get-appdata-path");
+const LocalAppDataPath: string = await ipcRenderer.invoke("get-localappdata-path");
 
-export const LauncherFolder: string = getLauncherFolder();
-export const VersionsFolder: string = getVersionsFolder();
-export const ModsFolder: string = getModsFolder();
+const AmethystPath:         string = path.join(...[AppDataPath, "Amethyst"]);
+const LauncherPath:         string = path.join(...[AmethystPath, "Launcher"]);
+const VersionsPath:         string = path.join(...[AmethystPath, "Versions"]);
+const MinecraftUWPPath:     string = path.join(...[LocalAppDataPath, "Packages", "Microsoft.MinecraftUWP_8wekyb3d8bbwe"]);
+const ComMojangPath:        string = path.join(...[MinecraftUWPPath, "LocalState", "games", "com.mojang"]);
+const AmethystUWPPath:      string = path.join(...[ComMojangPath, "amethyst"]);
+const ModsPath:             string = path.join(...[AmethystUWPPath, 'mods']);
+const LauncherConfigPath:   string = path.join(...[AmethystUWPPath, "launcher_config.json"]);
 
-export const LauncherConfigPath: string = getLauncherConfig();
+export const AmethystFolder:        string = ValidatePath(AmethystPath);
+export const LauncherFolder:        string = ValidatePath(LauncherPath);
+export const VersionsFolder:        string = ValidatePath(VersionsPath);
+export const ModsFolder:            string = ValidatePath(ModsPath);
+export const LauncherConfigFile:    string = ValidatePath(LauncherConfigPath);
+export const ComMojangFolder:       string = ValidatePath(ComMojangPath);
+export const AmethystUWPFolder:     string = ValidatePath(AmethystUWPPath);
+export const MinecraftUWPFolder:    string = ValidatePath(MinecraftUWPPath);
 
-export function getAmethystFolder(): string {
-    //@ts-expect-error window.env
-    const amethystFolder = path.join(window.env["AppData"], "Amethyst");
-
-    if (!fs.existsSync(amethystFolder)) {
-        fs.mkdirSync(amethystFolder, {recursive: true});
+export function ValidatePath(in_path: string): string {
+    if (!IsValidPath(in_path)) {
+        CreatePath(in_path);
     }
-
-    return amethystFolder;
+    return in_path;
 }
 
-export function getMinecraftUWPFolder(): string {
-    //@ts-expect-error window.env
-    const folder = path.join(window.env["LocalAppData"], "Packages", "Microsoft.MinecraftUWP_8wekyb3d8bbwe");
-    ensureDirectoryExists(folder);
-    return folder;
+export function IsValidPath(path: string): boolean {
+    return fs.existsSync(path);
 }
 
-export function getComMojangFolder(): string {
-    const folder = path.join(getMinecraftUWPFolder(), "LocalState", "games", "com.mojang");
-    ensureDirectoryExists(folder);
-    return folder;
-}
-
-export function getAmethystUWPFolder(): string {
-    const folder = path.join(getComMojangFolder(), "amethyst");
-    ensureDirectoryExists(folder);
-    return folder;
-}
-
-export function getVersionsFolder(): string {
-    const folder = path.join(getAmethystFolder(), "Versions");
-    ensureDirectoryExists(folder);
-    return folder;
-}
-
-export function getModsFolder(): string {
-    const folder = path.join(getAmethystUWPFolder(), "mods");
-    ensureDirectoryExists(folder);
-    return folder;
-}
-
-export function getLauncherConfig(): string {
-    const folder = path.join(getAmethystUWPFolder(), "launcher_config.json")
-    ensureDirectoryExists(folder);
-    return folder;
-}
-
-export function getLauncherFolder(): string {
-    const folder = path.join(getAmethystFolder(), "Launcher")
-    ensureDirectoryExists(folder);
-    return folder;
-}
-
-
-export function ensureDirectoryExists(filePath: string): void {
-    const dirname = path.dirname(filePath);
-    fs.mkdirSync(dirname, {recursive: true});
+export function CreatePath(in_path: string, recursive: boolean = true): void {
+    const in_path_dir: string = path.dirname(in_path);
+    fs.mkdirSync(in_path_dir, { recursive: recursive })
 }

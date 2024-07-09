@@ -1,4 +1,4 @@
-import {ensureDirectoryExists, LauncherFolder} from "./Paths";
+import { ValidatePath, LauncherFolder} from "./Paths";
 import {SemVersion} from "./classes/SemVersion";
 
 const fs = window.require('fs') as typeof import('fs');
@@ -32,7 +32,7 @@ export class MinecraftVersion {
 
 export async function getAllMinecraftVersions() {
     const versionCacheFile = path.join(LauncherFolder, "cached_versions.json");
-    ensureDirectoryExists(versionCacheFile);
+    ValidatePath(versionCacheFile);
     let lastWriteTime: Date = new Date(0);
 
     if (fs.existsSync(versionCacheFile)) {

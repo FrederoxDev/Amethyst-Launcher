@@ -16,7 +16,7 @@ function createWindow() {
         webPreferences: {
             preload: join(app.getAppPath(), '/src/preload/preload.cjs'),
             nodeIntegration: true,
-            webSecurity: true,
+            webSecurity: false,
             contextIsolation: false,
         },
         frame: false
@@ -71,6 +71,14 @@ ipcMain.on('WINDOW_UI_THEME', (event, args) => {
 
 ipcMain.handle("get-app-path", (event) => {
     return app.getAppPath()
+})
+
+ipcMain.handle("get-appdata-path", () => {
+    return process.env.APPDATA;
+})
+
+ipcMain.handle("get-localappdata-path", () => {
+    return process.env.LOCALAPPDATA;
 })
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();

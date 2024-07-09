@@ -1,4 +1,4 @@
-import {ensureDirectoryExists, LauncherFolder} from "./Paths";
+import { ValidatePath, LauncherFolder} from "./Paths";
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
@@ -24,6 +24,6 @@ export function findAllProfiles(): Profile[] {
 
 export function saveAllProfiles(profiles: Profile[]) {
     const profilesFile = path.join(LauncherFolder, "profiles.json");
-    ensureDirectoryExists(profilesFile);
+    ValidatePath(profilesFile);
     fs.writeFileSync(profilesFile, JSON.stringify(profiles, undefined, 4));
 }
