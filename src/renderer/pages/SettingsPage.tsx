@@ -37,7 +37,7 @@ export default function SettingsPage() {
         if (minecraftVersion) {
             isVerDownloaded = IsDownloaded(minecraftVersion.version)
             isRegisteredVerOurs = isRegisteredVersionOurs(minecraftVersion)
-            installDir = GetPackagePath(minecraftVersion) ?? "Could not find installed."
+            installDir = GetPackagePath() ?? "Could not find installed."
         }
     }
 
