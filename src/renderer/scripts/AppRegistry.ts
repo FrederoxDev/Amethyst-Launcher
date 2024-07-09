@@ -1,102 +1,66 @@
-import { VersionsFolder } from "./Paths";
+import {VersionsFolder} from "./Paths";
 import {MinecraftVersion} from "./Versions";
 
 const regedit = window.require("regedit-rs") as typeof import("regedit-rs");
 const child = window.require("child_process") as typeof import("child_process");
 const path = window.require("path") as typeof import("path");
 
-async function sleep(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
+export function GetPackage() {
+    const reg_key = "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages";
+    const listed = regedit.listSync(reg_key);
+    if (!listed[reg_key].exists) return undefined;
 
-export function getInstalledMinecraftPackagePath(_version: MinecraftVersion) {
-    const regKey = "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages";
-    const listed = regedit.listSync(regKey);
-    if (!listed[regKey].exists) return undefined;
-
-    const minecraftKey = listed[regKey].keys.find((key) => key.startsWith("Microsoft.MinecraftUWP_"));
+    const minecraftKey = listed[reg_key].keys.find((key) => key.startsWith("Microsoft.MinecraftUWP_"));
     if (minecraftKey === undefined) return undefined;
 
-    const minecraftValues =
-        regedit.listSync(
-            `${regKey}\\${minecraftKey}`,
-        )[`${regKey}\\${minecraftKey}`];
+    const minecraftValues = regedit.listSync(`${reg_key}\\${minecraftKey}`)[`${reg_key}\\${minecraftKey}`];
     if (!minecraftValues.exists) return undefined;
 
-    return minecraftValues.values["PackageRootFolder"].value as string;
+    return minecraftValues
 }
 
-export function getCurrentlyInstalledPackageID() {
-    const regKey =
-        "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages";
-    const listed = regedit.listSync(regKey);
-    if (!listed[regKey].exists) return undefined;
-
-    const minecraftKey = listed[regKey].keys.find((key) =>
-        key.startsWith("Microsoft.MinecraftUWP_")
-    );
-    if (minecraftKey === undefined) return undefined;
-
-    const minecraftValues =
-        regedit.listSync(
-            `${regKey}\\${minecraftKey}`,
-        )[`${regKey}\\${minecraftKey}`];
-    if (!minecraftValues.exists) return undefined;
-
-    const packageId = minecraftValues.values["PackageID"].value as string;
-    return packageId;
+export function GetPackagePath() {
+    return GetPackage()?.values["PackageRootFolder"].value as string;
 }
 
-export async function unregisterExisting() {
-    const packageId = getCurrentlyInstalledPackageID();
+export function GetPackageID() {
+    return GetPackage()?.values["PackageID"].value as string;
+}
+
+export async function UnregisterCurrent() {
+    const packageId = GetPackageID();
     console.log("Currently installed packageId", packageId);
     if (packageId === undefined) return;
 
     const unregisterCmd = `powershell -ExecutionPolicy Bypass -Command "& { Remove-AppxPackage -Package "${packageId}" -PreserveApplicationData }"`;
-    await execAsync(unregisterCmd)
-    console.log("Unregistered")
-}
-
-export async function registerVersion(version: MinecraftVersion) {
-    const maxAttempts = 30;
-    let currentPackageId = getCurrentlyInstalledPackageID();
-
-    let i = 0;
-    while (i < maxAttempts) {
-        if (currentPackageId === undefined) break;
-        await unregisterExisting();
-
-        currentPackageId = getCurrentlyInstalledPackageID()
-        await sleep(1000)
-        console.log(`unregistering attempt ${i++}`)
-    }
-
-    if (currentPackageId !== undefined) {
-        throw new Error("There is still a version installed!");
-    }
-
-    const appxManifest = path.join(VersionsFolder, `Minecraft-${version.version.toString()}`, "AppxManifest.xml");
-
-    const registerCmd = `powershell -ExecutionPolicy Bypass -Command "& { Add-AppxPackage -Path "${appxManifest}" -Register }"`;
-    await execAsync(registerCmd)
-    console.log('Registered')
-
-    i = 0;
-    // wait for it to finish registering
-    while (i < maxAttempts) {
-        currentPackageId = getCurrentlyInstalledPackageID();
-        if (currentPackageId !== undefined) break;
-        console.log(`waiting for registration attempt ${i++}`)
-        await sleep(1000);
-    }
-}
-
-function execAsync(cmd: string) {
-    return new Promise((resolved) => {
-        const exec_proc = child.exec(cmd)
+    await new Promise((resolved) => {
+        const exec_proc = child.exec(unregisterCmd)
 
         exec_proc.on('exit', (exit_code) => {
             resolved(exit_code)
         })
     })
+    console.log("Unregistered")
+}
+
+export async function RegisterVersion(version: MinecraftVersion) {
+    // Make sure no version is currently registered
+    if (GetPackageID() !== undefined) {
+        await UnregisterCurrent();
+        if (GetPackageID() !== undefined) {
+            throw new Error("There is still a version installed!");
+        }
+    }
+
+    // Register New Version
+    const appxManifest = path.join(VersionsFolder, `Minecraft-${version.version.toString()}`, "AppxManifest.xml");
+    const registerCmd = `powershell -ExecutionPolicy Bypass -Command "& { Add-AppxPackage -Path "${appxManifest}" -Register }"`;
+    await new Promise((resolved) => {
+        const exec_proc = child.exec(registerCmd)
+
+        exec_proc.on('exit', (exit_code) => {
+            resolved(exit_code)
+        })
+    })
+    console.log('Registered')
 }

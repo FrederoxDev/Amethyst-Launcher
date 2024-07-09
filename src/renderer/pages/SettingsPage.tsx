@@ -1,7 +1,7 @@
 import {useAppState} from "../contexts/AppState";
 import {SemVersion} from "../scripts/classes/SemVersion";
-import { isRegisteredVersionOurs, isVersionDownloaded } from "../scripts/VersionManager";
-import { getInstalledMinecraftPackagePath } from "../scripts/AppRegistry";
+import { isRegisteredVersionOurs, IsDownloaded } from "../scripts/VersionManager";
+import { GetPackagePath } from "../scripts/AppRegistry";
 import { AmethystFolder, LauncherConfigFile, MinecraftUWPFolder } from "../scripts/Paths";
 import { isDeveloperModeEnabled } from "../scripts/DeveloperMode";
 import ReadOnlyTextBox from "../components/ReadOnlyTextBox";
@@ -35,9 +35,9 @@ export default function SettingsPage() {
         minecraftVersion = allMinecraftVersions.find(version => version.version.toString() === semVersion.toString());
 
         if (minecraftVersion) {
-            isVerDownloaded = isVersionDownloaded(minecraftVersion.version)
+            isVerDownloaded = IsDownloaded(minecraftVersion.version)
             isRegisteredVerOurs = isRegisteredVersionOurs(minecraftVersion)
-            installDir = getInstalledMinecraftPackagePath(minecraftVersion) ?? "Could not find installed."
+            installDir = GetPackagePath(minecraftVersion) ?? "Could not find installed."
         }
     }
 

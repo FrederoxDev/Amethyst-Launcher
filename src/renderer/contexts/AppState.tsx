@@ -1,6 +1,6 @@
 import {createContext, ReactNode, useCallback, useContext, useEffect, useState} from "react";
 
-import {getAllMinecraftVersions, MinecraftVersion} from "../scripts/Versions"
+import {FetchMinecraftVersions, MinecraftVersion} from "../scripts/Versions"
 import {LauncherConfig, readLauncherConfig, saveLauncherConfig} from "../scripts/Launcher";
 import {findAllProfiles, Profile, saveAllProfiles} from "../scripts/Profiles";
 
@@ -79,7 +79,7 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
         setUITheme(readConfig.ui_theme ?? "Light");
 
         const fetchMinecraftVersions = async () => {
-            const versions = await getAllMinecraftVersions();
+            const versions = await FetchMinecraftVersions();
             setAllMinecraftVersions(versions);
         }
 

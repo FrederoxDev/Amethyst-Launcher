@@ -4,8 +4,8 @@ import {useAppState} from "../contexts/AppState";
 import {SemVersion} from "../scripts/classes/SemVersion";
 import { readLauncherConfig, saveLauncherConfig } from "../scripts/Launcher";
 import { isDeveloperModeEnabled, tryEnableDeveloperMode } from "../scripts/DeveloperMode";
-import { registerVersion, unregisterExisting } from "../scripts/AppRegistry";
-import { cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded } from "../scripts/VersionManager";
+import { RegisterVersion, UnregisterCurrent } from "../scripts/AppRegistry";
+import { CleanupInstall, TransferProxy, CreateLock, DownloadVersion, ExtractVersion, IsLocked, isRegisteredVersionOurs, IsDownloaded } from "../scripts/VersionManager";
 
 const child = window.require('child_process') as typeof import('child_process')
 
@@ -50,31 +50,31 @@ export default function LauncherPage() {
             // We create a lock file when starting the download
             // if we are doing a launch, and we detect it for the version we are targeting
             // there is a good chance the previous install/download failed and therefore remove it.
-            const didPreviousDownloadFail = isLockFilePresent(semVersion);
+            const didPreviousDownloadFail = IsLocked(semVersion);
             
             if (didPreviousDownloadFail) {
                 log("Detected a .lock file from the previous download attempt, cleaning up.");
-                cleanupFailedInstall(semVersion);
+                CleanupInstall(semVersion, false);
                 log("Removed previous download attempt.");
             }
 
             // Check for the folder for the version we are targeting, if not present we need to fetch.
-            if (!isVersionDownloaded(semVersion)) {
+            if (!IsDownloaded(semVersion)) {
                 log("Target version is not downloaded.");
-                createLockFile(semVersion);
-                await downloadVersion(minecraftVersion, setStatus, setLoadingPercent);
-                await extractVersion(minecraftVersion, setStatus, setLoadingPercent);
+                CreateLock(semVersion);
+                await DownloadVersion(minecraftVersion, setStatus, setLoadingPercent);
+                await ExtractVersion(minecraftVersion, setStatus, setLoadingPercent);
                 log("Cleaning up after successful download")
-                cleanupSuccessfulInstall(semVersion);
+                CleanupInstall(semVersion, true);
             }
 
             // Only register the game if needed
             if (!isRegisteredVersionOurs(minecraftVersion)) {
                 setStatus("Unregistering existing version");
-                await unregisterExisting();
+                await UnregisterCurrent();
 
                 setStatus("Registering downloaded version");
-                await registerVersion(minecraftVersion)
+                await RegisterVersion(minecraftVersion)
 
                 saveLauncherConfig(readLauncherConfig());
             }
@@ -82,7 +82,7 @@ export default function LauncherPage() {
             setIsLoading(false);
             setStatus("");
 
-            copyProxyToInstalledVer(minecraftVersion);
+            TransferProxy(minecraftVersion);
 
             const startGameCmd = `start minecraft:`;
             child.exec(startGameCmd)

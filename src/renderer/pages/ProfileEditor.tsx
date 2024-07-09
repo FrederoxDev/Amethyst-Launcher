@@ -6,7 +6,7 @@ import MinecraftButton, {MinecraftButtonStyle} from "../components/MinecraftButt
 import {useAppState} from "../contexts/AppState";
 import {useNavigate} from "react-router-dom";
 import {getModList} from "../scripts/Mods";
-import {VersionType} from "../scripts/Versions";
+import {MinecraftVersionType} from "../scripts/Versions";
 
 export default function ProfileEditor() {
     const [profileName, setProfileName] = useState("");
@@ -125,7 +125,7 @@ export default function ProfileEditor() {
                         setValue={setProfileMinecraftVersion}
 
                         // we don't support non-release versions right now so only show release lmao
-                        options={allMinecraftVersions.filter(ver => ver.versionType === VersionType.Release).map(ver => ver.toString())}
+                        options={allMinecraftVersions.filter(ver => ver.versionType === MinecraftVersionType.Release).map(ver => ver.toString())}
                         id="minecraft-version"
                     />
                     <Dropdown

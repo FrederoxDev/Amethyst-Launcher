@@ -1,10 +1,10 @@
-import { ValidatePath, LauncherFolder} from "./Paths";
-import {SemVersion} from "./classes/SemVersion";
+import { ValidatePath, LauncherFolder } from "./Paths";
+import { SemVersion } from "./classes/SemVersion";
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
 
-export enum VersionType {
+export enum MinecraftVersionType {
     Release = 0,
     Beta = 1,
     Preview = 2
@@ -13,9 +13,9 @@ export enum VersionType {
 export class MinecraftVersion {
     version: SemVersion;
     uuid: string;
-    versionType: VersionType;
+    versionType: MinecraftVersionType;
 
-    constructor(version: SemVersion, uuid: string, versionType: VersionType) {
+    constructor(version: SemVersion, uuid: string, versionType: MinecraftVersionType) {
         this.version = version;
         this.uuid = uuid;
         this.versionType = versionType;
@@ -23,14 +23,14 @@ export class MinecraftVersion {
 
     toString(): string {
         let prefix = "";
-        if (this.versionType === VersionType.Beta) prefix = "-beta";
-        else if (this.versionType === VersionType.Preview) prefix = "-preview";
+        if (this.versionType === MinecraftVersionType.Beta) prefix = "-beta";
+        else if (this.versionType === MinecraftVersionType.Preview) prefix = "-preview";
 
         return `${this.version.toString()}${prefix}`
     }
 }
 
-export async function getAllMinecraftVersions() {
+export async function FetchMinecraftVersions() {
     const versionCacheFile = path.join(LauncherFolder, "cached_versions.json");
     ValidatePath(versionCacheFile);
     let lastWriteTime: Date = new Date(0);
@@ -54,7 +54,7 @@ export async function getAllMinecraftVersions() {
             throw new Error("Failed to fetch minecraft version data from https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min");
         }
 
-        fs.writeFileSync(versionCacheFile, await data.text(),);
+        fs.writeFileSync(versionCacheFile, await data.text());
     }
 
     const versionData = fs.readFileSync(versionCacheFile, "utf-8");
@@ -65,7 +65,7 @@ export async function getAllMinecraftVersions() {
         versions.push(new MinecraftVersion(
             SemVersion.fromString(version[0] as string),
             version[1],
-            version[2] as unknown as VersionType
+            version[2] as unknown as MinecraftVersionType
         ));
     }
 
