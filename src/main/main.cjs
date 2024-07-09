@@ -16,7 +16,7 @@ function createWindow() {
         webPreferences: {
             preload: join(app.getAppPath(), '/src/preload/preload.cjs'),
             nodeIntegration: true,
-            webSecurity: true,
+            webSecurity: false,
             contextIsolation: false,
         },
         frame: false
