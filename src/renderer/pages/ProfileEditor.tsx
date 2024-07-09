@@ -1,13 +1,12 @@
 import {useCallback, useEffect, useState} from "react";
-import DividedSection from "../components/DividedSection";
 import MainPanel from "../components/MainPanel";
 import TextInput from "../components/TextInput";
 import Dropdown from "../components/Dropdown";
 import MinecraftButton, {MinecraftButtonStyle} from "../components/MinecraftButton";
 import {useAppState} from "../contexts/AppState";
 import {useNavigate} from "react-router-dom";
-import {VersionType} from "../types/MinecraftVersion";
 import {getModList} from "../scripts/Mods";
+import {VersionType} from "../scripts/Versions";
 
 export default function ProfileEditor() {
     const [profileName, setProfileName] = useState("");
@@ -53,14 +52,14 @@ export default function ProfileEditor() {
                      toggleModActive(name);
                  }}
             >
-                <DividedSection className="cursor-pointer" style={{
+                <div className="cursor-pointer border-y-[2px] border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]" style={{
                     backgroundColor: isHovered ? "#5A5B5C" : "#48494A",
                     padding: "1px",
                     paddingLeft: "4px",
                     paddingRight: "4px"
                 }}>
                     <p className="minecraft-seven text-white">{name}</p>
-                </DividedSection>
+                </div>
             </div>
         )
     }
@@ -92,8 +91,7 @@ export default function ProfileEditor() {
     }
 
     const deleteProfile = () => {
-        const newProfiles = allProfiles;
-        newProfiles.splice(selectedProfile, 1);
+        allProfiles.splice(selectedProfile, 1);
         setAllProfiles(allProfiles);
 
         saveData();

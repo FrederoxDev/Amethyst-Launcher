@@ -1,9 +1,9 @@
 import {useAppState} from "../contexts/AppState";
-import {SemVersion} from "../types/SemVersion";
-import { isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
-import { getInstalledMinecraftPackagePath } from "../versionSwitcher/AppRegistry";
-import { getAmethystFolder, getLauncherConfig, getMinecraftUWPFolder } from "../versionSwitcher/AmethystPaths";
-import { isDeveloperModeEnabled } from "../versionSwitcher/DeveloperMode";
+import {SemVersion} from "../scripts/classes/SemVersion";
+import { isRegisteredVersionOurs, isVersionDownloaded } from "../scripts/VersionManager";
+import { getInstalledMinecraftPackagePath } from "../scripts/AppRegistry";
+import { AmethystFolder, LauncherConfigPath, MinecraftUWPFolder } from "../scripts/Paths";
+import { isDeveloperModeEnabled } from "../scripts/DeveloperMode";
 import ReadOnlyTextBox from "../components/ReadOnlyTextBox";
 import { useEffect, useState } from "react";
 import MinecraftToggle from "../components/MinecraftToggle"
@@ -28,8 +28,6 @@ export default function SettingsPage() {
     let isRegisteredVerOurs = false;
     let installDir = "";
 
-    const amethystFolder = getAmethystFolder()
-    const minecraftFolder = getMinecraftUWPFolder()
     const isWindowsDevModeOn = isDeveloperModeEnabled();
 
     if (profile) {
@@ -44,14 +42,12 @@ export default function SettingsPage() {
     }
 
     const updateCfgText = () => {
-        const configFile = getLauncherConfig();
-
-        if (!fs.existsSync(configFile)) {
+        if (!fs.existsSync(LauncherConfigPath)) {
             setLauncherCfg("Launcher config does not exist...");
             return;
         }
 
-        const data = fs.readFileSync(configFile, 'utf-8');
+        const data = fs.readFileSync(LauncherConfigPath, 'utf-8');
         setLauncherCfg(data)
     }
 
@@ -98,8 +94,8 @@ export default function SettingsPage() {
                 <p>Is Registered Version Ours: {isRegisteredVerOurs ? "true" : "false"}</p>
                 <p>Is windows developer mode: {isWindowsDevModeOn ? "enabled" : "disabled"}</p>
                 <p>Install path: {installDir}</p>
-                <p>Amethyst Folder: {amethystFolder}</p>
-                <p>Minecraft Folder: {minecraftFolder}</p>
+                <p>Amethyst Folder: {AmethystFolder}</p>
+                <p>Minecraft Folder: {MinecraftUWPFolder}</p>
             </div>
 
             <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">

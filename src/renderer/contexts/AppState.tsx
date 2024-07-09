@@ -1,14 +1,9 @@
 import {createContext, ReactNode, useCallback, useContext, useEffect, useState} from "react";
-import {Profile} from "../types/Profile";
-import {
-    findAllProfiles,
-    getAllMinecraftVersions,
-    readLauncherConfig,
-    saveAllProfiles,
-    saveLauncherConfig
-} from "../launcher/Modlist";
-import {LauncherConfig} from "../types/LauncherConfig";
-import {MinecraftVersion} from "../types/MinecraftVersion";
+
+import {getAllMinecraftVersions, MinecraftVersion} from "../scripts/Versions"
+import {LauncherConfig, readLauncherConfig, saveLauncherConfig} from "../scripts/Launcher";
+import {findAllProfiles, Profile, saveAllProfiles} from "../scripts/Profiles";
+
 import { ipcRenderer } from "electron";
 import {getModList} from "../scripts/Mods";
 

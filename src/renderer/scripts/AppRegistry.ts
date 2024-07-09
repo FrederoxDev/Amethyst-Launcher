@@ -1,5 +1,5 @@
-import { MinecraftVersion } from "../types/MinecraftVersion";
-import { getVersionsFolder } from "./AmethystPaths";
+import { VersionsFolder } from "./Paths";
+import {MinecraftVersion} from "./Versions";
 
 const regedit = window.require("regedit-rs") as typeof import("regedit-rs");
 const child = window.require("child_process") as typeof import("child_process");
@@ -75,8 +75,7 @@ export async function registerVersion(version: MinecraftVersion) {
         throw new Error("There is still a version installed!");
     }
 
-    const versionsFolder = getVersionsFolder();
-    const appxManifest = path.join(versionsFolder, `Minecraft-${version.version.toString()}`, "AppxManifest.xml");
+    const appxManifest = path.join(VersionsFolder, `Minecraft-${version.version.toString()}`, "AppxManifest.xml");
 
     const registerCmd = `powershell -ExecutionPolicy Bypass -Command "& { Add-AppxPackage -Path "${appxManifest}" -Register }"`;
     await execAsync(registerCmd)

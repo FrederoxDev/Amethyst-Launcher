@@ -1,4 +1,4 @@
-import {getModsFolder} from "../versionSwitcher/AmethystPaths";
+import { ModsFolder } from "./Paths";
 
 //////////////////// MOD CONFIG ////////////////////
 
@@ -85,15 +85,14 @@ export function getModList(): ModList {
         runtimeMods: []
     };
 
-    const modsFolder = getModsFolder();
-    if (!fs.existsSync(modsFolder)) {
+    if (!fs.existsSync(ModsFolder)) {
         return {
             mods: [],
             runtimeMods: []
         };
     }
 
-    const mod_directories = fs.readdirSync(modsFolder, { withFileTypes: true }).filter(entry => entry.isDirectory());
+    const mod_directories = fs.readdirSync(ModsFolder, { withFileTypes: true }).filter(entry => entry.isDirectory());
 
     for (const mod_directory of mod_directories) {
         const dir_path = path.join(mod_directory.parentPath, mod_directory.name);
