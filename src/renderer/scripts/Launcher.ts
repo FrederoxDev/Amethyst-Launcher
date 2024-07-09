@@ -1,4 +1,4 @@
-import { LauncherConfigPath } from "./Paths";
+import { LauncherConfigFile } from "./Paths";
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
@@ -13,15 +13,15 @@ export interface LauncherConfig {
 }
 
 export function saveLauncherConfig(config: LauncherConfig) {
-    fs.mkdirSync(path.dirname(LauncherConfigPath), {recursive: true});
-    fs.writeFileSync(LauncherConfigPath, JSON.stringify(config, undefined, 4));
+    fs.mkdirSync(path.dirname(LauncherConfigFile), {recursive: true});
+    fs.writeFileSync(LauncherConfigFile, JSON.stringify(config, undefined, 4));
 }
 
 export function readLauncherConfig(): LauncherConfig {
     let data: Partial<LauncherConfig> = {};
 
     try {
-        const jsonData = fs.readFileSync(LauncherConfigPath, "utf-8");
+        const jsonData = fs.readFileSync(LauncherConfigFile, "utf-8");
         data = JSON.parse(jsonData);
     } catch {
         console.error(`Failed to read/parse the launcherConfig file`);

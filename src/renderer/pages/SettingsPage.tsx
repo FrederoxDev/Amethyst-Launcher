@@ -2,7 +2,7 @@ import {useAppState} from "../contexts/AppState";
 import {SemVersion} from "../scripts/classes/SemVersion";
 import { isRegisteredVersionOurs, isVersionDownloaded } from "../scripts/VersionManager";
 import { getInstalledMinecraftPackagePath } from "../scripts/AppRegistry";
-import { AmethystFolder, LauncherConfigPath, MinecraftUWPFolder } from "../scripts/Paths";
+import { AmethystFolder, LauncherConfigFile, MinecraftUWPFolder } from "../scripts/Paths";
 import { isDeveloperModeEnabled } from "../scripts/DeveloperMode";
 import ReadOnlyTextBox from "../components/ReadOnlyTextBox";
 import { useEffect, useState } from "react";
@@ -42,12 +42,12 @@ export default function SettingsPage() {
     }
 
     const updateCfgText = () => {
-        if (!fs.existsSync(LauncherConfigPath)) {
+        if (!fs.existsSync(LauncherConfigFile)) {
             setLauncherCfg("Launcher config does not exist...");
             return;
         }
 
-        const data = fs.readFileSync(LauncherConfigPath, 'utf-8');
+        const data = fs.readFileSync(LauncherConfigFile, 'utf-8');
         setLauncherCfg(data)
     }
 
