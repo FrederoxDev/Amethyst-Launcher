@@ -3,10 +3,10 @@ const {autoUpdater} = require("electron-updater");
 
 const {join} = require('path');
 
-/** @type {BrowserWindow} */
+/** @type {Electron.BrowserWindow} */
 let mainWindow = null;
 
-function createWindow() {
+function createWindow(){
     const win = new BrowserWindow({
         width: 800,
         height: 600,
@@ -22,14 +22,15 @@ function createWindow() {
         frame: false
     });
 
-    mainWindow = win;
     win.setMenuBarVisibility(false);
 
     if (app.isPackaged) {
-        win.loadURL(`file://${join(app.getAppPath(), '/build/public/index.html')}`);
+        win.loadURL(`file://${join(app.getAppPath(), '/build/public/index.html')}`).then();
     } else {
-        win.loadURL('http://localhost:3000');
+        win.loadURL('http://localhost:3000').then();
     }
+
+    return win;
 }
 
 const windowMenu = new Menu()
@@ -69,7 +70,7 @@ ipcMain.on('WINDOW_UI_THEME', (event, args) => {
     }
 })
 
-ipcMain.handle("get-app-path", (event) => {
+ipcMain.handle("get-app-path", () => {
     return app.getAppPath()
 })
 
@@ -89,29 +90,24 @@ if (hasSingleInstanceLock === false) {
 // No window is open so create new
 else {
     app.on('ready', () => {
-        createWindow();
+        mainWindow = createWindow();
     })
 
-    app.on('second-instance', (event, argv, dir) => {
+    app.on('second-instance', () => {
         // When second instance is started, restore and focus on existing one.
         if (mainWindow) {
             if (mainWindow.isMinimized()) mainWindow.restore();
             mainWindow.focus();
         }
-
-        if (process.argv.length >= 2) {
-            const file_path = process.argv[1]
-        }
     })
 }
 
-ipcMain.handle('get-app-version', (event) => {
+ipcMain.handle('get-app-version', () => {
     return app.getVersion();
 });
 
-ipcMain.handle('check-for-updates', (event) => {
-    autoUpdater.checkForUpdates().then(r => {
-    });
+ipcMain.handle('check-for-updates', () => {
+    autoUpdater.checkForUpdates().then()
 });
 
 ipcMain.handle('set-auto-download', (event, bool) => {
@@ -122,7 +118,7 @@ ipcMain.handle('set-auto-install-on-app-quit', (event, bool) => {
     autoUpdater.autoInstallOnAppQuit = bool;
 });
 
-ipcMain.handle('update-download', async (event) => {
+ipcMain.handle('update-download', async () => {
     await autoUpdater.downloadUpdate();
 });
 
@@ -142,7 +138,7 @@ autoUpdater.on('download-progress', (info) => {
     mainWindow.webContents.send('download-progress', info);
 });
 
-autoUpdater.on('update-downloaded', (info) => {
+autoUpdater.on('update-downloaded', () => {
     // mainWindow.webContents.send('update-downloaded', info);
     autoUpdater.quitAndInstall(true, true);
 });
