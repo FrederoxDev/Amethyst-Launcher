@@ -1,24 +1,23 @@
 import { ipcRenderer } from "electron";
-import { MinecraftVersion } from "../types/MinecraftVersion";
-import { SemVersion } from "../types/SemVersion";
-import { /** getAmethystFolder, */ getVersionsFolder } from "./AmethystPaths";
+import { SemVersion } from "./classes/SemVersion";
+import { VersionsFolder } from "./Paths";
 import { getInstalledMinecraftPackagePath } from "./AppRegistry";
 import { Extractor } from "./backend/Extractor";
 import { download } from "./backend/MinecraftVersionDownloader";
+import {MinecraftVersion} from "./Versions";
 
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
 
 export function isVersionDownloaded(version: SemVersion) {
-    return fs.existsSync(path.join(getVersionsFolder(), `Minecraft-${version.toString()}`));
+    return fs.existsSync(path.join(VersionsFolder, `Minecraft-${version.toString()}`));
 }
 
 export function createLockFile(version: SemVersion) {
-    const versionsFolder = getVersionsFolder();
-    const lockPath = path.join(versionsFolder, `Minecraft-${version.toString()}.lock`);
+    const lockPath = path.join(VersionsFolder, `Minecraft-${version.toString()}.lock`);
 
-    if (!fs.existsSync(versionsFolder)) {
-        fs.mkdirSync(versionsFolder, {recursive: true})
+    if (!fs.existsSync(VersionsFolder)) {
+        fs.mkdirSync(VersionsFolder, {recursive: true})
     }
 
     const handle = fs.openSync(lockPath, "w");
@@ -26,15 +25,13 @@ export function createLockFile(version: SemVersion) {
 }
 
 export function isLockFilePresent(version: SemVersion) {
-    const versionsFolder = getVersionsFolder();
-    const lockPath = path.join(versionsFolder, `Minecraft-${version.toString()}.lock`);
+    const lockPath = path.join(VersionsFolder, `Minecraft-${version.toString()}.lock`);
     return fs.existsSync(lockPath);
 }
 
 export function cleanupSuccessfulInstall(version: SemVersion) {
-    const versionsFolder = getVersionsFolder();
-    const appxPath = path.join(versionsFolder, `Minecraft-${version.toString()}.zip`);
-    const lockPath = path.join(versionsFolder, `Minecraft-${version.toString()}.lock`);
+    const appxPath = path.join(VersionsFolder, `Minecraft-${version.toString()}.zip`);
+    const lockPath = path.join(VersionsFolder, `Minecraft-${version.toString()}.lock`);
 
     if (fs.existsSync(appxPath)) {
         fs.rmSync(appxPath, {recursive: true})
@@ -46,10 +43,9 @@ export function cleanupSuccessfulInstall(version: SemVersion) {
 }
 
 export function cleanupFailedInstall(version: SemVersion) {
-    const versionsFolder = getVersionsFolder();
-    const appxPath = path.join(versionsFolder, `Minecraft-${version.toString()}.zip`);
-    const lockPath = path.join(versionsFolder, `Minecraft-${version.toString()}.lock`);
-    const folderPath = path.join(versionsFolder, `Minecraft-${version.toString()}`);
+    const appxPath = path.join(VersionsFolder, `Minecraft-${version.toString()}.zip`);
+    const lockPath = path.join(VersionsFolder, `Minecraft-${version.toString()}.lock`);
+    const folderPath = path.join(VersionsFolder, `Minecraft-${version.toString()}`);
     
     if (fs.existsSync(appxPath)) {
         fs.rmSync(appxPath, {recursive: true})
@@ -69,12 +65,11 @@ export async function downloadVersion(
     setStatus: React.Dispatch<React.SetStateAction<string>>,
     setLoadingPercent: React.Dispatch<React.SetStateAction<number>>,
 ) {
-    const versionsFolder = getVersionsFolder();
-    if (!fs.existsSync(versionsFolder)) {
-        fs.mkdirSync(versionsFolder, {recursive: true});
+    if (!fs.existsSync(VersionsFolder)) {
+        fs.mkdirSync(VersionsFolder, {recursive: true});
     }
 
-    const outputFile = path.join(versionsFolder, `Minecraft-${version.version.toString()}.zip`);
+    const outputFile = path.join(VersionsFolder, `Minecraft-${version.version.toString()}.zip`);
 
     const toMB = (bytes: number) => {
         const mb = bytes / (1024 * 1024);
@@ -105,9 +100,8 @@ export async function extractVersion(
     setStatus: React.Dispatch<React.SetStateAction<string>>,
     setLoadingPercent: React.Dispatch<React.SetStateAction<number>>,
 ) {
-    const versionsFolder = getVersionsFolder();
-    const appxPath = path.join(versionsFolder, `Minecraft-${version.toString()}.zip`);
-    const folderPath = path.join(versionsFolder, `Minecraft-${version.toString()}`);
+    const appxPath = path.join(VersionsFolder, `Minecraft-${version.toString()}.zip`);
+    const folderPath = path.join(VersionsFolder, `Minecraft-${version.toString()}`);
 
     const exludes = [
         "AppxMetadata/CodeIntegrity.cat",
@@ -137,8 +131,7 @@ export async function extractVersion(
 }
 
 export function copyProxyToInstalledVer(version: MinecraftVersion) {
-    const versionsFolder = getVersionsFolder();
-    const versionFolder = path.join(versionsFolder, `Minecraft-${version.toString()}`);
+    const versionFolder = path.join(VersionsFolder, `Minecraft-${version.toString()}`);
 
     ipcRenderer.invoke('get-app-path').then(appPath => {
         const proxyDllPath = path.join(appPath, "build/public/proxy/dxgi.dll",);
@@ -149,11 +142,10 @@ export function copyProxyToInstalledVer(version: MinecraftVersion) {
 }
 
 export function isRegisteredVersionOurs(version: MinecraftVersion) {
-    const versionsFolder = getVersionsFolder();
     const fileName = `Minecraft-${version.version.toString()}`;
 
     const packageRootFolder = getInstalledMinecraftPackagePath(version);
     if (packageRootFolder === undefined) return false;
 
-    return packageRootFolder === `${versionsFolder}\\${fileName}`;
+    return packageRootFolder === `${VersionsFolder}\\${fileName}`;
 }

@@ -1,11 +1,11 @@
 import Dropdown from "../components/Dropdown";
 import MinecraftButton from "../components/MinecraftButton";
 import {useAppState} from "../contexts/AppState";
-import {SemVersion} from "../types/SemVersion";
-import {readLauncherConfig, saveLauncherConfig} from "../launcher/Modlist";
-import { isDeveloperModeEnabled, tryEnableDeveloperMode } from "../versionSwitcher/DeveloperMode";
-import { registerVersion, unregisterExisting } from "../versionSwitcher/AppRegistry";
-import { cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
+import {SemVersion} from "../scripts/classes/SemVersion";
+import { readLauncherConfig, saveLauncherConfig } from "../scripts/Launcher";
+import { isDeveloperModeEnabled, tryEnableDeveloperMode } from "../scripts/DeveloperMode";
+import { registerVersion, unregisterExisting } from "../scripts/AppRegistry";
+import { cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded } from "../scripts/VersionManager";
 
 const child = window.require('child_process') as typeof import('child_process')
 

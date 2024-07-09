@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import DividedSection from "../components/DividedSection";
 import MinecraftButton, { MinecraftButtonStyle } from "../components/MinecraftButton";
 import { UpdateInfo } from "electron-updater";
 import LoadingWheel from "../components/LoadingWheel";
@@ -78,24 +77,24 @@ export default function UpdatePage() {
                 {!downloadActive && (
                     <div className="fixed top-0 left-0 flex flex-col w-full items-center justify-center h-full">
                         <div>
-                            <DividedSection>
+                            <div className="border-y-[2px] border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
                                 <p className="minecraft-seven text-white text-[14px]">Launcher Update found!</p>
-                            </DividedSection>
-                            <DividedSection>
+                            </div>
+                            <div className="border-y-[2px] border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
                                 <p className="minecraft-seven text-[#BCBEC0] text-[12px]">Version: {updateInfo ? updateInfo.version : "undefined"} (current: {appVersion})</p>
                                 <p className="minecraft-seven text-[#BCBEC0] text-[12px]">Path: {updateInfo ? updateInfo.path : "undefined"}</p>
                                 <p className="minecraft-seven text-[#BCBEC0] text-[12px]">Release
                                     Date: {updateInfo ? updateInfo.releaseDate : "undefined"}</p>
                                 <p className="minecraft-seven text-[#BCBEC0] text-[12px]">Sha512: {updateInfo ? updateInfo.sha512 : "undefined"}</p>
-                            </DividedSection>
-                            <DividedSection className="flex justify-around gap-[8px]">
+                            </div>
+                            <div className="flex justify-around gap-[8px] border-y-[2px] border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]">
                                 <div className="w-[50%]"><MinecraftButton text="Download"
                                     style={MinecraftButtonStyle.Confirm}
                                     onClick={downloadUpdate} /></div>
                                 <div className="w-[50%]"><MinecraftButton text="Ignore"
                                     style={MinecraftButtonStyle.Warn}
                                     onClick={ignoreUpdate} /></div>
-                            </DividedSection>
+                            </div>
                         </div>
                     </div>
                 )}
