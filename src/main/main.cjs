@@ -1,7 +1,8 @@
 const {app, Menu, BrowserWindow, ipcMain, nativeTheme, MenuItem} = require('electron');
 const {autoUpdater} = require("electron-updater");
-
 const {join} = require('path');
+
+process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 
 /** @type {Electron.BrowserWindow} */
 let mainWindow = null;
