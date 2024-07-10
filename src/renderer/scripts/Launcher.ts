@@ -12,12 +12,7 @@ export interface LauncherConfig {
     ui_theme: string
 }
 
-export function saveLauncherConfig(config: LauncherConfig) {
-    fs.mkdirSync(path.dirname(LauncherConfigFile), {recursive: true});
-    fs.writeFileSync(LauncherConfigFile, JSON.stringify(config, undefined, 4));
-}
-
-export function readLauncherConfig(): LauncherConfig {
+export function GetLauncherConfig(): LauncherConfig {
     let data: Partial<LauncherConfig> = {};
 
     try {
@@ -37,3 +32,9 @@ export function readLauncherConfig(): LauncherConfig {
         ...data,
     }
 }
+
+export function SetLauncherConfig(config: LauncherConfig) {
+    fs.mkdirSync(path.dirname(LauncherConfigFile), {recursive: true});
+    fs.writeFileSync(LauncherConfigFile, JSON.stringify(config, undefined, 4));
+}
+

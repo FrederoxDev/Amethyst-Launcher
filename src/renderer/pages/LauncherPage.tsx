@@ -2,10 +2,10 @@ import Dropdown from "../components/Dropdown";
 import MinecraftButton from "../components/MinecraftButton";
 import {useAppState} from "../contexts/AppState";
 import {SemVersion} from "../scripts/classes/SemVersion";
-import { readLauncherConfig, saveLauncherConfig } from "../scripts/Launcher";
-import { isDeveloperModeEnabled, tryEnableDeveloperMode } from "../scripts/DeveloperMode";
+import { GetLauncherConfig, SetLauncherConfig } from "../scripts/Launcher";
+import { IsDevModeEnabled, TryEnableDevMode } from "../scripts/DeveloperMode";
 import { RegisterVersion, UnregisterCurrent } from "../scripts/AppRegistry";
-import { CleanupInstall, TransferProxy, CreateLock, DownloadVersion, ExtractVersion, IsLocked, isRegisteredVersionOurs, IsDownloaded } from "../scripts/VersionManager";
+import { CleanupInstall, InstallProxy, CreateLock, DownloadVersion, ExtractVersion, IsLocked, IsRegistered, IsDownloaded } from "../scripts/VersionManager";
 
 const child = window.require('child_process') as typeof import('child_process')
 
@@ -40,8 +40,8 @@ export default function LauncherPage() {
             setIsLoading(true);
 
             // Check that the user has developer mode enabled on windows for the game to be installed through loose files.
-            if (!isDeveloperModeEnabled()) {
-                const couldEnableDev = await tryEnableDeveloperMode();
+            if (!IsDevModeEnabled()) {
+                const couldEnableDev = await TryEnableDevMode();
                 if (!couldEnableDev) {
                     throw new Error("Failed to enable 'Developer Mode' in windows settings to allow installing the game from loose files, please enable manually or make sure to press 'Yes' to enable automatically.")
                 }
@@ -69,20 +69,20 @@ export default function LauncherPage() {
             }
 
             // Only register the game if needed
-            if (!isRegisteredVersionOurs(minecraftVersion)) {
+            if (!IsRegistered(minecraftVersion)) {
                 setStatus("Unregistering existing version");
                 await UnregisterCurrent();
 
                 setStatus("Registering downloaded version");
                 await RegisterVersion(minecraftVersion)
 
-                saveLauncherConfig(readLauncherConfig());
+                SetLauncherConfig(GetLauncherConfig());
             }
 
             setIsLoading(false);
             setStatus("");
 
-            TransferProxy(minecraftVersion);
+            InstallProxy(minecraftVersion);
 
             const startGameCmd = `start minecraft:`;
             child.exec(startGameCmd)

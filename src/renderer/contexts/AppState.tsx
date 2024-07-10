@@ -1,11 +1,11 @@
 import {createContext, ReactNode, useCallback, useContext, useEffect, useState} from "react";
 
 import {FetchMinecraftVersions, MinecraftVersion} from "../scripts/Versions"
-import {LauncherConfig, readLauncherConfig, saveLauncherConfig} from "../scripts/Launcher";
-import {findAllProfiles, Profile, saveAllProfiles} from "../scripts/Profiles";
+import {LauncherConfig, GetLauncherConfig, SetLauncherConfig} from "../scripts/Launcher";
+import {GetProfiles, Profile, SetProfiles} from "../scripts/Profiles";
 
 import { ipcRenderer } from "electron";
-import {getModList} from "../scripts/Mods";
+import {GetMods} from "../scripts/Mods";
 
 interface TAppStateContext {
     allMods: string[];
@@ -66,13 +66,13 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
 
     // Initialize Data like all mods and existing profiles..
     useEffect(() => {
-        setAllProfiles(findAllProfiles());
+        setAllProfiles(GetProfiles());
 
-        const modList = getModList();
+        const modList = GetMods();
         setAllRuntimes(["Vanilla", ...modList.runtimeMods]);
         setAllMods(modList.mods);
 
-        const readConfig = readLauncherConfig();
+        const readConfig = GetLauncherConfig();
         setKeepLauncherOpen(readConfig.keep_open ?? true);
         setDeveloperMode(readConfig.developer_mode ?? false);
         setSelectedProfile(readConfig.selected_profile ?? 0);
@@ -89,7 +89,7 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
     const [hasInitialized, setHasInitialized] = useState(false);
 
     const saveData = useCallback(() => {
-        saveAllProfiles(allProfiles);
+        SetProfiles(allProfiles);
 
         const launcherConfig: LauncherConfig = {
             developer_mode: developerMode,
@@ -100,7 +100,7 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
             ui_theme: UITheme
         };
 
-        saveLauncherConfig(launcherConfig);
+        SetLauncherConfig(launcherConfig);
     }, [allProfiles, developerMode, keepLauncherOpen, selectedProfile, UITheme])
 
     useEffect(() => {
