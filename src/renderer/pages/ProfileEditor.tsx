@@ -52,7 +52,7 @@ export default function ProfileEditor() {
                      toggleModActive(name);
                  }}
             >
-                <div className="cursor-pointer border-y-[2px] border-solid border-t-[#5A5B5C] border-b-[#1E1E1F] p-[8px] bg-[#48494A]" style={{
+                <div className="cursor-pointer border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]" style={{
                     backgroundColor: isHovered ? "#5A5B5C" : "#48494A",
                     padding: "1px",
                     paddingLeft: "4px",
