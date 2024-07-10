@@ -1,9 +1,9 @@
 import {useAppState} from "../contexts/AppState";
 import {SemVersion} from "../scripts/classes/SemVersion";
-import { isRegisteredVersionOurs, IsDownloaded } from "../scripts/VersionManager";
+import { IsRegistered, IsDownloaded } from "../scripts/VersionManager";
 import { GetPackagePath } from "../scripts/AppRegistry";
 import { AmethystFolder, LauncherConfigFile, MinecraftUWPFolder } from "../scripts/Paths";
-import { isDeveloperModeEnabled } from "../scripts/DeveloperMode";
+import { IsDevModeEnabled } from "../scripts/DeveloperMode";
 import ReadOnlyTextBox from "../components/ReadOnlyTextBox";
 import { useEffect, useState } from "react";
 import MinecraftToggle from "../components/MinecraftToggle"
@@ -28,7 +28,7 @@ export default function SettingsPage() {
     let isRegisteredVerOurs = false;
     let installDir = "";
 
-    const isWindowsDevModeOn = isDeveloperModeEnabled();
+    const isWindowsDevModeOn = IsDevModeEnabled();
 
     if (profile) {
         const semVersion = SemVersion.fromString(profile.minecraft_version);
@@ -36,7 +36,7 @@ export default function SettingsPage() {
 
         if (minecraftVersion) {
             isVerDownloaded = IsDownloaded(minecraftVersion.version)
-            isRegisteredVerOurs = isRegisteredVersionOurs(minecraftVersion)
+            isRegisteredVerOurs = IsRegistered(minecraftVersion)
             installDir = GetPackagePath() ?? "Could not find installed."
         }
     }

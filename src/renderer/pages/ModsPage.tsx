@@ -3,7 +3,7 @@ import MainPanel from "../components/MainPanel";
 import MinecraftButton from "../components/MinecraftButton";
 import { MinecraftUWPFolder, ModsFolder } from "../scripts/Paths";
 
-import { validateModConfig, ModConfig } from "../scripts/Mods";
+import { ValidateMod, ModConfig } from "../scripts/Mods";
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
@@ -46,7 +46,7 @@ function getAllMods(): ModErrorInfo[] {
             try {
                 const configData = fs.readFileSync(modConfigPath, "utf-8");
                 const configParsed = JSON.parse(configData);
-                modConfig = validateModConfig(configParsed, modErrors);
+                modConfig = ValidateMod(configParsed, modErrors);
                 console.log(modConfig)
             }
             catch {

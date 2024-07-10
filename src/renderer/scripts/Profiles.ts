@@ -3,18 +3,18 @@ import { ValidatePath, LauncherFolder} from "./Paths";
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
 
-export type Profile = {
+export interface Profile {
     name: string,
     runtime: string,
     mods: string[]
     minecraft_version: string
-};
+}
 
-export function findAllProfiles(): Profile[] {
-    const profilesFile = path.join(LauncherFolder, "profiles.json");
-    if (!fs.existsSync(profilesFile)) return [];
+export function GetProfiles(): Profile[] {
+    const profiles_filepath = path.join(LauncherFolder, "profiles.json");
+    if (!fs.existsSync(profiles_filepath)) return [];
 
-    const jsonData = fs.readFileSync(profilesFile, "utf-8");
+    const jsonData = fs.readFileSync(profiles_filepath, "utf-8");
     try {
         return JSON.parse(jsonData);
     } catch {
@@ -22,8 +22,8 @@ export function findAllProfiles(): Profile[] {
     }
 }
 
-export function saveAllProfiles(profiles: Profile[]) {
-    const profilesFile = path.join(LauncherFolder, "profiles.json");
-    ValidatePath(profilesFile);
-    fs.writeFileSync(profilesFile, JSON.stringify(profiles, undefined, 4));
+export function SetProfiles(profiles: Profile[]) {
+    const profiles_filepath = path.join(LauncherFolder, "profiles.json");
+    ValidatePath(profiles_filepath);
+    fs.writeFileSync(profiles_filepath, JSON.stringify(profiles, undefined, 4));
 }

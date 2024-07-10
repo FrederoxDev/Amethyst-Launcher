@@ -1,17 +1,17 @@
-import { ipcRenderer } from "electron";
 import { SemVersion } from "./classes/SemVersion";
-import { VersionsFolder, ValidatePath, DeletePath } from "./Paths";
+import { VersionsFolder, ElectronAppPath, ValidatePath, DeletePath } from "./Paths";
 import { GetPackagePath } from "./AppRegistry";
 import { Extractor } from "./backend/Extractor";
 import { download } from "./backend/MinecraftVersionDownloader";
-import {MinecraftVersion} from "./Versions";
+import { MinecraftVersion } from "./Versions";
 import React from "react";
 
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
 
 export function IsDownloaded(version: SemVersion) {
-    return fs.existsSync(path.join(VersionsFolder, `Minecraft-${version.toString()}`));
+    const version_path = path.join(VersionsFolder, `Minecraft-${version.toString()}`)
+    return fs.existsSync(version_path);
 }
 
 export function IsLocked(version: SemVersion) {
@@ -100,22 +100,15 @@ export async function ExtractVersion(version: MinecraftVersion, setStatus: React
     );
 }
 
-export function TransferProxy(version: MinecraftVersion) {
-    const versionFolder = path.join(VersionsFolder, `Minecraft-${version.version.toString()}`);
+export function InstallProxy(version: MinecraftVersion) {
+    const target_path = path.join(VersionsFolder, `Minecraft-${version.version.toString()}`, "dxgi.dll");
+    const proxy_path = path.join(ElectronAppPath, "build/public/proxy/dxgi.dll",);
 
-    ipcRenderer.invoke('get-app-path').then(appPath => {
-        const proxyDllPath = path.join(appPath, "build/public/proxy/dxgi.dll",);
-        const targetDllPath = path.join(versionFolder, "dxgi.dll")
-
-        fs.copyFileSync(proxyDllPath, targetDllPath);
-    })
+    fs.copyFileSync(proxy_path, target_path);
 }
 
-export function isRegisteredVersionOurs(version: MinecraftVersion) {
+export function IsRegistered(version: MinecraftVersion) {
     const fileName = `Minecraft-${version.version.toString()}`;
 
-    const packageRootFolder = GetPackagePath();
-    if (packageRootFolder === undefined) return false;
-
-    return packageRootFolder === `${VersionsFolder}\\${fileName}`;
+    return (GetPackagePath() === `${VersionsFolder}\\${fileName}`);
 }

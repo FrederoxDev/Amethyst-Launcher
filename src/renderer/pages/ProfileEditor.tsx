@@ -5,7 +5,7 @@ import Dropdown from "../components/Dropdown";
 import MinecraftButton, {MinecraftButtonStyle} from "../components/MinecraftButton";
 import {useAppState} from "../contexts/AppState";
 import {useNavigate} from "react-router-dom";
-import {getModList} from "../scripts/Mods";
+import {GetMods} from "../scripts/Mods";
 import {MinecraftVersionType} from "../scripts/Versions";
 
 export default function ProfileEditor() {
@@ -99,7 +99,7 @@ export default function ProfileEditor() {
     }
 
     const fetchMods = useCallback(() => {
-        const {mods} = getModList();
+        const {mods} = GetMods();
         setAllMods(mods);
     }, [setAllMods])
 

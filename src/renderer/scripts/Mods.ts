@@ -2,7 +2,7 @@ import { ModsFolder } from "./Paths";
 
 //////////////////// MOD CONFIG ////////////////////
 
-export type ModConfig = {
+export interface ModConfig {
     meta: {
         name: string,
         version: string,
@@ -10,9 +10,9 @@ export type ModConfig = {
         description?: string,
         is_runtime?: boolean
     }
-};
+}
 
-export function validateModConfig(config: Record<string, never>, outErrors?: string[]) : ModConfig {
+export function ValidateMod(config: Record<string, never>, outErrors?: string[]) : ModConfig {
     const validated_config: ModConfig = {
         meta: {
             name: "",
@@ -79,46 +79,47 @@ export type ModList = {
     mods: string[]
 }
 
-export function getModList(): ModList {
-    const mods: ModList = {
-        mods: [],
-        runtimeMods: []
-    };
+export function GetMods(): ModList {
+    if (fs.existsSync(ModsFolder)) {
+        const mods: ModList = {
+            mods: [],
+            runtimeMods: []
+        };
 
-    if (!fs.existsSync(ModsFolder)) {
+        const mod_directories = fs.readdirSync(ModsFolder, { withFileTypes: true }).filter(entry => entry.isDirectory());
+
+        for (const mod_directory of mod_directories) {
+            const dir_path = path.join(mod_directory.parentPath, mod_directory.name);
+
+            const config_path = path.join(dir_path, "mod.json")
+            if (fs.existsSync(config_path)) {
+                let mod_config: ModConfig;
+
+                const config_file = fs.readFileSync(config_path, "utf-8");
+
+                try {
+                    const parsed_config = JSON.parse(config_file);
+                    mod_config = ValidateMod(parsed_config);
+                }
+                catch {
+                    console.error(`Failed to read/parse the config for ${mod_directory.name} folder`);
+                    continue;
+                }
+
+                if (mod_config.meta.is_runtime) {
+                    mods.runtimeMods.push(mod_directory.name);
+                } else {
+                    mods.mods.push(mod_directory.name)
+                }
+            }
+        }
+
+        return mods;
+    }
+    else {
         return {
             mods: [],
             runtimeMods: []
         };
     }
-
-    const mod_directories = fs.readdirSync(ModsFolder, { withFileTypes: true }).filter(entry => entry.isDirectory());
-
-    for (const mod_directory of mod_directories) {
-        const dir_path = path.join(mod_directory.parentPath, mod_directory.name);
-
-        const config_path = path.join(dir_path, "mod.json")
-        if (fs.existsSync(config_path)) {
-            let mod_config: ModConfig;
-
-            const config_file = fs.readFileSync(config_path, "utf-8");
-
-            try {
-                const parsed_config = JSON.parse(config_file);
-                mod_config = validateModConfig(parsed_config);
-            }
-            catch {
-                console.error(`Failed to read/parse the config for ${mod_directory.name} folder`);
-                continue;
-            }
-
-            if (mod_config.meta.is_runtime) {
-                mods.runtimeMods.push(mod_directory.name);
-            } else {
-                mods.mods.push(mod_directory.name)
-            }
-        }
-    }
-
-    return mods;
 }
