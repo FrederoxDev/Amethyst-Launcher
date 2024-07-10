@@ -1,13 +1,12 @@
 import {useCallback, useEffect, useState} from "react";
-import DividedSection from "../components/DividedSection";
 import MainPanel from "../components/MainPanel";
 import TextInput from "../components/TextInput";
 import Dropdown from "../components/Dropdown";
 import MinecraftButton, {MinecraftButtonStyle} from "../components/MinecraftButton";
 import {useAppState} from "../contexts/AppState";
 import {useNavigate} from "react-router-dom";
-import {findAllMods} from "../launcher/Modlist";
-import {VersionType} from "../types/MinecraftVersion";
+import {GetMods} from "../scripts/Mods";
+import {MinecraftVersionType} from "../scripts/Versions";
 
 export default function ProfileEditor() {
     const [profileName, setProfileName] = useState("");
@@ -53,14 +52,14 @@ export default function ProfileEditor() {
                      toggleModActive(name);
                  }}
             >
-                <DividedSection className="cursor-pointer" style={{
+                <div className="cursor-pointer border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]" style={{
                     backgroundColor: isHovered ? "#5A5B5C" : "#48494A",
                     padding: "1px",
                     paddingLeft: "4px",
                     paddingRight: "4px"
                 }}>
                     <p className="minecraft-seven text-white">{name}</p>
-                </DividedSection>
+                </div>
             </div>
         )
     }
@@ -92,8 +91,7 @@ export default function ProfileEditor() {
     }
 
     const deleteProfile = () => {
-        const newProfiles = allProfiles;
-        newProfiles.splice(selectedProfile, 1);
+        allProfiles.splice(selectedProfile, 1);
         setAllProfiles(allProfiles);
 
         saveData();
@@ -101,7 +99,7 @@ export default function ProfileEditor() {
     }
 
     const fetchMods = useCallback(() => {
-        const {mods} = findAllMods();
+        const {mods} = GetMods();
         setAllMods(mods);
     }, [setAllMods])
 
@@ -127,7 +125,7 @@ export default function ProfileEditor() {
                         setValue={setProfileMinecraftVersion}
 
                         // we don't support non-release versions right now so only show release lmao
-                        options={allMinecraftVersions.filter(ver => ver.versionType === VersionType.Release).map(ver => ver.toString())}
+                        options={allMinecraftVersions.filter(ver => ver.versionType === MinecraftVersionType.Release).map(ver => ver.toString())}
                         id="minecraft-version"
                     />
                     <Dropdown

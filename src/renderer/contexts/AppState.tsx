@@ -1,16 +1,11 @@
 import {createContext, ReactNode, useCallback, useContext, useEffect, useState} from "react";
-import {Profile} from "../types/Profile";
-import {
-    findAllMods,
-    findAllProfiles,
-    getAllMinecraftVersions,
-    readLauncherConfig,
-    saveAllProfiles,
-    saveLauncherConfig
-} from "../launcher/Modlist";
-import {LauncherConfig} from "../types/LauncherConfig";
-import {MinecraftVersion} from "../types/MinecraftVersion";
+
+import {FetchMinecraftVersions, MinecraftVersion} from "../scripts/Versions"
+import {LauncherConfig, GetLauncherConfig, SetLauncherConfig} from "../scripts/Launcher";
+import {GetProfiles, Profile, SetProfiles} from "../scripts/Profiles";
+
 import { ipcRenderer } from "electron";
+import {GetMods} from "../scripts/Mods";
 
 interface TAppStateContext {
     allMods: string[];
@@ -71,20 +66,20 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
 
     // Initialize Data like all mods and existing profiles..
     useEffect(() => {
-        setAllProfiles(findAllProfiles());
+        setAllProfiles(GetProfiles());
 
-        const modList = findAllMods();
+        const modList = GetMods();
         setAllRuntimes(["Vanilla", ...modList.runtimeMods]);
         setAllMods(modList.mods);
 
-        const readConfig = readLauncherConfig();
+        const readConfig = GetLauncherConfig();
         setKeepLauncherOpen(readConfig.keep_open ?? true);
         setDeveloperMode(readConfig.developer_mode ?? false);
         setSelectedProfile(readConfig.selected_profile ?? 0);
         setUITheme(readConfig.ui_theme ?? "Light");
 
         const fetchMinecraftVersions = async () => {
-            const versions = await getAllMinecraftVersions();
+            const versions = await FetchMinecraftVersions();
             setAllMinecraftVersions(versions);
         }
 
@@ -94,7 +89,7 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
     const [hasInitialized, setHasInitialized] = useState(false);
 
     const saveData = useCallback(() => {
-        saveAllProfiles(allProfiles);
+        SetProfiles(allProfiles);
 
         const launcherConfig: LauncherConfig = {
             developer_mode: developerMode,
@@ -105,7 +100,7 @@ export const AppStateProvider = ({children}: { children: ReactNode }) => {
             ui_theme: UITheme
         };
 
-        saveLauncherConfig(launcherConfig);
+        SetLauncherConfig(launcherConfig);
     }, [allProfiles, developerMode, keepLauncherOpen, selectedProfile, UITheme])
 
     useEffect(() => {

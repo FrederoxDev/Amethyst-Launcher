@@ -1,11 +1,11 @@
 import Dropdown from "../components/Dropdown";
 import MinecraftButton from "../components/MinecraftButton";
 import {useAppState} from "../contexts/AppState";
-import {SemVersion} from "../types/SemVersion";
-import {readLauncherConfig, saveLauncherConfig} from "../launcher/Modlist";
-import { isDeveloperModeEnabled, tryEnableDeveloperMode } from "../versionSwitcher/DeveloperMode";
-import { registerVersion, unregisterExisting } from "../versionSwitcher/AppRegistry";
-import { cleanupFailedInstall, cleanupSuccessfulInstall, copyProxyToInstalledVer, createLockFile, downloadVersion, extractVersion, isLockFilePresent, isRegisteredVersionOurs, isVersionDownloaded } from "../versionSwitcher/VersionManager";
+import {SemVersion} from "../scripts/classes/SemVersion";
+import { GetLauncherConfig, SetLauncherConfig } from "../scripts/Launcher";
+import { IsDevModeEnabled, TryEnableDevMode } from "../scripts/DeveloperMode";
+import { RegisterVersion, UnregisterCurrent } from "../scripts/AppRegistry";
+import { CleanupInstall, InstallProxy, CreateLock, DownloadVersion, ExtractVersion, IsLocked, IsRegistered, IsDownloaded } from "../scripts/VersionManager";
 
 const child = window.require('child_process') as typeof import('child_process')
 
@@ -40,8 +40,8 @@ export default function LauncherPage() {
             setIsLoading(true);
 
             // Check that the user has developer mode enabled on windows for the game to be installed through loose files.
-            if (!isDeveloperModeEnabled()) {
-                const couldEnableDev = await tryEnableDeveloperMode();
+            if (!IsDevModeEnabled()) {
+                const couldEnableDev = await TryEnableDevMode();
                 if (!couldEnableDev) {
                     throw new Error("Failed to enable 'Developer Mode' in windows settings to allow installing the game from loose files, please enable manually or make sure to press 'Yes' to enable automatically.")
                 }
@@ -50,39 +50,39 @@ export default function LauncherPage() {
             // We create a lock file when starting the download
             // if we are doing a launch, and we detect it for the version we are targeting
             // there is a good chance the previous install/download failed and therefore remove it.
-            const didPreviousDownloadFail = isLockFilePresent(semVersion);
+            const didPreviousDownloadFail = IsLocked(semVersion);
             
             if (didPreviousDownloadFail) {
                 log("Detected a .lock file from the previous download attempt, cleaning up.");
-                cleanupFailedInstall(semVersion);
+                CleanupInstall(semVersion, false);
                 log("Removed previous download attempt.");
             }
 
             // Check for the folder for the version we are targeting, if not present we need to fetch.
-            if (!isVersionDownloaded(semVersion)) {
+            if (!IsDownloaded(semVersion)) {
                 log("Target version is not downloaded.");
-                createLockFile(semVersion);
-                await downloadVersion(minecraftVersion, setStatus, setLoadingPercent);
-                await extractVersion(minecraftVersion, setStatus, setLoadingPercent);
+                CreateLock(semVersion);
+                await DownloadVersion(minecraftVersion, setStatus, setLoadingPercent);
+                await ExtractVersion(minecraftVersion, setStatus, setLoadingPercent);
                 log("Cleaning up after successful download")
-                cleanupSuccessfulInstall(semVersion);
+                CleanupInstall(semVersion, true);
             }
 
             // Only register the game if needed
-            if (!isRegisteredVersionOurs(minecraftVersion)) {
+            if (!IsRegistered(minecraftVersion)) {
                 setStatus("Unregistering existing version");
-                await unregisterExisting();
+                await UnregisterCurrent();
 
                 setStatus("Registering downloaded version");
-                await registerVersion(minecraftVersion)
+                await RegisterVersion(minecraftVersion)
 
-                saveLauncherConfig(readLauncherConfig());
+                SetLauncherConfig(GetLauncherConfig());
             }
 
             setIsLoading(false);
             setStatus("");
 
-            copyProxyToInstalledVer(minecraftVersion);
+            InstallProxy(minecraftVersion);
 
             const startGameCmd = `start minecraft:`;
             child.exec(startGameCmd)
