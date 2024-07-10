@@ -3,11 +3,12 @@ import { ipcRenderer } from "electron";
 const fs = window.require('fs') as typeof import('fs')
 const path = window.require('path') as typeof import('path')
 
+const AppDataPath:                  string = await ipcRenderer.invoke('get-appdata-path');
 const LocalAppDataPath:             string = await ipcRenderer.invoke("get-localappdata-path");
 
 const AppPath:                      string = await ipcRenderer.invoke("get-app-path");
 
-const AmethystPath:                 string = path.join(...[LocalAppDataPath, "Amethyst"]);
+const AmethystPath:                 string = path.join(...[AppDataPath, "Amethyst"]);
 const LauncherPath:                 string = path.join(...[AmethystPath, "Launcher"]);
 const VersionsPath:                 string = path.join(...[AmethystPath, "Versions"]);
 const MinecraftUWPPath:             string = path.join(...[LocalAppDataPath, "Packages", "Microsoft.MinecraftUWP_8wekyb3d8bbwe"]);

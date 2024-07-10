@@ -1,8 +1,20 @@
 const {app, Menu, BrowserWindow, ipcMain, nativeTheme, MenuItem} = require('electron');
 const {autoUpdater} = require("electron-updater");
 const {join} = require('path');
+const path = require("path");
+const fs = require("fs");
 
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
+
+{
+    const amethyst_appdata_path = path.join(app.getPath('appData'), 'Amethyst', 'Launcher', 'AppData')
+    if (!fs.existsSync(amethyst_appdata_path)) {
+        fs.mkdirSync(amethyst_appdata_path, {recursive: true});
+    }
+    try { app.setPath('userData', amethyst_appdata_path) }
+    catch (e) { console.error(e); }
+}
+
 
 /** @type {Electron.BrowserWindow} */
 let mainWindow = null;
