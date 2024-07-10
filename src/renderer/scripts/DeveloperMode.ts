@@ -1,7 +1,7 @@
 const regedit = window.require("regedit-rs") as typeof import("regedit-rs");
 const sudo = window.require('sudo-prompt') as typeof import("sudo-prompt");
 
-export function isDeveloperModeEnabled() {
+export function IsDevModeEnabled() {
     const regKey = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock"
     const listed = regedit.listSync(regKey);
 
@@ -15,15 +15,15 @@ export function isDeveloperModeEnabled() {
     return false;
 }
 
-export async function tryEnableDeveloperMode(): Promise<boolean> {
+export async function TryEnableDevMode(): Promise<boolean> {
     const command = `reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock" /v "AllowDevelopmentWithoutDevLicense" /t REG_DWORD /d 1 /f`;
-    let options = {
+    const options = {
         name: "Amethyst Launcher"
     };
 
-    return new Promise((resolve, _reject) => {
+    return new Promise((resolve) => {
         try {
-            sudo.exec(command, options, (error, stdout, _stderr) => {
+            sudo.exec(command, options, (error, stdout) => {
                 if (error) {
                     console.log(`Error: ${error}`);
                     resolve(false);

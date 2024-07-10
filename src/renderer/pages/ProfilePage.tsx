@@ -1,8 +1,8 @@
 import {useNavigate} from "react-router-dom";
 import MainPanel from "../components/MainPanel";
-import {Profile} from "../types/Profile";
 import {useAppState} from "../contexts/AppState";
 import MinecraftButton from "../components/MinecraftButton";
+import {Profile} from "../scripts/Profiles";
 
 const ProfileButton = ({profile, index}: { profile: Profile, index: number }) => {
     const navigate = useNavigate();

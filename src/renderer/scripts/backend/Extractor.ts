@@ -1,17 +1,15 @@
 import JSZip from 'jszip';
-import {ActionComplete, ExtractProgress} from './Progress';
+import { ActionComplete, ExtractProgress } from './Progress';
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
 
 export class Extractor {
-    static async extractFile(file: string, to: string, excludes: string[], onProgress: ExtractProgress = () => {
-    }, onComplete: ActionComplete = () => {
-    }) {
+    static async extractFile(file: string, to: string, excludes: string[], onProgress: ExtractProgress = (): void => {}, onComplete: ActionComplete = (): void => {}): Promise<void> {
         try {
             fs.mkdirSync(to);
         } catch (err) {
-
+            console.error(err)
         }
 
         let isSuccess = false;
@@ -55,7 +53,7 @@ export class Extractor {
                 }
             }
 
-            isSuccess = extracted === allFiles;
+            isSuccess = (extracted === allFiles);
         } catch (error) {
             console.error('Error loading zip file:', error);
         } finally {
