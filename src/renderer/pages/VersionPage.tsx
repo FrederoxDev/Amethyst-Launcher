@@ -1,17 +1,15 @@
 import MainPanel from "../components/MainPanel";
 // import MinecraftButton from "../components/MinecraftButton";
-import { MinecraftVersion } from "../scripts/Versions";
-import {GetInstalledVersions} from "../scripts/Versions";
-
-const VersionButton = ({version}: { version: MinecraftVersion, index: number }) => {
+import { GetInstalledVersionsFromFile, InstalledVersion, ValidateVersionsFile } from "../scripts/Versions";
+const VersionButton = ({version}: { version: InstalledVersion, index: number }) => {
     // const navigate = useNavigate();
 
 
     return (
         <div>
             <div className="cursor-pointer border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-                <p className="minecraft-seven text-white text-[14px] px-[4px]">{version.toString()}</p>
-                <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px]">{"UUID:"} ({version.uuid})</p>
+                <p className="minecraft-seven text-white text-[14px] px-[4px]">{version.version.toString()}</p>
+                <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px]">{"Path:"} ({version.path})</p>
             </div>
         </div>
     )
@@ -20,9 +18,9 @@ const VersionButton = ({version}: { version: MinecraftVersion, index: number }) 
 export default function VersionPage() {
     // const navigate = useNavigate();
 
+    ValidateVersionsFile()
 
-    const versions = GetInstalledVersions();
-
+    const versions = GetInstalledVersionsFromFile();
 
     return (
         <MainPanel>
