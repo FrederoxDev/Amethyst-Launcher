@@ -177,8 +177,6 @@ export function GetInstalledVersionsFromFile(): InstalledVersion[] {
         const version_file_text = fs.readFileSync(VersionsFile, 'utf-8');
         const version_file_data: VersionsFileObject = VersionsFileObject.fromString(version_file_text);
 
-        console.log(version_file_data.installed_versions);
-
         installed_versions = version_file_data.installed_versions;
     }
     return installed_versions
