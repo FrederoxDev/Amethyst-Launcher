@@ -1,4 +1,4 @@
-import {app, Menu, BrowserWindow, ipcMain, nativeTheme, MenuItem} from "electron";
+import {app, Menu, BrowserWindow, ipcMain, nativeTheme, MenuItem, dialog} from "electron";
 import {autoUpdater} from "electron-updater";
 import * as path from "node:path";
 import * as fs from "fs";
@@ -90,6 +90,14 @@ ipcMain.handle("get-appdata-path", () => {
 
 ipcMain.handle("get-localappdata-path", () => {
     return process.env.LOCALAPPDATA;
+})
+
+ipcMain.handle("show-dialog", async (event, args) => {
+    return await dialog.showOpenDialog(args)
+})
+
+ipcMain.handle("show-message", async (event, args) => {
+    return await dialog.showMessageBox(args);
 })
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();

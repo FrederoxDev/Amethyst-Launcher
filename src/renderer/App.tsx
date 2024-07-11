@@ -9,7 +9,6 @@ import SettingsPage from "./pages/SettingsPage";
 import UpdatePage from "./pages/UpdatePage";
 import ModsPage from "./pages/ModsPage";
 import VersionPage from "./pages/VersionPage";
-import VersionEditor from "./pages/VersionEditor";
 
 export default function App() {
     
@@ -78,7 +77,6 @@ export default function App() {
                             <Route path='/mods' element={<ModsPage/>}/>
                             <Route path='/settings' element={<SettingsPage/>}/>
                             <Route path='/versions' element={<VersionPage/>}/>
-                            <Route path='/version-editor' element={<VersionEditor/>}/>
                         </Routes>
 
                         <UpdatePage></UpdatePage>
