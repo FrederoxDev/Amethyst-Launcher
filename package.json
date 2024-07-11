@@ -6,7 +6,7 @@
   "main": "build/electron/main/main.js",
   "type": "module",
   "scripts": {
-    "start": "vite --port 3000",
+    "start": "vite",
     "build": "npm run build:vite && npm run build:electron",
     "build:vite": "tsc -b && vite build",
     "build:electron": "electron-builder -w",
