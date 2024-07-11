@@ -8,6 +8,8 @@ import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import UpdatePage from "./pages/UpdatePage";
 import ModsPage from "./pages/ModsPage";
+import VersionPage from "./pages/VersionPage";
+import VersionEditor from "./pages/VersionEditor";
 
 export default function App() {
     
@@ -18,13 +20,13 @@ export default function App() {
 
     return (
         <AppStateProvider>
-            <link rel="preload" href="/images/art/lush_cave.png" as="image"/>
+            <link rel="preload" href="images/art/lush_cave.png" as="image"/>
 
             <div className="container relative">
                 <Title/>
 
                 <div className="launcher_background absolute flex-group">
-                    <img src="/images/art/lush_cave.png" className="object-cover w-full h-full min-h-screen" alt="" />
+                    <img src="images/art/lush_cave.png" className="object-cover w-full h-full min-h-screen" alt="" />
                 </div>
 
                 <div className="contents_container absolute flex flex-row w-full gap-[12px] h-[calc(100%-64px)] p-[12px]">
@@ -34,28 +36,34 @@ export default function App() {
                                 <Link to="/" className='block p-[9px]' draggable={false}>
                                     <div className='w-[46px] h-[46px]'
                                         style={location.pathname === "/" ? highlightedIcon : unselectedIcon}>
-                                        <img src="/images/icons/crafting-icon.png" className='w-full h-full pixelated' alt=''/>
+                                        <img src="images/icons/crafting-icon.png" className='w-full h-full pixelated' alt=''/>
                                     </div>
                                 </Link>
                                 <Link to="/profiles" className='block p-[9px]' draggable={false}>
                                     <div className='w-[46px] h-[46px]'
                                         style={location.pathname === "/profiles" ? highlightedIcon : unselectedIcon}>
-                                        <img src="/images/icons/chest-icon.png" className='w-full h-full pixelated' alt=''/>
+                                        <img src="images/icons/chest-icon.png" className='w-full h-full pixelated' alt=''/>
                                     </div>
                                 </Link>
                                 <Link to="/mods" className='block p-[9px]' draggable={false}>
                                     <div className='w-[46px] h-[46px]'
                                         style={location.pathname === "/mods" ? highlightedIcon : unselectedIcon}>
-                                        <img src="/images/icons/shulker-icon.png" className='w-full h-full pixelated' alt=''/>
+                                        <img src="images/icons/shulker-icon.png" className='w-full h-full pixelated' alt=''/>
+                                    </div>
+                                </Link>
+                                <Link to="/versions" className='block p-[9px]' draggable={false}>
+                                    <div className='w-[46px] h-[46px]'
+                                         style={location.pathname === "/versions" ? highlightedIcon : unselectedIcon}>
+                                        <img src="images/icons/portal-icon.png" className='w-full h-full pixelated' alt=''/>
                                     </div>
                                 </Link>
                             </div>
                             
                             <Link to="/settings" className='block p-[22px] bottom-0' draggable={false}>
                                 <div className='relative w-[20px] h-[20px]'>
-                                    <img src="/images/icons/settings-icon.png" className="absolute top-0 left-0 w-full h-full pixelated" alt=''/>
+                                    <img src="images/icons/settings-icon.png" className="absolute top-0 left-0 w-full h-full pixelated" alt=''/>
                                     {location.pathname === "/settings" ? 
-                                        <img src="/images/icons/settings-icon.png" className="absolute top-0 left-0 w-full h-full pixelated" alt=''/>
+                                        <img src="images/icons/settings-icon.png" className="absolute top-0 left-0 w-full h-full pixelated" alt=''/>
                                         : <></>
                                     }
                                 </div>
@@ -69,6 +77,8 @@ export default function App() {
                             <Route path='/profile-editor' element={<ProfileEditor/>}/>
                             <Route path='/mods' element={<ModsPage/>}/>
                             <Route path='/settings' element={<SettingsPage/>}/>
+                            <Route path='/versions' element={<VersionPage/>}/>
+                            <Route path='/version-editor' element={<VersionEditor/>}/>
                         </Routes>
 
                         <UpdatePage></UpdatePage>
