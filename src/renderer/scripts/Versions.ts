@@ -30,14 +30,42 @@ export class MinecraftVersion {
     }
 }
 
-export interface VersionsFileObject {
-    installed_versions: [
-        {
-            path: string
-            version: MinecraftVersion
-        }
-    ]
+export class VersionsFileObject {
+    installed_versions: InstalledVersion[]
     default_installation_path: string
+
+    constructor(versions: InstalledVersion[], install_path: string) {
+        this.installed_versions = versions;
+        this.default_installation_path = install_path;
+    }
+
+    static fromString(string: string): VersionsFileObject {
+        const obj = JSON.parse(string) as VersionsFileObject;
+
+        const default_installation_path = obj.default_installation_path;
+
+        const installed_versions = obj.installed_versions.map(installed_version => {
+            const old_sem_version = installed_version.version.version
+            const sem_version = new SemVersion(old_sem_version.major, old_sem_version.minor, old_sem_version.patch, old_sem_version.build)
+            const minecraft_version = new MinecraftVersion(sem_version, installed_version.version.uuid, installed_version.version.versionType)
+
+            return {
+                path: installed_version.path,
+                version: minecraft_version
+            }
+        })
+
+        return {
+            default_installation_path: default_installation_path,
+            installed_versions: installed_versions
+        }
+
+    }
+}
+
+export interface InstalledVersion {
+    path: string;
+    version: MinecraftVersion;
 }
 
 export async function FetchMinecraftVersions() {
@@ -109,14 +137,51 @@ export function GetInstalledVersions(): MinecraftVersion[] {
     }
 }
 
-export function GetInstalledVersionsFromFile(): MinecraftVersion[] {
+export function ValidateVersionsFile(): void {
+    if (!fs.existsSync(VersionsFile)) {
+        const default_version_file: VersionsFileObject = {
+            installed_versions: [],
+            default_installation_path: VersionsFolder
+        }
+
+        const versions_file_string = JSON.stringify(default_version_file, undefined, 4)
+
+        fs.writeFileSync(VersionsFile, versions_file_string);
+    }
+
+    const installed_versions = GetInstalledVersionsFromFile().filter((version) => { fs.existsSync(version.path) });
+
+    const old_versions = GetInstalledVersions()
+
+    for (const old_version of old_versions) {
+        if (installed_versions.find(version => version.version.toString() === old_version.toString()) === undefined) {
+            installed_versions.push({path: path.join(VersionsFolder, `Minecraft-${old_version.version.toString()}`), version: old_version})
+        }
+    }
+
     if (fs.existsSync(VersionsFile)) {
         const version_file_text = fs.readFileSync(VersionsFile, 'utf-8');
-        const version_file_data = JSON.parse(version_file_text) as VersionsFileObject;
+        const version_file_data: VersionsFileObject = JSON.parse(version_file_text) as VersionsFileObject;
 
-        return version_file_data.installed_versions.map(element => element.version)
+        version_file_data.installed_versions = installed_versions
+
+        fs.writeFileSync(VersionsFile, JSON.stringify(version_file_data, undefined, 4))
     }
-    return []
+}
+
+export function GetInstalledVersionsFromFile(): InstalledVersion[] {
+
+    let installed_versions: InstalledVersion[] = []
+
+    if (fs.existsSync(VersionsFile)) {
+        const version_file_text = fs.readFileSync(VersionsFile, 'utf-8');
+        const version_file_data: VersionsFileObject = VersionsFileObject.fromString(version_file_text);
+
+        console.log(version_file_data.installed_versions);
+
+        installed_versions = version_file_data.installed_versions;
+    }
+    return installed_versions
 }
 
 export function FindMinecraftVersion(sem_version: SemVersion) {
