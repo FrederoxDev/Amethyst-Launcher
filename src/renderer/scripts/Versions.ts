@@ -1,6 +1,5 @@
-import {ValidatePath, LauncherFolder, VersionsFolder} from "./Paths";
+import { VersionsFolder, CachedVersionsFile, VersionsFile } from "./Paths";
 import { SemVersion } from "./classes/SemVersion";
-
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
@@ -31,13 +30,21 @@ export class MinecraftVersion {
     }
 }
 
+export interface VersionsFileObject {
+    installed_versions: [
+        {
+            path: string
+            version: MinecraftVersion
+        }
+    ]
+    default_installation_path: string
+}
+
 export async function FetchMinecraftVersions() {
-    const versionCacheFile = path.join(LauncherFolder, "cached_versions.json");
-    ValidatePath(versionCacheFile);
     let lastWriteTime: Date = new Date(0);
 
-    if (fs.existsSync(versionCacheFile)) {
-        const fileInfo = fs.statSync(versionCacheFile);
+    if (fs.existsSync(CachedVersionsFile)) {
+        const fileInfo = fs.statSync(CachedVersionsFile);
         lastWriteTime = fileInfo.mtime;
     }
 
@@ -55,10 +62,10 @@ export async function FetchMinecraftVersions() {
             throw new Error("Failed to fetch minecraft version data from https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min");
         }
 
-        fs.writeFileSync(versionCacheFile, await data.text());
+        fs.writeFileSync(CachedVersionsFile, await data.text());
     }
 
-    const versionData = fs.readFileSync(versionCacheFile, "utf-8");
+    const versionData = fs.readFileSync(CachedVersionsFile, "utf-8");
     const rawJson = JSON.parse(versionData);
     const versions: MinecraftVersion[] = [];
 
@@ -102,11 +109,18 @@ export function GetInstalledVersions(): MinecraftVersion[] {
     }
 }
 
-export function FindMinecraftVersion(sem_version: SemVersion) {
-    const versionCacheFile = path.join(LauncherFolder, "cached_versions.json");
-    ValidatePath(versionCacheFile);
+export function GetInstalledVersionsFromFile(): MinecraftVersion[] {
+    if (fs.existsSync(VersionsFile)) {
+        const version_file_text = fs.readFileSync(VersionsFile, 'utf-8');
+        const version_file_data = JSON.parse(version_file_text) as VersionsFileObject;
 
-    const versionData = fs.readFileSync(versionCacheFile, "utf-8");
+        return version_file_data.installed_versions.map(element => element.version)
+    }
+    return []
+}
+
+export function FindMinecraftVersion(sem_version: SemVersion) {
+    const versionData = fs.readFileSync(CachedVersionsFile, "utf-8");
     const rawJson = JSON.parse(versionData);
 
     for (const version of rawJson) {
