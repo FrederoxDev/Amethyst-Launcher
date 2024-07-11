@@ -3,11 +3,10 @@
   "version": "2.4.7",
   "author": "FrederoxDev, Adrian8115",
   "description": "Amethyst Launcher",
-  "main": "src/main/main.cjs",
+  "main": "build/electron/main/main.js",
   "type": "module",
   "scripts": {
-    "start-vite": "vite --port 3000",
-    "start-electron": "electron .",
+    "start": "vite --port 3000",
     "build": "npm run build:vite && npm run build:electron",
     "build:vite": "tsc -b && vite build",
     "build:electron": "electron-builder -w",
@@ -40,7 +39,7 @@
     "tailwindcss": "^3.4.4",
     "typescript": "^5.2.2",
     "vite": "^5.3.1",
-    "vite-plugin-electron-renderer": "^0.14.5"
+    "vite-plugin-electron": "^0.28.7"
   },
   "build": {
     "productName": "Amethyst-Launcher",
@@ -50,9 +49,7 @@
       "buildResources": "build/public"
     },
     "files": [
-      "build/**/*",
-      "src/main/main.cjs",
-      "src/preload/preload.cjs"
+      "build/**/*"
     ],
     "win": {
       "target": "nsis",

@@ -1,8 +1,7 @@
-const {app, Menu, BrowserWindow, ipcMain, nativeTheme, MenuItem} = require('electron');
-const {autoUpdater} = require("electron-updater");
-const {join} = require('path');
-const path = require("path");
-const fs = require("fs");
+import {app, Menu, BrowserWindow, ipcMain, nativeTheme, MenuItem} from "electron";
+import {autoUpdater} from "electron-updater";
+import * as path from "node:path";
+import * as fs from "fs";
 
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 
@@ -15,9 +14,7 @@ process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
     catch (e) { console.error(e); }
 }
 
-
-/** @type {Electron.BrowserWindow} */
-let mainWindow = null;
+let mainWindow: Electron.BrowserWindow = null;
 
 function createWindow(){
     const win = new BrowserWindow({
@@ -27,7 +24,7 @@ function createWindow(){
         minHeight: 400,
         backgroundColor: "#1E1E1F",
         webPreferences: {
-            preload: join(app.getAppPath(), '/src/preload/preload.cjs'),
+            preload: path.join(app.getAppPath(), '/build/electron/preload/preload.mjs'),
             nodeIntegration: true,
             webSecurity: false,
             contextIsolation: false,
@@ -38,7 +35,7 @@ function createWindow(){
     win.setMenuBarVisibility(false);
 
     if (app.isPackaged) {
-        win.loadURL(`file://${join(app.getAppPath(), '/build/public/index.html')}`).then();
+        win.loadURL(`file://${path.join(app.getAppPath(), '/build/public/index.html')}`).then();
     } else {
         win.loadURL('http://localhost:3000').then();
     }
@@ -98,7 +95,7 @@ ipcMain.handle("get-localappdata-path", () => {
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 // Other window is open, so don't create a new one
 if (hasSingleInstanceLock === false) {
-	return app.quit();
+    app.quit();
 }
 // No window is open so create new
 else {

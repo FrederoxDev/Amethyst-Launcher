@@ -14,7 +14,7 @@ const VersionsPath:                 string = path.join(...[AmethystPath, "Versio
 const MinecraftUWPPath:             string = path.join(...[LocalAppDataPath, "Packages", "Microsoft.MinecraftUWP_8wekyb3d8bbwe"]);
 const ComMojangPath:                string = path.join(...[MinecraftUWPPath, "LocalState", "games", "com.mojang"]);
 const AmethystUWPPath:              string = path.join(...[ComMojangPath, "amethyst"]);
-const ModsPath:                     string = path.join(...[AmethystUWPPath, 'mods']);
+const ModsPath:                     string = path.join(...[AmethystUWPPath, 'Mods']);
 const LauncherConfigPath:           string = path.join(...[AmethystUWPPath, "launcher_config.json"]);
 
 export const AmethystFolder:        string = ValidatePath(AmethystPath);
