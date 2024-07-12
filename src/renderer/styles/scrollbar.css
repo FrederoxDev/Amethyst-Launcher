@@ -1,0 +1,47 @@
+@media (prefers-color-scheme: dark) {
+    .scrollbar::-webkit-scrollbar {
+        width: 15px;
+    }
+    
+    .scrollbar::-webkit-scrollbar-thumb {
+        background: #E6E8EB;
+        border: 3px solid black;
+        box-shadow: inset 0 -5px #58585A, inset 0 -5px 0 3px #F0F1F3, inset 0 3px #F0F1F3, 0 3px #00000034;
+    }
+    
+    .scrollbar::-webkit-scrollbar-track {
+        background-color: #58585A;
+        background-clip: content-box;
+        border-left-width: 5px;
+        border-right-width: 5px;
+        border-top-width: 0;
+        border-bottom-width: 0;
+        border-color: transparent;
+        border-style: solid;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    .scrollbar::-webkit-scrollbar {
+        width: 15px;
+    }
+    
+    .scrollbar::-webkit-scrollbar-thumb {
+        background: #E6E8EB;
+        border: 3px solid black;
+        box-shadow: inset 0 -5px #58585A, inset 0 -5px 0 3px #F0F1F3, inset 0 3px #F0F1F3, 0 3px #00000034;
+    }
+    
+    .scrollbar::-webkit-scrollbar-track {
+        background-color: #58585A;
+        background-clip: content-box;
+        border-left-width: 5px;
+        border-right-width: 5px;
+        border-top-width: 0;
+        border-bottom-width: 0;
+        border-color: transparent;
+        border-style: solid;
+    }
+}
+
+  

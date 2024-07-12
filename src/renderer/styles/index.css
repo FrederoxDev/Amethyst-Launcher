@@ -1,0 +1,60 @@
+@import url("./titlebar.css");
+@import url("./toggle.css");
+@import url("./background_image.css");
+@import url("./radial_button.css");
+@import url("./button.css");
+@import url("./scrollbar.css");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+    user-select: none;
+}
+
+/*noinspection CssUnknownTarget*/
+@font-face {
+    font-family: 'Minecraft-Ten';
+    src: url('/fonts/Minecraft-Ten.ttf') format('truetype');
+}
+
+/*noinspection CssUnknownTarget*/
+@font-face {
+    font-family: 'Minecraft-Seven';
+    src: url('/fonts/Minecraft-Seven.ttf') format('truetype');
+}
+
+/*noinspection CssUnknownTarget*/
+@font-face {
+    font-family: 'Minecraft-Five';
+    src: url('/fonts/extra/Minecraft-Five.otf') format('opentype');
+}
+
+.minecraft-seven {
+    font-family: "Minecraft-Seven", sans-serif;
+    image-rendering: auto;
+    letter-spacing: .5px;
+}
+
+.minecraft-ten {
+    font-family: "Minecraft-Ten", sans-serif;
+    image-rendering: auto;
+    letter-spacing: .1px;
+}
+
+.pixelated {
+    image-rendering: pixelated;
+}
+
+.container {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #313233;
+}
+
+img {
+    -webkit-user-drag: none;
+}
