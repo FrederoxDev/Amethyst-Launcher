@@ -6,11 +6,14 @@ const path = window.require('path') as typeof import('path');
 
 export class Extractor {
     static async extractFile(file: string, to: string, excludes: string[], onProgress: ExtractProgress = (): void => {}, onComplete: ActionComplete = (): void => {}): Promise<void> {
-        try {
-            fs.mkdirSync(to);
-        } catch (err) {
-            console.error(err)
+        if (!fs.existsSync(to)) {
+            try {
+                fs.mkdirSync(to);
+            } catch (err) {
+                console.error(err)
+            }
         }
+
 
         let isSuccess = false;
 

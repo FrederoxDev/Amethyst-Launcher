@@ -9,6 +9,7 @@ import SettingsPage from "./pages/SettingsPage";
 import UpdatePage from "./pages/UpdatePage";
 import ModsPage from "./pages/ModsPage";
 import VersionPage from "./pages/VersionPage";
+import DropWindow from "./components/DropWindow";
 
 export default function App() {
     
@@ -80,6 +81,7 @@ export default function App() {
                         </Routes>
 
                         <UpdatePage></UpdatePage>
+                        <DropWindow></DropWindow>
                     </div>
                 </div>
             </div>
