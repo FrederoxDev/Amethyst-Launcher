@@ -1,6 +1,7 @@
 import { GetInstalledVersionsFromFile, InstalledVersion, ValidateVersionsFile } from "../scripts/Versions";
 import { useState } from "react";
 import { ipcRenderer } from "electron";
+import PopupPanel from "../components/PopupPanel";
 
 const fs = window.require('fs') as typeof import('fs')
 const child = window.require('child_process') as typeof import('child_process')
@@ -101,27 +102,25 @@ export default function VersionPage() {
             {
                 selected_version &&
 
-                (
-                    <>
-                        <div className="fixed top-0 left-0 w-full h-full bg-[#000000BB]" onClick={() => SetSelectedVersion(undefined)}></div>
+                <PopupPanel onExit={() => SetSelectedVersion(undefined)}>
+                    <div
+                        className="flex flex-row w-full justify-between items-center border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
 
-                        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center border-[3px] border-[#1E1E1F]">
-                            <div className="w-[500px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-                                <div className="flex">
-                                    <p className="minecraft-seven text-white text-[14px] max-w-[400px]">{selected_version.version.toString()}</p>
-                                    <div className="p-[4px] justify-center items-center ml-auto cursor-pointer" onClick={() => SetSelectedVersion(undefined)}>
-                                        <svg width="12" height="12" viewBox="0 0 12 12">
-                                            <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
-                                                     points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"/>
-                                        </svg>
-                                    </div>
-                                </div>
+                        <p className="minecraft-seven text-white text-[14px] max-w-[400px]">{selected_version.version.toString()}</p>
 
-                                <p className="minecraft-seven text-[#BCBEC0] text-[12px] max-w-[400px]">{selected_version.path}</p>
-                            </div>
+                        <div className="p-[4px] justify-center items-center ml-auto cursor-pointer"
+                             onClick={() => SetSelectedVersion(undefined)}>
+                            <svg width="12" height="12" viewBox="0 0 12 12">
+                                <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
+                                         points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"/>
+                            </svg>
                         </div>
-                    </>
-                )
+                    </div>
+                    <div className="flex border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+                        <p className="minecraft-seven text-[#BCBEC0] text-[12px]">{selected_version.path}</p>
+                    </div>
+
+                </PopupPanel>
             }
         </>
 

@@ -4,6 +4,7 @@ import MinecraftButton from "../components/MinecraftButton";
 import { MinecraftUWPFolder, ModsFolder } from "../scripts/Paths";
 
 import { ValidateMod, ModConfig } from "../scripts/Mods";
+import PopupPanel from "../components/PopupPanel";
 
 const fs = window.require('fs') as typeof import('fs');
 const path = window.require('path') as typeof import('path');
@@ -47,7 +48,6 @@ function getAllMods(): ModErrorInfo[] {
                 const configData = fs.readFileSync(modConfigPath, "utf-8");
                 const configParsed = JSON.parse(configData);
                 modConfig = ValidateMod(configParsed, modErrors);
-                console.log(modConfig)
             }
             catch {
                 modErrors.push(`Failed to parse the mod.json configuration file, invalid json?`);
@@ -114,27 +114,23 @@ export default function ModsPage() {
 
             {
                 selectedReport &&
-
-                (
-                    <>
-                        <div className="fixed top-0 left-0 w-full h-full bg-[#000000BB]" onClick={() => setSelectedReport(undefined)}></div>
-
-                        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center border-[3px] border-[#1E1E1F]">
-                            <div className="w-[500px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-                                <div className="flex">
-                                    <p className="minecraft-seven text-white text-[14px] max-w-[400px]">{selectedReport.modIdentifier}</p>
-                                    <div className="p-[4px] justify-center items-center ml-auto cursor-pointer" onClick={() => setSelectedReport(undefined)}>
-                                        <svg width="12" height="12" viewBox="0 0 12 12">
-                                            <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
-                                                     points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"/>
-                                        </svg>
-                                    </div>
+                    <PopupPanel onExit={() => setSelectedReport(undefined)}>
+                        <div className="w-[500px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+                            <div className="flex">
+                                <p className="minecraft-seven text-white text-[14px] max-w-[400px]">{selectedReport.modIdentifier}</p>
+                                <div className="p-[4px] justify-center items-center ml-auto cursor-pointer"
+                                     onClick={() => setSelectedReport(undefined)}>
+                                    <svg width="12" height="12" viewBox="0 0 12 12">
+                                        <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
+                                                 points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"/>
+                                    </svg>
                                 </div>
-
-                                <p className="minecraft-seven text-[#BCBEC0] text-[12px] max-w-[400px]">{selectedReport.description ?? ""}</p>
                             </div>
-                            {
-                                selectedReport.modErrors.length > 0
+
+                            <p className="minecraft-seven text-[#BCBEC0] text-[12px] max-w-[400px]">{selectedReport.description ?? ""}</p>
+                        </div>
+                        {
+                            selectedReport.modErrors.length > 0
 
                                 ?
 
@@ -144,7 +140,8 @@ export default function ModsPage() {
                                         <p className="minecraft-seven text-white text-[12px]">Errors:</p>
                                         <ul>
                                             {selectedReport.modErrors.map(err => (
-                                                <li className="minecraft-seven text-red-400 text-[12px]" key={err}>- {err}</li>
+                                                <li className="minecraft-seven text-red-400 text-[12px]"
+                                                    key={err}>- {err}</li>
                                             ))}
                                         </ul>
                                     </div>
@@ -153,15 +150,14 @@ export default function ModsPage() {
                                 :
 
                                 (
-                                    <div className="w-[500px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+                                    <div
+                                        className="w-[500px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
                                         <p className="minecraft-seven text-white text-[12px]">No issues detected!</p>
                                     </div>
                                 )
-                            }
-                        </div>
-                    </>
-                )
+                        }
+                    </PopupPanel>
             }
-        </>
+    </>
     )
 }

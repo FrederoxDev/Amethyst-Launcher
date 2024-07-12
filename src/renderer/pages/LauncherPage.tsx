@@ -87,7 +87,7 @@ export default function LauncherPage() {
             const startGameCmd = `start minecraft:`;
             child.exec(startGameCmd)
         } catch (e: unknown) {
-            console.log(e);
+            console.error(e);
             setError((e as Error).message);
             setStatus("");
             setIsLoading(false);
@@ -107,10 +107,11 @@ export default function LauncherPage() {
                                 <p className="minecraft-seven text-[#FFFFFF] text-[12px]">{error}</p>
                             </div>
                             <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-center">
-                                <div
-                                    className="cursor-pointer p-[4px]"
-                                    onClick={() => setError("")}>
-                                    <img src="images/icons/close-icon.png" className="w-[24px] h-[24px]" alt=""/>
+                                <div className="cursor-pointer p-[4px]" onClick={() => setError("")}>
+                                    <svg width="20" height="20" viewBox="0 0 12 12">
+                                        <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
+                                                 points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"/>
+                                    </svg>
                                 </div>
                             </div>
                         </div>
