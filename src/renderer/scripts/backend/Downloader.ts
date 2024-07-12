@@ -7,7 +7,7 @@ export class Downloader {
     static async downloadFile(from: string, to: string, onProgress: DownloadProgress = () => {
     }, onComplete: ActionComplete = () => {
     }) {
-        const response = await fetch(from);
+        const response = await fetch(from, { signal: AbortSignal.timeout(50000)});
         if (!response.ok) {
             throw new Error('Download error.');
         }
