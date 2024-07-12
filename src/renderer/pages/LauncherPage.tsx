@@ -99,21 +99,28 @@ export default function LauncherPage() {
 
             {error === "" ? <></> : (
                     <>
-                        <div className="bg-red-500 w-full">
-                            <p className="minecraft-seven text-[14px]">There was an error while trying to launch the
-                                game!</p>
-                            <div className="bg-red-600 h-[2px] w-full min-h-[2px]"></div>
-                            <p className="minecraft-seven text-[13px]">{error}</p>
+                        <div className="flex flex-row gap-[8px] bg-[#CA3636] w-full border-[#CF4A4A] border-[3px] justify-between items-center">
+                            <div className="flex flex-col p-[8px]">
+                                <p className="minecraft-seven text-[#FFFFFF] text-[14px]">There was an error while
+                                    trying to launch the
+                                    game!</p>
+                                <p className="minecraft-seven text-[#FFFFFF] text-[12px]">{error}</p>
+                            </div>
+                            <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-center">
+                                <div
+                                    className="cursor-pointer p-[4px]"
+                                    onClick={() => setError("")}>
+                                    <img src="images/icons/close-icon.png" className="w-[24px] h-[24px]" alt=""/>
+                                </div>
+                            </div>
                         </div>
-                        <div className="bg-red-600 h-[2px] w-full min-h-[2px]"></div>
                     </>
-                )
+            )
             }
 
-            
 
             <div className="absolute bottom-0 w-full">
-                {/* Not affliated disclaimer */}
+                {/* Not affiliated disclaimer */}
                 <div className="bg-[#0c0c0cc5] w-fit ml-auto rounded-t-[3px]">
                     <p className="minecraft-seven text-white px-[4px] text-[13px]">Not approved by or associated with
                         Mojang or Microsoft</p>

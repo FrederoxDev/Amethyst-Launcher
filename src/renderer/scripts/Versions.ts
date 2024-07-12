@@ -182,6 +182,18 @@ export function GetInstalledVersionsFromFile(): InstalledVersion[] {
     return installed_versions
 }
 
+export function GetInstalledVersionPath(version: MinecraftVersion): string | undefined {
+    const versions = GetInstalledVersionsFromFile();
+
+    const version_path = versions.find(in_version => in_version.version.uuid === version.uuid)?.path;
+
+    if (!version_path) {
+        console.warn(`Version ${version.toString()} not found in installed versions`)
+    }
+
+    return version_path
+}
+
 export function FindMinecraftVersion(sem_version: SemVersion) {
     const versionData = fs.readFileSync(CachedVersionsFile, "utf-8");
     const rawJson = JSON.parse(versionData);
