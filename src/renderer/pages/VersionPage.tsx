@@ -1,8 +1,6 @@
 import { GetInstalledVersionsFromFile, InstalledVersion, ValidateVersionsFile } from "../scripts/Versions";
 import { useState } from "react";
-
 import { ipcRenderer } from "electron";
-
 
 const fs = window.require('fs') as typeof import('fs')
 const child = window.require('child_process') as typeof import('child_process')
@@ -14,7 +12,6 @@ type VersionButtonProps = {
 }
 
 const VersionButton = ({version, onInspect, onDelete}: VersionButtonProps) => {
-
     function DeleteVersion() {
         const message_args = { message: "Are you sure you want to delete this version?\n\nThis is an irreversible action!", type: "warning", buttons: ["Cancel", "Confirm"], defaultId: 0, title: "Delete Version", noLink: true}
         ipcRenderer.invoke('show-message', message_args).then((value: Electron.MessageBoxReturnValue) => {
@@ -37,28 +34,6 @@ const VersionButton = ({version, onInspect, onDelete}: VersionButtonProps) => {
         })
     }
 
-    // function MoveVersion() {
-    //     const dialog_args = { title: "Move version", buttonLabel: "Move", defaultPath: version.path, properties: ["openDirectory", 'promptToCreate'] };
-    //     ipcRenderer.invoke('show-dialog', dialog_args).then((value: Electron.OpenDialogReturnValue) => {
-    //         if (value.canceled) return;
-    //         else {
-    //             if (value.filePaths) {
-    //                 const file_path = value.filePaths[0];
-    //
-    //                 try {
-    //                     fs.renameSync(version.path, file_path);
-    //                 } catch (e) {
-    //                     console.error(e)
-    //                 }
-    //
-    //
-    //
-    //                 console.log(file_path);
-    //             }
-    //         }
-    //     })
-    // }
-
     function OpenVersionLocation() {
         if (fs.existsSync(version.path)) {
             child.spawn(`explorer "${version.path}"`, {shell: true})
@@ -76,15 +51,15 @@ const VersionButton = ({version, onInspect, onDelete}: VersionButtonProps) => {
                 {/*<p className="minecraft-seven text-[#B1B2B5] text-[14px] overflow-ellipsis overflow-hidden whitespace-nowrap">{"Path:"} ({version.path})</p>*/}
             </div>
             <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-center">
+
                 <div className="cursor-pointer w-[32px] h-[32px] bg-[#333334] hover:bg-[#FF000080] rounded-[4px] p-[4px]" onClick={() => DeleteVersion()}>
                     <img src="images/icons/delete-icon.png" className="w-[24px] h-[24px]" alt=""/>
                 </div>
+
                 <div className="cursor-pointer w-[32px] h-[32px] bg-[#333334] hover:bg-[#5a5b5c] rounded-[4px] p-[4px]" onClick={() => OpenVersionLocation()}>
                     <img src="images/icons/open-folder-icon.png" className="w-[24px] h-[24px]" alt=""/>
                 </div>
-                {/*<div className="cursor-pointer w-[32px] h-[32px] bg-[#333334] hover:bg-[#5a5b5c] rounded-[4px] p-[4px]" onClick={() => MoveVersion()}>*/}
-                {/*    <img src="images/icons/move-icon.png" className="w-[24px] h-[24px]"/>*/}
-                {/*</div>*/}
+
                 <div className="cursor-pointer w-[32px] h-[32px] bg-[#333334] hover:bg-[#5a5b5c] rounded-[4px] p-[4px]" onClick={() => InspectVersion()}>
                     <img src="images/icons/info-icon.png" className="w-[24px] h-[24px]" alt=""/>
                 </div>
