@@ -5,12 +5,12 @@ import { Extractor } from "../scripts/backend/Extractor";
 import { CopyRecursive } from "../scripts/Files";
 
 const fs = window.require('fs') as typeof import('fs')
-// const path = window.require('path') as typeof import('path')
+const path = window.require('path') as typeof import('path')
 
 export default function DropWindow() {
     const [hovered, setHovered] = useState(false)
 
-    const { setStatus, setError} = useAppState()
+    const { setError } = useAppState()
 
 
 
@@ -67,17 +67,18 @@ export default function DropWindow() {
         // IMPORT ZIP
         function ImportZIP(zip_path: string) {
             try {
-                Extractor.extractFile(zip_path, ModsFolder, [], undefined, (success => {
+                const zip_name = path.basename(zip_path);
+                const extracted_folder_path = path.join(ModsFolder, zip_name.slice(0, -'.zip'.length));
+                console.log(extracted_folder_path);
+                Extractor.extractFile(zip_path, extracted_folder_path, [], undefined, (success => {
                     if (!success) {
                         throw new Error("There was an error while extracting Mod ZIP!");
                     }
 
                     console.log("Successfully extracted Mod ZIP!")
-                    setStatus("Successfully extracted Mod ZIP!")
                 })).then()
             } catch (error) {
                 setError((error as Error).message)
-                setStatus('')
             }
         }
 
@@ -87,7 +88,6 @@ export default function DropWindow() {
                 CopyRecursive(folder_path, ModsFolder);
             } catch (error) {
                 setError((error as Error).message)
-                setStatus('')
             }
         }
 
@@ -103,7 +103,7 @@ export default function DropWindow() {
             window.removeEventListener('dragleave', dragEnd)
             window.removeEventListener('drop', drop)
         }
-    }, [setError, setStatus])
+    }, [setError])
 
     return (
         <div className={`absolute w-full h-full top-0 left-0 pointer-events-none ${hovered ? 'opacity-100' : 'opacity-0'} transition-opacity ease-out duration-150`}>

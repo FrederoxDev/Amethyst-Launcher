@@ -100,15 +100,13 @@ export default function LauncherPage() {
             {error === "" ? <></> : (
                     <>
                         <div className="flex flex-row gap-[8px] bg-[#CA3636] w-full border-[#CF4A4A] border-[3px] justify-between items-center">
-                            <div className="flex flex-col p-[8px]">
-                                <p className="minecraft-seven text-[#FFFFFF] text-[14px]">There was an error while
-                                    trying to launch the
-                                    game!</p>
-                                <p className="minecraft-seven text-[#FFFFFF] text-[12px]">{error}</p>
+                            <div className="flex flex-row p-[8px] gap-[8px]">
+                                <img src="images/icons/warning-icon.png" className='w-[24px] h-[24px] pixelated' alt=''/>
+                                <p className="minecraft-seven text-[#FFFFFF] text-[16px]">{error}</p>
                             </div>
                             <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-center">
                                 <div className="cursor-pointer p-[4px]" onClick={() => setError("")}>
-                                    <svg width="20" height="20" viewBox="0 0 12 12">
+                                    <svg width="18" height="18" viewBox="0 0 12 12">
                                         <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
                                                  points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"/>
                                     </svg>
@@ -130,7 +128,7 @@ export default function LauncherPage() {
 
                 {/* Loading bar */}
                 <div
-                    className={`bg-[#313233] ${isLoading ? "h-[25px]" : "h-0"} transition-all duration-300 ease-in-out`}>
+                    className={`bg-[#313233] ${(status || isLoading) ? "h-[25px]" : "h-0"} transition-all duration-300 ease-in-out`}>
                     <div
                         className={`bg-[#3C8527] absolute ${isLoading ? "min-h-[25px]" : "min-h-0"} transition-all duration-300 ease-in-out`}
                         style={{width: `${loadingPercent * 100}%`}}
