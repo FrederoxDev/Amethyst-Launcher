@@ -216,12 +216,13 @@ class Protocol {
 const protocol: Protocol = new Protocol();
 
 async function postXmlAsync(url: RequestInfo | URL, data: Node) {
-    const requestOptions = {
+    const requestOptions: RequestInit = {
         method: "POST",
         headers: {
             "Content-Type": "application/soap+xml",
         },
         body: new XMLSerializer().serializeToString(data),
+        signal: AbortSignal.timeout(5000)
     };
 
     const response = await fetch(url, requestOptions);
@@ -243,7 +244,7 @@ async function getDownloadUrl(updateIdentity: string, revisionNumber: string) {
         );
 
         console.log(
-            `GetDownloadUrl() response for updateIdentity ${updateIdentity}, revision ${revisionNumber}:\n${result}`,
+            `GetDownloadUrl() response for updateIdentity ${updateIdentity}, revision ${revisionNumber}:\n`, result
         );
 
         const downloadUrls = protocol.extractDownloadResponseUrls(result);

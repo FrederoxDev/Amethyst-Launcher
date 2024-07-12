@@ -46,26 +46,32 @@ const VersionButton = ({version, onInspect, onDelete}: VersionButtonProps) => {
     }
 
     return (
-        <div className="flex flex-row w-full justify-between border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] px-[2px]">
-            <div className="h-full flex flex-col justify-center items-center min-w-0 p-[8px]">
-                <p className="minecraft-seven text-white text-[16px]">{version.version.toString()}</p>
-                {/*<p className="minecraft-seven text-[#B1B2B5] text-[14px] overflow-ellipsis overflow-hidden whitespace-nowrap">{"Path:"} ({version.path})</p>*/}
-            </div>
-            <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-center">
-
-                <div className="cursor-pointer w-[32px] h-[32px] bg-[#333334] hover:bg-[#FF000080] rounded-[4px] p-[4px]" onClick={() => DeleteVersion()}>
-                    <img src="images/icons/delete-icon.png" className="w-[24px] h-[24px]" alt=""/>
+        <div className="m-[-3px] border-[3px] border-[#1E1E1F]">
+            <div className="flex flex-row w-full justify-between items-center border-[3px] border-t-[#5a5b5c] border-l-[#5a5b5c] border-b-[#333334] border-r-[#333334] bg-[#48494a]">
+                <div className="h-full flex flex-col justify-center items-center min-w-0 p-[8px]">
+                    <p className="minecraft-seven text-white text-[16px]">{version.version.toString()}</p>
+                    {/*<p className="minecraft-seven text-[#B1B2B5] text-[14px] overflow-ellipsis overflow-hidden whitespace-nowrap">{"Path:"} ({version.path})</p>*/}
                 </div>
+                <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-center">
 
-                <div className="cursor-pointer w-[32px] h-[32px] bg-[#333334] hover:bg-[#5a5b5c] rounded-[4px] p-[4px]" onClick={() => OpenVersionLocation()}>
-                    <img src="images/icons/open-folder-icon.png" className="w-[24px] h-[24px]" alt=""/>
-                </div>
+                    <div className="cursor-pointer w-[32px] h-[32px] bg-[#333334] hover:bg-[#FF000080] rounded-[4px] p-[4px]"
+                        onClick={() => DeleteVersion()}>
+                        <img src="images/icons/delete-icon.png" className="w-[24px] h-[24px]" alt=""/>
+                    </div>
 
-                <div className="cursor-pointer w-[32px] h-[32px] bg-[#333334] hover:bg-[#5a5b5c] rounded-[4px] p-[4px]" onClick={() => InspectVersion()}>
-                    <img src="images/icons/info-icon.png" className="w-[24px] h-[24px]" alt=""/>
+                    <div className="cursor-pointer w-[32px] h-[32px] bg-[#333334] hover:bg-[#5a5b5c] rounded-[4px] p-[4px]"
+                        onClick={() => OpenVersionLocation()}>
+                        <img src="images/icons/open-folder-icon.png" className="w-[24px] h-[24px]" alt=""/>
+                    </div>
+
+                    <div className="cursor-pointer w-[32px] h-[32px] bg-[#333334] hover:bg-[#5a5b5c] rounded-[4px] p-[4px]"
+                        onClick={() => InspectVersion()}>
+                        <img src="images/icons/info-icon.png" className="w-[24px] h-[24px]" alt=""/>
+                    </div>
                 </div>
             </div>
         </div>
+
     )
 }
 
@@ -88,11 +94,11 @@ export default function VersionPage() {
                     className="flex flex-col gap-[8px] h-full p-[8px] bg-[#48494A] border-[#1E1E1F] border-[3px] overflow-hidden">
                     <p className="minecraft-seven text-white text-[14px]">Version Manager</p>
                     <div
-                        className="flex flex-col border-[3px] border-[#1E1E1F] h-full bg-[#313233] overflow-y-auto overflow-x-hidden scrollbar">
-
+                        className="flex flex-col gap-[3px] border-[3px] border-[#1E1E1F] h-full bg-[#313233] overflow-y-auto overflow-x-hidden scrollbar">
                         {
                             versions.map((version, index) => {
-                                return <VersionButton version={version} onInspect={() => SetSelectedVersion(version)} onDelete={() => RefreshVersions()} key={index}/>
+                                return <VersionButton version={version} onInspect={() => SetSelectedVersion(version)}
+                                                      onDelete={() => RefreshVersions()} key={index}/>
                             })
                         }
                     </div>
