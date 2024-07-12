@@ -1,0 +1,160 @@
+.titlebar {
+    position: relative;
+    -webkit-app-region: drag;
+    width: 100%;
+    height: 56px;
+}
+
+.title_text_main {
+    position: absolute;
+    display: block;
+    font-size: 24px;
+    transform: translateY(-4px);
+}
+
+.title_text_sub {
+    position: absolute;
+    display: block;
+    font-size: 12px;
+    transform: translateY(16px);
+}
+
+.titlebar_highlight {
+    width: 100%;
+    height: 8px;
+    border-top-width: 2px;
+}
+
+.titlebar_shadow {
+    width: 100%;
+    height: 3px;
+    background-color: #00000050;
+    position: absolute;
+    z-index: 10;
+}
+
+.title_panel {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+.window_button_panel {
+    
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    height: calc(100% - 16px);
+    margin: 8px;
+    right: 0;
+}
+
+.window_button {
+    -webkit-app-region: no-drag;
+    position: relative;
+    top: 0;
+    cursor: pointer;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    pointer-events: auto;
+    border-radius: 4px;
+    margin: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .titlebar {
+        background-color: #343536;
+    }
+
+    .title_text_main {
+        color: #FFFFFF;
+    }
+    
+    .title_text_sub {
+        color: #e6e8eb;
+    }
+    
+    .titlebar_highlight {
+        border-top-color: #38393a;
+        background-color: #1f1f1f;
+    }
+
+    .window_button_svg {
+        fill: #FFFFFF;
+    }
+
+    .window_button_svg_box {
+        fill: none;
+        stroke: #FFFFFF;
+    }
+
+    .window_button_hover:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .window_button_hover:active {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .close_button_hover:hover {
+        background-color: rgb(255, 0, 0, 0.5);
+    }
+
+    .close_button_hover:active {
+        background-color: rgb(255, 0, 0, 0.3);
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    .titlebar {
+        background-color: #e6e8eb;
+    }
+
+    .title_text_main {
+        color: #1e1e1f;
+    }
+    
+    .title_text_sub {
+        color: #434345;
+    }
+    
+    .titlebar_highlight {
+        border-top-color: #ebedef;
+        background-color: #b1b2b5;
+    }
+
+    .window_button_svg {
+        fill: #000000;
+    }
+
+    .window_button_svg_box {
+        fill: none;
+        stroke: #000000;
+    }
+
+    .window_button_hover:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+    
+    .window_button_hover:active {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .close_button_hover:hover {
+        background-color: rgb(255, 0, 0, 0.5);
+    }
+
+    .close_button_hover:active {
+        background-color: rgb(255, 0, 0, 0.3);
+    }
+}
