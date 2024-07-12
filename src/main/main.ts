@@ -45,6 +45,7 @@ function createWindow(){
 
 const windowMenu = new Menu()
 windowMenu.append(new MenuItem({role:"toggleDevTools"}))
+windowMenu.append(new MenuItem({role:"reload"}))
 Menu.setApplicationMenu(windowMenu);
 
 ipcMain.on('TITLE_BAR_ACTION', (event, args) => {
