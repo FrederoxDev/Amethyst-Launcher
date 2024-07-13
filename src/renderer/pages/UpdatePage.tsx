@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import MinecraftButton, { MinecraftButtonStyle } from "../components/MinecraftButton";
 import { UpdateInfo } from "electron-updater";
 import LoadingWheel from "../components/LoadingWheel";
+import PopupPanel from "../components/PopupPanel";
 
 const { ipcRenderer } = window.require('electron');
 
@@ -71,38 +72,37 @@ export default function UpdatePage() {
     }, []);
 
     return (
-        <>{!popupClosed && updateAvailable && (
-            <>
-                <div className="fixed top-0 left-0 w-full h-full bg-[#000000BB]"></div>
-                {!downloadActive && (
-                    <div className="fixed top-0 left-0 flex flex-col w-full items-center justify-center h-full">
-                        <div>
-                            <div className="border-y-[3px] border-t-[#5A5B5C] border-b-[#1E1E1F] bg-[#48494A] p-[8px]">
+        <>
+            {!popupClosed && updateAvailable && (
+                <PopupPanel>
+                    {!downloadActive && (
+                        <div className="w-[500px]">
+                            <div className="w-full border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
                                 <p className="minecraft-seven text-white text-[14px]">Launcher Update found!</p>
                             </div>
-                            <div className="border-y-[3px] border-t-[#5A5B5C] border-b-[#1E1E1F] bg-[#48494A] p-[8px] ">
+                            <div className="w-full border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
                                 <p className="minecraft-seven text-[#BCBEC0] text-[12px]">Version: {updateInfo ? updateInfo.version : "undefined"} (current: {appVersion})</p>
                                 <p className="minecraft-seven text-[#BCBEC0] text-[12px]">Path: {updateInfo ? updateInfo.path : "undefined"}</p>
                                 <p className="minecraft-seven text-[#BCBEC0] text-[12px]">Release
                                     Date: {updateInfo ? updateInfo.releaseDate : "undefined"}</p>
                                 <p className="minecraft-seven text-[#BCBEC0] text-[12px]">Sha512: {updateInfo ? updateInfo.sha512 : "undefined"}</p>
                             </div>
-                            <div className="flex justify-around gap-[8px] border-y-[3px] border-t-[#5A5B5C] border-b-[#1E1E1F] bg-[#48494A] p-[8px]">
+                            <div
+                                className="flex justify-around gap-[8px] w-full border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
                                 <div className="w-[50%]"><MinecraftButton text="Download"
-                                    style={MinecraftButtonStyle.Confirm}
-                                    onClick={downloadUpdate} /></div>
+                                                                          style={MinecraftButtonStyle.Confirm}
+                                                                          onClick={downloadUpdate}/></div>
                                 <div className="w-[50%]"><MinecraftButton text="Ignore"
-                                    style={MinecraftButtonStyle.Warn}
-                                    onClick={ignoreUpdate} /></div>
+                                                                          style={MinecraftButtonStyle.Warn}
+                                                                          onClick={ignoreUpdate}/></div>
                             </div>
                         </div>
-                    </div>
-                )}
-                {downloadActive && (
-                    <LoadingWheel text={"Downloading update..."} percentage={downloadPercentage}></LoadingWheel>
-                )}
-            </>
-        )}
+                    )}
+                    {downloadActive && (
+                        <LoadingWheel text={"Downloading update..."} percentage={downloadPercentage}></LoadingWheel>
+                    )}
+                </PopupPanel>
+            )}
         </>
     );
 }
