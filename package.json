@@ -1,6 +1,6 @@
 {
   "name": "amethyst-launcher",
-  "version": "2.4.7",
+  "version": "2.5.1",
   "author": "FrederoxDev, Adrian8115",
   "description": "Amethyst Launcher",
   "main": "build/electron/main/main.js",
@@ -14,7 +14,7 @@
     "bump-version": "npm version patch --no-git-tag-version"
   },
   "dependencies": {
-    "electron-updater": "^6.2.1",
+    "electron-updater": "^6.3.0-alpha.6",
     "jszip": "^3.10.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
