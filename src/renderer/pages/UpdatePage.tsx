@@ -87,14 +87,9 @@ export default function UpdatePage() {
                                     Date: {updateInfo ? updateInfo.releaseDate : "undefined"}</p>
                                 <p className="minecraft-seven text-[#BCBEC0] text-[12px]">Sha512: {updateInfo ? updateInfo.sha512 : "undefined"}</p>
                             </div>
-                            <div
-                                className="flex justify-around gap-[8px] w-full border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-                                <div className="w-[50%]"><MinecraftButton text="Download"
-                                                                          style={MinecraftButtonStyle.Confirm}
-                                                                          onClick={downloadUpdate}/></div>
-                                <div className="w-[50%]"><MinecraftButton text="Ignore"
-                                                                          style={MinecraftButtonStyle.Warn}
-                                                                          onClick={ignoreUpdate}/></div>
+                            <div className="flex justify-around gap-[8px] w-full border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+                                <MinecraftButton text="Download" style={MinecraftButtonStyle.Confirm} onClick={downloadUpdate}/>
+                                <MinecraftButton text="Ignore" style={MinecraftButtonStyle.Warn} onClick={ignoreUpdate}/>
                             </div>
                         </div>
                     )}
