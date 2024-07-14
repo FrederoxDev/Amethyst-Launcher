@@ -1,5 +1,7 @@
-const regedit = window.require("regedit-rs") as typeof import("regedit-rs");
-const sudo = window.require('sudo-prompt') as typeof import("sudo-prompt");
+import * as sudo from 'sudo-prompt';
+
+// .node type so window.require is needed
+const regedit = window.require('regedit-rs') as typeof import('regedit-rs');
 
 export function IsDevModeEnabled() {
     const regKey = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock"

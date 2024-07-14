@@ -1,8 +1,8 @@
 import { VersionsFolder, CachedVersionsFile, VersionsFile } from "./Paths";
 import { SemVersion } from "./classes/SemVersion";
 
-const fs = window.require('fs') as typeof import('fs');
-const path = window.require('path') as typeof import('path');
+import * as fs from 'fs';
+import * as path from 'path';
 
 export enum MinecraftVersionType {
     Release = 0,
@@ -28,6 +28,14 @@ export class MinecraftVersion {
 
         return `${this.version.toString()}${prefix}`
     }
+
+    static toString(version: MinecraftVersion) {
+        let prefix = "";
+        if (version.versionType === MinecraftVersionType.Beta) prefix = "-beta";
+        else if (version.versionType === MinecraftVersionType.Preview) prefix = "-preview";
+
+        return `${SemVersion.toString(version.version)}${prefix}`
+    }
 }
 
 export class VersionsFileObject {
@@ -45,21 +53,19 @@ export class VersionsFileObject {
         const default_installation_path = obj.default_installation_path;
 
         const installed_versions = obj.installed_versions.map(installed_version => {
-            const old_sem_version = installed_version.version.version
-            const sem_version = new SemVersion(old_sem_version.major, old_sem_version.minor, old_sem_version.patch, old_sem_version.build)
+            const sem_version = SemVersion.fromString(SemVersion.toString(installed_version.version.version));
             const minecraft_version = new MinecraftVersion(sem_version, installed_version.version.uuid, installed_version.version.versionType)
 
             return {
                 path: installed_version.path,
                 version: minecraft_version
-            }
+            } as InstalledVersion;
         })
 
         return {
             default_installation_path: default_installation_path,
             installed_versions: installed_versions
-        }
-
+        } as VersionsFileObject;
     }
 }
 

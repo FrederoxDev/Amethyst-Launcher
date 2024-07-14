@@ -1,7 +1,7 @@
 import { LauncherConfigFile } from "./Paths";
 
-const fs = window.require('fs') as typeof import('fs');
-const path = window.require('path') as typeof import('path');
+import * as fs from 'fs';
+import * as path from 'path';
 
 export interface LauncherConfig {
     runtime: string,
@@ -23,12 +23,12 @@ export function GetLauncherConfig(): LauncherConfig {
     }
 
     return {
-        developer_mode: false,
         keep_open: true,
+        developer_mode: false,
+        ui_theme: "System",
         mods: [],
         runtime: "Vanilla",
         selected_profile: 0,
-        ui_theme: "System",
         ...data,
     }
 }

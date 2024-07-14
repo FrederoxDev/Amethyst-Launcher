@@ -1,5 +1,5 @@
-const fs = window.require('fs') as typeof import('fs');
-const path = window.require('path') as typeof import('path');
+import * as fs from 'fs';
+import * as path from 'path';
 
 
 // This is really janky and probably shouldn't be used

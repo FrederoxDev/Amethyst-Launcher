@@ -3,8 +3,8 @@ import { useState } from "react";
 import { ipcRenderer } from "electron";
 import PopupPanel from "../components/PopupPanel";
 
-const fs = window.require('fs') as typeof import('fs')
-const child = window.require('child_process') as typeof import('child_process')
+import * as fs from 'fs';
+import * as child from 'child_process';
 
 type VersionButtonProps = {
     version: InstalledVersion;

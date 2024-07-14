@@ -1,6 +1,5 @@
 import {useEffect, useState} from "react";
-
-const {ipcRenderer} = window.require('electron');
+import {ipcRenderer} from "electron";
 
 export default function Header() {
     const [appVersion, setAppVersion] = useState('-');

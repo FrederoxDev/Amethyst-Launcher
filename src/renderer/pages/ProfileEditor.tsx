@@ -7,12 +7,14 @@ import {useAppState} from "../contexts/AppState";
 import {useNavigate} from "react-router-dom";
 import {GetMods} from "../scripts/Mods";
 import {MinecraftVersionType} from "../scripts/Versions";
+import {GetDefaultInstallPath} from "../scripts/VersionManager";
 
 export default function ProfileEditor() {
     const [profileName, setProfileName] = useState("");
     const [profileActiveMods, setProfileActiveMods] = useState<string[]>([])
     const [profileRuntime, setProfileRuntime] = useState<string>("");
     const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<string>("");
+    const [profileInstallDir, setProfileInstallDir] = useState<string>(GetDefaultInstallPath());
 
     const {
         allMods,
@@ -135,6 +137,7 @@ export default function ProfileEditor() {
                         options={allRuntimes}
                         id="runtime-mod"
                     />
+                    <TextInput label="Install Directory" text={profileInstallDir} setText={setProfileInstallDir}/>
                 </div>
 
                 {/* Mod Selection */}
@@ -172,8 +175,8 @@ export default function ProfileEditor() {
 
                 {/* Profile Actions */}
                 <div className="flex justify-around gap-[8px]">
-                    <div className="w-[50%]"><MinecraftButton text="Save Profile" onClick={() => saveProfile()}/></div>
-                    <div className="w-[50%]"><MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} onClick={() => deleteProfile()}/></div>
+                    <MinecraftButton text="Save Profile" onClick={() => saveProfile()}/>
+                    <MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} onClick={() => deleteProfile()}/>
                 </div>
             </div>
         </MainPanel>

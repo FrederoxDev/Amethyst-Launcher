@@ -4,8 +4,8 @@ import { useAppState } from '../contexts/AppState'
 import { Extractor } from "../scripts/backend/Extractor";
 import { CopyRecursive } from "../scripts/Files";
 
-const fs = window.require('fs') as typeof import('fs')
-const path = window.require('path') as typeof import('path')
+import * as fs from 'fs';
+import * as path from 'path';
 
 export default function DropWindow() {
     const [hovered, setHovered] = useState(false)

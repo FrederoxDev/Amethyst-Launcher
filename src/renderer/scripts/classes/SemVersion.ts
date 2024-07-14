@@ -26,4 +26,8 @@ export class SemVersion {
     toString(): string {
         return `${this.major}.${this.minor}.${this.patch}.${this.build}`;
     }
+
+    static toString(version: SemVersion) {
+        return `${version.major}.${version.minor}.${version.patch}.${version.build}`;
+    }
 }

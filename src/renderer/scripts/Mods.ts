@@ -71,8 +71,8 @@ export function ValidateMod(config: Record<string, never>, outErrors?: string[])
 
 //////////////////// MOD LIST ////////////////////
 
-const fs = window.require('fs') as typeof import('fs');
-const path = window.require('path') as typeof import('path');
+import * as fs from 'fs';
+import * as path from 'path';
 
 export type ModList = {
     runtimeMods: string[],
