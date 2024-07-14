@@ -105,13 +105,10 @@ export default function ProfileEditor() {
 
   return (
     <MainPanel>
-      <div className="w-full h-full flex flex-col border-[3px] border-[#1E1E1F] bg-[#48494A]">
+      <div className="w-full h-full flex flex-col p-[8px] gap-[8px] border-[3px] border-[#1E1E1F] bg-[#48494A]">
         {/* Settings */}
-        <div className="flex flex-col">
-          <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+        <div className="flex flex-col gap-[8px]">
             <TextInput label="Profile Name" text={profileName} setText={setProfileName} />
-          </div>
-          <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
             <Dropdown
               labelText="Minecraft Version"
               value={profileMinecraftVersion}
@@ -122,8 +119,6 @@ export default function ProfileEditor() {
                 .map(ver => ver.toString())}
               id="minecraft-version"
             />
-          </div>
-          <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
             <Dropdown
               labelText="Runtime"
               value={profileRuntime}
@@ -131,10 +126,7 @@ export default function ProfileEditor() {
               options={allRuntimes}
               id="runtime-mod"
             />
-          </div>
-          <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
             <TextInput label="Install Directory" text={profileInstallDir} setText={setProfileInstallDir} />
-          </div>
         </div>
 
         {/* Mod Selection */}
@@ -143,7 +135,7 @@ export default function ProfileEditor() {
             <div className="h-full flex flex-col"></div>
           </div>
         ) : (
-          <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px] flex-grow flex justify-around gap-[8px]">
+          <div className="bg-[#48494a] flex-grow flex justify-around gap-[8px]">
             <div className="w-[50%] h-full flex flex-col">
               <p className="text-white minecraft-seven text-[14px]">Active Mods</p>
               <div className="border-[3px] border-[#1E1E1F] bg-[#313233] flex-grow">
@@ -172,7 +164,7 @@ export default function ProfileEditor() {
         )}
 
         {/* Profile Actions */}
-        <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px] flex justify-around gap-[8px]">
+        <div className="flex justify-around gap-[8px]">
           <MinecraftButton text="Save Profile" onClick={() => saveProfile()} />
           <MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} onClick={() => deleteProfile()} />
         </div>
