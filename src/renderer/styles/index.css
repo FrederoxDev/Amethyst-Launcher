@@ -37,6 +37,12 @@
   letter-spacing: 0.5px;
 }
 
+.minecraft-five {
+  font-family: 'Minecraft-Five', sans-serif;
+  image-rendering: auto;
+  letter-spacing: 0.5px;
+}
+
 .minecraft-ten {
   font-family: 'Minecraft-Ten', sans-serif;
   image-rendering: auto;

@@ -32,19 +32,14 @@ export default function ProfilePage() {
   return (
     <MainPanel>
       <div
-        className="flex flex-col h-full bg-[#48494A] border-[#1E1E1F] border-[3px] overflow-hidden">
-        <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+        className="flex flex-col h-full p-[8px] gap-[8px] bg-[#48494A] border-[#1E1E1F] border-[3px] overflow-hidden">
           <p className="minecraft-seven text-white text-[14px]">Profile Editor</p>
-        </div>
-        <div className="h-full border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
           <div
             className="flex flex-col gap-[3px] border-[3px] border-[#1E1E1F] h-full bg-[#313233] overflow-y-auto overflow-x-hidden scrollbar">
             {allProfiles.map((profile, index) => {
               return <ProfileButton profile={profile} index={index} key={index} />
             })}
           </div>
-        </div>
-        <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
           <div className="bg-[#48494A] h-fit">
             <MinecraftButton
               text="Create new profile"
@@ -64,7 +59,6 @@ export default function ProfilePage() {
               }}
             />
           </div>
-        </div>
       </div>
     </MainPanel>
   )
