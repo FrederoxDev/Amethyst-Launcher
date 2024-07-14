@@ -1,13 +1,25 @@
 import { SemVersion } from "./classes/SemVersion";
-import { VersionsFolder, ElectronAppPath, ValidatePath, DeletePath } from "./Paths";
+import {VersionsFolder, ElectronAppPath, ValidatePath, DeletePath, VersionsFile} from "./Paths";
 import { GetPackagePath } from "./AppRegistry";
 import { Extractor } from "./backend/Extractor";
 import { download } from "./backend/MinecraftVersionDownloader";
-import { MinecraftVersion } from "./Versions";
+import {MinecraftVersion, VersionsFileObject} from "./Versions";
 import React from "react";
 
-const fs = window.require("fs") as typeof import("fs");
-const path = window.require("path") as typeof import("path");
+import * as fs from 'fs';
+import * as path from 'path';
+
+export function GetDefaultInstallPath(): string {
+    ValidatePath(VersionsFile)
+
+    if (fs.existsSync(VersionsFile)) {
+        const version_file_text = fs.readFileSync(VersionsFile, 'utf-8');
+        const version_file_data: VersionsFileObject = VersionsFileObject.fromString(version_file_text);
+
+        return version_file_data.default_installation_path;
+    }
+    return VersionsFolder
+}
 
 export function IsDownloaded(version: SemVersion) {
     const version_path = path.join(VersionsFolder, `Minecraft-${version.toString()}`)

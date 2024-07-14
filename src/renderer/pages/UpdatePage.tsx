@@ -3,8 +3,7 @@ import MinecraftButton, { MinecraftButtonStyle } from "../components/MinecraftBu
 import { UpdateInfo } from "electron-updater";
 import LoadingWheel from "../components/LoadingWheel";
 import PopupPanel from "../components/PopupPanel";
-
-const { ipcRenderer } = window.require('electron');
+import { ipcRenderer } from "electron";
 
 export default function UpdatePage() {
     const [updateAvailable, setUpdateAvailable] = useState<boolean>(false);

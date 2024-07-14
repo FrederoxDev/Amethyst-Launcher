@@ -1,4 +1,4 @@
-import {createContext, ReactNode, useCallback, useContext, useEffect, useState} from "react";
+import React, {createContext, ReactNode, useCallback, useContext, useEffect, useState} from "react";
 
 import {FetchMinecraftVersions, MinecraftVersion} from "../scripts/Versions"
 import {LauncherConfig, GetLauncherConfig, SetLauncherConfig} from "../scripts/Launcher";

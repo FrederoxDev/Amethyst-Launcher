@@ -1,7 +1,7 @@
 import { ipcRenderer } from "electron";
 
-const fs = window.require('fs') as typeof import('fs')
-const path = window.require('path') as typeof import('path')
+import * as fs from 'fs';
+import * as path from 'path';
 
 // PATHS
 const AppPath:                      string = await ipcRenderer.invoke("get-app-path");
@@ -13,7 +13,8 @@ const LauncherPath:                 string = path.join(...[AmethystPath, "Launch
 const VersionsPath:                 string = path.join(...[AmethystPath, "Versions"]);
 
 const VersionsFilePath:             string = path.join(...[LauncherPath, "versions.json"]);
-const CachedVersionsPath:           string = path.join(...[LauncherPath, "cached_versions.json"]);
+const CachedVersionsFilePath:       string = path.join(...[LauncherPath, "cached_versions.json"]);
+const ProfilesFilePath:             string = path.join(...[LauncherPath, "profiles.json"]);
 
 const MinecraftUWPPath:             string = path.join(...[LocalAppDataPath, "Packages", "Microsoft.MinecraftUWP_8wekyb3d8bbwe"]);
 const ComMojangPath:                string = path.join(...[MinecraftUWPPath, "LocalState", "games", "com.mojang"]);
@@ -29,8 +30,9 @@ export const AmethystFolder:        string = ValidatePath(AmethystPath);
 export const LauncherFolder:        string = ValidatePath(LauncherPath);
 export const VersionsFolder:        string = ValidatePath(VersionsPath);
 
-export const VersionsFile: string = ValidatePath(VersionsFilePath)
-export const CachedVersionsFile:    string = ValidatePath(CachedVersionsPath);
+export const VersionsFile:          string = ValidatePath(VersionsFilePath)
+export const CachedVersionsFile:    string = ValidatePath(CachedVersionsFilePath);
+export const ProfilesFile:          string = ValidatePath(ProfilesFilePath);
 
 export const MinecraftUWPFolder:    string = ValidatePath(MinecraftUWPPath);
 export const ComMojangFolder:       string = ValidatePath(ComMojangPath);

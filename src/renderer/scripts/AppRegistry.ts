@@ -1,9 +1,11 @@
 import {VersionsFolder} from "./Paths";
 import {MinecraftVersion} from "./Versions";
 
-const regedit = window.require("regedit-rs") as typeof import("regedit-rs");
-const child = window.require("child_process") as typeof import("child_process");
-const path = window.require("path") as typeof import("path");
+import * as child from 'child_process';
+import * as path from 'path';
+
+// .node type so window.require is needed
+const regedit = window.require('regedit-rs') as typeof import('regedit-rs');
 
 export function GetPackage() {
     const reg_key = "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages";

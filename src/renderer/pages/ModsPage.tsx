@@ -6,9 +6,9 @@ import { MinecraftUWPFolder, ModsFolder } from "../scripts/Paths";
 import { ValidateMod, ModConfig } from "../scripts/Mods";
 import PopupPanel from "../components/PopupPanel";
 
-const fs = window.require('fs') as typeof import('fs');
-const path = window.require('path') as typeof import('path');
-const child = window.require('child_process') as typeof import('child_process')
+import * as fs from 'fs';
+import * as path from 'path';
+import * as child from 'child_process';
 
 type ModErrorInfo = { modIdentifier: string, description?: string, modErrors: string[] }
 

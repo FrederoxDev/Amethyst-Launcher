@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import MinecraftToggle from "../components/MinecraftToggle"
 import MinecraftRadialButtonPanel from "../components/MinecraftRadialButtonPanel";
 
-const fs = window.require('fs') as typeof import('fs');
+import * as fs from 'fs';
 
 
 export default function SettingsPage() {

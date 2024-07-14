@@ -7,7 +7,7 @@ import { IsDevModeEnabled, TryEnableDevMode } from "../scripts/DeveloperMode";
 import { RegisterVersion, UnregisterCurrent } from "../scripts/AppRegistry";
 import { CleanupInstall, InstallProxy, CreateLock, DownloadVersion, ExtractVersion, IsLocked, IsRegistered, IsDownloaded } from "../scripts/VersionManager";
 
-const child = window.require('child_process') as typeof import('child_process')
+import * as child from 'child_process';
 
 export default function LauncherPage() {
     const {
@@ -41,8 +41,8 @@ export default function LauncherPage() {
 
             // Check that the user has developer mode enabled on windows for the game to be installed through loose files.
             if (!IsDevModeEnabled()) {
-                const couldEnableDev = await TryEnableDevMode();
-                if (!couldEnableDev) {
+                const enabled_dev = await TryEnableDevMode();
+                if (!enabled_dev) {
                     throw new Error("Failed to enable 'Developer Mode' in windows settings to allow installing the game from loose files, please enable manually or make sure to press 'Yes' to enable automatically.")
                 }
             }
@@ -86,7 +86,7 @@ export default function LauncherPage() {
 
             const startGameCmd = `start minecraft:`;
             child.exec(startGameCmd)
-        } catch (e: unknown) {
+        } catch (e) {
             console.error(e);
             setError((e as Error).message);
             setStatus("");

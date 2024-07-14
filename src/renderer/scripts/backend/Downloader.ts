@@ -1,6 +1,6 @@
 import {ActionComplete, DownloadProgress} from "./Progress";
 
-const fs = window.require('fs') as typeof import('fs');
+import * as fs from 'fs';
 
 
 export class Downloader {
