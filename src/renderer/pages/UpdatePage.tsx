@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import MinecraftButton, { MinecraftButtonStyle } from '../components/MinecraftButton'
+import MinecraftButton from '../components/MinecraftButton'
+import { MinecraftButtonStyle } from '../components/MinecraftButtonStyle'
 import { UpdateInfo } from 'electron-updater'
 import LoadingWheel from '../components/LoadingWheel'
 import PopupPanel from '../components/PopupPanel'
