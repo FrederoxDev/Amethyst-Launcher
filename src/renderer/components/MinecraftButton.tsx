@@ -1,13 +1,10 @@
+import { MinecraftButtonStyle } from './MinecraftButtonStyle'
+
 type MinecraftButtonProps = {
   text: string
   disabled?: boolean
   onClick?: () => void
   style?: MinecraftButtonStyle
-}
-
-export enum MinecraftButtonStyle {
-  Confirm,
-  Warn
 }
 
 export default function MinecraftButton({ text, onClick, disabled = false, style }: MinecraftButtonProps) {
