@@ -221,8 +221,7 @@ async function postXmlAsync(url: RequestInfo | URL, data: Node) {
         headers: {
             "Content-Type": "application/soap+xml",
         },
-        body: new XMLSerializer().serializeToString(data),
-        signal: AbortSignal.timeout(5000)
+        body: new XMLSerializer().serializeToString(data)
     };
 
     const response = await fetch(url, requestOptions);
