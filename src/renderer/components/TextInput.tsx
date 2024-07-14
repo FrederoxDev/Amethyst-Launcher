@@ -6,7 +6,7 @@ export type TextInputProps = {
 
 export default function TextInput({ label, text, setText }: TextInputProps) {
   return (
-    <>
+    <div>
       <p className="minecraft-seven text-white text-[14px]">{label}</p>
       <div className="border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233]">
         <input
@@ -19,6 +19,6 @@ export default function TextInput({ label, text, setText }: TextInputProps) {
           }}
         />
       </div>
-    </>
+    </div>
   )
 }

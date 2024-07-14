@@ -1,3 +1,5 @@
+import React from 'react'
+
 type DropdownProps = {
   id: string
   labelText: string
@@ -13,7 +15,7 @@ export default function Dropdown({ id, labelText, options, value, setValue }: Dr
   }
 
   return (
-    <div className="">
+    <div className="flex flex-col">
       <label htmlFor={id} className="minecraft-seven text-white text-[14px]">
         {labelText}
       </label>
