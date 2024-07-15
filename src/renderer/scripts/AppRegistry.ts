@@ -32,7 +32,7 @@ export async function UnregisterCurrent() {
     console.log("Currently installed packageId", packageId);
     if (packageId === undefined) return;
 
-    const unregisterCmd = `powershell -ExecutionPolicy Bypass -Command "& { Remove-AppxPackage -Package "${packageId}" -PreserveApplicationData }"`;
+    const unregisterCmd = `powershell -ExecutionPolicy Bypass -Command "& { Remove-AppxPackage -Package "${packageId}" -PreserveRoamableApplicationData }"`;
     await new Promise((resolved) => {
         const exec_proc = child.exec(unregisterCmd)
 
