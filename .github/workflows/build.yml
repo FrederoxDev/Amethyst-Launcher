@@ -62,7 +62,7 @@ jobs:
         with:
           token: ${{ secrets.PAT_TOKEN }}
           tag: v${{ env.VERSION }}
-          name: "Release v${{ env.VERSION }}"
+          name: 'Release v${{ env.VERSION }}'
           draft: false
           prerelease: false
-          artifacts: "release/*.exe,release/*.exe.blockmap,release/*.yml"
+          artifacts: 'release/*.exe,release/*.exe.blockmap,release/*.yml'
