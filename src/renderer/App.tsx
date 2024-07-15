@@ -29,10 +29,10 @@ export default function App() {
         </div>
 
         <div className="contents_container absolute flex flex-row w-full gap-[12px] h-[calc(100%-64px)] p-[12px]">
-          <div className="navbar_container h-full w-[70px]">
-            <div className="h-full bg-[#313233] w-[70px] flex flex-col border-[3px] border-[#1E1E1F]">
-              <div className="page_nav_panel grow-[1]">
-                <Link to="/" className="block p-[9px]" draggable={false}>
+          <div className="navbar_container h-full w-[68px]">
+            <div className="h-full bg-[#313233] w-[68px] flex flex-col justify-between items-center p-[8px] border-[3px] border-[#1E1E1F]">
+              <div className="flex flex-col gap-[8px] grow-[1]">
+                <Link to="/" draggable={false}>
                   <div
                     className="w-[46px] h-[46px]"
                     style={location.pathname === '/' ? highlightedIcon : unselectedIcon}
@@ -40,7 +40,7 @@ export default function App() {
                     <img src="images/icons/crafting-icon.png" className="w-full h-full pixelated" alt="" />
                   </div>
                 </Link>
-                <Link to="/profiles" className="block p-[9px]" draggable={false}>
+                <Link to="/profiles" draggable={false}>
                   <div
                     className="w-[46px] h-[46px]"
                     style={location.pathname === '/profiles' ? highlightedIcon : unselectedIcon}
@@ -48,7 +48,7 @@ export default function App() {
                     <img src="images/icons/chest-icon.png" className="w-full h-full pixelated" alt="" />
                   </div>
                 </Link>
-                <Link to="/mods" className="block p-[9px]" draggable={false}>
+                <Link to="/mods" draggable={false}>
                   <div
                     className="w-[46px] h-[46px]"
                     style={location.pathname === '/mods' ? highlightedIcon : unselectedIcon}
@@ -56,7 +56,7 @@ export default function App() {
                     <img src="images/icons/shulker-icon.png" className="w-full h-full pixelated" alt="" />
                   </div>
                 </Link>
-                <Link to="/versions" className="block p-[9px]" draggable={false}>
+                <Link to="/versions" draggable={false}>
                   <div
                     className="w-[46px] h-[46px]"
                     style={location.pathname === '/versions' ? highlightedIcon : unselectedIcon}
@@ -66,17 +66,17 @@ export default function App() {
                 </Link>
               </div>
 
-              <Link to="/settings" className="block p-[22px] bottom-0" draggable={false}>
-                <div className="relative w-[20px] h-[20px]">
+              <Link to="/settings" draggable={false}>
+                <div className="relative flex justify-center items-center w-[46px] h-[46px]">
                   <img
                     src="images/icons/settings-icon.png"
-                    className="absolute top-0 left-0 w-full h-full pixelated"
+                    className="absolute w-[20px] h-[20px] pixelated"
                     alt=""
                   />
                   {location.pathname === '/settings' ? (
                     <img
                       src="images/icons/settings-icon.png"
-                      className="absolute top-0 left-0 w-full h-full pixelated"
+                      className="absolute w-[20px] h-[20px] pixelated"
                       alt=""
                     />
                   ) : (
@@ -86,7 +86,7 @@ export default function App() {
               </Link>
             </div>
           </div>
-          <div className="view_container w-[calc(100%-84px)]">
+          <div className="view_container w-[calc(100%-80px)]">
             <Routes>
               <Route path="/" element={<LauncherPage />} />
               <Route path="/profiles" element={<ProfilePage />} />
