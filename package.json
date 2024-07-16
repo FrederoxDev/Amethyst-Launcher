@@ -1,7 +1,7 @@
 {
   "name": "amethyst-launcher",
-  "version": "2.5.2",
-  "author": "FrederoxDev, Adrian8115",
+  "version": "2.5.3",
+  "author": "FrederoxDev, Adrian8115, OmniacDev",
   "description": "Amethyst Launcher",
   "main": "build/electron/main/main.js",
   "type": "module",
