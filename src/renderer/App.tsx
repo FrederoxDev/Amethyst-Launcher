@@ -31,7 +31,7 @@ export default function App() {
         <div className="contents_container absolute flex flex-row w-full gap-[12px] h-[calc(100%-64px)] p-[12px]">
           <div className="navbar_container h-full w-[68px]">
             <div className="h-full bg-[#313233] w-[68px] flex flex-col justify-between items-center p-[8px] border-[3px] border-[#1E1E1F]">
-              <div className="flex flex-col gap-[8px] grow-[1]">
+              <div className="flex flex-col gap-[16px] grow-[1]">
                 <Link to="/" draggable={false}>
                   <div
                     className="w-[46px] h-[46px]"
