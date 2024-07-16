@@ -26,6 +26,7 @@ function createWindow() {
     minWidth: 600,
     minHeight: 400,
     backgroundColor: '#1E1E1F',
+    show: false,
     webPreferences: {
       preload: path.join(app.getAppPath(), '/build/electron/preload/preload.mjs'),
       nodeIntegration: true,
@@ -113,6 +114,10 @@ if (hasSingleInstanceLock === false) {
 else {
   app.on('ready', () => {
     mainWindow = createWindow()
+
+    mainWindow.webContents.once('did-finish-load', () => {
+      mainWindow.show()
+    })
   })
 
   app.on('second-instance', () => {
