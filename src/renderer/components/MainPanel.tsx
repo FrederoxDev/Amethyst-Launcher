@@ -1,9 +1,13 @@
-import { ReactNode } from 'react'
+import {ReactNode} from "react"
 
 type MainPanelProps = {
-  children: ReactNode
+    children: ReactNode
 }
 
-export default function MainPanel({ children }: MainPanelProps) {
-  return <div className="h-full w-full relative flex flex-col">{children}</div>
+export default function MainPanel({children}: MainPanelProps) {
+    return (
+        <div className="h-full w-full relative flex flex-col">
+            {children}
+        </div>
+    )
 }

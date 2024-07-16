@@ -1,46 +1,35 @@
-import { useState } from 'react'
-import MinecraftRadialButton from './MinecraftRadialButton'
+import { useState } from "react";
+import MinecraftRadialButton from "./MinecraftRadialButton";
 
 type RadialButtonPanelProperties = {
-  elements: {
-    text: string
-    value: string
-    className?: string
-  }[]
+    elements: {
+        text: string,
+        value: string,
+        className?: string,
+    }[]
 
-  default_selected_value?: string
+    default_selected_value?: string,
 
-  onChange: (selected_value: string) => void
+    onChange: (selected_value: string) => void,
 }
 
-export default function MinecraftRadialButtonPanel({
-  elements,
-  default_selected_value,
-  onChange
-}: RadialButtonPanelProperties) {
-  const [selected_value, setSelectedValue] = useState(default_selected_value)
+export default function MinecraftRadialButtonPanel({elements, default_selected_value, onChange}: RadialButtonPanelProperties) {
+    const [selected_value, setSelectedValue] = useState(default_selected_value);
 
-  function handleSelect(value: string) {
-    setSelectedValue(value)
-    onChange(value)
-  }
+    function handleSelect(value: string) {
+        setSelectedValue(value)
+        onChange(value)
+    }
 
-  return (
-    <>
-      <div className="flex items-center justify-center">
-        {elements.map(element => {
-          return (
-            <MinecraftRadialButton
-              key={element.value}
-              text={element.text}
-              value={element.value}
-              selected={selected_value === element.value}
-              className={element.className}
-              onChange={handleSelect}
-            />
-          )
-        })}
-      </div>
-    </>
-  )
+    return (
+        <>
+            <div className="flex items-center justify-center">
+                {
+                    elements.map(element => {
+                        return <MinecraftRadialButton key={element.value} text={element.text} value={element.value} selected={selected_value === element.value} className={element.className} onChange={handleSelect}/>
+                    })
+                }
+            </div>
+        </>
+    )
 }
