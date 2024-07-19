@@ -40,7 +40,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="bg-[#48494A] h-fit">
-                    <MinecraftButton text="Create new profile" onClick={() => {
+                    <MinecraftButton text="Create New Profile" onClick={() => {
                         const defaultProfile: Profile = {
                             name: "New Profile",
                             minecraft_version: "1.21.0.3",
