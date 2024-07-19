@@ -69,7 +69,7 @@ Then, copy the mod's `.zip` file into the mods folder, and unzip it.
 > Make sure your mods folder structure looks like this
 > ```
 > Mods
-> └── AmethystRuntime
+> └── Mod
 >     ├── File
 >     ├── File
 >     └── File
@@ -78,12 +78,13 @@ Then, copy the mod's `.zip` file into the mods folder, and unzip it.
 > and **NOT** this
 > ```
 > Mods
-> └── AmethystRuntime
->     └── AmethystRuntime
+> └── Mod
+>     └── Mod
 >         ├── File
 >         ├── File
 >         └── File
 > ```
+
 > [!NOTE]
 > Mods only support specific versions, and may not support the latest versions of minecraft.
 
