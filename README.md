@@ -1,69 +1,90 @@
-# Step-by-step Guide on how to install Amethyst with mods
+# Amethyst Launcher
 
-**Requirements:**
-* Windows OS
-* Minecraft Bedrock Edition
+Launcher for Minecraft Bedrock mods created with AmethystAPI
 
-\- If you already have Minecraft installed and have run the game at least once, make sure Minecraft is closed.  
-\- If you do not have Minecraft installed, install it, run the game at least once, and close it.  
+## 📚 Getting Started
 
-**Amethyst Launcher:**
-* Download the latest **Amethyst.Launcher.Setup.biggest.version.number.exe** file from here: https://github.com/FrederoxDev/Amethyst-Launcher/releases/
-* Run the .exe and go through the installation steps
-* If the launcher is not already opened, open it
-* Click the **Chest Icon** on the left sidebar, then click **Create New Profile**
-* The values in the input boxes should be set as follows:  
-**\- Profile Name:** The name of the profile (Just pick whatever you want)  
-**\- Minecraft Version:** The latest Minecraft version that Amethyst supports (Currently 1.21.0.3. **This may change**)  
-**\- Runtime:** "Vanilla"  
-* Click **Save Profile**, then click the **Grass Block Icon** on the left sidebar
-* Verify that under **Profile** (in the bottom left corner), the profile you just made is selected
-* Click **Launch Game**. Amethyst is going to do it's thing. Don't touch anything. I wouldn't even recommend you move your mouse (Unless it's to stop the computer from falling asleep). Amethyst can be very finicky at this stage.  
-NOTE: When Minecraft launches, a black console will also open named **AmethystAPI**. Do not close this. It will also close Minecraft if you do.
-* After a few minutes, Minecraft should launch. If long enough has passed and Amethyst has not done anything, and there are no loading bars or errors on the screen, press **Launch Game** again. Minecraft should now be open. Verify that the version number matches the version number chosen in your profile.
-* Now close Minecraft again. It's time to load in some mods.
+### **Requirements**
+**OS**: Windows 10 (Minimum)\
+**Other**: Minecraft Bedrock Edition
 
-**Mods:**
-* Download the latest **`AmethystRuntime@biggest.version.number.zip`** file from here: https://github.com/FrederoxDev/Amethyst/releases/
-* Open Amethyst, Click on the **Amethyst Block Icon** on the left sidebar, then click **Open Mods Folder**
-* Move the **AmethystRuntime.zip** file you just downloaded to that folder
-* Select it, and click **Extract All** on the top menu bar of file explorer
-* In the same mods folder, deleted the old **AmethystRuntime.zip**. You won't need it anymore.  
-NOTE: **Do not change** the names of any of the folders in the mods folder. This will make the Amethyst Launcher unable to detect the mods
-* Make sure that when you open the folder for the mod you just extracted, you immediately see three files, and there are no other layers to the folder. For example:
-  
-**\>Mods  
-    &emsp;\> AmethystRuntime  
-         &emsp;&emsp;\> AmethystRuntime  
-              &emsp;&emsp;&emsp;\> File  
-              &emsp;&emsp;&emsp;\> File  
-              &emsp;&emsp;&emsp;\> File**  
-              
-Is BAD, but 
+> [!IMPORTANT]
+> Amethyst Launcher won't work if you do not own Minecraft Bedrock Edition
 
-**\>Mods  
-    &emsp;\> AmethystRuntime  
-         &emsp;&emsp;\> File  
-         &emsp;&emsp;\> File  
-         &emsp;&emsp;\> File**  
-         
-Is GOOD
+### Installation
+1. Download the latest installer version from [releases](https://github.com/FrederoxDev/Amethyst-Launcher/releases/latest)
+2. Run the installer and follow the installation steps
+3. Start the launcher
 
-* If there is an extra layer that shouldn't be there, remove it
-* Repeat the **Mods** section of this guide for any other mods you want, but instead of **AmethystRuntime**,  use any of the mods on this page: https://github.com/FrederoxDev/Amethyst. Just make sure that you use the **Releases** button on the right side of the mod's github page to download the latest working .zip file.  
-NOTE: Not all mods will be updated to work with the latest runtime and/or Minecraft version
 
-**Loading the Mods:**  
-* Now that you have all the mods you want installed into the **mods folder**, reboot the Amethyst Launcher (Close and open it again).
-* Click the **Chest Icon** on the left sidebar, then click **the profile you made earlier**
-* Now click the **runtime dropdown** and select **`AmethystRuntime@version.number`**
-* A new UI should appear with **Active Mods** and **Inactive Mods** boxes.
-* In the **Inactive Mods** box, click on **all the mods you want to use**. They should now appear in the **Active Mods** box.
-* Now click **Save Profile**, then click the **Grass Block Icon**
-* Verify one more time that the **correct profile is selected in the bottom left corner**, and click **Launch Game**
-* Minecraft should now launch... **with mods!**
-* Anytime you want to change what mods are active, what runtime is being used, or what version of Minecraft is active, you will need to use the Amethyst Launcher. Otherwise, you can launch Minecraft like you normally do, and the last used profile will be used automatically.
 
-# Amethyst Launcher (Windows)
+## 🕹️ Usage
 
-This is the launcher for using Amethyst on Windows
+### Launching
+You can launch the game from the **Launcher Page**, which can be accesssed by clicking on the **Crafting Table Icon** in the navigation bar.
+
+To launch the game, click the **'Launch Game'** button.
+
+To change the selected profile, click on the **'Profiles'** dropdown next to the **'Launch Game'** button, and select the desired one.
+
+> [!NOTE]
+> When launching, the launcher will search for the version specified by the selected profile. If no installed version is found, it will automatically install the sepcified version.
+
+### Profiles
+You can view and create profiles in the **Profile Manager**, which can be accessed by clicking on the **Chest Icon** in the navigation bar.
+
+To create a new profile, click the **'Create New Profile'** button at the bottom of the **Profile Manager**.
+You will then need to input your profile's name, and select the version and runtime that it uses. If you are using a modded runtime, then you can also select which mods the profile will use.
+
+> #### Vanilla Profile Example:
+> **- Profile Name**: Vanilla 1.21\
+> **- Minecraft Version**: 1.21.2.2\
+> **- Runtime**: Vanilla
+
+> #### Modded Profile Example:
+> **- Profile Name**: Amethyst 1.21\
+> **- Minecraft Version**: 1.21.0.3\
+> **- Runtime**: AmethystRuntime@1.3.1
+
+To edit an existing profile, click on the desired profile in the **Profile Manager**, change the profile's settings and then click the **'Save Profile'** button, or if you want to delete the profile, click the **'Delete Profile'** button.
+
+### Mods & Runtimes
+You can view installed mods and runtimes in the **Mod Manager**, which can be accessed by clicking on the **Shulker Icon** in the navigation bar.
+
+To import a new mod or runtime, you can either do it automatically or manually.
+
+**Automatically:** Select the mod or runtime's `.zip` file, or unzipped folder, and drag it into the launcher.
+
+**Manually:** Click the **'Open Mod Folder'** button at the bottom of the **Mod Manager**. This will open the launcher's mods folder in a new file explorer window.
+Then, copy the mod's `.zip` file into the mods folder, and unzip it.
+
+> [!IMPORTANT]
+> Make sure your mods folder structure looks like this
+> ```
+> Mods
+> └── AmethystRuntime
+>     ├── File
+>     ├── File
+>     └── File
+> ```
+> 
+> and **NOT** this
+> ```
+> Mods
+> └── AmethystRuntime
+>     └── AmethystRuntime
+>         ├── File
+>         ├── File
+>         └── File
+> ```
+
+> [!NOTE]
+> Mods only support specific versions, and may not support the latest versions of minecraft.
+
+### Versions
+You can view currently installed versions in the **Version Manager**, which can be accessed by clicking on the **Portal Icon** in the navigation bar.
+
+In the **Version Manager**, you can delete versions, view where they are installed, or view extra info about them.
+
+> [!NOTE]
+> Deleting a version will **NOT** remove the profiles that are using that version. This will only remove the installed version from your local storage device.
