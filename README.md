@@ -24,14 +24,14 @@ Launcher for Minecraft Bedrock mods created with AmethystAPI
 
 ### Launching
 
-You can launch the game from the **Launcher Page**, which can be accesssed by clicking on the **Crafting Table Icon** in the navigation bar.
+You can launch the game from the **Launcher Page**, which can be accessed by clicking on the **Crafting Table Icon** in the navigation bar.
 
 To launch the game, click the **'Launch Game'** button.
 
 To change the selected profile, click on the **'Profiles'** dropdown next to the **'Launch Game'** button, and select the desired one.
 
 > [!NOTE]
-> When launching, the launcher will search for the version specified by the selected profile. If no installed version is found, it will automatically install the sepcified version.
+> When launching, the launcher will search for the version specified by the selected profile. If no installed version is found, it will automatically install the specified version.
 
 ### Profiles
 
@@ -60,7 +60,7 @@ You can view installed mods and runtimes in the **Mod Manager**, which can be ac
 
 To import a new mod or runtime, you can either do it automatically or manually.
 
-**Automatically:** Select the mod or runtime's `.zip` file, or unzipped folder, and drag it into the launcher.
+**Automatically:** Select the mod or runtimes `.zip` file, or unzipped folder, and drag it into the launcher.
 
 **Manually:** Click the **'Open Mod Folder'** button at the bottom of the **Mod Manager**. This will open the launcher's mods folder in a new file explorer window.
 Then, copy the mod's `.zip` file into the mods folder, and unzip it.
