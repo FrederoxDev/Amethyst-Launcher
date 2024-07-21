@@ -18,8 +18,6 @@ Launcher for Minecraft Bedrock mods created with AmethystAPI
 2. Run the installer and follow the installation steps
 3. Start the launcher
 
-
-
 ## 🕹️ Usage
 
 ### Launching
@@ -41,13 +39,13 @@ To create a new profile, click the **'Create New Profile'** button at the bottom
 You will then need to input your profile's name, and select the version and runtime that it uses. If you are using a modded runtime, then you can also select which mods the profile will use.
 
 > #### Vanilla Profile Example:
-> 
+>
 > **- Profile Name**: Vanilla 1.21\
 > **- Minecraft Version**: 1.21.2.2\
 > **- Runtime**: Vanilla
 
 > #### Modded Profile Example:
-> 
+>
 > **- Profile Name**: Amethyst 1.21\
 > **- Minecraft Version**: 1.21.0.3\
 > **- Runtime**: AmethystRuntime@1.3.1
@@ -67,6 +65,7 @@ Then, copy the mod's `.zip` file into the mods folder, and unzip it.
 
 > [!IMPORTANT]
 > Make sure your mods folder structure looks like this
+>
 > ```
 > Mods
 > └── Mod
@@ -76,6 +75,7 @@ Then, copy the mod's `.zip` file into the mods folder, and unzip it.
 > ```
 >
 > and **NOT** this
+>
 > ```
 > Mods
 > └── Mod
