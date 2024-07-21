@@ -8,14 +8,14 @@ import { UseAppState } from '../contexts/AppState'
 import { useNavigate } from 'react-router-dom'
 import { GetMods } from '../scripts/Mods'
 import { MinecraftVersionType } from '../scripts/Versions'
-import { GetDefaultInstallPath } from '../scripts/VersionManager'
+// import { GetDefaultInstallPath } from '../scripts/VersionManager'
 
 export default function ProfileEditor() {
   const [profileName, setProfileName] = useState('')
   const [profileActiveMods, setProfileActiveMods] = useState<string[]>([])
   const [profileRuntime, setProfileRuntime] = useState<string>('')
   const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<string>('')
-  const [profileInstallDir, setProfileInstallDir] = useState<string>(GetDefaultInstallPath())
+  // const [profileInstallDir, setProfileInstallDir] = useState<string>(GetDefaultInstallPath())
 
   const {
     allMods,
@@ -126,7 +126,7 @@ export default function ProfileEditor() {
               options={allRuntimes}
               id="runtime-mod"
             />
-            <TextInput label="Install Directory" text={profileInstallDir} setText={setProfileInstallDir} />
+            {/*<TextInput label="Install Directory" text={profileInstallDir} setText={setProfileInstallDir} />*/}
         </div>
 
         {/* Mod Selection */}
