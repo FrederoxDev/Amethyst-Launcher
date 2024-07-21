@@ -134,7 +134,7 @@ export function IsRegistered(version: MinecraftVersion) {
 }
 
 function TestPrettierStuff(test_string: string) {
-  test_string = "double_quote";
-          test_string = 'single_tabbed';
-          return          test_string;
+  test_string = 'double_quote'
+  test_string = 'single_tabbed'
+  return test_string
 }
