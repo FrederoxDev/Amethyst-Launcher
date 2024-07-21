@@ -1,29 +1,28 @@
-import { ValidatePath, LauncherFolder} from "./Paths";
+import { ValidatePath, ProfilesFile } from './Paths'
+import { InstalledVersion } from './Versions'
 
-const fs = window.require('fs') as typeof import('fs');
-const path = window.require('path') as typeof import('path');
+import * as fs from 'fs'
 
 export interface Profile {
-    name: string,
-    runtime: string,
-    mods: string[]
-    minecraft_version: string
+  name: string
+  runtime: string
+  mods: string[]
+  minecraft_version: string
+  installed_version?: InstalledVersion
 }
 
 export function GetProfiles(): Profile[] {
-    const profiles_filepath = path.join(LauncherFolder, "profiles.json");
-    if (!fs.existsSync(profiles_filepath)) return [];
+  if (!fs.existsSync(ProfilesFile)) return []
 
-    const jsonData = fs.readFileSync(profiles_filepath, "utf-8");
-    try {
-        return JSON.parse(jsonData);
-    } catch {
-        return [];
-    }
+  const json_data = fs.readFileSync(ProfilesFile, 'utf-8')
+  try {
+    return JSON.parse(json_data)
+  } catch {
+    return []
+  }
 }
 
 export function SetProfiles(profiles: Profile[]) {
-    const profiles_filepath = path.join(LauncherFolder, "profiles.json");
-    ValidatePath(profiles_filepath);
-    fs.writeFileSync(profiles_filepath, JSON.stringify(profiles, undefined, 4));
+  ValidatePath(ProfilesFile)
+  fs.writeFileSync(ProfilesFile, JSON.stringify(profiles, undefined, 4))
 }
