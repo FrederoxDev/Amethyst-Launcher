@@ -37,7 +37,7 @@ jobs:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
 
   manual-format:
-    if: ${{ github.event_name == 'workflow_dispath' }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: windows-latest
     strategy:
       matrix:
