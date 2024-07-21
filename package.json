@@ -10,9 +10,9 @@
     "build": "npm run build:vite && npm run build:electron",
     "build:vite": "tsc -b && vite build",
     "build:electron": "electron-builder -w",
-    "lint": "eslint . --ext ts,tsx src/** --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint . --ext ts,tsx src/**/* --report-unused-disable-directives --max-warnings 0",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write .",
+    "format": "prettier --write src/**/*",
     "bump-version": "npm version patch --no-git-tag-version"
   },
   "dependencies": {
