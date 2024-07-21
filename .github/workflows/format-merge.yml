@@ -1,0 +1,36 @@
+name: Auto-Format Merge
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  format:
+    if: github.event.pull_request.merged
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        node-version: [ 20.x ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Format and Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          npm run format
+          git commit -am "Auto-Format Merge"
+          git push https://github.com/${{ github.repository }} HEAD:main
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
