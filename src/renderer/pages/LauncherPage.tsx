@@ -7,9 +7,11 @@ import {
   CleanupInstall,
   CreateLock,
   DownloadVersion,
-  ExtractVersion, InstallProxy,
+  ExtractVersion,
+  InstallProxy,
   IsDownloaded,
-  IsLocked, IsRegistered
+  IsLocked,
+  IsRegistered
 } from '../scripts/VersionManager'
 import { RegisterVersion, UnregisterCurrent } from '../scripts/AppRegistry'
 import { GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
@@ -166,15 +168,15 @@ export default function LauncherPage() {
         {/* Profile Selector & Play Button */}
         <div className="flex flex-row gap-[8px] border-[#1E1E1F] border-[3px] p-[8px] bg-[#48494A]">
           <div className="w-[30%] mt-auto">
-              <Dropdown
-                labelText="Profile"
-                options={allProfiles?.map(profile => profile.name)}
-                value={allProfiles[selectedProfile]?.name}
-                setValue={value => {
-                  setSelectedProfile(allProfiles.map(profile => profile.name).findIndex(e => e === value))
-                }}
-                id="profile-select"
-              />
+            <Dropdown
+              labelText="Profile"
+              options={allProfiles?.map(profile => profile.name)}
+              value={allProfiles[selectedProfile]?.name}
+              setValue={value => {
+                setSelectedProfile(allProfiles.map(profile => profile.name).findIndex(e => e === value))
+              }}
+              id="profile-select"
+            />
           </div>
 
           <div className="w-[70%]">

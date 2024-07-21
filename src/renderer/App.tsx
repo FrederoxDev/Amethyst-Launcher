@@ -68,17 +68,9 @@ export default function App() {
 
               <Link to="/settings" draggable={false}>
                 <div className="relative flex justify-center items-center w-[46px] h-[46px]">
-                  <img
-                    src="images/icons/settings-icon.png"
-                    className="absolute w-[20px] h-[20px] pixelated"
-                    alt=""
-                  />
+                  <img src="images/icons/settings-icon.png" className="absolute w-[20px] h-[20px] pixelated" alt="" />
                   {location.pathname === '/settings' ? (
-                    <img
-                      src="images/icons/settings-icon.png"
-                      className="absolute w-[20px] h-[20px] pixelated"
-                      alt=""
-                    />
+                    <img src="images/icons/settings-icon.png" className="absolute w-[20px] h-[20px] pixelated" alt="" />
                   ) : (
                     <></>
                   )}

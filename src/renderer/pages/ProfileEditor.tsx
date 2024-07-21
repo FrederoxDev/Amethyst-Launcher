@@ -43,7 +43,8 @@ export default function ProfileEditor() {
 
   const ModButton = ({ name }: { name: string }) => {
     return (
-      <div className="m-[-3px] border-[3px] border-[#1E1E1F]"
+      <div
+        className="m-[-3px] border-[3px] border-[#1E1E1F]"
         onClick={() => {
           if (profileRuntime === 'Vanilla') {
             alert('Cannot add mods to a vanilla profile')
@@ -108,25 +109,25 @@ export default function ProfileEditor() {
       <div className="w-full h-full flex flex-col p-[8px] gap-[8px] border-[3px] border-[#1E1E1F] bg-[#48494A]">
         {/* Settings */}
         <div className="flex flex-col gap-[8px]">
-            <TextInput label="Profile Name" text={profileName} setText={setProfileName} />
-            <Dropdown
-              labelText="Minecraft Version"
-              value={profileMinecraftVersion}
-              setValue={setProfileMinecraftVersion}
-              // we don't support non-release versions right now so only show release lmao
-              options={allMinecraftVersions
-                .filter(ver => ver.versionType === MinecraftVersionType.Release)
-                .map(ver => ver.toString())}
-              id="minecraft-version"
-            />
-            <Dropdown
-              labelText="Runtime"
-              value={profileRuntime}
-              setValue={setProfileRuntime}
-              options={allRuntimes}
-              id="runtime-mod"
-            />
-            {/*<TextInput label="Install Directory" text={profileInstallDir} setText={setProfileInstallDir} />*/}
+          <TextInput label="Profile Name" text={profileName} setText={setProfileName} />
+          <Dropdown
+            labelText="Minecraft Version"
+            value={profileMinecraftVersion}
+            setValue={setProfileMinecraftVersion}
+            // we don't support non-release versions right now so only show release lmao
+            options={allMinecraftVersions
+              .filter(ver => ver.versionType === MinecraftVersionType.Release)
+              .map(ver => ver.toString())}
+            id="minecraft-version"
+          />
+          <Dropdown
+            labelText="Runtime"
+            value={profileRuntime}
+            setValue={setProfileRuntime}
+            options={allRuntimes}
+            id="runtime-mod"
+          />
+          {/*<TextInput label="Install Directory" text={profileInstallDir} setText={setProfileInstallDir} />*/}
         </div>
 
         {/* Mod Selection */}

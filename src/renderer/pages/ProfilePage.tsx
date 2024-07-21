@@ -31,34 +31,32 @@ export default function ProfilePage() {
 
   return (
     <MainPanel>
-      <div
-        className="flex flex-col h-full p-[8px] gap-[8px] bg-[#48494A] border-[#1E1E1F] border-[3px] overflow-hidden">
-          <p className="minecraft-seven text-white text-[14px]">Profile Editor</p>
-          <div
-            className="flex flex-col gap-[3px] border-[3px] border-[#1E1E1F] h-full bg-[#313233] overflow-y-auto overflow-x-hidden scrollbar">
-            {allProfiles.map((profile, index) => {
-              return <ProfileButton profile={profile} index={index} key={index} />
-            })}
-          </div>
-          <div className="bg-[#48494A] h-fit">
-            <MinecraftButton
-              text="Create new profile"
-              onClick={() => {
-                const defaultProfile: Profile = {
-                  name: 'New Profile',
-                  minecraft_version: '1.21.0.3',
-                  mods: [],
-                  runtime: 'Vanilla'
-                }
+      <div className="flex flex-col h-full p-[8px] gap-[8px] bg-[#48494A] border-[#1E1E1F] border-[3px] overflow-hidden">
+        <p className="minecraft-seven text-white text-[14px]">Profile Editor</p>
+        <div className="flex flex-col gap-[3px] border-[3px] border-[#1E1E1F] h-full bg-[#313233] overflow-y-auto overflow-x-hidden scrollbar">
+          {allProfiles.map((profile, index) => {
+            return <ProfileButton profile={profile} index={index} key={index} />
+          })}
+        </div>
+        <div className="bg-[#48494A] h-fit">
+          <MinecraftButton
+            text="Create new profile"
+            onClick={() => {
+              const defaultProfile: Profile = {
+                name: 'New Profile',
+                minecraft_version: '1.21.0.3',
+                mods: [],
+                runtime: 'Vanilla'
+              }
 
-                const newProfiles = [...allProfiles, defaultProfile]
-                setAllProfiles(newProfiles)
+              const newProfiles = [...allProfiles, defaultProfile]
+              setAllProfiles(newProfiles)
 
-                setSelectedProfile(newProfiles.length - 1)
-                navigate('/profile-editor')
-              }}
-            />
-          </div>
+              setSelectedProfile(newProfiles.length - 1)
+              navigate('/profile-editor')
+            }}
+          />
+        </div>
       </div>
     </MainPanel>
   )
