@@ -132,3 +132,9 @@ export function IsRegistered(version: MinecraftVersion) {
 
   return GetPackagePath() === `${VersionsFolder}\\${fileName}`
 }
+
+function TestPrettierStuff(test_string: string) {
+  test_string = "double_quote";
+          test_string = 'single_tabbed';
+          return          test_string;
+}
