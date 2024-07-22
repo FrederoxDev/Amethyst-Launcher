@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import MainPanel from '../components/MainPanel'
+import Panel from '../components/Panel'
 import TextInput from '../components/TextInput'
 import Dropdown from '../components/Dropdown'
 import MinecraftButton from '../components/MinecraftButton'
@@ -8,6 +8,8 @@ import { UseAppState } from '../contexts/AppState'
 import { useNavigate } from 'react-router-dom'
 import { GetMods } from '../scripts/Mods'
 import { MinecraftVersionType } from '../scripts/Versions'
+import ListItem from '../components/ListItem'
+import List from '../components/List'
 // import { GetDefaultInstallPath } from '../scripts/VersionManager'
 
 export default function ProfileEditor() {
@@ -43,8 +45,8 @@ export default function ProfileEditor() {
 
   const ModButton = ({ name }: { name: string }) => {
     return (
-      <div
-        className="m-[-3px] border-[3px] border-[#1E1E1F]"
+      <ListItem
+        className="cursor-pointer"
         onClick={() => {
           if (profileRuntime === 'Vanilla') {
             alert('Cannot add mods to a vanilla profile')
@@ -54,10 +56,10 @@ export default function ProfileEditor() {
           toggleModActive(name)
         }}
       >
-        <div className="cursor-pointer border-[3px] border-t-[#5a5b5c] border-l-[#5a5b5c] border-b-[#333334] border-r-[#333334] bg-[#48494a] p-[4px]">
+        <div className="p-[4px]">
           <p className="minecraft-seven text-white">{name}</p>
         </div>
-      </div>
+      </ListItem>
     )
   }
 
@@ -105,8 +107,8 @@ export default function ProfileEditor() {
   }, [loadProfile])
 
   return (
-    <MainPanel>
-      <div className="w-full h-full flex flex-col p-[8px] gap-[8px] border-[3px] border-[#1E1E1F] bg-[#48494A]">
+    <Panel>
+      <div className="content_panel">
         {/* Settings */}
         <div className="flex flex-col gap-[8px]">
           <TextInput label="Profile Name" text={profileName} setText={setProfileName} />
@@ -139,27 +141,27 @@ export default function ProfileEditor() {
           <div className="bg-[#48494a] flex-grow flex justify-around gap-[8px]">
             <div className="w-[50%] h-full flex flex-col">
               <p className="text-white minecraft-seven text-[14px]">Active Mods</p>
-              <div className="border-[3px] border-[#1E1E1F] bg-[#313233] flex-grow">
-                {allMods.length > 0 ? (
+              <List>
+                {
                   allMods
                     .filter(mod => profileActiveMods.includes(mod))
-                    .map((mod, index) => <ModButton name={mod} key={index} />)
-                ) : (
-                  <></>
-                )}
-              </div>
+                    .map((mod, index) => (
+                      <ModButton name={mod} key={index} />
+                    ))
+                }
+              </List>
             </div>
             <div className=" w-[50%] h-full flex flex-col">
               <p className="text-white minecraft-seven text-[14px]">Inactive Mods</p>
-              <div className="border-[3px] border-[#1E1E1F] bg-[#313233] flex-grow">
-                {allMods.length > 0 ? (
-                  allMods
-                    .filter(mod => !profileActiveMods.includes(mod))
-                    .map((mod, index) => <ModButton name={mod} key={index} />)
-                ) : (
-                  <></>
-                )}
-              </div>
+              <List>
+                  {
+                    allMods
+                      .filter(mod => !profileActiveMods.includes(mod))
+                      .map((mod, index) => (
+                        <ModButton name={mod} key={index} />
+                      ))
+                  }
+              </List>
             </div>
           </div>
         )}
@@ -170,6 +172,6 @@ export default function ProfileEditor() {
           <MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} onClick={() => deleteProfile()} />
         </div>
       </div>
-    </MainPanel>
+    </Panel>
   )
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import MainPanel from '../components/MainPanel'
+import Panel from '../components/Panel'
 import MinecraftButton from '../components/MinecraftButton'
 import { MinecraftUWPFolder, ModsFolder } from '../scripts/Paths'
 
@@ -9,6 +9,8 @@ import PopupPanel from '../components/PopupPanel'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as child from 'child_process'
+import List from '../components/List'
+import ListItem from '../components/ListItem'
 
 type ModErrorInfo = { modIdentifier: string; description?: string; modErrors: string[] }
 
@@ -86,19 +88,13 @@ export default function ModsPage() {
 
   return (
     <>
-      <MainPanel>
-        <div className="flex flex-col gap-[8px] h-full p-[8px] bg-[#48494A] border-[3px] border-[#1E1E1F]">
+      <Panel>
+        <div className="content_panel">
           <p className="minecraft-seven text-white text-[14px]">Mod Manager</p>
-          <div className="flex flex-col gap-[3px] border-[3px] border-[#1E1E1F] h-full bg-[#313233] overflow-y-auto overflow-x-hidden scrollbar">
-            {allReports.map(report => (
-              <div
-                className="m-[-3px] border-[3px] border-[#1E1E1F]"
-                onClick={() => {
-                  setSelectedReport(report)
-                }}
-                key={report.modIdentifier}
-              >
-                <div className="cursor-pointer border-[3px] border-t-[#5a5b5c] border-l-[#5a5b5c] border-b-[#333334] border-r-[#333334] bg-[#48494a] p-[8px]">
+          <List>
+            {allReports.map((report, index) => (
+              <ListItem className="cursor-pointer" onClick={() => setSelectedReport(report)} key={index}>
+                <div className="p-[8px]">
                   <p className="minecraft-seven text-white text-[14px] px-[4px]">{report.modIdentifier}</p>
                   <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px]">{report.description}</p>
                   {report.modErrors.length > 0 && (
@@ -110,14 +106,14 @@ export default function ModsPage() {
                     <p className="minecraft-seven text-[#BCBEC0] text-[14px] px-[4px]">No Errors</p>
                   )}
                 </div>
-              </div>
+              </ListItem>
             ))}
-          </div>
+          </List>
           <div className="w-full h-fit">
             <MinecraftButton text="Open Mods Folder" onClick={openModsFolder} />
           </div>
         </div>
-      </MainPanel>
+      </Panel>
 
       {selectedReport && (
         <PopupPanel onExit={() => setSelectedReport(undefined)}>

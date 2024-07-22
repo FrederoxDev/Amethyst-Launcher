@@ -10,6 +10,18 @@
   cursor: pointer;
 }
 
+@media (prefers-color-scheme: dark) {
+  .button_border {
+    border-color: #1e1e1f;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  .button_border {
+    border-color: #b1b2b5;
+  }
+}
+
 .button_border:active {
   transform: translateY(5px);
   height: calc(100% - 5px);

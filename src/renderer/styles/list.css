@@ -1,0 +1,66 @@
+.list {
+    height: 100%;
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    border-width: 3px;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.list_item {
+    margin: -3px;
+
+    border-width: 3px;
+}
+
+.list_item_border {
+    border-width: 3px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .list {
+        background-color: #313233;
+        border-color: #1E1E1F;
+    }
+
+    .list_item {
+        border-color: #1E1E1F;
+    }
+
+    .list_item_border {
+        background-color: #48494A;
+
+        border-bottom-color: #333334;
+        border-right-color: #333334;
+        border-top-color: #5A5B5C;
+        border-left-color: #5A5B5C;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    .list {
+        background-color: #d0d1d4;
+        border-color: #b1b2b5;
+    }
+
+    .list_item {
+        border-color: #b1b2b5;
+    }
+
+    .list_item_border {
+        background-color: #e6e8eb;
+
+        border-top-color: #ecedee;
+        border-left-color: #ecedee;
+        border-right-color: #d0d1d4;
+        border-bottom-color: #d0d1d4;
+    }
+}
+
+
+

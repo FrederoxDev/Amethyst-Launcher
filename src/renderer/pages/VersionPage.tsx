@@ -5,6 +5,9 @@ import PopupPanel from '../components/PopupPanel'
 
 import * as fs from 'fs'
 import * as child from 'child_process'
+import Panel from '../components/Panel'
+import ListItem from '../components/ListItem'
+import List from '../components/List'
 
 type VersionButtonProps = {
   version: InstalledVersion
@@ -51,10 +54,10 @@ const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => 
   }
 
   return (
-    <div className="m-[-3px] border-[3px] border-[#1E1E1F]">
-      <div className="flex flex-row w-full justify-between items-center border-[3px] border-t-[#5a5b5c] border-l-[#5a5b5c] border-b-[#333334] border-r-[#333334] bg-[#48494a]">
+    <ListItem>
+      <div className="flex flex-row w-full justify-between items-center">
         <div className="h-full flex flex-col justify-center items-center min-w-0 p-[8px]">
-          <p className="minecraft-seven text-white text-[16px]">{version.version.toString()}</p>
+          <p className="minecraft-seven themed_text text-[16px]">{version.version.toString()}</p>
           {/*<p className="minecraft-seven text-[#B1B2B5] text-[14px] overflow-ellipsis overflow-hidden whitespace-nowrap">{"Path:"} ({version.path})</p>*/}
         </div>
         <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-center">
@@ -80,7 +83,7 @@ const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => 
           </div>
         </div>
       </div>
-    </div>
+    </ListItem>
   )
 }
 
@@ -97,10 +100,10 @@ export default function VersionPage() {
 
   return (
     <>
-      <div className="relative w-full h-full">
-        <div className="flex flex-col gap-[8px] h-full p-[8px] bg-[#48494A] border-[#1E1E1F] border-[3px] overflow-hidden">
-          <p className="minecraft-seven text-white text-[14px]">Version Manager</p>
-          <div className="flex flex-col gap-[3px] border-[3px] border-[#1E1E1F] h-full bg-[#313233] overflow-y-auto overflow-x-hidden scrollbar">
+      <Panel>
+        <div className="content_panel">
+          <p className="minecraft-seven themed_text text-[14px]">Version Manager</p>
+          <List>
             {versions.map((version, index) => {
               return (
                 <VersionButton
@@ -111,9 +114,9 @@ export default function VersionPage() {
                 />
               )
             })}
-          </div>
+          </List>
         </div>
-      </div>
+      </Panel>
 
       {selected_version && (
         <PopupPanel onExit={() => SetSelectedVersion(undefined)}>

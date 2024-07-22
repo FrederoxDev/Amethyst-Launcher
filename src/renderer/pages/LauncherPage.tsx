@@ -16,6 +16,7 @@ import {
 import { RegisterVersion, UnregisterCurrent } from '../scripts/AppRegistry'
 import { GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
 import child from 'child_process'
+import Panel from '../components/Panel'
 
 export default function LauncherPage() {
   const {
@@ -119,32 +120,28 @@ export default function LauncherPage() {
   }
 
   return (
-    <div className="relative w-full h-full">
-      {error === '' ? (
-        <></>
-      ) : (
-        <>
-          <div className="flex flex-row gap-[8px] bg-[#CA3636] w-full border-[#CF4A4A] border-[3px] justify-between items-center">
-            <div className="flex flex-row p-[8px] gap-[8px]">
-              <img src="images/icons/warning-icon.png" className="w-[24px] h-[24px] pixelated" alt="" />
-              <p className="minecraft-seven text-[#FFFFFF] text-[16px]">{error}</p>
-            </div>
-            <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-center">
-              <div className="cursor-pointer p-[4px]" onClick={() => setError('')}>
-                <svg width="18" height="18" viewBox="0 0 12 12">
-                  <polygon
-                    className="fill-[#FFFFFF]"
-                    fillRule="evenodd"
-                    points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"
-                  />
-                </svg>
-              </div>
+    <Panel>
+      {error !== '' && (
+        <div className="flex flex-row gap-[8px] bg-[#CA3636] w-full border-[#CF4A4A] border-[3px] justify-between items-center">
+          <div className="flex flex-row p-[8px] gap-[8px]">
+            <img src="images/icons/warning-icon.png" className="w-[24px] h-[24px] pixelated" alt="" />
+            <p className="minecraft-seven text-[#FFFFFF] text-[16px]">{error}</p>
+          </div>
+          <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-center">
+            <div className="cursor-pointer p-[4px]" onClick={() => setError('')}>
+              <svg width="18" height="18" viewBox="0 0 12 12">
+                <polygon
+                  className="fill-[#FFFFFF]"
+                  fillRule="evenodd"
+                  points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"
+                />
+              </svg>
             </div>
           </div>
-        </>
+        </div>
       )}
 
-      <div className="absolute bottom-0 w-full">
+      <div className="flex flex-col justify-end h-full w-full">
         {/* Not affiliated disclaimer */}
         <div className="bg-[#0c0c0cc5] w-fit ml-auto rounded-t-[3px]">
           <p className="minecraft-seven text-white px-[4px] text-[13px]">
@@ -184,6 +181,6 @@ export default function LauncherPage() {
           </div>
         </div>
       </div>
-    </div>
+    </Panel>
   )
 }
