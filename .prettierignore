@@ -1,0 +1,9 @@
+.vscode
+.gitignore
+.github
+build
+release
+proxy
+node_modules
+package.json
+package-lock.json

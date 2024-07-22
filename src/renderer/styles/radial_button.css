@@ -1,114 +1,114 @@
 .radial_button_base {
-    width: 100%;
-    height: 51px;
-    margin: -1.5px;
+  width: 100%;
+  height: 51px;
+  margin: -1.5px;
 }
 
 .radial_button_border {
-    height: 100%;
-    border-width: 3px;
-    border-color: #1E1E1F;
-    cursor: pointer;
+  height: 100%;
+  border-width: 3px;
+  border-color: #1e1e1f;
+  cursor: pointer;
 }
 
 .radial_button_border.selected {
-    transform: translateY(5px);
-    height: calc(100% - 5px);
+  transform: translateY(5px);
+  height: calc(100% - 5px);
 }
 
 .radial_button_top {
-    height: calc(100% - 5px);
-    border-width: 3px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  height: calc(100% - 5px);
+  border-width: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .radial_button_top.selected {
-    height: 100%;
+  height: 100%;
 }
 
 .radial_button_text {
-    font-family: "Minecraft-Seven", sans-serif;
-    font-size: 16px;
+  font-family: 'Minecraft-Seven', sans-serif;
+  font-size: 16px;
 }
 
 .radial_button_text.selected {
-    color: #FFFFFF;
+  color: #ffffff;
 }
 
 .radial_button_side {
-    height: 5px;
+  height: 5px;
 }
 .radial_button_side.selected {
-    height: 0;
+  height: 0;
 }
 
 @media (prefers-color-scheme: dark) {
-    .radial_button_top {
-        border-top-color: #6D6D6E;
-        border-left-color: #6D6D6E;
-        border-right-color: #5A5B5C;
-        border-bottom-color: #5A5B5C;
-        background-color: #48494A;
-    }
+  .radial_button_top {
+    border-top-color: #6d6d6e;
+    border-left-color: #6d6d6e;
+    border-right-color: #5a5b5c;
+    border-bottom-color: #5a5b5c;
+    background-color: #48494a;
+  }
 
-    .radial_button_side {
-        background-color: #313233;
-    }
+  .radial_button_side {
+    background-color: #313233;
+  }
 
-    .radial_button_text {
-        color: #FFFFFF;
-    }
+  .radial_button_text {
+    color: #ffffff;
+  }
 
-    .radial_button_top:hover {
-        border-color: #68686A;
-        background-color: #58585A;
-    }
+  .radial_button_top:hover {
+    border-color: #68686a;
+    background-color: #58585a;
+  }
 
-    .radial_button_top.selected {
-        border-top-color: #5A5B5C;
-        border-left-color: #5A5B5C;
-        border-right-color: #454647;
-        border-bottom-color: #454647;
+  .radial_button_top.selected {
+    border-top-color: #5a5b5c;
+    border-left-color: #5a5b5c;
+    border-right-color: #454647;
+    border-bottom-color: #454647;
 
-        background-color: #313233;
-    }
+    background-color: #313233;
+  }
 }
 
 @media (prefers-color-scheme: light) {
-    .radial_button_top {
-        border-top-color: #ECEDEE;
-        border-left-color: #ECEDEE;
-        border-right-color: #E3E3E5;
-        border-bottom-color: #E3E3E5;
+  .radial_button_top {
+    border-top-color: #ecedee;
+    border-left-color: #ecedee;
+    border-right-color: #e3e3e5;
+    border-bottom-color: #e3e3e5;
 
-        background-color: #D0D1D4;
-    }
+    background-color: #d0d1d4;
+  }
 
-    .radial_button_side {
-        background-color: #58585A;
-    }
+  .radial_button_side {
+    background-color: #58585a;
+  }
 
-    .radial_button_text {
-        color: #1E1E1F;
-    }
+  .radial_button_text {
+    color: #1e1e1f;
+  }
 
-    .radial_button_top:hover {
-        border-top-color: #EFF0F0;
-        border-left-color: #EFF0F0;
-        border-right-color: #E0E0E1;
-        border-bottom-color: #E0E0E1;
+  .radial_button_top:hover {
+    border-top-color: #eff0f0;
+    border-left-color: #eff0f0;
+    border-right-color: #e0e0e1;
+    border-bottom-color: #e0e0e1;
 
-        background-color: #B1B2B5;
-    }
+    background-color: #b1b2b5;
+  }
 
-    .radial_button_top.selected {
-        border-top-color: #639D52;
-        border-left-color: #639D52;
-        border-right-color: #4F913C;
-        border-bottom-color: #4F913C;
+  .radial_button_top.selected {
+    border-top-color: #639d52;
+    border-left-color: #639d52;
+    border-right-color: #4f913c;
+    border-bottom-color: #4f913c;
 
-        background-color: #3C8527;
-    }
+    background-color: #3c8527;
+  }
 }

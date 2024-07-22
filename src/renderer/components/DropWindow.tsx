@@ -1,117 +1,115 @@
 import { useEffect, useState } from 'react'
 import { ModsFolder } from '../scripts/Paths'
-import { useAppState } from '../contexts/AppState'
-import { Extractor } from "../scripts/backend/Extractor";
-import { CopyRecursive } from "../scripts/Files";
+import { UseAppState } from '../contexts/AppState'
+import { Extractor } from '../scripts/backend/Extractor'
+import { CopyRecursive } from '../scripts/Files'
 
-const fs = window.require('fs') as typeof import('fs')
-const path = window.require('path') as typeof import('path')
+import * as fs from 'fs'
+import * as path from 'path'
 
 export default function DropWindow() {
-    const [hovered, setHovered] = useState(false)
+  const [hovered, setHovered] = useState(false)
 
-    const { setError } = useAppState()
+  const { setError } = UseAppState()
 
+  useEffect(() => {
+    let dragCount = 0
 
+    // DRAG EVENTS
+    function dragOver(event: DragEvent) {
+      event.preventDefault()
+    }
 
-    useEffect(() => {
-        let dragCount = 0
+    function dragStart(event: DragEvent) {
+      event.preventDefault()
 
-        // DRAG EVENTS
-        function dragOver(event: DragEvent) {
-            event.preventDefault()
+      if (dragCount === 0) setHovered(true)
+
+      dragCount++
+    }
+
+    function dragEnd(event: DragEvent) {
+      event.preventDefault()
+
+      dragCount--
+
+      if (dragCount === 0) setHovered(false)
+    }
+
+    function drop(event: DragEvent) {
+      event.preventDefault()
+
+      setHovered(false)
+
+      dragCount = 0
+
+      if (!event.dataTransfer) return
+
+      const items = event.dataTransfer.files
+
+      for (const file of items) {
+        const file_path: string = file.path
+
+        if (fs.lstatSync(file_path).isDirectory()) {
+          ImportFolder(file_path)
+        } else if (fs.lstatSync(file_path).isFile()) {
+          ImportZIP(file_path)
+        } else {
+          console.error('File path does not point to a file or directory!')
         }
+      }
+    }
 
-        function dragStart(event: DragEvent) {
-            event.preventDefault()
+    // IMPORT ZIP
+    function ImportZIP(zip_path: string) {
+      try {
+        const zip_name = path.basename(zip_path)
+        const extracted_folder_path = path.join(ModsFolder, zip_name.slice(0, -'.zip'.length))
+        console.log(extracted_folder_path)
+        Extractor.extractFile(zip_path, extracted_folder_path, [], undefined, success => {
+          if (!success) {
+            throw new Error('There was an error while extracting Mod ZIP!')
+          }
 
-            if (dragCount === 0) setHovered(true)
+          console.log('Successfully extracted Mod ZIP!')
+        }).then()
+      } catch (error) {
+        setError((error as Error).message)
+      }
+    }
 
-            dragCount++
-        }
+    // IMPORT FOLDER
+    function ImportFolder(folder_path: string) {
+      try {
+        CopyRecursive(folder_path, ModsFolder)
+      } catch (error) {
+        setError((error as Error).message)
+      }
+    }
 
-        function dragEnd(event: DragEvent) {
-            event.preventDefault()
+    // EVENT LISTENERS
+    window.addEventListener('dragover', dragOver)
+    window.addEventListener('dragenter', dragStart)
+    window.addEventListener('dragleave', dragEnd)
+    window.addEventListener('drop', drop)
 
-            dragCount--
+    return () => {
+      window.removeEventListener('dragover', dragOver)
+      window.removeEventListener('dragenter', dragStart)
+      window.removeEventListener('dragleave', dragEnd)
+      window.removeEventListener('drop', drop)
+    }
+  }, [setError])
 
-            if (dragCount === 0) setHovered(false)
-        }
+  return (
+    <div
+      className={`absolute w-full h-full top-0 left-0 pointer-events-none ${hovered ? 'opacity-100' : 'opacity-0'} transition-opacity ease-out duration-150`}
+    >
+      <div className="absolute pointer-events-none w-full h-full bg-black top-0 left-0 opacity-80" />
 
-        function drop(event: DragEvent) {
-            event.preventDefault()
-
-            setHovered(false)
-
-            dragCount = 0
-
-            if (!event.dataTransfer) return
-
-            const items = event.dataTransfer.files
-
-            for (const file of items) {
-                const file_path: string = file.path;
-
-                if (fs.lstatSync(file_path).isDirectory()) {
-                    ImportFolder(file_path)
-                }
-                else if (fs.lstatSync(file_path).isFile()) {
-                    ImportZIP(file_path)
-                }
-                else {
-                    console.error('File path does not point to a file or directory!')
-                }
-            }
-        }
-
-        // IMPORT ZIP
-        function ImportZIP(zip_path: string) {
-            try {
-                const zip_name = path.basename(zip_path);
-                const extracted_folder_path = path.join(ModsFolder, zip_name.slice(0, -'.zip'.length));
-                console.log(extracted_folder_path);
-                Extractor.extractFile(zip_path, extracted_folder_path, [], undefined, (success => {
-                    if (!success) {
-                        throw new Error("There was an error while extracting Mod ZIP!");
-                    }
-
-                    console.log("Successfully extracted Mod ZIP!")
-                })).then()
-            } catch (error) {
-                setError((error as Error).message)
-            }
-        }
-
-        // IMPORT FOLDER
-        function ImportFolder(folder_path: string) {
-            try {
-                CopyRecursive(folder_path, ModsFolder);
-            } catch (error) {
-                setError((error as Error).message)
-            }
-        }
-
-        // EVENT LISTENERS
-        window.addEventListener('dragover', dragOver)
-        window.addEventListener('dragenter', dragStart)
-        window.addEventListener('dragleave', dragEnd)
-        window.addEventListener('drop', drop)
-
-        return () => {
-            window.removeEventListener('dragover', dragOver)
-            window.removeEventListener('dragenter', dragStart)
-            window.removeEventListener('dragleave', dragEnd)
-            window.removeEventListener('drop', drop)
-        }
-    }, [setError])
-
-    return (
-        <div className={`absolute w-full h-full top-0 left-0 pointer-events-none ${hovered ? 'opacity-100' : 'opacity-0'} transition-opacity ease-out duration-150`}>
-            <div className="absolute pointer-events-none w-full h-full bg-black top-0 left-0 opacity-80" />
-
-            <h1 className="minecraft-seven pointer-events-none text-white absolute left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]">
-                Drop mod .zip or folder to import
-            </h1>
-        </div>
-    )
+      <h1 className="minecraft-seven pointer-events-none text-white absolute left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]">
+        Drop mod .zip or folder to import
+      </h1>
+    </div>
+  )
 }
