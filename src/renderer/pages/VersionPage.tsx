@@ -120,8 +120,7 @@ export default function VersionPage() {
 
       {selected_version && (
         <PopupPanel>
-          <div
-            className="flex flex-row w-full justify-between items-center border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+          <div className="flex flex-row w-full justify-between items-center border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
             <p className="minecraft-seven text-white text-[14px] max-w-[400px]">
               {selected_version.version.toString()}
             </p>
@@ -145,8 +144,6 @@ export default function VersionPage() {
           <div className="flex flex-col w-full border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
             <p className="minecraft-seven text-[#BCBEC0] text-[12px] select-text">{selected_version.version.uuid}</p>
           </div>
-
-
         </PopupPanel>
       )}
     </>

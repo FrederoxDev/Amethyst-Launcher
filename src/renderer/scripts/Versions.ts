@@ -4,6 +4,10 @@ import { SemVersion } from './classes/SemVersion'
 import * as fs from 'fs'
 import * as path from 'path'
 
+////////////////////////
+// CURRENT VERSIONING //
+////////////////////////
+
 export enum MinecraftVersionType {
   Release = 0,
   Beta = 1,
@@ -90,21 +94,29 @@ export async function FetchMinecraftVersions() {
   const currentTime = new Date()
   const discardOldDataTime = new Date(currentTime.getTime() - 60 * 60 * 1000)
 
-  console.log(lastWriteTime, discardOldDataTime, lastWriteTime < discardOldDataTime)
-
   if (lastWriteTime < discardOldDataTime) {
-    console.log(
-      'Fetching minecraft versions from https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min'
-    )
-    const data = await fetch('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
+    console.groupCollapsed(`%caction %cFetching MinecraftVersions %c @ ${currentTime.toTimeString()}`, 'color: grey', 'font-weight: bold;', 'color: grey')
+    console.log('Source: https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
 
-    if (!data.ok) {
-      throw new Error(
-        'Failed to fetch minecraft version data from https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min'
+    console.log(
+      'Fetching...'
+    )
+    try {
+      const data = await fetch('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
+      if (data.ok) {
+        fs.writeFileSync(CachedVersionsFile, await data.text())
+        console.log(
+          `Fetch Successful`
+        )
+      }
+    }
+    catch {
+      console.error(
+        'Fetch Failed'
       )
     }
 
-    fs.writeFileSync(CachedVersionsFile, await data.text())
+    console.groupEnd()
   }
 
   const versionData = fs.readFileSync(CachedVersionsFile, 'utf-8')

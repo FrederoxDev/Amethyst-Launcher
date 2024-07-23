@@ -1,7 +1,7 @@
 import { ModsFolder } from './Paths'
 
-import Ajv, {JSONSchemaType, DefinedError} from 'ajv'
-const ajv = new Ajv({allErrors: true, useDefaults: true})
+import Ajv, { JSONSchemaType, DefinedError } from 'ajv'
+const ajv = new Ajv({ allErrors: true, useDefaults: true })
 
 //////////////////// MOD CONFIG ////////////////////
 
@@ -25,7 +25,7 @@ const ModConfigSchema: JSONSchemaType<ModConfig> = {
         version: { type: 'string', default: '' },
         author: { type: 'string', default: '' },
         description: { type: 'string', nullable: true },
-        is_runtime: { type: 'boolean', nullable: true },
+        is_runtime: { type: 'boolean', nullable: true }
       },
       required: ['name', 'version', 'author']
     }
@@ -34,10 +34,9 @@ const ModConfigSchema: JSONSchemaType<ModConfig> = {
   additionalProperties: false
 }
 
-const Validator = ajv.compile(ModConfigSchema);
+const Validator = ajv.compile(ModConfigSchema)
 
 export function ValidateMod(config: Record<string, unknown>, outErrors?: string[]): ModConfig {
-
   Validator(config)
 
   if (Validator.errors) {
@@ -57,7 +56,6 @@ export function ValidateMod(config: Record<string, unknown>, outErrors?: string[
     },
     ...config
   }
-
 
   // const validated_config: ModConfig = {
   //   meta: {

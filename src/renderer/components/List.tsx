@@ -1,14 +1,9 @@
 import React from 'react'
 
 type ListProps = {
-  children: React.ReactNode[];
+  children: React.ReactNode[]
 }
 
-
 export default function List({ children }: ListProps) {
-  return (
-    <div className="list scrollbar">
-      {children}
-    </div>
-  )
+  return <div className="list scrollbar">{children}</div>
 }

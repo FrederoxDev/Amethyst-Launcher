@@ -9,9 +9,7 @@ type ListItemProps = {
 export default function ListItem({ children, onClick, className }: ListItemProps) {
   return (
     <div className={`list_item ${className}`} onClick={onClick}>
-      <div className="list_item_border">
-        {children}
-      </div>
+      <div className="list_item_border">{children}</div>
     </div>
   )
 }

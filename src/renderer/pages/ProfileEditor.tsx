@@ -142,25 +142,21 @@ export default function ProfileEditor() {
             <div className="w-[50%] h-full flex flex-col">
               <p className="text-white minecraft-seven text-[14px]">Active Mods</p>
               <List>
-                {
-                  allMods
-                    .filter(mod => profileActiveMods.includes(mod))
-                    .map((mod, index) => (
-                      <ModButton name={mod} key={index} />
-                    ))
-                }
+                {allMods
+                  .filter(mod => profileActiveMods.includes(mod))
+                  .map((mod, index) => (
+                    <ModButton name={mod} key={index} />
+                  ))}
               </List>
             </div>
             <div className=" w-[50%] h-full flex flex-col">
               <p className="text-white minecraft-seven text-[14px]">Inactive Mods</p>
               <List>
-                  {
-                    allMods
-                      .filter(mod => !profileActiveMods.includes(mod))
-                      .map((mod, index) => (
-                        <ModButton name={mod} key={index} />
-                      ))
-                  }
+                {allMods
+                  .filter(mod => !profileActiveMods.includes(mod))
+                  .map((mod, index) => (
+                    <ModButton name={mod} key={index} />
+                  ))}
               </List>
             </div>
           </div>
