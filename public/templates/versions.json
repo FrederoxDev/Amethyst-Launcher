@@ -1,0 +1,13 @@
+{
+  "default_path": "C:\\Users\\Administrator\\AppData\\Roaming\\Amethyst\\Versions",
+  "versions": [
+    {
+      "path": "C:\\Users\\Administrator\\AppData\\Roaming\\Amethyst\\Versions\\Minecraft-1.21.0.3",
+      "uuid": "21c7d413-83d5-45de-b8b2-e9e6f87fb5fe"
+    },
+    {
+      "path": "C:\\Users\\Administrator\\AppData\\Roaming\\Amethyst\\Versions\\Minecraft-1.21.2.2",
+      "uuid": "9a8e324e-7240-403a-a404-b7420421138c"
+    }
+  ]
+}

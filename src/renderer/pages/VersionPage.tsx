@@ -119,8 +119,9 @@ export default function VersionPage() {
       </Panel>
 
       {selected_version && (
-        <PopupPanel onExit={() => SetSelectedVersion(undefined)}>
-          <div className="flex flex-row w-full justify-between items-center border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+        <PopupPanel>
+          <div
+            className="flex flex-row w-full justify-between items-center border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
             <p className="minecraft-seven text-white text-[14px] max-w-[400px]">
               {selected_version.version.toString()}
             </p>
@@ -138,9 +139,14 @@ export default function VersionPage() {
               </svg>
             </div>
           </div>
-          <div className="flex border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-            <p className="minecraft-seven text-[#BCBEC0] text-[12px]">{selected_version.path}</p>
+          <div className="flex flex-col w-full border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+            <p className="minecraft-seven text-[#BCBEC0] text-[12px] select-text">{selected_version.path}</p>
           </div>
+          <div className="flex flex-col w-full border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+            <p className="minecraft-seven text-[#BCBEC0] text-[12px] select-text">{selected_version.version.uuid}</p>
+          </div>
+
+
         </PopupPanel>
       )}
     </>
