@@ -1,6 +1,8 @@
 import AJV, { JSONSchemaType } from 'ajv'
 
 import { SemVersion } from './classes/SemVersion'
+import { VersionsFile } from './Paths'
+import * as fs from 'node:fs'
 
 /////////////////////////////
 // EXPERIMENTAL VERSIONING //
@@ -11,7 +13,8 @@ export interface Version {
   path: string
 }
 
-// region VersionData
+
+
 export interface VersionData {
   uuid: string
   sem_version: SemVersion
@@ -23,7 +26,6 @@ export namespace VersionData {
     return `${SemVersion.toString(data.sem_version)}${['', '-beta', '-preview'][data.type]}`
   }
 }
-// endregion
 
 export enum VersionType {
   Release = 0,
@@ -73,3 +75,11 @@ export const VersionsFile_Schema: JSONSchemaType<VersionsFile> = {
 
 const JSON_Validator = new AJV({ allErrors: true })
 export const VersionsFile_Validator = JSON_Validator.compile<VersionsFile>(VersionsFile_Schema)
+
+
+export function ValidateVersionsFile() {
+  const text = fs.readFileSync(VersionsFile, { encoding: 'utf8' })
+  const json = JSON.parse(text)
+
+  VersionsFile_Validator(json)
+}
