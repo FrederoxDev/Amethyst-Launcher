@@ -10,57 +10,68 @@
 
     overflow-y: auto;
     overflow-x: hidden;
+
+    background-color: #313233;
+    border-color: #1E1E1F;
 }
 
 .list_item {
     margin: -3px;
-
     border-width: 3px;
+
+    border-color: #1E1E1F;
 }
 
 .list_item_border {
     border-width: 3px;
+
+    background-color: #48494A;
+
+    border-bottom-color: #333334;
+    border-right-color: #333334;
+    border-top-color: #5A5B5C;
+    border-left-color: #5A5B5C;
 }
 
-@media (prefers-color-scheme: dark) {
-    .list {
-        background-color: #313233;
-        border-color: #1E1E1F;
-    }
+/*@media (prefers-color-scheme: dark) {*/
+/*    .list {*/
+/*        background-color: #313233;*/
+/*        border-color: #1E1E1F;*/
+/*    }*/
 
-    .list_item {
-        border-color: #1E1E1F;
-    }
+/*    .list_item {*/
+/*        border-color: #1E1E1F;*/
+/*    }*/
 
-    .list_item_border {
-        background-color: #48494A;
+/*    .list_item_border {*/
+/*        background-color: #48494A;*/
 
-        border-bottom-color: #333334;
-        border-right-color: #333334;
-        border-top-color: #5A5B5C;
-        border-left-color: #5A5B5C;
-    }
-}
+/*        border-bottom-color: #333334;*/
+/*        border-right-color: #333334;*/
+/*        border-top-color: #5A5B5C;*/
+/*        border-left-color: #5A5B5C;*/
+/*    }*/
+/*}*/
 
-@media (prefers-color-scheme: light) {
-    .list {
-        background-color: #d0d1d4;
-        border-color: #b1b2b5;
-    }
+/*@media (prefers-color-scheme: light) {*/
+/*    .list {*/
+/*        background-color: #d0d1d4;*/
+/*        border-color: #b1b2b5;*/
+/*    }*/
 
-    .list_item {
-        border-color: #b1b2b5;
-    }
+/*    .list_item {*/
+/*        border-color: #b1b2b5;*/
+/*    }*/
 
-    .list_item_border {
-        background-color: #e6e8eb;
+/*    .list_item_border {*/
+/*        background-color: #e6e8eb;*/
 
-        border-top-color: #ecedee;
-        border-left-color: #ecedee;
-        border-right-color: #d0d1d4;
-        border-bottom-color: #d0d1d4;
-    }
-}
+/*        border-top-color: #ecedee;*/
+/*        border-left-color: #ecedee;*/
+/*        border-right-color: #d0d1d4;*/
+/*        border-bottom-color: #d0d1d4;*/
+/*    }*/
+/*}*/
 
 
 

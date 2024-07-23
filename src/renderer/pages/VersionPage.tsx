@@ -57,7 +57,7 @@ const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => 
     <ListItem>
       <div className="flex flex-row w-full justify-between items-center">
         <div className="h-full flex flex-col justify-center items-center min-w-0 p-[8px]">
-          <p className="minecraft-seven themed_text text-[16px]">{version.version.toString()}</p>
+          <p className="minecraft-seven text-[#FFFFFF] text-[16px]">{version.version.toString()}</p>
           {/*<p className="minecraft-seven text-[#B1B2B5] text-[14px] overflow-ellipsis overflow-hidden whitespace-nowrap">{"Path:"} ({version.path})</p>*/}
         </div>
         <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-center">
@@ -102,7 +102,7 @@ export default function VersionPage() {
     <>
       <Panel>
         <div className="content_panel">
-          <p className="minecraft-seven themed_text text-[14px]">Version Manager</p>
+          <p className="minecraft-seven text-[#FFFFFF] text-[14px]">Version Manager</p>
           <List>
             {versions.map((version, index) => {
               return (

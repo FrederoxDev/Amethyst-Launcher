@@ -15,18 +15,21 @@
     gap: 8px;
 
     border-width: 3px;
+
+    background-color: #48494A;
+    border-color: #1E1E1F;
 }
 
-@media (prefers-color-scheme: dark) {
-    .content_panel {
-        background-color: #48494A;
-        border-color: #1E1E1F;
-    }
-}
+/*@media (prefers-color-scheme: dark) {*/
+/*    .content_panel {*/
+/*        background-color: #48494A;*/
+/*        border-color: #1E1E1F;*/
+/*    }*/
+/*}*/
 
-@media (prefers-color-scheme: light) {
-    .content_panel {
-        background-color: #e6e8eb;
-        border-color: #b1b2b5;
-    }
-}
+/*@media (prefers-color-scheme: light) {*/
+/*    .content_panel {*/
+/*        background-color: #e6e8eb;*/
+/*        border-color: #b1b2b5;*/
+/*    }*/
+/*}*/

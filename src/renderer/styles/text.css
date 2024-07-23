@@ -34,14 +34,14 @@
     letter-spacing: 0.1px;
 }
 
-@media (prefers-color-scheme: dark) {
-    .themed_text {
-        color: #FFFFFF;
-    }
-}
+/*@media (prefers-color-scheme: dark) {*/
+/*    .themed_text {*/
+/*        color: #FFFFFF;*/
+/*    }*/
+/*}*/
 
-@media (prefers-color-scheme: light) {
-    .themed_text {
-        color: #000000;
-    }
-}
+/*@media (prefers-color-scheme: light) {*/
+/*    .themed_text {*/
+/*        color: #000000;*/
+/*    }*/
+/*}*/
