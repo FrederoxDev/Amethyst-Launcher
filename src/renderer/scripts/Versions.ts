@@ -96,34 +96,36 @@ export async function FetchMinecraftVersions() {
   const discardOldDataTime = new Date(currentTime.getTime() - 60 * 60 * 1000)
 
   if (lastWriteTime < discardOldDataTime) {
-    await Console.GroupAsync(async () => {
-      Console.Group( () => {
-        console.log('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
-      }, Console.InfoStr(['Source']), true)
+    Console.StartGroup(Console.ActionStr([`%cFetching Versions %c${currentTime.toLocaleTimeString()}`], ['font-weight: bold;', 'color: LightSlateGrey']))
 
-      if (navigator.onLine) {
-        try {
-          const start_time = performance.now()
-          const data = await fetch('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
-          const end_time = performance.now()
-          if (data.ok) {
-            fs.writeFileSync(CachedVersionsFile, await data.text())
-            Console.Group(() => {
-              Console.Info([`Fetch took ${Math.floor(end_time - start_time)}ms`])
-            }, Console.ReturnStr(['Successful']), true)
-          }
-        } catch (error) {
+    Console.Group( () => {
+      console.log('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
+    }, Console.InfoStr(['Source']), true)
+
+    if (navigator.onLine) {
+      try {
+        const start_time = performance.now()
+        const data = await fetch('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
+        const end_time = performance.now()
+        if (data.ok) {
+          fs.writeFileSync(CachedVersionsFile, await data.text())
           Console.Group(() => {
-            Console.Error([`${error}`])
-          }, Console.ReturnStr(['Failed'], [], true), true)
+            Console.Info([`Fetch took ${Math.round(end_time - start_time)}ms`])
+          }, Console.ReturnStr(['Successful']), true)
         }
-      }
-      else {
+      } catch (error) {
         Console.Group(() => {
-          Console.Error(['Internet is offline'])
+          Console.Error([`${error}`])
         }, Console.ReturnStr(['Failed'], [], true), true)
       }
-    }, Console.ActionStr([`%cFetching Versions %c${currentTime.toLocaleTimeString()}`], ['font-weight: bold;', 'color: LightSlateGrey']), true)
+    }
+    else {
+      Console.Group(() => {
+        Console.Error(['Internet is offline'])
+      }, Console.ReturnStr(['Failed'], [], true), true)
+    }
+
+    Console.EndGroup()
   }
 
   const versionData = fs.readFileSync(CachedVersionsFile, 'utf-8')

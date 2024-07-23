@@ -1,19 +1,21 @@
 export namespace Console {
-  export async function GroupAsync(callback: () => Promise<void>, label: string[] = [], collapsed: boolean = false) {
-    collapsed ? console.groupCollapsed(...label) : console.group(...label);
-    await callback()
-    console.groupEnd()
-  }
-
   export function Group(callback: () => void, label: string[] = [], collapsed: boolean = false) {
     collapsed ? console.groupCollapsed(...label) : console.group(...label);
     callback()
     console.groupEnd()
   }
 
+  export function StartGroup(label: string | string[] = [], collapsed: boolean = false) {
+    collapsed ? console.groupCollapsed(...label) : console.group(...label);
+  }
+
+  export function EndGroup() {
+    console.groupEnd()
+  }
+
   export function ActionStr(label: string[], formatting: string[] = []) {
     const action_label: string = '%c action %c'
-    const action_formatting: string[] = ['background-color: LightSlateGrey; color: White; font-weight: bold', '']
+    const action_formatting: string[] = ['background-color: LightSlateGrey; color: White; font-weight: bold','']
 
     return [[action_label, ...label].join(' '), ...[...action_formatting, ...formatting]]
   }
