@@ -1,5 +1,6 @@
 import { VersionsFolder, CachedVersionsFile, VersionsFile } from './Paths'
 import { SemVersion } from './classes/SemVersion'
+import { Console } from './Console'
 
 import * as fs from 'fs'
 import * as path from 'path'
@@ -95,28 +96,34 @@ export async function FetchMinecraftVersions() {
   const discardOldDataTime = new Date(currentTime.getTime() - 60 * 60 * 1000)
 
   if (lastWriteTime < discardOldDataTime) {
-    console.groupCollapsed(`%caction %cFetching MinecraftVersions %c @ ${currentTime.toTimeString()}`, 'color: grey', 'font-weight: bold;', 'color: grey')
-    console.log('Source: https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
+    await Console.GroupAsync(async () => {
+      Console.Group( () => {
+        console.log('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
+      }, Console.InfoStr(['Source']), true)
 
-    console.log(
-      'Fetching...'
-    )
-    try {
-      const data = await fetch('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
-      if (data.ok) {
-        fs.writeFileSync(CachedVersionsFile, await data.text())
-        console.log(
-          `Fetch Successful`
-        )
+      if (navigator.onLine) {
+        try {
+          const start_time = performance.now()
+          const data = await fetch('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
+          const end_time = performance.now()
+          if (data.ok) {
+            fs.writeFileSync(CachedVersionsFile, await data.text())
+            Console.Group(() => {
+              Console.Info([`Fetch took ${Math.floor(end_time - start_time)}ms`])
+            }, Console.ReturnStr(['Successful']), true)
+          }
+        } catch (error) {
+          Console.Group(() => {
+            Console.Error([`${error}`])
+          }, Console.ReturnStr(['Failed'], [], true), true)
+        }
       }
-    }
-    catch {
-      console.error(
-        'Fetch Failed'
-      )
-    }
-
-    console.groupEnd()
+      else {
+        Console.Group(() => {
+          Console.Error(['Internet is offline'])
+        }, Console.ReturnStr(['Failed'], [], true), true)
+      }
+    }, Console.ActionStr([`%cFetching Versions %c${currentTime.toLocaleTimeString()}`], ['font-weight: bold;', 'color: LightSlateGrey']), true)
   }
 
   const versionData = fs.readFileSync(CachedVersionsFile, 'utf-8')
