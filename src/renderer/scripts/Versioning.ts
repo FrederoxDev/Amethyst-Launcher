@@ -13,8 +13,6 @@ export interface Version {
   path: string
 }
 
-
-
 export interface VersionData {
   uuid: string
   sem_version: SemVersion
@@ -75,7 +73,6 @@ export const VersionsFile_Schema: JSONSchemaType<VersionsFile> = {
 
 const JSON_Validator = new AJV({ allErrors: true })
 export const VersionsFile_Validator = JSON_Validator.compile<VersionsFile>(VersionsFile_Schema)
-
 
 export function ValidateVersionsFile() {
   const text = fs.readFileSync(VersionsFile, { encoding: 'utf8' })

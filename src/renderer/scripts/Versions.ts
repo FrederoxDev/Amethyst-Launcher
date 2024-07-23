@@ -96,11 +96,20 @@ export async function FetchMinecraftVersions() {
   const discardOldDataTime = new Date(currentTime.getTime() - 60 * 60 * 1000)
 
   if (lastWriteTime < discardOldDataTime) {
-    Console.StartGroup(Console.ActionStr([`%cFetching Versions %c${currentTime.toLocaleTimeString()}`], ['font-weight: bold;', 'color: LightSlateGrey']))
+    Console.StartGroup(
+      Console.ActionStr(
+        [`%cFetching Versions %c${currentTime.toLocaleTimeString()}`],
+        ['font-weight: bold;', 'color: LightSlateGrey']
+      )
+    )
 
-    Console.Group( () => {
-      console.log('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
-    }, Console.InfoStr(['Source']), true)
+    Console.Group(
+      () => {
+        console.log('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
+      },
+      Console.InfoStr(['Source']),
+      true
+    )
 
     if (navigator.onLine) {
       try {
@@ -109,20 +118,31 @@ export async function FetchMinecraftVersions() {
         const end_time = performance.now()
         if (data.ok) {
           fs.writeFileSync(CachedVersionsFile, await data.text())
-          Console.Group(() => {
-            Console.Info([`Fetch took ${Math.round(end_time - start_time)}ms`])
-          }, Console.ReturnStr(['Successful']), true)
+          Console.Group(
+            () => {
+              Console.Info([`Fetch took ${Math.round(end_time - start_time)}ms`])
+            },
+            Console.ReturnStr(['Successful']),
+            true
+          )
         }
       } catch (error) {
-        Console.Group(() => {
-          Console.Error([`${error}`])
-        }, Console.ReturnStr(['Failed'], [], true), true)
+        Console.Group(
+          () => {
+            Console.Error([`${error}`])
+          },
+          Console.ReturnStr(['Failed'], [], true),
+          true
+        )
       }
-    }
-    else {
-      Console.Group(() => {
-        Console.Error(['Internet is offline'])
-      }, Console.ReturnStr(['Failed'], [], true), true)
+    } else {
+      Console.Group(
+        () => {
+          Console.Error(['Internet is offline'])
+        },
+        Console.ReturnStr(['Failed'], [], true),
+        true
+      )
     }
 
     Console.EndGroup()
