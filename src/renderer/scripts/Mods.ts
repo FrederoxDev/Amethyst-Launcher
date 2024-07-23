@@ -1,7 +1,7 @@
 import { ModsFolder } from './Paths'
 
 import Ajv, {JSONSchemaType, DefinedError} from 'ajv'
-const ajv = new Ajv({allErrors: true})
+const ajv = new Ajv({allErrors: true, useDefaults: true})
 
 //////////////////// MOD CONFIG ////////////////////
 
