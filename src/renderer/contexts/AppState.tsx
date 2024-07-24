@@ -70,7 +70,10 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [status, SetStatus] = useState('')
   const [error, SetError] = useState('')
 
-  const [versions_file, SetVersionsFile] = useState<VersionsFileData>({ versions: [], default_path: Paths.VersionsFolder })
+  const [versions_file, SetVersionsFile] = useState<VersionsFileData>({
+    versions: [],
+    default_path: Paths.VersionsFolder
+  })
 
   // Initialize Data like all mods and existing profiles
   useEffect(() => {

@@ -44,7 +44,9 @@ export default function LauncherPage() {
 
     const profile = profiles[selected_profile]
     const semVersion = SemVersion.fromString(profile.minecraft_version)
-    const minecraftVersion = minecraft_versions.find(version => SemVersion.toString(version.version) === SemVersion.toString(semVersion))!
+    const minecraftVersion = minecraft_versions.find(
+      version => SemVersion.toString(version.version) === SemVersion.toString(semVersion)
+    )!
 
     if (minecraftVersion === undefined) {
       throw new Error(`Version ${semVersion.toString()} not found`)
@@ -57,9 +59,7 @@ export default function LauncherPage() {
     if (!IsDevModeEnabled()) {
       const enabled_dev = await TryEnableDevMode()
       if (!enabled_dev) {
-        throw new Error(
-          'Failed to enable Windows \'Developer Mode\', please enable manually'
-        )
+        throw new Error("Failed to enable Windows 'Developer Mode', please enable manually")
       }
     }
 
@@ -134,7 +134,9 @@ export default function LauncherPage() {
           <div className="flex flex-row gap-[8px] bg-[#CA3636] w-full border-[#CF4A4A] border-[3px] justify-between items-center">
             <div className="flex flex-row min-w-0 p-[8px] gap-[8px]">
               <img src="images/icons/warning-icon.png" className="w-[24px] h-[24px] pixelated" alt="" />
-              <p className="minecraft-seven text-[#FFFFFF] text-[16px] overflow-ellipsis overflow-hidden whitespace-nowrap">{error}</p>
+              <p className="minecraft-seven text-[#FFFFFF] text-[16px] overflow-ellipsis overflow-hidden whitespace-nowrap">
+                {error}
+              </p>
             </div>
             <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-top">
               <div className="cursor-pointer p-[4px]" onClick={() => SetError('')}>

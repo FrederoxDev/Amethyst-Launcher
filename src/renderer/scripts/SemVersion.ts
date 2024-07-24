@@ -3,14 +3,13 @@ import AJV_Instance from './AJV_Instance'
 
 // region SemVersion
 export interface SemVersion {
-  major: number,
-  minor: number,
-  patch: number,
+  major: number
+  minor: number
+  patch: number
   build?: number
 }
 
 export namespace SemVersion {
-
   export function toString(sem: SemVersion, v: boolean = false) {
     return `${v ? 'v' : ''}${sem.major}.${sem.minor}.${sem.patch}${sem.build ? `.${sem.build}` : ''}`
   }
@@ -20,7 +19,7 @@ export namespace SemVersion {
     const matches = str.match(regex)
 
     if (matches) {
-      const [ major, minor, patch, build] = matches.map(Number)
+      const [major, minor, patch, build] = matches.map(Number)
       return { major: major, minor: minor, patch: patch, build: build }
     }
 
@@ -29,9 +28,8 @@ export namespace SemVersion {
 
   export function fromArray(arr: number[]): SemVersion {
     if (arr.length <= 4 && arr.length >= 3) {
-      return { major: arr[0], minor: arr[1], patch: arr[2], build: arr[3]}
-    }
-    else {
+      return { major: arr[0], minor: arr[1], patch: arr[2], build: arr[3] }
+    } else {
       throw new Error(`Invalid SemVersion array format: ${arr.toString()}`)
     }
   }
@@ -39,10 +37,10 @@ export namespace SemVersion {
   export const Schema: JSONSchemaType<SemVersion> = {
     type: 'object',
     properties: {
-      major: {type: 'number'},
-      minor: {type: 'number'},
-      patch: {type: 'number'},
-      build: {type: 'number', nullable: true},
+      major: { type: 'number' },
+      minor: { type: 'number' },
+      patch: { type: 'number' },
+      build: { type: 'number', nullable: true }
     },
     required: ['major', 'minor', 'patch'],
     additionalProperties: false
@@ -70,7 +68,7 @@ export namespace SemVersionData {
       },
       {
         type: 'array',
-        items: { type: 'number' } ,
+        items: { type: 'number' },
         minLength: 3,
         maxLength: 4
       }

@@ -59,7 +59,7 @@ export namespace VersionsFileData {
   export const Schema: JSONSchemaType<VersionsFileData> = {
     type: 'object',
     properties: {
-      default_path: { type: 'string', },
+      default_path: { type: 'string' },
       versions: {
         type: 'array',
         items: Version.Schema
@@ -97,9 +97,7 @@ export async function FetchAvailableVersionData() {
   const discard_old_data: boolean = current_time.getTime() > last_write_time.getTime() + 3600000
 
   if (discard_old_data) {
-    Console.StartGroup(
-      Console.ActionStr('Fetch Versions')
-    )
+    Console.StartGroup(Console.ActionStr('Fetch Versions'))
     {
       Console.Group(Console.InfoStr('URL'), () => {
         console.log('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
@@ -158,7 +156,7 @@ export function GetVersionsFile(): VersionsFileData {
 
   return {
     versions: [],
-    default_path: VersionsFolder,
+    default_path: VersionsFolder
   }
 }
 

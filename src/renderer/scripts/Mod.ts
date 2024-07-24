@@ -1,5 +1,6 @@
 import { JSONSchemaType } from 'ajv'
 import { SemVersionData } from './SemVersion'
+import AJV_Instance from './AJV_Instance'
 
 // region Mod
 export interface Mod {
@@ -18,6 +19,8 @@ export namespace Mod {
     required: ['uuid', 'version'],
     additionalProperties: false
   }
+
+  export const Validator = AJV_Instance.compile<Mod>(Schema)
 }
 // endregion Mod
 
@@ -25,7 +28,7 @@ export namespace Mod {
 export interface ModData {
   meta: {
     name: string
-    author: string
+    authors: string | string[]
     description?: string
     uuid: string
     version: SemVersionData
@@ -35,6 +38,46 @@ export interface ModData {
     is_runtime?: boolean
   }
   options?: ModOption[]
+}
+
+export namespace ModData {
+  export const Schema: JSONSchemaType<ModData> = {
+    type: 'object',
+    properties: {
+      meta: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          authors: {
+            oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }]
+          },
+          description: { type: 'string', nullable: true },
+          uuid: { type: 'string', format: 'uuid' },
+          version: SemVersionData.Schema
+        },
+        required: ['name', 'authors', 'uuid', 'version'],
+        additionalProperties: false
+      },
+      format: {
+        type: 'object',
+        properties: {
+          min_launcher_version: SemVersionData.Schema,
+          is_runtime: { type: 'boolean', nullable: true }
+        },
+        required: ['min_launcher_version'],
+        additionalProperties: false
+      },
+      options: {
+        type: 'array',
+        items: ModOption.Schema,
+        nullable: true
+      }
+    },
+    required: ['meta', 'format'],
+    additionalProperties: false
+  }
+
+  export const Validator = AJV_Instance.compile<ModData>(Schema)
 }
 // endregion
 
@@ -74,9 +117,9 @@ export namespace ModOption {
   }
 
   export const Schema: JSONSchemaType<ModOption> = {
-    type: 'object',
     oneOf: [
       {
+        type: 'object',
         properties: {
           type: {
             type: 'string',
@@ -85,15 +128,18 @@ export namespace ModOption {
           properties: {
             type: 'object',
             properties: {
-              label: { type: 'string', nullable: true},
-              description: { type: 'string', nullable: true},
+              label: { type: 'string', nullable: true },
+              description: { type: 'string', nullable: true }
             },
-            nullable: true
+            nullable: true,
+            additionalProperties: false
           }
         },
-        required: ['type']
+        required: ['type'],
+        additionalProperties: false
       },
       {
+        type: 'object',
         properties: {
           type: {
             type: 'string',
@@ -102,15 +148,18 @@ export namespace ModOption {
           properties: {
             type: 'object',
             properties: {
-              label: { type: 'string', nullable: true},
-              description: { type: 'string', nullable: true},
+              label: { type: 'string', nullable: true },
+              description: { type: 'string', nullable: true }
             },
-            nullable: true
+            nullable: true,
+            additionalProperties: false
           }
         },
-        required: ['type']
+        required: ['type'],
+        additionalProperties: false
       },
       {
+        type: 'object',
         properties: {
           type: {
             type: 'string',
@@ -119,15 +168,18 @@ export namespace ModOption {
           properties: {
             type: 'object',
             properties: {
-              label: { type: 'string', nullable: true},
-              description: { type: 'string', nullable: true},
+              label: { type: 'string', nullable: true },
+              description: { type: 'string', nullable: true }
             },
-            nullable: true
+            nullable: true,
+            additionalProperties: false
           }
         },
-        required: ['type']
+        required: ['type'],
+        additionalProperties: false
       },
       {
+        type: 'object',
         properties: {
           type: {
             type: 'string',
@@ -136,16 +188,19 @@ export namespace ModOption {
           properties: {
             type: 'object',
             properties: {
-              label: { type: 'string', nullable: true},
-              description: { type: 'string', nullable: true},
-              options: { type: 'array', items: { type: 'string'}}
+              label: { type: 'string', nullable: true },
+              description: { type: 'string', nullable: true },
+              options: { type: 'array', items: { type: 'string' } }
             },
-            required: ['options']
+            required: ['options'],
+            additionalProperties: false
           }
         },
-        required: ['type', 'properties']
+        required: ['type', 'properties'],
+        additionalProperties: false
       },
       {
+        type: 'object',
         properties: {
           type: {
             type: 'string',
@@ -154,19 +209,21 @@ export namespace ModOption {
           properties: {
             type: 'object',
             properties: {
-              label: { type: 'string', nullable: true},
-              description: { type: 'string', nullable: true},
-              min: { type: 'number'},
-              max: { type: 'number'}
+              label: { type: 'string', nullable: true },
+              description: { type: 'string', nullable: true },
+              min: { type: 'number' },
+              max: { type: 'number' }
             },
-            required: ['min', 'max']
+            required: ['min', 'max'],
+            additionalProperties: false
           }
         },
-        required: ['type', 'properties']
+        required: ['type', 'properties'],
+        additionalProperties: false
       }
     ]
   }
+
+  export const Validator = AJV_Instance.compile<ModOption>(Schema)
 }
-
-
 // endregion

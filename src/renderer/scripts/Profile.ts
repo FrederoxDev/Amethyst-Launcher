@@ -6,7 +6,6 @@ import { Mod } from './Mod'
 import { JSONSchemaType } from 'ajv'
 import * as fs from 'fs'
 
-
 // region Profile
 export interface Profile {
   name: string
@@ -24,8 +23,8 @@ export namespace Profile {
       runtime: Mod.Schema,
       mods: {
         type: 'array',
-        items: Mod.Schema,
-      },
+        items: Mod.Schema
+      }
     },
     required: ['name', 'version', 'runtime', 'mods'],
     additionalProperties: false
@@ -47,7 +46,6 @@ export namespace ProfilesJSON {
   export const Validator = AJV_Instance.compile<ProfilesJSON>(Schema)
 }
 // endregion ProfilesJSON
-
 
 export function GetProfiles(): Profile[] {
   if (!fs.existsSync(ProfilesFile)) return []

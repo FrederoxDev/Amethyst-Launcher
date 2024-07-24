@@ -21,12 +21,11 @@ export namespace Console {
     ]
 
     const time_label = `%c${new Date().toLocaleTimeString()}%c`
-    const time_formatting: string[] = [
-      'color: LightSlateGrey;',
-      ''
-    ]
+    const time_formatting: string[] = ['color: LightSlateGrey;', '']
 
-    return time ? [[action_label, label, time_label].join(' '), ...action_formatting, ...time_formatting] : [[action_label, label].join(' '), ...action_formatting]
+    return time
+      ? [[action_label, label, time_label].join(' '), ...action_formatting, ...time_formatting]
+      : [[action_label, label].join(' '), ...action_formatting]
   }
 
   export function InfoStr(label: string) {

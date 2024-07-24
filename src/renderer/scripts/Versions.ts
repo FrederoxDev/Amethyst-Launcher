@@ -98,9 +98,7 @@ export async function FetchMinecraftVersions() {
   const discardOldDataTime = new Date(currentTime.getTime() - 60 * 60 * 1000)
 
   if (lastWriteTime < discardOldDataTime) {
-    Console.StartGroup(
-      Console.ActionStr('Fetching Versions')
-    )
+    Console.StartGroup(Console.ActionStr('Fetching Versions'))
     {
       Console.Group(Console.InfoStr('URL'), () => {
         console.log('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
