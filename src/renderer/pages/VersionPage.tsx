@@ -2,6 +2,7 @@ import { GetInstalledVersionsFromFile, InstalledVersion, ValidateVersionsFile } 
 import { useState } from 'react'
 import { ipcRenderer } from 'electron'
 import PopupPanel from '../components/PopupPanel'
+import { Console } from '../scripts/Console'
 
 import * as fs from 'fs'
 import * as child from 'child_process'
@@ -32,10 +33,15 @@ const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => 
         if (fs.existsSync(version.path)) {
           fs.rm(version.path, { recursive: true }, err => {
             if (err) {
-              console.error(err)
+              Console.Error((err as Error).message)
             } else {
               onDelete()
-              console.warn(`Deleted Version: ${version.version.toString()} at ${version.path}`)
+              Console.Group(Console.ActionStr(`Delete Version`), () => {
+                Console.Info(`Version: ${version.version.toString()}`)
+                Console.Group(Console.InfoStr('Path'), () => {
+                  console.log(version.path)
+                })
+              })
             }
           })
         }

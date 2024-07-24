@@ -4,6 +4,7 @@ import { GetPackagePath } from './AppRegistry'
 import { Extractor } from './backend/Extractor'
 import { download } from './backend/MinecraftVersionDownloader'
 import { MinecraftVersion, VersionsFileObject } from './Versions'
+import { Console } from './Console'
 import React from 'react'
 
 import * as fs from 'fs'
@@ -59,10 +60,18 @@ export async function DownloadVersion(
 
   const outputFile = path.join(VersionsFolder, `Minecraft-${SemVersion.toString(version.version)}.zip`)
 
+  Console.Group(Console.InfoStr('File'), () => {
+    console.log(outputFile)
+  })
+
   const toMB = (bytes: number) => {
     const mb = bytes / (1024 * 1024)
     return `${mb.toFixed(1)}MB`
   }
+
+  const start_time = performance.now()
+
+  setLoadingPercent(0)
 
   await download(
     version.uuid,
@@ -75,10 +84,15 @@ export async function DownloadVersion(
     success => {
       if (!success) {
         setStatus('')
+        Console.Group(Console.ResultStr('Failed', true), () => {
+          Console.Error('Version download failed')
+        })
         throw new Error('Failed to download Minecraft!')
       }
-
-      setStatus('Successfully downloaded Minecraft!')
+      const end_time = performance.now()
+      Console.Group(Console.ResultStr('Successful'), () => {
+        Console.Info(`Elapsed Time: ${Math.round((end_time - start_time + Number.EPSILON) * 100) / 100}ms`)
+      })
     }
   )
 }
@@ -91,6 +105,14 @@ export async function ExtractVersion(
   const appxPath = path.join(VersionsFolder, `Minecraft-${SemVersion.toString(version.version)}.zip`)
   const folderPath = path.join(VersionsFolder, `Minecraft-${SemVersion.toString(version.version)}`)
 
+  Console.Group(Console.InfoStr('File'), () => {
+    console.log(appxPath)
+  })
+
+  Console.Group(Console.InfoStr('Folder'), () => {
+    console.log(folderPath)
+  })
+
   const excludes = [
     'AppxMetadata/CodeIntegrity.cat',
     'AppxMetadata',
@@ -98,6 +120,10 @@ export async function ExtractVersion(
     'AppxSignature.p7x',
     '[Content_Types].xml'
   ]
+
+  setLoadingPercent(0)
+
+  const start_time = performance.now()
 
   await Extractor.extractFile(
     appxPath,
@@ -109,10 +135,17 @@ export async function ExtractVersion(
     },
     success => {
       if (!success) {
-        throw new Error('There was an error while extracting the game!')
+        Console.Group(Console.ResultStr('Failed', true), () => {
+          Console.Error('Version extract failed')
+        })
+        throw new Error('Version extract failed')
       }
 
-      console.log('Finished extracting!')
+      const end_time = performance.now()
+
+      Console.Group(Console.ResultStr('Successful'), () => {
+        Console.Info(`Elapsed Time: ${Math.round((end_time - start_time + Number.EPSILON) * 100) / 100}ms`)
+      })
       setStatus('Successfully extracted the downloaded version!')
     }
   )

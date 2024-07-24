@@ -17,6 +17,7 @@ import { RegisterVersion, UnregisterCurrent } from '../scripts/AppRegistry'
 import { GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
 import child from 'child_process'
 import Panel from '../components/Panel'
+import { Console } from '../scripts/Console'
 
 export default function LauncherPage() {
   const {
@@ -35,15 +36,10 @@ export default function LauncherPage() {
   } = UseAppState()
 
   const LaunchGame = async () => {
-    const log = (msg: string) => {
-      console.log(msg)
-      SetStatus(msg)
-    }
-
     if (is_loading) return
 
     if (profiles.length === 0) {
-      throw new Error('Cannot launch without a profile!')
+      throw new Error('Cannot launch without a profile')
     }
 
     const profile = profiles[selected_profile]
@@ -51,7 +47,7 @@ export default function LauncherPage() {
     const minecraftVersion = minecraft_versions.find(version => SemVersion.toString(version.version) === SemVersion.toString(semVersion))!
 
     if (minecraftVersion === undefined) {
-      throw new Error(`Failed to find minecraft version ${semVersion.toString()} in the profile in allVersions!`)
+      throw new Error(`Version ${semVersion.toString()} not found`)
     }
 
     SetError('')
@@ -62,7 +58,7 @@ export default function LauncherPage() {
       const enabled_dev = await TryEnableDevMode()
       if (!enabled_dev) {
         throw new Error(
-          "Failed to enable 'Developer Mode' in windows settings to allow installing the game from loose files, please enable manually or make sure to press 'Yes' to enable automatically."
+          'Failed to enable Windows \'Developer Mode\', please enable manually'
         )
       }
     }
@@ -73,28 +69,36 @@ export default function LauncherPage() {
     const didPreviousDownloadFail = IsLocked(semVersion)
 
     if (didPreviousDownloadFail) {
-      log('Detected a .lock file from the previous download attempt, cleaning up.')
       CleanupInstall(semVersion, false)
-      log('Removed previous download attempt.')
     }
 
     // Check for the folder for the version we are targeting, if not present we need to fetch.
     if (!IsDownloaded(semVersion)) {
-      log('Target version is not downloaded.')
       CreateLock(semVersion)
-      await DownloadVersion(minecraftVersion, SetStatus, SetLoadingPercent)
-      await ExtractVersion(minecraftVersion, SetStatus, SetLoadingPercent)
-      log('Cleaning up after successful download')
+      Console.StartGroup(Console.ActionStr('Download Version'))
+      {
+        await DownloadVersion(minecraftVersion, SetStatus, SetLoadingPercent)
+      }
+      Console.EndGroup()
+      Console.StartGroup(Console.ActionStr('Extract Version'))
+      {
+        await ExtractVersion(minecraftVersion, SetStatus, SetLoadingPercent)
+      }
+      Console.EndGroup()
       CleanupInstall(semVersion, true)
+
+      InstallProxy(minecraftVersion)
     }
 
     // Only register the game if needed
     if (!IsRegistered(minecraftVersion)) {
-      SetStatus('Unregistering existing version')
+      SetStatus('Unregistering Version')
+      SetLoadingPercent(0)
       await UnregisterCurrent()
-
-      SetStatus('Registering downloaded version')
+      SetStatus('Registering Version')
+      SetLoadingPercent(0.5)
       await RegisterVersion(minecraftVersion)
+      SetLoadingPercent(1)
 
       SetLauncherConfig(GetLauncherConfig())
     }
@@ -102,21 +106,25 @@ export default function LauncherPage() {
     SetIsLoading(false)
     SetStatus('')
 
-    InstallProxy(minecraftVersion)
-
-    const startGameCmd = `start minecraft:`
-    child.exec(startGameCmd)
+    child.exec(`start minecraft:`)
   }
 
   const launchGame = async () => {
-    try {
-      await LaunchGame()
-    } catch (e) {
-      console.error(e)
-      SetError((e as Error).message)
-      SetStatus('')
-      SetIsLoading(false)
+    Console.StartGroup(Console.ActionStr('Launch Game'))
+    {
+      try {
+        await LaunchGame()
+        Console.Result('Successful')
+      } catch (e) {
+        Console.Group(Console.ResultStr('Failed', true), () => {
+          Console.Error((e as Error).message)
+          SetError((e as Error).message)
+          SetStatus('')
+          SetIsLoading(false)
+        })
+      }
     }
+    Console.EndGroup()
   }
 
   return (
@@ -124,11 +132,11 @@ export default function LauncherPage() {
       <div className="flex flex-col justify-between h-full w-full">
         {error !== '' && (
           <div className="flex flex-row gap-[8px] bg-[#CA3636] w-full border-[#CF4A4A] border-[3px] justify-between items-center">
-            <div className="flex flex-row p-[8px] gap-[8px]">
+            <div className="flex flex-row min-w-0 p-[8px] gap-[8px]">
               <img src="images/icons/warning-icon.png" className="w-[24px] h-[24px] pixelated" alt="" />
-              <p className="minecraft-seven text-[#FFFFFF] text-[16px]">{error}</p>
+              <p className="minecraft-seven text-[#FFFFFF] text-[16px] overflow-ellipsis overflow-hidden whitespace-nowrap">{error}</p>
             </div>
-            <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-center">
+            <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-top">
               <div className="cursor-pointer p-[4px]" onClick={() => SetError('')}>
                 <svg width="18" height="18" viewBox="0 0 12 12">
                   <polygon

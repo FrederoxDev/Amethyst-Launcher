@@ -1,5 +1,6 @@
 import { Downloader } from './Downloader'
 import { ActionComplete, DownloadProgress } from './Progress'
+import { Console } from '../Console'
 
 class Protocol {
   static DEFAULT_URL = 'https://fe3.delivery.mp.microsoft.com/ClientWebService/client.asmx'
@@ -201,7 +202,7 @@ async function getDownloadUrl(updateIdentity: string, revisionNumber: string) {
       protocol.buildDownloadRequest(updateIdentity, revisionNumber)
     )
 
-    console.log(`GetDownloadUrl() response for updateIdentity ${updateIdentity}, revision ${revisionNumber}:\n`, result)
+    // console.log(`GetDownloadUrl() response for updateIdentity ${updateIdentity}, revision ${revisionNumber}:\n`, result)
 
     const downloadUrls = protocol.extractDownloadResponseUrls(result)
 
@@ -230,6 +231,8 @@ export async function download(
     onComplete(false)
     throw new Error('BadUpdateIdentity!')
   }
-  console.log('Resolved download link:', link)
+  Console.Group(Console.InfoStr('URL'), () => {
+    console.log(link)
+  })
   await Downloader.downloadFile(link, destination, onProgress, onComplete)
 }

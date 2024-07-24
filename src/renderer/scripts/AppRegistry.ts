@@ -4,6 +4,7 @@ import { MinecraftVersion } from './Versions'
 import * as child from 'child_process'
 import * as path from 'path'
 import { SemVersion } from './classes/SemVersion'
+import { Console } from './Console'
 
 // .node type so window.require is needed
 const regedit = window.require('regedit-rs') as typeof import('regedit-rs')
@@ -33,18 +34,33 @@ export function GetPackageID() {
 
 export async function UnregisterCurrent() {
   const packageId = GetPackageID()
-  console.log('Currently installed packageId', packageId)
+
   if (packageId === undefined) return
 
-  const unregisterCmd = `powershell -ExecutionPolicy Bypass -Command "& { Remove-AppxPackage -Package "${packageId}" -PreserveRoamableApplicationData }"`
-  await new Promise(resolved => {
-    const exec_proc = child.exec(unregisterCmd)
-
-    exec_proc.on('exit', exit_code => {
-      resolved(exit_code)
+  Console.StartGroup(Console.ActionStr('Unregister Version'))
+  {
+    Console.Group(Console.InfoStr('PackageID'), () => {
+      console.log(packageId)
     })
-  })
-  console.log('Unregistered')
+
+    const unregisterCmd = `powershell -ExecutionPolicy Bypass -Command "& { Remove-AppxPackage -Package "${packageId}" -PreserveRoamableApplicationData }"`
+    await new Promise(resolved => {
+      const exec_proc = child.exec(unregisterCmd)
+
+      exec_proc.on('exit', exit_code => {
+        resolved(exit_code)
+      })
+    })
+
+    if (GetPackageID() !== undefined) {
+      Console.Group(Console.ResultStr('Failed', true), () => {
+        Console.Error('Incorrect version is still registered')
+      })
+    } else {
+      Console.Result('Successful')
+    }
+  }
+  Console.EndGroup()
 }
 
 export async function RegisterVersion(version: MinecraftVersion) {
@@ -52,19 +68,29 @@ export async function RegisterVersion(version: MinecraftVersion) {
   if (GetPackageID() !== undefined) {
     await UnregisterCurrent()
     if (GetPackageID() !== undefined) {
-      throw new Error('There is still a version installed!')
+      throw new Error('Incorrect version is still registered')
     }
   }
 
-  // Register New Version
-  const appxManifest = path.join(VersionsFolder, `Minecraft-${SemVersion.toString(version.version)}`, 'AppxManifest.xml')
-  const registerCmd = `powershell -ExecutionPolicy Bypass -Command "& { Add-AppxPackage -Path "${appxManifest}" -Register }"`
-  await new Promise(resolved => {
-    const exec_proc = child.exec(registerCmd)
+  Console.StartGroup(Console.ActionStr('Register Version'))
+  {
+    // Register New Version
+    const appxManifest = path.join(VersionsFolder, `Minecraft-${SemVersion.toString(version.version)}`, 'AppxManifest.xml')
 
-    exec_proc.on('exit', exit_code => {
-      resolved(exit_code)
+    Console.Group(Console.InfoStr('AppxManifest'),() => {
+      console.log(appxManifest)
     })
-  })
-  console.log('Registered')
+
+    const registerCmd = `powershell -ExecutionPolicy Bypass -Command "& { Add-AppxPackage -Path "${appxManifest}" -Register }"`
+    await new Promise(resolved => {
+      const exec_proc = child.exec(registerCmd)
+
+      exec_proc.on('exit', exit_code => {
+        resolved(exit_code)
+      })
+    })
+
+    Console.Result('Successful')
+  }
+  Console.EndGroup()
 }

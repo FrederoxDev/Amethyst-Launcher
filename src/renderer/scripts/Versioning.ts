@@ -99,19 +99,12 @@ export async function FetchAvailableVersionData() {
 
   if (discard_old_data) {
     Console.StartGroup(
-      Console.ActionStr(
-        [`%cFetching Versions %c${current_time.toLocaleTimeString()}`],
-        ['font-weight: bold;', 'color: LightSlateGrey']
-      )
+      Console.ActionStr('Fetching Versions')
     )
     {
-      Console.Group(
-        Console.InfoStr(['URL']),
-        () => {
-          console.log('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
-        },
-        true
-      )
+      Console.Group(Console.InfoStr('URL'), () => {
+        console.log('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
+      })
 
       if (navigator.onLine) {
         try {
@@ -120,31 +113,19 @@ export async function FetchAvailableVersionData() {
           const end_time = performance.now()
           if (data.ok) {
             fs.writeFileSync(CachedVersionsFile, await data.text())
-            Console.Group(
-              Console.ResultStr(['Successful']),
-              () => {
-                Console.Info([`Fetch took ${Math.round((end_time - start_time + Number.EPSILON) * 100) / 100}ms`])
-              },
-              true
-            )
+            Console.Group(Console.ResultStr('Successful'), () => {
+              Console.Info(`Elapsed Time: ${Math.round((end_time - start_time + Number.EPSILON) * 100) / 100}ms`)
+            })
           }
         } catch (error) {
-          Console.Group(
-            Console.ResultStr(['Failed'], [], true),
-            () => {
-              Console.Error([`${error}`])
-            },
-            true
-          )
+          Console.Group(Console.ResultStr('Failed', true), () => {
+            Console.Error(`${error}`)
+          })
         }
       } else {
-        Console.Group(
-          Console.ResultStr(['Failed'], [], true),
-          () => {
-            Console.Error(['Internet is offline'])
-          },
-          true
-        )
+        Console.Group(Console.ResultStr('Failed', true), () => {
+          Console.Error('Internet is offline')
+        })
       }
     }
     Console.EndGroup()
