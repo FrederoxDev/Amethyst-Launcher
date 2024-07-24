@@ -12,12 +12,13 @@ import MinecraftRadialButtonPanel from '../components/MinecraftRadialButtonPanel
 import * as fs from 'fs'
 
 export default function SettingsPage() {
-  const { keepLauncherOpen, setKeepLauncherOpen, developerMode, setDeveloperMode, UITheme, setUITheme } = UseAppState()
+  const { keep_launcher_open, SetKeepLauncherOpen, developer_mode, SetDeveloperMode, ui_theme, SetUITheme } =
+    UseAppState()
 
-  const { allProfiles, selectedProfile, allMinecraftVersions } = UseAppState()
+  const { profiles, selected_profile, minecraft_versions } = UseAppState()
   const [launcherCfg, setLauncherCfg] = useState<string>('')
 
-  const profile = allProfiles[selectedProfile]
+  const profile = profiles[selected_profile]
   let minecraftVersion = undefined
   let isVerDownloaded = false
   let isRegisteredVerOurs = false
@@ -27,7 +28,7 @@ export default function SettingsPage() {
 
   if (profile) {
     const semVersion = SemVersion.fromString(profile.minecraft_version)
-    minecraftVersion = allMinecraftVersions.find(version => version.version.toString() === semVersion.toString())
+    minecraftVersion = minecraft_versions.find(version => version.version.toString() === semVersion.toString())
 
     if (minecraftVersion) {
       isVerDownloaded = IsDownloaded(minecraftVersion.version)
@@ -49,7 +50,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const timer = setTimeout(updateCfgText, 0)
     return () => clearTimeout(timer)
-  }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode, UITheme])
+  }, [profiles, selected_profile, keep_launcher_open, developer_mode, ui_theme])
 
   return (
     <div
@@ -65,7 +66,7 @@ export default function SettingsPage() {
             </p>
           </div>
           <div className="ml-auto">
-            <MinecraftToggle isChecked={keepLauncherOpen} setIsChecked={setKeepLauncherOpen} />
+            <MinecraftToggle isChecked={keep_launcher_open} setIsChecked={SetKeepLauncherOpen} />
           </div>
         </div>
       </div>
@@ -79,7 +80,7 @@ export default function SettingsPage() {
             </p>
           </div>
           <div className="ml-auto">
-            <MinecraftToggle isChecked={developerMode} setIsChecked={setDeveloperMode} />
+            <MinecraftToggle isChecked={developer_mode} setIsChecked={SetDeveloperMode} />
           </div>
         </div>
       </div>
@@ -92,9 +93,9 @@ export default function SettingsPage() {
             { text: 'Dark', value: 'Dark' },
             { text: 'System', value: 'System' }
           ]}
-          default_selected_value={UITheme}
+          default_selected_value={ui_theme}
           onChange={value => {
-            setUITheme(value)
+            SetUITheme(value)
           }}
         />
       </div>

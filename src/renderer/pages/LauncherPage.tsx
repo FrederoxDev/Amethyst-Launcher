@@ -20,42 +20,42 @@ import Panel from '../components/Panel'
 
 export default function LauncherPage() {
   const {
-    allProfiles,
-    selectedProfile,
-    setSelectedProfile,
-    loadingPercent,
+    profiles,
+    selected_profile,
+    SetSelectedProfile,
+    loading_percent,
     status,
-    setStatus,
-    isLoading,
-    setIsLoading,
+    SetStatus,
+    is_loading,
+    SetIsLoading,
     error,
-    setError,
-    allMinecraftVersions,
-    setLoadingPercent
+    SetError,
+    minecraft_versions,
+    SetLoadingPercent
   } = UseAppState()
 
   const LaunchGame = async () => {
     const log = (msg: string) => {
       console.log(msg)
-      setStatus(msg)
+      SetStatus(msg)
     }
 
-    if (isLoading) return
+    if (is_loading) return
 
-    if (allProfiles.length === 0) {
+    if (profiles.length === 0) {
       throw new Error('Cannot launch without a profile!')
     }
 
-    const profile = allProfiles[selectedProfile]
+    const profile = profiles[selected_profile]
     const semVersion = SemVersion.fromString(profile.minecraft_version)
-    const minecraftVersion = allMinecraftVersions.find(version => version.version.toString() === semVersion.toString())!
+    const minecraftVersion = minecraft_versions.find(version => version.version.toString() === semVersion.toString())!
 
     if (minecraftVersion === undefined) {
       throw new Error(`Failed to find minecraft version ${semVersion.toString()} in the profile in allVersions!`)
     }
 
-    setError('')
-    setIsLoading(true)
+    SetError('')
+    SetIsLoading(true)
 
     // Check that the user has developer mode enabled on windows for the game to be installed through loose files.
     if (!IsDevModeEnabled()) {
@@ -82,25 +82,25 @@ export default function LauncherPage() {
     if (!IsDownloaded(semVersion)) {
       log('Target version is not downloaded.')
       CreateLock(semVersion)
-      await DownloadVersion(minecraftVersion, setStatus, setLoadingPercent)
-      await ExtractVersion(minecraftVersion, setStatus, setLoadingPercent)
+      await DownloadVersion(minecraftVersion, SetStatus, SetLoadingPercent)
+      await ExtractVersion(minecraftVersion, SetStatus, SetLoadingPercent)
       log('Cleaning up after successful download')
       CleanupInstall(semVersion, true)
     }
 
     // Only register the game if needed
     if (!IsRegistered(minecraftVersion)) {
-      setStatus('Unregistering existing version')
+      SetStatus('Unregistering existing version')
       await UnregisterCurrent()
 
-      setStatus('Registering downloaded version')
+      SetStatus('Registering downloaded version')
       await RegisterVersion(minecraftVersion)
 
       SetLauncherConfig(GetLauncherConfig())
     }
 
-    setIsLoading(false)
-    setStatus('')
+    SetIsLoading(false)
+    SetStatus('')
 
     InstallProxy(minecraftVersion)
 
@@ -113,9 +113,9 @@ export default function LauncherPage() {
       await LaunchGame()
     } catch (e) {
       console.error(e)
-      setError((e as Error).message)
-      setStatus('')
-      setIsLoading(false)
+      SetError((e as Error).message)
+      SetStatus('')
+      SetIsLoading(false)
     }
   }
 
@@ -128,7 +128,7 @@ export default function LauncherPage() {
             <p className="minecraft-seven text-[#FFFFFF] text-[16px]">{error}</p>
           </div>
           <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-center">
-            <div className="cursor-pointer p-[4px]" onClick={() => setError('')}>
+            <div className="cursor-pointer p-[4px]" onClick={() => SetError('')}>
               <svg width="18" height="18" viewBox="0 0 12 12">
                 <polygon
                   className="fill-[#FFFFFF]"
@@ -151,11 +151,11 @@ export default function LauncherPage() {
 
         {/* Loading bar */}
         <div
-          className={`bg-[#313233] ${status || isLoading ? 'h-[25px]' : 'h-0'} transition-all duration-300 ease-in-out`}
+          className={`bg-[#313233] ${status || is_loading ? 'h-[25px]' : 'h-0'} transition-all duration-300 ease-in-out`}
         >
           <div
-            className={`bg-[#3C8527] absolute ${isLoading ? 'min-h-[25px]' : 'min-h-0'} transition-all duration-300 ease-in-out`}
-            style={{ width: `${loadingPercent * 100}%` }}
+            className={`bg-[#3C8527] absolute ${is_loading ? 'min-h-[25px]' : 'min-h-0'} transition-all duration-300 ease-in-out`}
+            style={{ width: `${loading_percent * 100}%` }}
           ></div>
           <p className="minecraft-seven absolute z-30 text-white overflow-hidden text-ellipsis whitespace-nowrap max-w-full px-2">
             {status}
@@ -167,10 +167,10 @@ export default function LauncherPage() {
           <div className="w-[30%] mt-auto">
             <Dropdown
               labelText="Profile"
-              options={allProfiles?.map(profile => profile.name)}
-              value={allProfiles[selectedProfile]?.name}
+              options={profiles?.map(profile => profile.name)}
+              value={profiles[selected_profile]?.name}
               setValue={value => {
-                setSelectedProfile(allProfiles.map(profile => profile.name).findIndex(e => e === value))
+                SetSelectedProfile(profiles.map(profile => profile.name).findIndex(e => e === value))
               }}
               id="profile-select"
             />

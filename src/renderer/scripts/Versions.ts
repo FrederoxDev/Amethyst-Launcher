@@ -83,6 +83,8 @@ export interface InstalledVersion {
   version: MinecraftVersion
 }
 
+////////////////////////////////////////////////////////////
+
 export async function FetchMinecraftVersions() {
   let lastWriteTime: Date = new Date(0)
 
@@ -102,49 +104,49 @@ export async function FetchMinecraftVersions() {
         ['font-weight: bold;', 'color: LightSlateGrey']
       )
     )
+    {
+      Console.Group(
+        Console.InfoStr(['URL']),
+        () => {
+          console.log('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
+        },
+        true
+      )
 
-    Console.Group(
-      () => {
-        console.log('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
-      },
-      Console.InfoStr(['URL']),
-      true
-    )
-
-    if (navigator.onLine) {
-      try {
-        const start_time = performance.now()
-        const data = await fetch('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
-        const end_time = performance.now()
-        if (data.ok) {
-          fs.writeFileSync(CachedVersionsFile, await data.text())
+      if (navigator.onLine) {
+        try {
+          const start_time = performance.now()
+          const data = await fetch('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
+          const end_time = performance.now()
+          if (data.ok) {
+            fs.writeFileSync(CachedVersionsFile, await data.text())
+            Console.Group(
+              Console.ResultStr(['Successful']),
+              () => {
+                Console.Info([`Fetch took ${Math.round((end_time - start_time + Number.EPSILON) * 100) / 100}ms`])
+              },
+              true
+            )
+          }
+        } catch (error) {
           Console.Group(
+            Console.ResultStr(['Failed'], [], true),
             () => {
-              Console.Info([`Fetch took ${Math.round(end_time - start_time)}ms`])
+              Console.Error([`${error}`])
             },
-            Console.ResultStr(['Successful']),
             true
           )
         }
-      } catch (error) {
+      } else {
         Console.Group(
-          () => {
-            Console.Error([`${error}`])
-          },
           Console.ResultStr(['Failed'], [], true),
+          () => {
+            Console.Error(['Internet is offline'])
+          },
           true
         )
       }
-    } else {
-      Console.Group(
-        () => {
-          Console.Error(['Internet is offline'])
-        },
-        Console.ResultStr(['Failed'], [], true),
-        true
-      )
     }
-
     Console.EndGroup()
   }
 
@@ -164,6 +166,8 @@ export async function FetchMinecraftVersions() {
 
   return versions
 }
+
+////////////////////////////////////////////////////////////
 
 export function GetInstalledVersions(): MinecraftVersion[] {
   if (fs.existsSync(VersionsFolder)) {
@@ -192,6 +196,8 @@ export function GetInstalledVersions(): MinecraftVersion[] {
     return []
   }
 }
+
+////////////////////////////////////////////////////////////
 
 export function ValidateVersionsFile(): void {
   if (!fs.existsSync(VersionsFile)) {
@@ -230,6 +236,8 @@ export function ValidateVersionsFile(): void {
   }
 }
 
+////////////////////////////////////////////////////////////
+
 export function GetInstalledVersionsFromFile(): InstalledVersion[] {
   let installed_versions: InstalledVersion[] = []
 
@@ -242,6 +250,8 @@ export function GetInstalledVersionsFromFile(): InstalledVersion[] {
   return installed_versions
 }
 
+////////////////////////////////////////////////////////////
+
 export function GetInstalledVersionPath(version: MinecraftVersion): string | undefined {
   const versions = GetInstalledVersionsFromFile()
 
@@ -253,6 +263,8 @@ export function GetInstalledVersionPath(version: MinecraftVersion): string | und
 
   return version_path
 }
+
+////////////////////////////////////////////////////////////
 
 export function FindMinecraftVersion(sem_version: SemVersion) {
   const versionData = fs.readFileSync(CachedVersionsFile, 'utf-8')

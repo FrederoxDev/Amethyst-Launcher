@@ -1,5 +1,5 @@
 export namespace Console {
-  export function Group(callback: () => void, label: string[] = [], collapsed: boolean = false) {
+  export function Group(label: string[] = [], callback: () => void, collapsed: boolean = false) {
     collapsed ? console.groupCollapsed(...label) : console.group(...label)
     callback()
     console.groupEnd()

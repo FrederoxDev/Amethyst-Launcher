@@ -8,10 +8,10 @@ import ListItem from '../components/ListItem'
 
 const ProfileButton = ({ profile, index }: { profile: Profile; index: number }) => {
   const navigate = useNavigate()
-  const { setSelectedProfile } = UseAppState()
+  const { SetSelectedProfile } = UseAppState()
 
   const openProfile = (profile: Profile, index: number) => {
-    setSelectedProfile(index)
+    SetSelectedProfile(index)
     navigate('/profile-editor')
   }
 
@@ -29,14 +29,14 @@ const ProfileButton = ({ profile, index }: { profile: Profile; index: number }) 
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const { allProfiles, setAllProfiles, setSelectedProfile } = UseAppState()
+  const { profiles, SetProfiles, SetSelectedProfile } = UseAppState()
 
   return (
     <Panel>
       <div className="content_panel">
         <p className="minecraft-seven text-white text-[14px]">Profile Editor</p>
         <List>
-          {allProfiles.map((profile, index) => {
+          {profiles.map((profile, index) => {
             return <ProfileButton profile={profile} index={index} key={index} />
           })}
         </List>
@@ -51,10 +51,10 @@ export default function ProfilePage() {
                 runtime: 'Vanilla'
               }
 
-              const newProfiles = [...allProfiles, defaultProfile]
-              setAllProfiles(newProfiles)
+              const newProfiles = [...profiles, defaultProfile]
+              SetProfiles(newProfiles)
 
-              setSelectedProfile(newProfiles.length - 1)
+              SetSelectedProfile(newProfiles.length - 1)
               navigate('/profile-editor')
             }}
           />

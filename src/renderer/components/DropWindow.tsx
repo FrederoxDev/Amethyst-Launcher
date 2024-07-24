@@ -10,7 +10,7 @@ import * as path from 'path'
 export default function DropWindow() {
   const [hovered, setHovered] = useState(false)
 
-  const { setError } = UseAppState()
+  const { SetError } = UseAppState()
 
   useEffect(() => {
     let dragCount = 0
@@ -74,7 +74,7 @@ export default function DropWindow() {
           console.log('Successfully extracted Mod ZIP!')
         }).then()
       } catch (error) {
-        setError((error as Error).message)
+        SetError((error as Error).message)
       }
     }
 
@@ -83,7 +83,7 @@ export default function DropWindow() {
       try {
         CopyRecursive(folder_path, ModsFolder)
       } catch (error) {
-        setError((error as Error).message)
+        SetError((error as Error).message)
       }
     }
 
@@ -99,7 +99,7 @@ export default function DropWindow() {
       window.removeEventListener('dragleave', dragEnd)
       window.removeEventListener('drop', drop)
     }
-  }, [setError])
+  }, [SetError])
 
   return (
     <div

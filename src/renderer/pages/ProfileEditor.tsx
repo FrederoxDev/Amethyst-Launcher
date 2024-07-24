@@ -19,19 +19,11 @@ export default function ProfileEditor() {
   const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<string>('')
   // const [profileInstallDir, setProfileInstallDir] = useState<string>(GetDefaultInstallPath())
 
-  const {
-    allMods,
-    allRuntimes,
-    allMinecraftVersions,
-    allProfiles,
-    setAllProfiles,
-    selectedProfile,
-    saveData,
-    setAllMods
-  } = UseAppState()
+  const { mods, runtimes, minecraft_versions, profiles, SetProfiles, selected_profile, saveData, SetMods } =
+    UseAppState()
   const navigate = useNavigate()
 
-  if (allProfiles.length === 0) navigate('/profiles')
+  if (profiles.length === 0) navigate('/profiles')
 
   const toggleModActive = (name: string) => {
     if (profileActiveMods.includes(name)) {
@@ -64,34 +56,34 @@ export default function ProfileEditor() {
   }
 
   const loadProfile = useCallback(() => {
-    const profile = allProfiles[selectedProfile]
+    const profile = profiles[selected_profile]
     setProfileName(profile?.name ?? 'New Profile')
     setProfileRuntime(profile?.runtime ?? 'Vanilla')
     setProfileActiveMods(profile?.mods ?? [])
     setProfileMinecraftVersion(profile?.minecraft_version ?? '1.21.0.3')
-  }, [allProfiles, selectedProfile])
+  }, [profiles, selected_profile])
 
   const saveProfile = () => {
-    allProfiles[selectedProfile].name = profileName
+    profiles[selected_profile].name = profileName
 
     // Verify the vanilla runtime still exists
-    if (!(profileRuntime in allRuntimes)) setProfileRuntime('Vanilla')
+    if (!(profileRuntime in runtimes)) setProfileRuntime('Vanilla')
 
     // Ensure all mods still exist
-    const newMods = profileActiveMods.filter(mod => allMods.includes(mod))
-    setAllMods(newMods)
+    const newMods = profileActiveMods.filter(mod => mods.includes(mod))
+    SetMods(newMods)
 
-    allProfiles[selectedProfile].runtime = profileRuntime
-    allProfiles[selectedProfile].mods = profileActiveMods
-    allProfiles[selectedProfile].minecraft_version = profileMinecraftVersion
+    profiles[selected_profile].runtime = profileRuntime
+    profiles[selected_profile].mods = profileActiveMods
+    profiles[selected_profile].minecraft_version = profileMinecraftVersion
 
     saveData()
     navigate('/profiles')
   }
 
   const deleteProfile = () => {
-    allProfiles.splice(selectedProfile, 1)
-    setAllProfiles(allProfiles)
+    profiles.splice(selected_profile, 1)
+    SetProfiles(profiles)
 
     saveData()
     navigate('/profiles')
@@ -99,8 +91,8 @@ export default function ProfileEditor() {
 
   useEffect(() => {
     const { mods } = GetMods()
-    setAllMods(mods)
-  }, [setAllMods])
+    SetMods(mods)
+  }, [SetMods])
 
   useEffect(() => {
     loadProfile()
@@ -117,7 +109,7 @@ export default function ProfileEditor() {
             value={profileMinecraftVersion}
             setValue={setProfileMinecraftVersion}
             // we don't support non-release versions right now so only show release lmao
-            options={allMinecraftVersions
+            options={minecraft_versions
               .filter(ver => ver.versionType === MinecraftVersionType.Release)
               .map(ver => ver.toString())}
             id="minecraft-version"
@@ -126,7 +118,7 @@ export default function ProfileEditor() {
             labelText="Runtime"
             value={profileRuntime}
             setValue={setProfileRuntime}
-            options={allRuntimes}
+            options={runtimes}
             id="runtime-mod"
           />
           {/*<TextInput label="Install Directory" text={profileInstallDir} setText={setProfileInstallDir} />*/}
@@ -142,7 +134,7 @@ export default function ProfileEditor() {
             <div className="w-[50%] h-full flex flex-col">
               <p className="text-white minecraft-seven text-[14px]">Active Mods</p>
               <List>
-                {allMods
+                {mods
                   .filter(mod => profileActiveMods.includes(mod))
                   .map((mod, index) => (
                     <ModButton name={mod} key={index} />
@@ -152,7 +144,7 @@ export default function ProfileEditor() {
             <div className=" w-[50%] h-full flex flex-col">
               <p className="text-white minecraft-seven text-[14px]">Inactive Mods</p>
               <List>
-                {allMods
+                {mods
                   .filter(mod => !profileActiveMods.includes(mod))
                   .map((mod, index) => (
                     <ModButton name={mod} key={index} />

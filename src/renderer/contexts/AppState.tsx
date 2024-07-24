@@ -2,47 +2,53 @@ import React, { createContext, ReactNode, useCallback, useContext, useEffect, us
 
 import { FetchMinecraftVersions, MinecraftVersion } from '../scripts/Versions'
 import { LauncherConfig, GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
-import { GetProfiles, Profile, SetProfiles } from '../scripts/Profiles'
+import { GetProfiles, Profile } from '../scripts/Profiles'
+
+import { VersionsFile } from '../scripts/Versioning'
 
 import { ipcRenderer } from 'electron'
 import { GetMods } from '../scripts/Mods'
+import * as Paths from '../scripts/Paths'
 
 interface TAppStateContext {
-  allMods: string[]
-  setAllMods: React.Dispatch<React.SetStateAction<string[]>>
+  mods: string[]
+  SetMods: React.Dispatch<React.SetStateAction<string[]>>
 
-  allRuntimes: string[]
-  setAllRuntimes: React.Dispatch<React.SetStateAction<string[]>>
+  runtimes: string[]
+  SetRuntimes: React.Dispatch<React.SetStateAction<string[]>>
 
-  allMinecraftVersions: MinecraftVersion[]
-  setAllMinecraftVersions: React.Dispatch<React.SetStateAction<MinecraftVersion[]>>
+  minecraft_versions: MinecraftVersion[]
+  SetMinecraftVersions: React.Dispatch<React.SetStateAction<MinecraftVersion[]>>
 
-  allProfiles: Profile[]
-  setAllProfiles: React.Dispatch<React.SetStateAction<Profile[]>>
+  profiles: Profile[]
+  SetProfiles: React.Dispatch<React.SetStateAction<Profile[]>>
 
-  selectedProfile: number
-  setSelectedProfile: React.Dispatch<React.SetStateAction<number>>
+  selected_profile: number
+  SetSelectedProfile: React.Dispatch<React.SetStateAction<number>>
 
-  UITheme: string
-  setUITheme: React.Dispatch<React.SetStateAction<string>>
+  ui_theme: string
+  SetUITheme: React.Dispatch<React.SetStateAction<string>>
 
-  keepLauncherOpen: boolean
-  setKeepLauncherOpen: React.Dispatch<React.SetStateAction<boolean>>
+  keep_launcher_open: boolean
+  SetKeepLauncherOpen: React.Dispatch<React.SetStateAction<boolean>>
 
-  developerMode: boolean
-  setDeveloperMode: React.Dispatch<React.SetStateAction<boolean>>
+  developer_mode: boolean
+  SetDeveloperMode: React.Dispatch<React.SetStateAction<boolean>>
 
-  loadingPercent: number
-  setLoadingPercent: React.Dispatch<React.SetStateAction<number>>
+  loading_percent: number
+  SetLoadingPercent: React.Dispatch<React.SetStateAction<number>>
 
-  isLoading: boolean
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+  is_loading: boolean
+  SetIsLoading: React.Dispatch<React.SetStateAction<boolean>>
 
   status: string
-  setStatus: React.Dispatch<React.SetStateAction<string>>
+  SetStatus: React.Dispatch<React.SetStateAction<string>>
 
   error: string
-  setError: React.Dispatch<React.SetStateAction<string>>
+  SetError: React.Dispatch<React.SetStateAction<string>>
+
+  versions_file: VersionsFile
+  SetVersionsFile: React.Dispatch<React.SetStateAction<VersionsFile>>
 
   // Expose functions
   saveData: () => void
@@ -51,54 +57,56 @@ interface TAppStateContext {
 const AppStateContext = createContext<TAppStateContext | undefined>(undefined)
 
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
-  const [allMods, setAllMods] = useState<string[]>([])
-  const [allRuntimes, setAllRuntimes] = useState<string[]>([])
-  const [allMinecraftVersions, setAllMinecraftVersions] = useState<MinecraftVersion[]>([])
-  const [allProfiles, setAllProfiles] = useState<Profile[]>([])
-  const [selectedProfile, setSelectedProfile] = useState(0)
-  const [UITheme, setUITheme] = useState('System')
-  const [keepLauncherOpen, setKeepLauncherOpen] = useState(true)
-  const [developerMode, setDeveloperMode] = useState(false)
-  const [loadingPercent, setLoadingPercent] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
-  const [status, setStatus] = useState('')
-  const [error, setError] = useState('')
+  const [mods, SetMods] = useState<string[]>([])
+  const [runtimes, SetRuntimes] = useState<string[]>([])
+  const [minecraft_versions, SetMinecraft_versions] = useState<MinecraftVersion[]>([])
+  const [profiles, SetProfiles] = useState<Profile[]>([])
+  const [selected_profile, SetSelectedProfile] = useState(0)
+  const [ui_theme, SetUITheme] = useState('System')
+  const [keep_launcher_open, SetKeepLauncherOpen] = useState(true)
+  const [developer_mode, SetDeveloperMode] = useState(false)
+  const [loading_percent, SetLoadingPercent] = useState(0)
+  const [is_loading, SetIsLoading] = useState(false)
+  const [status, SetStatus] = useState('')
+  const [error, SetError] = useState('')
 
-  // Initialize Data like all mods and existing profiles..
+  const [versions_file, SetVersionsFile] = useState<VersionsFile>({ versions: [], default_path: Paths.VersionsFolder })
+
+  // Initialize Data like all mods and existing profiles
   useEffect(() => {
-    setAllProfiles(GetProfiles())
+    SetProfiles(GetProfiles())
 
     const modList = GetMods()
-    setAllRuntimes(['Vanilla', ...modList.runtimeMods])
-    setAllMods(modList.mods)
+    SetRuntimes(['Vanilla', ...modList.runtimeMods])
+    SetMods(modList.mods)
 
     const readConfig = GetLauncherConfig()
-    setKeepLauncherOpen(readConfig.keep_open ?? true)
-    setDeveloperMode(readConfig.developer_mode ?? false)
-    setSelectedProfile(readConfig.selected_profile ?? 0)
-    setUITheme(readConfig.ui_theme ?? 'Light')
+    SetKeepLauncherOpen(readConfig.keep_open ?? true)
+    SetDeveloperMode(readConfig.developer_mode ?? false)
+    SetSelectedProfile(readConfig.selected_profile ?? 0)
+    SetUITheme(readConfig.ui_theme ?? 'Light')
 
     FetchMinecraftVersions().then(versions => {
-      setAllMinecraftVersions(versions)
+      SetMinecraft_versions(versions)
     })
   }, [])
 
   const [hasInitialized, setHasInitialized] = useState(false)
 
   const saveData = useCallback(() => {
-    SetProfiles(allProfiles)
+    SetProfiles(profiles)
 
     const launcherConfig: LauncherConfig = {
-      developer_mode: developerMode,
-      keep_open: keepLauncherOpen,
-      mods: allProfiles[selectedProfile]?.mods ?? [],
-      runtime: allProfiles[selectedProfile]?.runtime ?? '',
-      selected_profile: selectedProfile,
-      ui_theme: UITheme
+      developer_mode: developer_mode,
+      keep_open: keep_launcher_open,
+      mods: profiles[selected_profile]?.mods ?? [],
+      runtime: profiles[selected_profile]?.runtime ?? '',
+      selected_profile: selected_profile,
+      ui_theme: ui_theme
     }
 
     SetLauncherConfig(launcherConfig)
-  }, [allProfiles, developerMode, keepLauncherOpen, selectedProfile, UITheme])
+  }, [profiles, developer_mode, keep_launcher_open, selected_profile, ui_theme])
 
   useEffect(() => {
     if (!hasInitialized) {
@@ -107,40 +115,42 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     }
 
     saveData()
-  }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode, hasInitialized, saveData])
+  }, [profiles, selected_profile, keep_launcher_open, developer_mode, hasInitialized, saveData])
 
   useEffect(() => {
-    ipcRenderer.send('WINDOW_UI_THEME', UITheme)
-  }, [UITheme])
+    ipcRenderer.send('WINDOW_UI_THEME', ui_theme)
+  }, [ui_theme])
 
   return (
     <AppStateContext.Provider
       value={{
-        allMods,
-        setAllMods,
-        allRuntimes,
-        setAllRuntimes,
-        allMinecraftVersions,
-        setAllMinecraftVersions,
-        allProfiles,
-        setAllProfiles,
-        selectedProfile,
-        setSelectedProfile,
-        UITheme,
-        setUITheme,
-        keepLauncherOpen,
-        setKeepLauncherOpen,
-        developerMode,
-        setDeveloperMode,
-        loadingPercent,
-        setLoadingPercent,
-        isLoading,
-        setIsLoading,
+        mods: mods,
+        SetMods: SetMods,
+        runtimes: runtimes,
+        SetRuntimes: SetRuntimes,
+        minecraft_versions: minecraft_versions,
+        SetMinecraftVersions: SetMinecraft_versions,
+        profiles: profiles,
+        SetProfiles: SetProfiles,
+        selected_profile: selected_profile,
+        SetSelectedProfile: SetSelectedProfile,
+        ui_theme: ui_theme,
+        SetUITheme: SetUITheme,
+        keep_launcher_open: keep_launcher_open,
+        SetKeepLauncherOpen: SetKeepLauncherOpen,
+        developer_mode: developer_mode,
+        SetDeveloperMode: SetDeveloperMode,
+        loading_percent: loading_percent,
+        SetLoadingPercent: SetLoadingPercent,
+        is_loading: is_loading,
+        SetIsLoading: SetIsLoading,
         status,
-        setStatus,
+        SetStatus: SetStatus,
         saveData,
-        error,
-        setError
+        error: error,
+        SetError: SetError,
+        versions_file: versions_file,
+        SetVersionsFile: SetVersionsFile
       }}
     >
       {children}
