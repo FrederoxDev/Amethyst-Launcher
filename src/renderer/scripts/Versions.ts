@@ -31,7 +31,7 @@ export class MinecraftVersion {
     if (this.versionType === MinecraftVersionType.Beta) prefix = '-beta'
     else if (this.versionType === MinecraftVersionType.Preview) prefix = '-preview'
 
-    return `${this.version.toString()}${prefix}`
+    return `${SemVersion.toString(this.version)}${prefix}`
   }
 
   static toString(version: MinecraftVersion) {
@@ -220,7 +220,7 @@ export function ValidateVersionsFile(): void {
   for (const old_version of old_versions) {
     if (installed_versions.find(version => version.version.toString() === old_version.toString()) === undefined) {
       installed_versions.push({
-        path: path.join(VersionsFolder, `Minecraft-${old_version.version.toString()}`),
+        path: path.join(VersionsFolder, `Minecraft-${SemVersion.toString(old_version.version)}`),
         version: old_version
       })
     }
@@ -271,7 +271,7 @@ export function FindMinecraftVersion(sem_version: SemVersion) {
   const rawJson = JSON.parse(versionData)
 
   for (const version of rawJson) {
-    if ((version[0] as string) === sem_version.toString())
+    if ((version[0] as string) === SemVersion.toString(sem_version))
       return new MinecraftVersion(
         SemVersion.fromString(version[0] as string),
         version[1],

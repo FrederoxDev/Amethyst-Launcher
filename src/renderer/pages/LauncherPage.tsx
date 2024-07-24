@@ -48,7 +48,7 @@ export default function LauncherPage() {
 
     const profile = profiles[selected_profile]
     const semVersion = SemVersion.fromString(profile.minecraft_version)
-    const minecraftVersion = minecraft_versions.find(version => version.version.toString() === semVersion.toString())!
+    const minecraftVersion = minecraft_versions.find(version => SemVersion.toString(version.version) === SemVersion.toString(semVersion))!
 
     if (minecraftVersion === undefined) {
       throw new Error(`Failed to find minecraft version ${semVersion.toString()} in the profile in allVersions!`)
@@ -121,63 +121,65 @@ export default function LauncherPage() {
 
   return (
     <Panel>
-      {error !== '' && (
-        <div className="flex flex-row gap-[8px] bg-[#CA3636] w-full border-[#CF4A4A] border-[3px] justify-between items-center">
-          <div className="flex flex-row p-[8px] gap-[8px]">
-            <img src="images/icons/warning-icon.png" className="w-[24px] h-[24px] pixelated" alt="" />
-            <p className="minecraft-seven text-[#FFFFFF] text-[16px]">{error}</p>
-          </div>
-          <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-center">
-            <div className="cursor-pointer p-[4px]" onClick={() => SetError('')}>
-              <svg width="18" height="18" viewBox="0 0 12 12">
-                <polygon
-                  className="fill-[#FFFFFF]"
-                  fillRule="evenodd"
-                  points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"
-                />
-              </svg>
+      <div className="flex flex-col justify-between h-full w-full">
+        {error !== '' && (
+          <div className="flex flex-row gap-[8px] bg-[#CA3636] w-full border-[#CF4A4A] border-[3px] justify-between items-center">
+            <div className="flex flex-row p-[8px] gap-[8px]">
+              <img src="images/icons/warning-icon.png" className="w-[24px] h-[24px] pixelated" alt="" />
+              <p className="minecraft-seven text-[#FFFFFF] text-[16px]">{error}</p>
+            </div>
+            <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-center">
+              <div className="cursor-pointer p-[4px]" onClick={() => SetError('')}>
+                <svg width="18" height="18" viewBox="0 0 12 12">
+                  <polygon
+                    className="fill-[#FFFFFF]"
+                    fillRule="evenodd"
+                    points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="flex flex-col justify-end h-full w-full">
-        {/* Not affiliated disclaimer */}
-        <div className="bg-[#0c0c0cc5] w-fit ml-auto rounded-t-[3px]">
-          <p className="minecraft-seven text-white px-[4px] text-[13px]">
-            Not approved by or associated with Mojang or Microsoft
-          </p>
-        </div>
-
-        {/* Loading bar */}
-        <div
-          className={`bg-[#313233] ${status || is_loading ? 'h-[25px]' : 'h-0'} transition-all duration-300 ease-in-out`}
-        >
-          <div
-            className={`bg-[#3C8527] absolute ${is_loading ? 'min-h-[25px]' : 'min-h-0'} transition-all duration-300 ease-in-out`}
-            style={{ width: `${loading_percent * 100}%` }}
-          ></div>
-          <p className="minecraft-seven absolute z-30 text-white overflow-hidden text-ellipsis whitespace-nowrap max-w-full px-2">
-            {status}
-          </p>
-        </div>
-
-        {/* Profile Selector & Play Button */}
-        <div className="flex flex-row gap-[8px] border-[#1E1E1F] border-[3px] p-[8px] bg-[#48494A]">
-          <div className="w-[30%] mt-auto">
-            <Dropdown
-              labelText="Profile"
-              options={profiles?.map(profile => profile.name)}
-              value={profiles[selected_profile]?.name}
-              setValue={value => {
-                SetSelectedProfile(profiles.map(profile => profile.name).findIndex(e => e === value))
-              }}
-              id="profile-select"
-            />
+        <div className="flex flex-col justify-end grow w-full">
+          {/* Not affiliated disclaimer */}
+          <div className="bg-[#0c0c0cc5] w-fit ml-auto rounded-t-[3px]">
+            <p className="minecraft-seven text-white px-[4px] text-[13px]">
+              Not approved by or associated with Mojang or Microsoft
+            </p>
           </div>
 
-          <div className="w-[70%]">
-            <MinecraftButton text="Launch Game" onClick={launchGame} />
+          {/* Loading bar */}
+          <div
+            className={`bg-[#313233] ${status || is_loading ? 'h-[25px]' : 'h-0'} transition-all duration-300 ease-in-out`}
+          >
+            <div
+              className={`bg-[#3C8527] absolute ${is_loading ? 'min-h-[25px]' : 'min-h-0'} transition-all duration-300 ease-in-out`}
+              style={{ width: `${loading_percent * 100}%` }}
+            ></div>
+            <p className="minecraft-seven absolute z-30 text-white overflow-hidden text-ellipsis whitespace-nowrap max-w-full px-2">
+              {status}
+            </p>
+          </div>
+
+          {/* Profile Selector & Play Button */}
+          <div className="flex flex-row gap-[8px] border-[#1E1E1F] border-[3px] p-[8px] bg-[#48494A]">
+            <div className="w-[30%] mt-auto">
+              <Dropdown
+                labelText="Profile"
+                options={profiles?.map(profile => profile.name)}
+                value={profiles[selected_profile]?.name}
+                setValue={value => {
+                  SetSelectedProfile(profiles.map(profile => profile.name).findIndex(e => e === value))
+                }}
+                id="profile-select"
+              />
+            </div>
+
+            <div className="w-[70%]">
+              <MinecraftButton text="Launch Game" onClick={launchGame} />
+            </div>
           </div>
         </div>
       </div>

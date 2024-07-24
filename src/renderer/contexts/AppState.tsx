@@ -59,7 +59,7 @@ const AppStateContext = createContext<TAppStateContext | undefined>(undefined)
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [mods, SetMods] = useState<string[]>([])
   const [runtimes, SetRuntimes] = useState<string[]>([])
-  const [minecraft_versions, SetMinecraft_versions] = useState<MinecraftVersion[]>([])
+  const [minecraft_versions, SetMinecraftVersions] = useState<MinecraftVersion[]>([])
   const [profiles, SetProfiles] = useState<Profile[]>([])
   const [selected_profile, SetSelectedProfile] = useState(0)
   const [ui_theme, SetUITheme] = useState('System')
@@ -87,7 +87,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     SetUITheme(readConfig.ui_theme ?? 'Light')
 
     FetchMinecraftVersions().then(versions => {
-      SetMinecraft_versions(versions)
+      SetMinecraftVersions(versions)
     })
   }, [])
 
@@ -129,7 +129,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         runtimes: runtimes,
         SetRuntimes: SetRuntimes,
         minecraft_versions: minecraft_versions,
-        SetMinecraftVersions: SetMinecraft_versions,
+        SetMinecraftVersions: SetMinecraftVersions,
         profiles: profiles,
         SetProfiles: SetProfiles,
         selected_profile: selected_profile,

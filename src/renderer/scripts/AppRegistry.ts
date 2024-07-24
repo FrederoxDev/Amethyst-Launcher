@@ -3,6 +3,7 @@ import { MinecraftVersion } from './Versions'
 
 import * as child from 'child_process'
 import * as path from 'path'
+import { SemVersion } from './classes/SemVersion'
 
 // .node type so window.require is needed
 const regedit = window.require('regedit-rs') as typeof import('regedit-rs')
@@ -56,7 +57,7 @@ export async function RegisterVersion(version: MinecraftVersion) {
   }
 
   // Register New Version
-  const appxManifest = path.join(VersionsFolder, `Minecraft-${version.version.toString()}`, 'AppxManifest.xml')
+  const appxManifest = path.join(VersionsFolder, `Minecraft-${SemVersion.toString(version.version)}`, 'AppxManifest.xml')
   const registerCmd = `powershell -ExecutionPolicy Bypass -Command "& { Add-AppxPackage -Path "${appxManifest}" -Register }"`
   await new Promise(resolved => {
     const exec_proc = child.exec(registerCmd)
