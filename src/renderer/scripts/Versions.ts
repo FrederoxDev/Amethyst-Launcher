@@ -107,7 +107,7 @@ export async function FetchMinecraftVersions() {
       () => {
         console.log('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
       },
-      Console.InfoStr(['Source']),
+      Console.InfoStr(['URL']),
       true
     )
 
@@ -122,7 +122,7 @@ export async function FetchMinecraftVersions() {
             () => {
               Console.Info([`Fetch took ${Math.round(end_time - start_time)}ms`])
             },
-            Console.ReturnStr(['Successful']),
+            Console.ResultStr(['Successful']),
             true
           )
         }
@@ -131,7 +131,7 @@ export async function FetchMinecraftVersions() {
           () => {
             Console.Error([`${error}`])
           },
-          Console.ReturnStr(['Failed'], [], true),
+          Console.ResultStr(['Failed'], [], true),
           true
         )
       }
@@ -140,7 +140,7 @@ export async function FetchMinecraftVersions() {
         () => {
           Console.Error(['Internet is offline'])
         },
-        Console.ReturnStr(['Failed'], [], true),
+        Console.ResultStr(['Failed'], [], true),
         true
       )
     }

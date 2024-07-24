@@ -33,8 +33,8 @@ export namespace Console {
     return [[action_label, ...label].join(' '), ...[...action_formatting, ...formatting]]
   }
 
-  export function ReturnStr(label: string[], formatting: string[] = [], failed: boolean = false) {
-    const action_label: string = '%c return %c'
+  export function ResultStr(label: string[], formatting: string[] = [], failed: boolean = false) {
+    const action_label: string = '%c result %c'
     const action_formatting: string[] = [
       `${failed ? `background-color: LightCoral` : `background-color: LightGreen`}; color: Black; font-weight: bold; border-radius: 3px;`,
       ''
@@ -61,8 +61,8 @@ export namespace Console {
     console.log(...InfoStr(label, formatting))
   }
 
-  export function Return(label: string[], formatting: string[] = [], failed: boolean = false) {
-    console.log(...ReturnStr(label, formatting, failed))
+  export function Result(label: string[], formatting: string[] = [], failed: boolean = false) {
+    console.log(...ResultStr(label, formatting, failed))
   }
 
   export function Error(label: string[], formatting: string[] = []) {
