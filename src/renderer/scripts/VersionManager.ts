@@ -1,4 +1,4 @@
-import { SemVersion } from './classes/SemVersion'
+import { SemVersion } from './SemVersion'
 import { VersionsFolder, ElectronAppPath, ValidatePath, DeletePath, VersionsFile } from './Paths'
 import { GetPackagePath } from './AppRegistry'
 import { Extractor } from './backend/Extractor'

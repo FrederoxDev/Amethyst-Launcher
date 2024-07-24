@@ -1,5 +1,5 @@
 import { VersionsFolder, CachedVersionsFile, VersionsFile } from './Paths'
-import { SemVersion } from './classes/SemVersion'
+import { SemVersion } from './SemVersion'
 import { Console } from './Console'
 
 import * as fs from 'fs'

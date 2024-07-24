@@ -1,5 +1,5 @@
 import { UseAppState } from '../contexts/AppState'
-import { SemVersion } from '../scripts/classes/SemVersion'
+import { SemVersion } from '../scripts/SemVersion'
 import { IsRegistered, IsDownloaded } from '../scripts/VersionManager'
 import { GetPackagePath } from '../scripts/AppRegistry'
 import { AmethystFolder, LauncherConfigFile, MinecraftUWPFolder } from '../scripts/Paths'

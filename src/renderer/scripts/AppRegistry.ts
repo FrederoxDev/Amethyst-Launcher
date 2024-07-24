@@ -3,7 +3,7 @@ import { MinecraftVersion } from './Versions'
 
 import * as child from 'child_process'
 import * as path from 'path'
-import { SemVersion } from './classes/SemVersion'
+import { SemVersion } from './SemVersion'
 import { Console } from './Console'
 
 // .node type so window.require is needed

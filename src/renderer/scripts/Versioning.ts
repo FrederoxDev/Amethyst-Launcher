@@ -1,20 +1,42 @@
-import AJV, { JSONSchemaType } from 'ajv'
+import { JSONSchemaType } from 'ajv'
 
-import { SemVersion } from './classes/SemVersion'
-import * as Paths from './Paths'
+import { SemVersion } from './SemVersion'
+import { VersionsFile, VersionsFolder } from './Paths'
 import * as fs from 'node:fs'
 import { CachedVersionsFile } from './Paths'
 import { Console } from './Console'
+import AJV_Instance from './AJV_Instance'
 
 /////////////////////////////
 // EXPERIMENTAL VERSIONING //
 /////////////////////////////
 
+// region Version
 export interface Version {
   uuid: string
   path: string
 }
 
+export namespace Version {
+  export const Schema: JSONSchemaType<Version> = {
+    type: 'object',
+    properties: {
+      uuid: { type: 'string' },
+      path: { type: 'string' }
+    },
+    required: ['uuid', 'path'],
+    additionalProperties: false
+  }
+}
+// endregion
+
+export enum VersionType {
+  Release = 0,
+  Beta = 1,
+  Preview = 2
+}
+
+// region VersionData
 export interface VersionData {
   uuid: string
   sem_version: SemVersion
@@ -26,61 +48,38 @@ export namespace VersionData {
     return `${SemVersion.toString(data.sem_version)}${['', '-beta', '-preview'][data.type]}`
   }
 }
+// endregion
 
-export enum VersionType {
-  Release = 0,
-  Beta = 1,
-  Preview = 2
-}
-
-export interface VersionsFile {
+// region VersionsFileData
+export interface VersionsFileData {
   default_path: string
   versions: Version[]
 }
-
-// region JSON Schemas
-export const Version_Schema: JSONSchemaType<Version> = {
-  type: 'object',
-  properties: {
-    uuid: {
-      type: 'string',
-      nullable: false
+export namespace VersionsFileData {
+  export const Schema: JSONSchemaType<VersionsFileData> = {
+    type: 'object',
+    properties: {
+      default_path: { type: 'string', },
+      versions: {
+        type: 'array',
+        items: Version.Schema
+      }
     },
-    path: {
-      type: 'string',
-      nullable: false
-    }
-  },
-  required: ['uuid', 'path'],
-  additionalProperties: false
-}
+    required: ['default_path', 'versions'],
+    additionalProperties: false
+  }
 
-export const VersionsFile_Schema: JSONSchemaType<VersionsFile> = {
-  type: 'object',
-  properties: {
-    default_path: {
-      type: 'string',
-      nullable: false
-    },
-    versions: {
-      type: 'array',
-      nullable: false,
-      items: Version_Schema
-    }
-  },
-  required: ['default_path', 'versions'],
-  additionalProperties: false
+  export const Validator = AJV_Instance.compile<VersionsFileData>(Schema)
 }
 // endregion
 
-const JSON_Validator = new AJV({ allErrors: true })
-export const VersionsFile_Validator = JSON_Validator.compile<VersionsFile>(VersionsFile_Schema)
+//////////////////////////////////////////////////
 
 export function ValidateVersionsFile() {
-  const text = fs.readFileSync(Paths.VersionsFile, { encoding: 'utf8' })
+  const text = fs.readFileSync(VersionsFile, { encoding: 'utf8' })
   const json = JSON.parse(text)
 
-  VersionsFile_Validator(json)
+  VersionsFileData.Validator(json)
 }
 
 //////////////////////////////////////////////////
@@ -99,7 +98,7 @@ export async function FetchAvailableVersionData() {
 
   if (discard_old_data) {
     Console.StartGroup(
-      Console.ActionStr('Fetching Versions')
+      Console.ActionStr('Fetch Versions')
     )
     {
       Console.Group(Console.InfoStr('URL'), () => {
@@ -146,4 +145,27 @@ export function GetAvailableVersionData() {
   }
 
   return versions
+}
+
+//////////////////////////////////////////////////
+
+export function GetVersionsFile(): VersionsFileData {
+  if (fs.existsSync(VersionsFile)) {
+    const text = fs.readFileSync(VersionsFile, 'utf-8')
+    const json = JSON.parse(text)
+    console.log(json)
+  }
+
+  return {
+    versions: [],
+    default_path: VersionsFolder,
+  }
+}
+
+export function GetVersions(): Version[] {
+  return GetVersionsFile().versions
+}
+
+export function GetDefaultVersionPath(): string {
+  return GetVersionsFile().default_path
 }

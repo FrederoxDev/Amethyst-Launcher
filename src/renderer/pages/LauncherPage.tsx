@@ -1,7 +1,7 @@
 import Dropdown from '../components/Dropdown'
 import MinecraftButton from '../components/MinecraftButton'
 import { UseAppState } from '../contexts/AppState'
-import { SemVersion } from '../scripts/classes/SemVersion'
+import { SemVersion } from '../scripts/SemVersion'
 import { IsDevModeEnabled, TryEnableDevMode } from '../scripts/DeveloperMode'
 import {
   CleanupInstall,

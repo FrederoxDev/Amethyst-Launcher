@@ -42,8 +42,10 @@ export function ValidateMod(config: Record<string, unknown>, outErrors?: string[
   if (Validator.errors) {
     for (const err of Validator.errors as DefinedError[]) {
       switch (err.keyword) {
-        case 'type':
+        case 'type': {
           outErrors?.push(`Field '${err.instancePath}' must be of type '${err.params.type}'`)
+          break;
+        }
       }
     }
   }
