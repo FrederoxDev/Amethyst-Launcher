@@ -54,7 +54,7 @@ export namespace Shard {
             uuid: { type: 'string', format: 'uuid' },
             version: SemVersion.Primitive.Schema,
             min_launcher_version: SemVersion.Primitive.Schema,
-            format: { nullable: true, oneOf: [Shard.Format.Schema] }
+            format: { oneOf: [Shard.Format.Schema], nullable: true }
           },
           required: ['name', 'authors', 'uuid', 'version', 'min_launcher_version'],
           additionalProperties: false
