@@ -6,7 +6,7 @@ import AJV_Instance from './AJV_Instance'
 export namespace Shard {
   // region Shard.Full
   /**
-   * Contains full data. Used **externally**
+   * Contains full data. Mainly used **externally**
    *
    * ```ts
    * meta: {
@@ -75,7 +75,7 @@ export namespace Shard {
 
   // region Shard.Fragment
   /**
-   * Contains minimal data. Used **internally**
+   * Contains minimal data. Mainly used **internally**
    *
    * ```ts
    * uuid: string // Must be UUID v4
@@ -87,7 +87,6 @@ export namespace Shard {
    * @see {SemVersion.Primitive}
    */
   export interface Fragment {
-    // UUID v4 string
     uuid: string
     version: SemVersion.Primitive
   }
