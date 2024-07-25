@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv'
-import { SemVersionData } from './SemVersion'
+import { SemVersion } from './SemVersion'
 import AJV_Instance from './AJV_Instance'
 
 // region Shard
@@ -25,7 +25,7 @@ export namespace Shard {
    * @see {Shard.Fragment}
    * @see {Shard.Format}
    * @see {Shard.Option}
-   * @see {SemVersionData}
+   * @see {SemVersion.Primitive}
    */
   export interface Full {
     meta: {
@@ -33,8 +33,8 @@ export namespace Shard {
       authors: string | string[]
       description?: string
       uuid: string
-      version: SemVersionData
-      min_launcher_version: SemVersionData
+      version: SemVersion.Primitive
+      min_launcher_version: SemVersion.Primitive
       format?: Shard.Format
     }
     options?: Shard.Option[]
@@ -52,8 +52,8 @@ export namespace Shard {
             },
             description: { type: 'string', nullable: true },
             uuid: { type: 'string', format: 'uuid' },
-            version: SemVersionData.Schema,
-            min_launcher_version: SemVersionData.Schema,
+            version: SemVersion.Primitive.Schema,
+            min_launcher_version: SemVersion.Primitive.Schema,
             format: { nullable: true, oneOf: [Shard.Format.Schema]}
           },
           required: ['name', 'authors', 'uuid', 'version', 'min_launcher_version'],
@@ -84,19 +84,19 @@ export namespace Shard {
    *
    * @internal
    * @see {Shard.Full}
-   * @see {SemVersionData}
+   * @see {SemVersion.Primitive}
    */
   export interface Fragment {
     // UUID v4 string
     uuid: string
-    version: SemVersionData
+    version: SemVersion.Primitive
   }
   export namespace Fragment {
     export const Schema: JSONSchemaType<Shard.Fragment> = {
       type: 'object',
       properties: {
         uuid: { type: 'string', format: 'uuid' },
-        version: SemVersionData.Schema
+        version: SemVersion.Primitive.Schema
       },
       required: ['uuid', 'version'],
       additionalProperties: false
@@ -122,7 +122,7 @@ export namespace Shard {
   // endregion
 
   // region Shard.Option
-  export type Option = Option.Empty | Option.Text | Option.Toggle | Option.Radial | Option.Slider
+  export type Option = Shard.Option.Empty | Shard.Option.Text | Shard.Option.Toggle | Shard.Option.Radial | Shard.Option.Slider
 
   export namespace Option {
     export interface Empty {
@@ -132,13 +132,13 @@ export namespace Shard {
         description?: string
       }
     }
-    export interface Text extends Empty {
+    export interface Text extends Shard.Option.Empty {
       type: 'text'
     }
-    export interface Toggle extends Empty {
+    export interface Toggle extends Shard.Option.Empty {
       type: 'toggle'
     }
-    export interface Radial extends Empty {
+    export interface Radial extends Shard.Option.Empty {
       type: 'radial'
       properties: {
         label?: string
@@ -146,7 +146,7 @@ export namespace Shard {
         options: string[]
       }
     }
-    export interface Slider extends Empty {
+    export interface Slider extends Shard.Option.Empty {
       type: 'slider'
       properties: {
         label?: string
@@ -156,7 +156,7 @@ export namespace Shard {
       }
     }
 
-    export const Schema: JSONSchemaType<Option> = {
+    export const Schema: JSONSchemaType<Shard.Option> = {
       oneOf: [
         {
           type: 'object',
@@ -264,7 +264,7 @@ export namespace Shard {
       ]
     }
 
-    export const Validator = AJV_Instance.compile<Option>(Schema)
+    export const Validator = AJV_Instance.compile<Shard.Option>(Shard.Option.Schema)
   }
   // endregion
 }

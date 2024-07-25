@@ -10,12 +10,12 @@ export interface SemVersion {
 }
 
 export namespace SemVersion {
-  export function toString(sem: SemVersion, v: boolean = false) {
-    return `${v ? 'v' : ''}${sem.major}.${sem.minor}.${sem.patch}${sem.build ? `.${sem.build}` : ''}`
+  export function toString(sem: SemVersion) {
+    return `${sem.major}.${sem.minor}.${sem.patch}${sem.build ? `.${sem.build}` : ''}`
   }
 
   export function fromString(str: string): SemVersion {
-    const regex = RegExp(/^v?(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/)
+    const regex = RegExp(/^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/)
     const matches = str.match(regex)
 
     if (matches) {
@@ -47,35 +47,31 @@ export namespace SemVersion {
   }
 
   export const Validator = AJV_Instance.compile<SemVersion>(Schema)
+
+  // region SemVersion.Raw
+  /**
+   * @description `string` must match regex: `/^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/`
+   * @description `number[]` must have size between: `3-4`, inclusive
+   */
+  export type Primitive = string | number[]
+
+  export namespace Primitive {
+    export const Schema: JSONSchemaType<SemVersion.Primitive> = {
+      oneOf: [
+        {
+          type: 'string',
+          pattern: RegExp(/^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/).source
+        },
+        {
+          type: 'array',
+          items: { type: 'number' },
+          minLength: 3,
+          maxLength: 4
+        }
+      ]
+    }
+
+    export const Validator = AJV_Instance.compile<SemVersion.Primitive>(SemVersion.Primitive.Schema)
+  }
 }
 // endregion SemVersion
-
-// region SemVersionData
-/**
- * @description `string` must match regex: `/^v?(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/`
- * @description `number[]` must have size between: `3-4`, inclusive
- */
-export type SemVersionData = SemVersion | string | number[]
-
-export namespace SemVersionData {
-  /** @description JSON Schema for `SemVersionData` type */
-  export const Schema: JSONSchemaType<SemVersionData> = {
-    oneOf: [
-      SemVersion.Schema,
-      {
-        type: 'string',
-        pattern: RegExp(/^v?(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/).source
-      },
-      {
-        type: 'array',
-        items: { type: 'number' },
-        minLength: 3,
-        maxLength: 4
-      }
-    ]
-  }
-
-  /** @description JSON Validator for `SemVersionData` type */
-  export const Validator = AJV_Instance.compile<SemVersionData>(Schema)
-}
-// endregion SemVersionData
