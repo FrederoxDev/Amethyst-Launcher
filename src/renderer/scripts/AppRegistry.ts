@@ -77,7 +77,7 @@ export async function RegisterVersion(version: MinecraftVersion) {
     // Register New Version
     const appxManifest = path.join(
       VersionsFolder,
-      `Minecraft-${SemVersion.toString(version.version)}`,
+      `Minecraft-${SemVersion.toPrimitive(version.version)}`,
       'AppxManifest.xml'
     )
 

@@ -2,6 +2,9 @@ import { JSONSchemaType } from 'ajv'
 import AJV_Instance from './AJV_Instance'
 
 // region SemVersion
+/**
+ * @see {SemVersion.Primitive}
+ */
 export interface SemVersion {
   major: number
   minor: number
@@ -10,48 +13,24 @@ export interface SemVersion {
 }
 
 export namespace SemVersion {
-  export function toString(sem: SemVersion) {
-    return `${sem.major}.${sem.minor}.${sem.patch}${sem.build ? `.${sem.build}` : ''}`
-  }
-
-  export function toPrimitive(sem: SemVersion, array: boolean = false): SemVersion.Primitive {
-    if (array) {
-      if (sem.build) {
-        return [sem.major, sem.minor, sem.major, sem.build]
-      }
-      else {
-        return [sem.major, sem.minor, sem.major]
-      }
-    }
-    else {
-      if (sem.build) {
-        return `${sem.major}.${sem.minor}.${sem.patch}.${sem.build}`
-      }
-      else {
-        return `${sem.major}.${sem.minor}.${sem.patch}`
-      }
+  export function toPrimitive(sem: SemVersion): SemVersion.Primitive {
+    if (sem.build) {
+      return `${sem.major}.${sem.minor}.${sem.patch}.${sem.build}`
+    } else {
+      return `${sem.major}.${sem.minor}.${sem.patch}`
     }
   }
 
-
-  export function fromString(str: string): SemVersion {
-    const regex = RegExp(/^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/)
-    const matches = str.match(regex)
+  export function fromPrimitive(primitive: SemVersion.Primitive): SemVersion {
+    const regex = RegExp(/^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/).source
+    const matches = primitive.match(regex)
 
     if (matches) {
-      const [major, minor, patch, build] = matches.map(Number)
+      const [, major, minor, patch, build] = matches.map(Number)
       return { major: major, minor: minor, patch: patch, build: build }
     }
 
-    throw new Error(`Invalid SemVersion string format: ${str}`)
-  }
-
-  export function fromArray(arr: number[]): SemVersion {
-    if (arr.length <= 4 && arr.length >= 3) {
-      return { major: arr[0], minor: arr[1], patch: arr[2], build: arr[3] }
-    } else {
-      throw new Error(`Invalid SemVersion array format: ${arr.toString()}`)
-    }
+    throw new Error(`Invalid SemVersion.Primitive string format: ${primitive}`)
   }
 
   export const Schema: JSONSchemaType<SemVersion> = {
@@ -70,25 +49,26 @@ export namespace SemVersion {
 
   // region SemVersion.Primitive
   /**
-   * @description `string` must match regex: `/^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/`
-   * @description `number[]` must have size between: `3-4`, inclusive
+   * @description Must match regex: `/^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/`
+   * @example
+   * "1.0.0" pass
+   * "1.0.0.0" pass
+   * "9.9.9" pass
+   * "9.9.9.9" pass
+   *
+   * "1.00" fail
+   * "1.0.0." fail
+   * "a.b.c" fail
+   * "1.0.0.0.0" fail
+   *
+   * @see {SemVersion}
    */
-  export type Primitive = string | number[]
+  export type Primitive = string
 
   export namespace Primitive {
     export const Schema: JSONSchemaType<SemVersion.Primitive> = {
-      oneOf: [
-        {
-          type: 'string',
-          pattern: RegExp(/^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/).source
-        },
-        {
-          type: 'array',
-          items: { type: 'number' },
-          minLength: 3,
-          maxLength: 4
-        }
-      ]
+      type: 'string',
+      pattern: RegExp(/^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/).source
     }
 
     export const Validator = AJV_Instance.compile<SemVersion.Primitive>(SemVersion.Primitive.Schema)

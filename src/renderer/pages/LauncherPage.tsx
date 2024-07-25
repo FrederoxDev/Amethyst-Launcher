@@ -43,9 +43,9 @@ export default function LauncherPage() {
     }
 
     const profile = profiles[selected_profile]
-    const semVersion = SemVersion.fromString(profile.minecraft_version)
+    const semVersion = SemVersion.fromPrimitive(profile.minecraft_version)
     const minecraftVersion = minecraft_versions.find(
-      version => SemVersion.toString(version.version) === SemVersion.toString(semVersion)
+      version => SemVersion.toPrimitive(version.version) === SemVersion.toPrimitive(semVersion)
     )!
 
     if (minecraftVersion === undefined) {

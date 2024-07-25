@@ -31,7 +31,7 @@ export class MinecraftVersion {
     if (this.versionType === MinecraftVersionType.Beta) prefix = '-beta'
     else if (this.versionType === MinecraftVersionType.Preview) prefix = '-preview'
 
-    return `${SemVersion.toString(this.version)}${prefix}`
+    return `${SemVersion.toPrimitive(this.version)}${prefix}`
   }
 
   static toString(version: MinecraftVersion) {
@@ -39,7 +39,7 @@ export class MinecraftVersion {
     if (version.versionType === MinecraftVersionType.Beta) prefix = '-beta'
     else if (version.versionType === MinecraftVersionType.Preview) prefix = '-preview'
 
-    return `${SemVersion.toString(version.version)}${prefix}`
+    return `${SemVersion.toPrimitive(version.version)}${prefix}`
   }
 }
 
@@ -58,7 +58,7 @@ export class VersionsFileObject {
     const default_installation_path = obj.default_installation_path
 
     const installed_versions = obj.installed_versions.map(installed_version => {
-      const sem_version = SemVersion.fromString(SemVersion.toString(installed_version.version.version))
+      const sem_version = SemVersion.fromPrimitive(SemVersion.toPrimitive(installed_version.version.version))
       const minecraft_version = new MinecraftVersion(
         sem_version,
         installed_version.version.uuid,
@@ -136,7 +136,7 @@ export async function FetchMinecraftVersions() {
   for (const version of rawJson) {
     versions.push(
       new MinecraftVersion(
-        SemVersion.fromString(version[0] as string),
+        SemVersion.fromPrimitive(version[0] as string),
         version[1],
         version[2] as unknown as MinecraftVersionType
       )
@@ -159,7 +159,7 @@ export function GetInstalledVersions(): MinecraftVersion[] {
 
       if (fs.existsSync(dir_path)) {
         if (version_dir.name.startsWith('Minecraft-')) {
-          const sem_version = SemVersion.fromString(version_dir.name.slice('Minecraft-'.length))
+          const sem_version = SemVersion.fromPrimitive(version_dir.name.slice('Minecraft-'.length))
 
           const minecraft_version = FindMinecraftVersion(sem_version)
 
@@ -199,7 +199,7 @@ export function ValidateVersionsFile(): void {
   for (const old_version of old_versions) {
     if (installed_versions.find(version => version.version.toString() === old_version.toString()) === undefined) {
       installed_versions.push({
-        path: path.join(VersionsFolder, `Minecraft-${SemVersion.toString(old_version.version)}`),
+        path: path.join(VersionsFolder, `Minecraft-${SemVersion.toPrimitive(old_version.version)}`),
         version: old_version
       })
     }
@@ -250,9 +250,9 @@ export function FindMinecraftVersion(sem_version: SemVersion) {
   const rawJson = JSON.parse(versionData)
 
   for (const version of rawJson) {
-    if ((version[0] as string) === SemVersion.toString(sem_version))
+    if ((version[0] as string) === SemVersion.toPrimitive(sem_version))
       return new MinecraftVersion(
-        SemVersion.fromString(version[0] as string),
+        SemVersion.fromPrimitive(version[0] as string),
         version[1],
         version[2] as unknown as MinecraftVersionType
       )

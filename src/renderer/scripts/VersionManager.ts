@@ -23,30 +23,30 @@ export function GetDefaultInstallPath(): string {
 }
 
 export function IsDownloaded(version: SemVersion) {
-  const version_path = path.join(VersionsFolder, `Minecraft-${SemVersion.toString(version)}`)
+  const version_path = path.join(VersionsFolder, `Minecraft-${SemVersion.toPrimitive(version)}`)
   return fs.existsSync(version_path)
 }
 
 export function IsLocked(version: SemVersion) {
-  const lock_path = path.join(VersionsFolder, `Minecraft-${SemVersion.toString(version)}.lock`)
+  const lock_path = path.join(VersionsFolder, `Minecraft-${SemVersion.toPrimitive(version)}.lock`)
   return fs.existsSync(lock_path)
 }
 
 export function CreateLock(version: SemVersion) {
-  const lock_path = path.join(VersionsFolder, `Minecraft-${SemVersion.toString(version)}.lock`)
+  const lock_path = path.join(VersionsFolder, `Minecraft-${SemVersion.toPrimitive(version)}.lock`)
   ValidatePath(lock_path)
   const handle = fs.openSync(lock_path, 'w')
   fs.close(handle)
 }
 
 export function CleanupInstall(version: SemVersion, successful: boolean) {
-  const appxPath = path.join(VersionsFolder, `Minecraft-${SemVersion.toString(version)}.zip`)
-  const lockPath = path.join(VersionsFolder, `Minecraft-${SemVersion.toString(version)}.lock`)
+  const appxPath = path.join(VersionsFolder, `Minecraft-${SemVersion.toPrimitive(version)}.zip`)
+  const lockPath = path.join(VersionsFolder, `Minecraft-${SemVersion.toPrimitive(version)}.lock`)
   DeletePath(appxPath)
   DeletePath(lockPath)
 
   if (!successful) {
-    const folderPath = path.join(VersionsFolder, `Minecraft-${SemVersion.toString(version)}`)
+    const folderPath = path.join(VersionsFolder, `Minecraft-${SemVersion.toPrimitive(version)}`)
     DeletePath(folderPath)
   }
 }
@@ -58,7 +58,7 @@ export async function DownloadVersion(
 ) {
   ValidatePath(VersionsFolder)
 
-  const outputFile = path.join(VersionsFolder, `Minecraft-${SemVersion.toString(version.version)}.zip`)
+  const outputFile = path.join(VersionsFolder, `Minecraft-${SemVersion.toPrimitive(version.version)}.zip`)
 
   Console.Group(Console.InfoStr('File'), () => {
     console.log(outputFile)
@@ -102,8 +102,8 @@ export async function ExtractVersion(
   setStatus: React.Dispatch<React.SetStateAction<string>>,
   setLoadingPercent: React.Dispatch<React.SetStateAction<number>>
 ) {
-  const appxPath = path.join(VersionsFolder, `Minecraft-${SemVersion.toString(version.version)}.zip`)
-  const folderPath = path.join(VersionsFolder, `Minecraft-${SemVersion.toString(version.version)}`)
+  const appxPath = path.join(VersionsFolder, `Minecraft-${SemVersion.toPrimitive(version.version)}.zip`)
+  const folderPath = path.join(VersionsFolder, `Minecraft-${SemVersion.toPrimitive(version.version)}`)
 
   Console.Group(Console.InfoStr('File'), () => {
     console.log(appxPath)
@@ -152,14 +152,18 @@ export async function ExtractVersion(
 }
 
 export function InstallProxy(version: MinecraftVersion) {
-  const target_path = path.join(VersionsFolder, `Minecraft-${SemVersion.toString(version.version)}`, 'dxgi.dll')
+  const target_path = path.join(
+    VersionsFolder,
+    `Minecraft-${SemVersion.toPrimitive(version.version)}`,
+    'dxgi.dll'
+  )
   const proxy_path = path.join(ElectronAppPath, 'build/public/proxy/dxgi.dll')
 
   fs.copyFileSync(proxy_path, target_path)
 }
 
 export function IsRegistered(version: MinecraftVersion) {
-  const fileName = `Minecraft-${SemVersion.toString(version.version)}`
+  const fileName = `Minecraft-${SemVersion.toPrimitive(version.version)}`
 
   return GetPackagePath() === `${VersionsFolder}\\${fileName}`
 }

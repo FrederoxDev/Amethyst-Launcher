@@ -45,7 +45,7 @@ export interface VersionData {
 
 export namespace VersionData {
   export function toString(data: VersionData) {
-    return `${SemVersion.toString(data.sem_version)}${['', '-beta', '-preview'][data.type]}`
+    return `${SemVersion.toPrimitive(data.sem_version)}${['', '-beta', '-preview'][data.type]}`
   }
 }
 // endregion
@@ -136,7 +136,7 @@ export function GetAvailableVersionData() {
 
   for (const version of json) {
     versions.push({
-      sem_version: SemVersion.fromString(version[0] as string),
+      sem_version: SemVersion.fromPrimitive(version[0] as string),
       uuid: version[1] as string,
       type: version[2] as VersionType
     })
