@@ -14,6 +14,26 @@ export namespace SemVersion {
     return `${sem.major}.${sem.minor}.${sem.patch}${sem.build ? `.${sem.build}` : ''}`
   }
 
+  export function toPrimitive(sem: SemVersion, array: boolean = false): SemVersion.Primitive {
+    if (array) {
+      if (sem.build) {
+        return [sem.major, sem.minor, sem.major, sem.build]
+      }
+      else {
+        return [sem.major, sem.minor, sem.major]
+      }
+    }
+    else {
+      if (sem.build) {
+        return `${sem.major}.${sem.minor}.${sem.patch}.${sem.build}`
+      }
+      else {
+        return `${sem.major}.${sem.minor}.${sem.patch}`
+      }
+    }
+  }
+
+
   export function fromString(str: string): SemVersion {
     const regex = RegExp(/^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/)
     const matches = str.match(regex)
