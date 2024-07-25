@@ -48,7 +48,7 @@ export namespace SemVersion {
 
   export const Validator = AJV_Instance.compile<SemVersion>(Schema)
 
-  // region SemVersion.Raw
+  // region SemVersion.Primitive
   /**
    * @description `string` must match regex: `/^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/`
    * @description `number[]` must have size between: `3-4`, inclusive
@@ -73,5 +73,6 @@ export namespace SemVersion {
 
     export const Validator = AJV_Instance.compile<SemVersion.Primitive>(SemVersion.Primitive.Schema)
   }
+  // endregion
 }
-// endregion SemVersion
+// endregion
