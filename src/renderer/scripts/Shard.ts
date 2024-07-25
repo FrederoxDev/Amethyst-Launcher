@@ -54,7 +54,7 @@ export namespace Shard {
             uuid: { type: 'string', format: 'uuid' },
             version: SemVersion.Primitive.Schema,
             min_launcher_version: SemVersion.Primitive.Schema,
-            format: { nullable: true, oneOf: [Shard.Format.Schema]}
+            format: { nullable: true, oneOf: [Shard.Format.Schema] }
           },
           required: ['name', 'authors', 'uuid', 'version', 'min_launcher_version'],
           additionalProperties: false
@@ -122,7 +122,12 @@ export namespace Shard {
   // endregion
 
   // region Shard.Option
-  export type Option = Shard.Option.Empty | Shard.Option.Text | Shard.Option.Toggle | Shard.Option.Radial | Shard.Option.Slider
+  export type Option =
+    | Shard.Option.Empty
+    | Shard.Option.Text
+    | Shard.Option.Toggle
+    | Shard.Option.Radial
+    | Shard.Option.Slider
 
   export namespace Option {
     export interface Empty {
