@@ -2,15 +2,15 @@ import { JSONSchemaType } from 'ajv'
 import { SemVersionData } from './SemVersion'
 import AJV_Instance from './AJV_Instance'
 
-// region Mod
-export interface Mod {
+// region Shard
+export interface Shard {
   // UUID v4 string
   uuid: string
   version: SemVersionData
 }
 
-export namespace Mod {
-  export const Schema: JSONSchemaType<Mod> = {
+export namespace Shard {
+  export const Schema: JSONSchemaType<Shard> = {
     type: 'object',
     properties: {
       uuid: { type: 'string', format: 'uuid' },
@@ -20,28 +20,39 @@ export namespace Mod {
     additionalProperties: false
   }
 
-  export const Validator = AJV_Instance.compile<Mod>(Schema)
+  export const Validator = AJV_Instance.compile<Shard>(Schema)
 }
-// endregion Mod
+// endregion
 
-// region ModData
-export interface ModData {
+// region ShardFormat
+export interface ShardFormat {
+  type?: ShardType
+  min_launcher_version: SemVersionData
+}
+
+export enum ShardType {
+  Mod = 0,
+  Runtime = 1
+}
+// endregion
+
+// region ShardData
+export interface ShardData {
   meta: {
     name: string
     authors: string | string[]
     description?: string
-    uuid: string
-    version: SemVersionData
   }
   format: {
-    min_launcher_version: SemVersionData
-    is_runtime?: boolean
+    type?: ShardType,
+    uuid: string
+    version: SemVersionData
   }
   options?: ModOption[]
 }
 
-export namespace ModData {
-  export const Schema: JSONSchemaType<ModData> = {
+export namespace ShardData {
+  export const Schema: JSONSchemaType<ShardData> = {
     type: 'object',
     properties: {
       meta: {
@@ -61,10 +72,10 @@ export namespace ModData {
       format: {
         type: 'object',
         properties: {
-          min_launcher_version: SemVersionData.Schema,
+          format_version: SemVersionData.Schema,
           is_runtime: { type: 'boolean', nullable: true }
         },
-        required: ['min_launcher_version'],
+        required: ['format_version'],
         additionalProperties: false
       },
       options: {
@@ -77,11 +88,12 @@ export namespace ModData {
     additionalProperties: false
   }
 
-  export const Validator = AJV_Instance.compile<ModData>(Schema)
+  export const Validator = AJV_Instance.compile<ShardData>(Schema)
 }
 // endregion
 
 // region ModOptions
+/** @description Options can only be used in "Mod" Shards (`type: 0`)*/
 export type ModOption = ModOption.Empty | ModOption.Text | ModOption.Toggle | ModOption.Radial | ModOption.Slider
 
 export namespace ModOption {

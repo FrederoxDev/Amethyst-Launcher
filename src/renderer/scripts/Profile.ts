@@ -1,7 +1,7 @@
 import { ValidatePath, ProfilesFile } from './Paths'
 import { Version, Version_Schema } from './Versioning'
 import AJV_Instance from './AJV_Instance'
-import { Mod } from './Mod'
+import { Shard } from './Shard'
 
 import { JSONSchemaType } from 'ajv'
 import * as fs from 'fs'
@@ -10,8 +10,8 @@ import * as fs from 'fs'
 export interface Profile {
   name: string
   version: Version
-  runtime: Mod
-  mods: Mod[]
+  runtime: Shard
+  mods: Shard[]
 }
 
 export namespace Profile {
