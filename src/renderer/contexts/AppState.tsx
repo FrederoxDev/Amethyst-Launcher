@@ -6,7 +6,7 @@ import { LauncherConfig, GetLauncherConfig, SetLauncherConfig } from '../scripts
 import { GetProfiles, Profile } from '../scripts/types/Profile'
 
 import { ipcRenderer } from 'electron'
-import { GetShards, Shard } from '../scripts/types/Shard'
+import { FindShard, GetShards, Shard } from '../scripts/types/Shard'
 
 interface TAppStateContext {
   mods: Shard.Full[]
@@ -87,15 +87,12 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const saveData = useCallback(() => {
     SetProfiles(profiles)
 
-    const mods = GetShards().mods.filter(shard => {
-      profiles[selected_profile]?.mods?.includes({ uuid: shard.meta.uuid, version: shard.meta.version })
-    }).map(mod => {
-      return mod.meta.name
-    })
+    const mods = profiles[selected_profile]?.mods?.map(m => FindShard(m)).filter(m => m !== undefined).map(m => m.meta.name) ?? []
 
-    const runtime = GetShards().runtimes.find(shard => {
-      return profiles[selected_profile]?.runtime?.uuid === shard.meta.uuid
-    })?.meta.name
+    let runtime;
+    if (profiles[selected_profile].runtime) {
+      runtime = FindShard(profiles[selected_profile].runtime)?.meta.name
+    }
 
     const launcherConfig: LauncherConfig = {
       developer_mode: developer_mode,

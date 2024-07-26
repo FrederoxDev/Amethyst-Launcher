@@ -334,3 +334,11 @@ export function GetShards(): Shard.List {
     }
   }
 }
+
+export function FindShard(fragment: Shard.Fragment): Shard.Full | undefined {
+  const shard_list = GetShards()
+  const shards = [...shard_list.mods, ...shard_list.runtimes]
+
+  const matching_shards = shards.filter(s => s.meta.uuid === fragment.uuid)
+  return matching_shards.find(s => s.meta.version === fragment.version)
+}
