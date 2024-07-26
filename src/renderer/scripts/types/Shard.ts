@@ -8,110 +8,6 @@ import { Console } from './Console'
 
 // region Shard
 export namespace Shard {
-  // region Shard.Full
-  /**
-   * Contains full data. Mainly used **externally**
-   *
-   * ```ts
-   * meta: {
-   *  name: string
-   *  author: string | string[]
-   *  description?: string
-   *  uuid: string // Must be UUID v4
-   *  version: SemVersion.Primitive
-   *  format?: Shard.Format
-   * }
-   * format_version: SemVersion.Primitive
-   * options?: Shard.Option[]
-   * ```
-   *
-   * @external
-   * @see {Shard.Fragment}
-   * @see {Shard.Format}
-   * @see {Shard.Option}
-   * @see {SemVersion.Primitive}
-   */
-  export interface Full {
-    meta: {
-      name: string
-      author: string | string[]
-      description?: string
-      uuid: string
-      version: SemVersion.Primitive
-      format?: Shard.Format
-    },
-    format_version: SemVersion.Primitive
-    options?: Shard.Option[]
-  }
-  export namespace Full {
-    export const Schema: JSONSchemaType<Full> = {
-      type: 'object',
-      properties: {
-        meta: {
-          type: 'object',
-          properties: {
-            name: { type: 'string' },
-            author: {
-              oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }]
-            },
-            description: { type: 'string', nullable: true },
-            uuid: { type: 'string', format: 'uuid' },
-            version: SemVersion.Primitive.Schema,
-            format: { oneOf: [Shard.Format.Schema], nullable: true }
-          },
-          required: ['name', 'author', 'uuid', 'version'],
-          additionalProperties: false
-        },
-        format_version: SemVersion.Primitive.Schema,
-        options: {
-          type: 'array',
-          items: Option.Schema,
-          nullable: true
-        }
-      },
-      required: ['meta', 'format_version'],
-      additionalProperties: false
-    }
-
-    export const Validator = AJV_Instance.compile<Full>(Schema)
-
-    export function toFragment(shard: Shard.Full): Shard.Fragment {
-      return { uuid: shard.meta.uuid, version: shard.meta.version }
-    }
-  }
-  // endregion
-
-  // region Shard.Fragment
-  /**
-   * Contains minimal data. Mainly used **internally**
-   *
-   * ```ts
-   * uuid: string // Must be UUID v4
-   * version: SemVersionData
-   * ```
-   *
-   * @internal
-   * @see {Shard.Full}
-   * @see {SemVersion.Primitive}
-   */
-  export interface Fragment {
-    uuid: string
-    version: SemVersion.Primitive
-  }
-  export namespace Fragment {
-    export const Schema: JSONSchemaType<Fragment> = {
-      type: 'object',
-      properties: {
-        uuid: { type: 'string', format: 'uuid' },
-        version: SemVersion.Primitive.Schema
-      },
-      required: ['uuid', 'version'],
-      additionalProperties: false
-    }
-
-    export const Validator = AJV_Instance.compile<Fragment>(Schema)
-  }
-  // endregion
 
   // region Shard.Format
   export enum Format {
@@ -277,6 +173,111 @@ export namespace Shard {
     }
 
     export const Validator = AJV_Instance.compile<Option>(Schema)
+  }
+  // endregion
+
+  // region Shard.Full
+  /**
+   * Contains full data. Mainly used **externally**
+   *
+   * ```ts
+   * meta: {
+   *  name: string
+   *  author: string | string[]
+   *  description?: string
+   *  uuid: string // Must be UUID v4
+   *  version: SemVersion.Primitive
+   *  format?: Shard.Format
+   * }
+   * format_version: SemVersion.Primitive
+   * options?: Shard.Option[]
+   * ```
+   *
+   * @external
+   * @see {Shard.Fragment}
+   * @see {Shard.Format}
+   * @see {Shard.Option}
+   * @see {SemVersion.Primitive}
+   */
+  export interface Full {
+    meta: {
+      name: string
+      author: string | string[]
+      description?: string
+      uuid: string
+      version: SemVersion.Primitive
+      format?: Shard.Format
+    },
+    format_version: SemVersion.Primitive
+    options?: Shard.Option[]
+  }
+  export namespace Full {
+    export const Schema: JSONSchemaType<Full> = {
+      type: 'object',
+      properties: {
+        meta: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            author: {
+              oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }]
+            },
+            description: { type: 'string', nullable: true },
+            uuid: { type: 'string', format: 'uuid' },
+            version: SemVersion.Primitive.Schema,
+            format: { ...Shard.Format.Schema, nullable: true }
+          },
+          required: ['name', 'author', 'uuid', 'version'],
+          additionalProperties: false
+        },
+        format_version: SemVersion.Primitive.Schema,
+        options: {
+          type: 'array',
+          items: Option.Schema,
+          nullable: true
+        }
+      },
+      required: ['meta', 'format_version'],
+      additionalProperties: false
+    }
+
+    export const Validator = AJV_Instance.compile<Full>(Schema)
+
+    export function toFragment(shard: Shard.Full): Shard.Fragment {
+      return { uuid: shard.meta.uuid, version: shard.meta.version }
+    }
+  }
+  // endregion
+
+  // region Shard.Fragment
+  /**
+   * Contains minimal data. Mainly used **internally**
+   *
+   * ```ts
+   * uuid: string // Must be UUID v4
+   * version: SemVersionData
+   * ```
+   *
+   * @internal
+   * @see {Shard.Full}
+   * @see {SemVersion.Primitive}
+   */
+  export interface Fragment {
+    uuid: string
+    version: SemVersion.Primitive
+  }
+  export namespace Fragment {
+    export const Schema: JSONSchemaType<Fragment> = {
+      type: 'object',
+      properties: {
+        uuid: { type: 'string', format: 'uuid' },
+        version: SemVersion.Primitive.Schema
+      },
+      required: ['uuid', 'version'],
+      additionalProperties: false
+    }
+
+    export const Validator = AJV_Instance.compile<Fragment>(Schema)
   }
   // endregion
 
