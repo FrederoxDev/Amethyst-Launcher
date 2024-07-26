@@ -35,21 +35,21 @@ export namespace Profile {
   }
 
   export const Validator = AJV_Instance.compile<Profile>(Schema)
+
+  // region Profile.File
+  export type File = Profile[]
+
+  export namespace File {
+    export const Schema: JSONSchemaType<Profile.File> = {
+      type: 'array',
+      items: Profile.Schema
+    }
+
+    export const Validator = AJV_Instance.compile<Profile.File>(Profile.File.Schema)
+  }
+  // endregion
 }
 // endregion Profile
-
-// region ProfilesJSON
-export type ProfilesJSON = Profile[]
-
-export namespace ProfilesJSON {
-  export const Schema: JSONSchemaType<ProfilesJSON> = {
-    type: 'array',
-    items: Profile.Schema
-  }
-
-  export const Validator = AJV_Instance.compile<ProfilesJSON>(Schema)
-}
-// endregion ProfilesJSON
 
 export function GetProfiles(): Profile[] {
   if (!fs.existsSync(ProfilesFile)) return []
@@ -57,12 +57,12 @@ export function GetProfiles(): Profile[] {
   const text = fs.readFileSync(ProfilesFile, 'utf-8')
 
   const json = JSON.parse(text)
-  if (ProfilesJSON.Validator(json)) {
+  if (Profile.File.Validator(json)) {
     return json
   }
   else {
     Console.Group(Console.ErrorStr('Failed to parse `profiles.json`'), () => {
-      console.log(ProfilesJSON.Validator.errors)
+      console.log(Profile.File.Validator.errors)
     })
 
     return []
@@ -72,12 +72,12 @@ export function GetProfiles(): Profile[] {
 export function SetProfiles(profiles: Profile[]) {
   ValidatePath(ProfilesFile)
 
-  if (ProfilesJSON.Validator(profiles)) {
+  if (Profile.File.Validator(profiles)) {
     fs.writeFileSync(ProfilesFile, JSON.stringify(profiles, undefined, 4))
   }
   else {
     Console.Group(Console.ErrorStr('Failed to set `profiles.json`'), () => {
-      console.log(ProfilesJSON.Validator.errors)
+      console.log(Profile.File.Validator.errors)
     })
   }
 }
