@@ -30,13 +30,13 @@ export namespace Shard {
   export interface Full {
     meta: {
       name: string
-      authors: string | string[]
+      author: string | string[]
       description?: string
       uuid: string
       version: SemVersion.Primitive
-      min_launcher_version: SemVersion.Primitive
       format?: Shard.Format
-    }
+    },
+    format_version: SemVersion.Primitive
     options?: Shard.Option[]
   }
   export namespace Full {
@@ -47,25 +47,25 @@ export namespace Shard {
           type: 'object',
           properties: {
             name: { type: 'string' },
-            authors: {
+            author: {
               oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }]
             },
             description: { type: 'string', nullable: true },
             uuid: { type: 'string', format: 'uuid' },
             version: SemVersion.Primitive.Schema,
-            min_launcher_version: SemVersion.Primitive.Schema,
             format: { oneOf: [Shard.Format.Schema], nullable: true }
           },
-          required: ['name', 'authors', 'uuid', 'version', 'min_launcher_version'],
+          required: ['name', 'author', 'uuid', 'version'],
           additionalProperties: false
         },
+        format_version: SemVersion.Primitive.Schema,
         options: {
           type: 'array',
           items: Option.Schema,
           nullable: true
         }
       },
-      required: ['meta'],
+      required: ['meta', 'format_version'],
       additionalProperties: false
     }
 
