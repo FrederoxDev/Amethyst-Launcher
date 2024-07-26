@@ -11,9 +11,9 @@ import * as fs from 'fs'
 export interface Profile {
   name: string
   version: Version.Local
-  icon_path?: string
   runtime?: Shard.Fragment
-  mods?: Shard.Fragment[]
+  mods?: Shard.Fragment[],
+  icon_path?: string
 }
 
 export namespace Profile {
