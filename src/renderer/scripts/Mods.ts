@@ -1,4 +1,4 @@
-import { ModsFolder } from './Paths'
+import { FolderPaths } from './Paths'
 
 //////////////////// MOD CONFIG ////////////////////
 
@@ -71,13 +71,13 @@ export type ModList = {
 }
 
 export function GetMods(): ModList {
-  if (fs.existsSync(ModsFolder)) {
+  if (fs.existsSync(FolderPaths.Mods)) {
     const mods: ModList = {
       mods: [],
       runtimeMods: []
     }
 
-    const mod_directories = fs.readdirSync(ModsFolder, { withFileTypes: true }).filter(entry => entry.isDirectory())
+    const mod_directories = fs.readdirSync(FolderPaths.Mods, { withFileTypes: true }).filter(entry => entry.isDirectory())
 
     for (const mod_directory of mod_directories) {
       const dir_path = path.join(mod_directory.parentPath, mod_directory.name)

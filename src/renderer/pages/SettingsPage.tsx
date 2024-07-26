@@ -1,9 +1,9 @@
 import { UseAppState } from '../contexts/AppState'
-import { SemVersion } from '../scripts/SemVersion'
-import { IsRegistered, IsDownloaded } from '../scripts/VersionManager'
-import { GetPackagePath } from '../scripts/AppRegistry'
-import { AmethystFolder, LauncherConfigFile, MinecraftUWPFolder } from '../scripts/Paths'
-import { IsDevModeEnabled } from '../scripts/DeveloperMode'
+import { SemVersion } from '../scripts/types/SemVersion'
+import { IsRegistered, IsDownloaded } from '../scripts/functions/VersionManager'
+import { GetPackagePath } from '../scripts/functions/AppRegistry'
+import { FolderPaths, FilePaths } from '../scripts/Paths'
+import { IsDevModeEnabled } from '../scripts/functions/DeveloperMode'
 import ReadOnlyTextBox from '../components/ReadOnlyTextBox'
 import { useEffect, useState } from 'react'
 import MinecraftToggle from '../components/MinecraftToggle'
@@ -38,12 +38,12 @@ export default function SettingsPage() {
   }
 
   const updateCfgText = () => {
-    if (!fs.existsSync(LauncherConfigFile)) {
+    if (!fs.existsSync(FilePaths.LauncherConfig)) {
       setLauncherCfg('Launcher config does not exist...')
       return
     }
 
-    const data = fs.readFileSync(LauncherConfigFile, 'utf-8')
+    const data = fs.readFileSync(FilePaths.LauncherConfig, 'utf-8')
     setLauncherCfg(data)
   }
 
@@ -107,8 +107,8 @@ export default function SettingsPage() {
         <p>Is Registered Version Ours: {isRegisteredVerOurs ? 'true' : 'false'}</p>
         <p>Is windows developer mode: {isWindowsDevModeOn ? 'enabled' : 'disabled'}</p>
         <p>Install path: {installDir}</p>
-        <p>Amethyst Folder: {AmethystFolder}</p>
-        <p>Minecraft Folder: {MinecraftUWPFolder}</p>
+        <p>Amethyst Folder: {FolderPaths.Amethyst}</p>
+        <p>Minecraft Folder: {FolderPaths.MinecraftUWP}</p>
       </div>
 
       <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">

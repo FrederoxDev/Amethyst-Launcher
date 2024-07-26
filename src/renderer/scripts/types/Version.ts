@@ -1,8 +1,8 @@
-import { CachedVersionsFile, VersionsFile, VersionsFolder } from './Paths'
+import { FolderPaths, FilePaths } from '../Paths'
 import { SemVersion } from './SemVersion'
 import { Console } from './Console'
 
-import AJV_Instance from './AJV_Instance'
+import AJV_Instance from '../schemas/AJV_Instance'
 import { JSONSchemaType } from 'ajv'
 import * as fs from 'node:fs'
 
@@ -120,7 +120,7 @@ export namespace Version {
 //////////////////////////////////////////////////
 
 export function ValidateVersionsFile() {
-  const text = fs.readFileSync(VersionsFile, { encoding: 'utf8' })
+  const text = fs.readFileSync(FilePaths.Versions, { encoding: 'utf8' })
   const json = JSON.parse(text)
 
   Version.File.Validator(json)
@@ -131,8 +131,8 @@ export function ValidateVersionsFile() {
 export async function FetchAvailableVersions() {
   let last_write_time: Date = new Date(0)
 
-  if (fs.existsSync(CachedVersionsFile)) {
-    const file_stats = fs.statSync(CachedVersionsFile)
+  if (fs.existsSync(FilePaths.CachedVersions)) {
+    const file_stats = fs.statSync(FilePaths.CachedVersions)
     last_write_time = file_stats.mtime
   }
 
@@ -153,7 +153,7 @@ export async function FetchAvailableVersions() {
           const data = await fetch('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
           const end_time = performance.now()
           if (data.ok) {
-            fs.writeFileSync(CachedVersionsFile, await data.text())
+            fs.writeFileSync(FilePaths.CachedVersions, await data.text())
             Console.Group(Console.ResultStr('Successful'), () => {
               Console.Info(`Elapsed Time: ${Math.round((end_time - start_time + Number.EPSILON) * 100) / 100}ms`)
             })
@@ -174,7 +174,7 @@ export async function FetchAvailableVersions() {
 }
 
 export function GetCachedVersions() {
-  const text = fs.readFileSync(CachedVersionsFile, 'utf-8')
+  const text = fs.readFileSync(FilePaths.CachedVersions, 'utf-8')
   const json = JSON.parse(text)
 
   if (Version.Cached.File.Validator(json)) {
@@ -198,15 +198,15 @@ export function GetCachedVersions() {
 //////////////////////////////////////////////////
 
 export function GetVersionsFile(): Version.File {
-  if (fs.existsSync(VersionsFile)) {
-    const text = fs.readFileSync(VersionsFile, 'utf-8')
+  if (fs.existsSync(FilePaths.Versions)) {
+    const text = fs.readFileSync(FilePaths.Versions, 'utf-8')
     const json = JSON.parse(text)
     console.log(json)
   }
 
   return {
     versions: [],
-    default_path: VersionsFolder
+    default_path: FolderPaths.Versions
   }
 }
 

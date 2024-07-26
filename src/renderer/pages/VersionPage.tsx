@@ -2,7 +2,7 @@ import { GetInstalledVersionsFromFile, InstalledVersion, ValidateVersionsFile } 
 import { useState } from 'react'
 import { ipcRenderer } from 'electron'
 import PopupPanel from '../components/PopupPanel'
-import { Console } from '../scripts/Console'
+import { Console } from '../scripts/types/Console'
 
 import * as fs from 'fs'
 import * as child from 'child_process'

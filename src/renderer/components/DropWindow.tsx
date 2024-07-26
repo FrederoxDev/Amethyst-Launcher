@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { ModsFolder } from '../scripts/Paths'
+import { FolderPaths } from '../scripts/Paths'
 import { UseAppState } from '../contexts/AppState'
 import { Extractor } from '../scripts/backend/Extractor'
-import { CopyRecursive } from '../scripts/Files'
+import { CopyRecursive } from '../scripts/functions/Files'
 
 import * as fs from 'fs'
 import * as path from 'path'
@@ -64,7 +64,7 @@ export default function DropWindow() {
     function ImportZIP(zip_path: string) {
       try {
         const zip_name = path.basename(zip_path)
-        const extracted_folder_path = path.join(ModsFolder, zip_name.slice(0, -'.zip'.length))
+        const extracted_folder_path = path.join(FolderPaths.Mods, zip_name.slice(0, -'.zip'.length))
         console.log(extracted_folder_path)
         Extractor.extractFile(zip_path, extracted_folder_path, [], undefined, success => {
           if (!success) {
@@ -81,7 +81,7 @@ export default function DropWindow() {
     // IMPORT FOLDER
     function ImportFolder(folder_path: string) {
       try {
-        CopyRecursive(folder_path, ModsFolder)
+        CopyRecursive(folder_path, FolderPaths.Mods)
       } catch (error) {
         SetError((error as Error).message)
       }

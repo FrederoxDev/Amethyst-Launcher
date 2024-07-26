@@ -1,10 +1,10 @@
-import { VersionsFolder } from './Paths'
-import { MinecraftVersion } from './Versions'
+import { FolderPaths } from '../Paths'
+import { MinecraftVersion } from '../Versions'
 
 import * as child from 'child_process'
 import * as path from 'path'
-import { SemVersion } from './SemVersion'
-import { Console } from './Console'
+import { SemVersion } from '../types/SemVersion'
+import { Console } from '../types/Console'
 
 // .node type so window.require is needed
 const regedit = window.require('regedit-rs') as typeof import('regedit-rs')
@@ -76,7 +76,7 @@ export async function RegisterVersion(version: MinecraftVersion) {
   {
     // Register New Version
     const appxManifest = path.join(
-      VersionsFolder,
+      FolderPaths.Versions,
       `Minecraft-${SemVersion.toPrimitive(version.version)}`,
       'AppxManifest.xml'
     )

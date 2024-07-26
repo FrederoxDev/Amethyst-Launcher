@@ -1,4 +1,4 @@
-import { LauncherConfigFile } from './Paths'
+import { FilePaths } from './Paths'
 
 import * as fs from 'fs'
 import * as path from 'path'
@@ -16,7 +16,7 @@ export function GetLauncherConfig(): LauncherConfig {
   let data: Partial<LauncherConfig> = {}
 
   try {
-    const jsonData = fs.readFileSync(LauncherConfigFile, 'utf-8')
+    const jsonData = fs.readFileSync(FilePaths.LauncherConfig, 'utf-8')
     data = JSON.parse(jsonData)
   } catch {
     console.error(`Failed to read/parse the launcherConfig file`)
@@ -34,6 +34,6 @@ export function GetLauncherConfig(): LauncherConfig {
 }
 
 export function SetLauncherConfig(config: LauncherConfig) {
-  fs.mkdirSync(path.dirname(LauncherConfigFile), { recursive: true })
-  fs.writeFileSync(LauncherConfigFile, JSON.stringify(config, undefined, 4))
+  fs.mkdirSync(path.dirname(FilePaths.LauncherConfig), { recursive: true })
+  fs.writeFileSync(FilePaths.LauncherConfig, JSON.stringify(config, undefined, 4))
 }

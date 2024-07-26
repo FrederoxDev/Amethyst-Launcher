@@ -1,6 +1,6 @@
 import { JSONSchemaType } from 'ajv'
 import { SemVersion } from './SemVersion'
-import AJV_Instance from './AJV_Instance'
+import AJV_Instance from '../schemas/AJV_Instance'
 
 // region Shard
 export namespace Shard {

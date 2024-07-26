@@ -1,4 +1,4 @@
-import { ValidatePath, ProfilesFile } from './Paths'
+import { FilePaths, ValidatePath } from './Paths'
 import { InstalledVersion } from './Versions'
 
 import * as fs from 'fs'
@@ -12,9 +12,9 @@ export interface Profile {
 }
 
 export function GetProfiles(): Profile[] {
-  if (!fs.existsSync(ProfilesFile)) return []
+  if (!fs.existsSync(FilePaths.Profiles)) return []
 
-  const json_data = fs.readFileSync(ProfilesFile, 'utf-8')
+  const json_data = fs.readFileSync(FilePaths.Profiles, 'utf-8')
   try {
     return JSON.parse(json_data)
   } catch {
@@ -23,6 +23,6 @@ export function GetProfiles(): Profile[] {
 }
 
 export function SetProfiles(profiles: Profile[]) {
-  ValidatePath(ProfilesFile)
-  fs.writeFileSync(ProfilesFile, JSON.stringify(profiles, undefined, 4))
+  ValidatePath(FilePaths.Profiles)
+  fs.writeFileSync(FilePaths.Profiles, JSON.stringify(profiles, undefined, 4))
 }

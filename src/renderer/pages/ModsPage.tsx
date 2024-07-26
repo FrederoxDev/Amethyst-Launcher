@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Panel from '../components/Panel'
 import MinecraftButton from '../components/MinecraftButton'
-import { MinecraftUWPFolder, ModsFolder } from '../scripts/Paths'
+import { FolderPaths } from '../scripts/Paths'
 
 import { ValidateMod, ModConfig } from '../scripts/Mods'
 import PopupPanel from '../components/PopupPanel'
@@ -17,10 +17,10 @@ type ModErrorInfo = { modIdentifier: string; description?: string; modErrors: st
 function getAllMods(): ModErrorInfo[] {
   const results: ModErrorInfo[] = []
 
-  if (!fs.existsSync(ModsFolder)) return results
+  if (!fs.existsSync(FolderPaths.Mods)) return results
 
   const allModNames = fs
-    .readdirSync(ModsFolder, { withFileTypes: true })
+    .readdirSync(FolderPaths.Mods, { withFileTypes: true })
     .filter(f => f.isDirectory())
     .map(dir => dir.name)
 
@@ -37,7 +37,7 @@ function getAllMods(): ModErrorInfo[] {
     }
 
     // Validate that it has a config file
-    const modConfigPath = path.join(ModsFolder, modIdentifier, 'mod.json')
+    const modConfigPath = path.join(FolderPaths.Mods, modIdentifier, 'mod.json')
 
     if (!fs.existsSync(modConfigPath)) {
       modErrors.push(`Missing mod.json configuration file inside mod folder.`)
@@ -63,14 +63,14 @@ function getAllMods(): ModErrorInfo[] {
 
 const openModsFolder = () => {
   // Don't reveal in explorer unless there is an existing minecraft folder
-  if (!fs.existsSync(MinecraftUWPFolder)) {
+  if (!fs.existsSync(FolderPaths.MinecraftUWP)) {
     alert('Minecraft is not currently installed')
     return
   }
 
-  if (!fs.existsSync(ModsFolder)) fs.mkdirSync(ModsFolder, { recursive: true })
+  if (!fs.existsSync(FolderPaths.Mods)) fs.mkdirSync(FolderPaths.Mods, { recursive: true })
 
-  const startGameCmd = `explorer "${ModsFolder}"`
+  const startGameCmd = `explorer "${FolderPaths.Mods}"`
   child.spawn(startGameCmd, { shell: true })
 }
 

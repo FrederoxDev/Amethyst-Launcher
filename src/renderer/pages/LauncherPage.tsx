@@ -1,8 +1,8 @@
 import Dropdown from '../components/Dropdown'
 import MinecraftButton from '../components/MinecraftButton'
 import { UseAppState } from '../contexts/AppState'
-import { SemVersion } from '../scripts/SemVersion'
-import { IsDevModeEnabled, TryEnableDevMode } from '../scripts/DeveloperMode'
+import { SemVersion } from '../scripts/types/SemVersion'
+import { IsDevModeEnabled, TryEnableDevMode } from '../scripts/functions/DeveloperMode'
 import {
   CleanupInstall,
   CreateLock,
@@ -12,12 +12,12 @@ import {
   IsDownloaded,
   IsLocked,
   IsRegistered
-} from '../scripts/VersionManager'
-import { RegisterVersion, UnregisterCurrent } from '../scripts/AppRegistry'
+} from '../scripts/functions/VersionManager'
+import { RegisterVersion, UnregisterCurrent } from '../scripts/functions/AppRegistry'
 import { GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
 import child from 'child_process'
 import Panel from '../components/Panel'
-import { Console } from '../scripts/Console'
+import { Console } from '../scripts/types/Console'
 
 export default function LauncherPage() {
   const {

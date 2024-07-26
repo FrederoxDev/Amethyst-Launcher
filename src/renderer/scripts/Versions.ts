@@ -1,6 +1,6 @@
-import { VersionsFolder, CachedVersionsFile, VersionsFile } from './Paths'
-import { SemVersion } from './SemVersion'
-import { Console } from './Console'
+import { FilePaths, FolderPaths } from './Paths'
+import { SemVersion } from './types/SemVersion'
+import { Console } from './types/Console'
 
 import * as fs from 'fs'
 import * as path from 'path'
@@ -88,8 +88,8 @@ export interface InstalledVersion {
 export async function FetchMinecraftVersions() {
   let lastWriteTime: Date = new Date(0)
 
-  if (fs.existsSync(CachedVersionsFile)) {
-    const fileInfo = fs.statSync(CachedVersionsFile)
+  if (fs.existsSync(FilePaths.CachedVersions)) {
+    const fileInfo = fs.statSync(FilePaths.CachedVersions)
     lastWriteTime = fileInfo.mtime
   }
 
@@ -110,7 +110,7 @@ export async function FetchMinecraftVersions() {
           const data = await fetch('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
           const end_time = performance.now()
           if (data.ok) {
-            fs.writeFileSync(CachedVersionsFile, await data.text())
+            fs.writeFileSync(FilePaths.CachedVersions, await data.text())
             Console.Group(Console.ResultStr('Successful'), () => {
               Console.Info(`Elapsed Time: ${Math.round((end_time - start_time + Number.EPSILON) * 100) / 100}ms`)
             })
@@ -129,7 +129,7 @@ export async function FetchMinecraftVersions() {
     Console.EndGroup()
   }
 
-  const versionData = fs.readFileSync(CachedVersionsFile, 'utf-8')
+  const versionData = fs.readFileSync(FilePaths.CachedVersions, 'utf-8')
   const rawJson = JSON.parse(versionData)
   const versions: MinecraftVersion[] = []
 
@@ -149,10 +149,10 @@ export async function FetchMinecraftVersions() {
 ////////////////////////////////////////////////////////////
 
 export function GetInstalledVersions(): MinecraftVersion[] {
-  if (fs.existsSync(VersionsFolder)) {
+  if (fs.existsSync(FolderPaths.Versions)) {
     const version_list: MinecraftVersion[] = []
 
-    const version_dirs = fs.readdirSync(VersionsFolder, { withFileTypes: true }).filter(entry => entry.isDirectory())
+    const version_dirs = fs.readdirSync(FolderPaths.Versions, { withFileTypes: true }).filter(entry => entry.isDirectory())
 
     for (const version_dir of version_dirs) {
       const dir_path = path.join(version_dir.parentPath, version_dir.name)
@@ -179,15 +179,15 @@ export function GetInstalledVersions(): MinecraftVersion[] {
 ////////////////////////////////////////////////////////////
 
 export function ValidateVersionsFile(): void {
-  if (!fs.existsSync(VersionsFile)) {
+  if (!fs.existsSync(FilePaths.Versions)) {
     const default_version_file: VersionsFileObject = {
       installed_versions: [],
-      default_installation_path: VersionsFolder
+      default_installation_path: FolderPaths.Versions
     }
 
     const versions_file_string = JSON.stringify(default_version_file, undefined, 4)
 
-    fs.writeFileSync(VersionsFile, versions_file_string)
+    fs.writeFileSync(FilePaths.Versions, versions_file_string)
   }
 
   const installed_versions = GetInstalledVersionsFromFile().filter(version => {
@@ -199,19 +199,19 @@ export function ValidateVersionsFile(): void {
   for (const old_version of old_versions) {
     if (installed_versions.find(version => version.version.toString() === old_version.toString()) === undefined) {
       installed_versions.push({
-        path: path.join(VersionsFolder, `Minecraft-${SemVersion.toPrimitive(old_version.version)}`),
+        path: path.join(FolderPaths.Versions, `Minecraft-${SemVersion.toPrimitive(old_version.version)}`),
         version: old_version
       })
     }
   }
 
-  if (fs.existsSync(VersionsFile)) {
-    const version_file_text = fs.readFileSync(VersionsFile, 'utf-8')
+  if (fs.existsSync(FilePaths.Versions)) {
+    const version_file_text = fs.readFileSync(FilePaths.Versions, 'utf-8')
     const version_file_data: VersionsFileObject = JSON.parse(version_file_text) as VersionsFileObject
 
     version_file_data.installed_versions = installed_versions
 
-    fs.writeFileSync(VersionsFile, JSON.stringify(version_file_data, undefined, 4))
+    fs.writeFileSync(FilePaths.Versions, JSON.stringify(version_file_data, undefined, 4))
   }
 }
 
@@ -220,8 +220,8 @@ export function ValidateVersionsFile(): void {
 export function GetInstalledVersionsFromFile(): InstalledVersion[] {
   let installed_versions: InstalledVersion[] = []
 
-  if (fs.existsSync(VersionsFile)) {
-    const version_file_text = fs.readFileSync(VersionsFile, 'utf-8')
+  if (fs.existsSync(FilePaths.Versions)) {
+    const version_file_text = fs.readFileSync(FilePaths.Versions, 'utf-8')
     const version_file_data: VersionsFileObject = VersionsFileObject.fromString(version_file_text)
 
     installed_versions = version_file_data.installed_versions
@@ -246,7 +246,7 @@ export function GetInstalledVersionPath(version: MinecraftVersion): string | und
 ////////////////////////////////////////////////////////////
 
 export function FindMinecraftVersion(sem_version: SemVersion) {
-  const versionData = fs.readFileSync(CachedVersionsFile, 'utf-8')
+  const versionData = fs.readFileSync(FilePaths.CachedVersions, 'utf-8')
   const rawJson = JSON.parse(versionData)
 
   for (const version of rawJson) {

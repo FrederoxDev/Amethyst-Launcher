@@ -1,5 +1,5 @@
-import { ValidatePath, ProfilesFile } from './Paths'
-import AJV_Instance from './AJV_Instance'
+import { FilePaths, ValidatePath } from '../Paths'
+import AJV_Instance from '../schemas/AJV_Instance'
 import { Console } from './Console'
 import { Version } from './Version'
 import { Shard } from './Shard'
@@ -52,9 +52,9 @@ export namespace Profile {
 // endregion Profile
 
 export function GetProfiles(): Profile[] {
-  if (!fs.existsSync(ProfilesFile)) return []
+  if (!fs.existsSync(FilePaths.Profiles)) return []
 
-  const text = fs.readFileSync(ProfilesFile, 'utf-8')
+  const text = fs.readFileSync(FilePaths.Profiles, 'utf-8')
 
   const json = JSON.parse(text)
   if (Profile.File.Validator(json)) {
@@ -70,10 +70,10 @@ export function GetProfiles(): Profile[] {
 }
 
 export function SetProfiles(profiles: Profile[]) {
-  ValidatePath(ProfilesFile)
+  ValidatePath(FilePaths.Profiles)
 
   if (Profile.File.Validator(profiles)) {
-    fs.writeFileSync(ProfilesFile, JSON.stringify(profiles, undefined, 4))
+    fs.writeFileSync(FilePaths.Profiles, JSON.stringify(profiles, undefined, 4))
   }
   else {
     Console.Group(Console.ErrorStr('Failed to set `profiles.json`'), () => {

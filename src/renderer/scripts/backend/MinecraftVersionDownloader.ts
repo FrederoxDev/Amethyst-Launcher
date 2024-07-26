@@ -1,6 +1,6 @@
 import { Downloader } from './Downloader'
 import { ActionComplete, DownloadProgress } from './Progress'
-import { Console } from '../Console'
+import { Console } from '../types/Console'
 
 class Protocol {
   static DEFAULT_URL = 'https://fe3.delivery.mp.microsoft.com/ClientWebService/client.asmx'

@@ -1,5 +1,5 @@
 import { JSONSchemaType } from 'ajv'
-import AJV_Instance from './AJV_Instance'
+import AJV_Instance from '../schemas/AJV_Instance'
 
 // region SemVersion
 /**
