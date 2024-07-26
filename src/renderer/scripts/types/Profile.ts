@@ -22,7 +22,7 @@ export namespace Profile {
     properties: {
       name: { type: 'string' },
       version: Version.Local.Schema,
-      runtime: { ...Shard.Fragment.Schema, nullable: true },
+      runtime: { oneOf: [Shard.Fragment.Schema], nullable: true },
       mods: {
         type: 'array',
         items: Shard.Fragment.Schema,

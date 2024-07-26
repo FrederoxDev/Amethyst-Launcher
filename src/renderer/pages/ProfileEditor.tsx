@@ -17,7 +17,7 @@ export default function ProfileEditor() {
   const [profileName, setProfileName] = useState('')
   const [profileActiveMods, setProfileActiveMods] = useState<Shard.Fragment[] | undefined>(undefined)
   const [profileRuntime, setProfileRuntime] = useState<Shard.Fragment | undefined>(undefined)
-  const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<Version.Local>({ sem_version: "1.21.0.3", uuid: "21c7d413-83d5-45de-b8b2-e9e6f87fb5fe", format: 0})
+  const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<Version.Local>()
   // const [profileInstallDir, setProfileInstallDir] = useState<string>(GetDefaultInstallPath())
 
   const { mods, runtimes, versions, profiles, SetProfiles, selected_profile, saveData, SetMods } = UseAppState()
