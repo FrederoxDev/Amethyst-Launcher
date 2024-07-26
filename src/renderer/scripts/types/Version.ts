@@ -73,7 +73,7 @@ export namespace Version {
 
   // region Version.Local
   export interface Local {
-    path?: string,
+    path: string,
     uuid: string,
     sem_version: SemVersion.Primitive,
     format: Format
@@ -83,12 +83,12 @@ export namespace Version {
     export const Schema: JSONSchemaType<Local> = {
       type: 'object',
       properties: {
-        path: { type: 'string', nullable: true },
+        path: { type: 'string' },
         uuid: { type: 'string', format: 'uuid' },
         sem_version: SemVersion.Primitive.Schema,
         format: Format.Schema
       },
-      required: ['uuid', 'sem_version', 'format'],
+      required: ['path', 'uuid', 'sem_version', 'format'],
       additionalProperties: false
     }
 
@@ -227,9 +227,7 @@ export function RefreshVersionsFile() {
   }
 
   const versions = GetVersions().filter(v => {
-    if (v.path) {
-      return fs.existsSync(v.path)
-    }
+    fs.existsSync(v.path)
   })
 
   if (fs.existsSync(FolderPaths.Versions)) {

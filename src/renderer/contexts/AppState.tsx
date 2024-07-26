@@ -3,17 +3,17 @@ import React, { createContext, ReactNode, useCallback, useContext, useEffect, us
 import { Version, GetCachedVersions } from '../scripts/types/Version'
 
 import { LauncherConfig, GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
-import { GetProfiles, Profile } from '../scripts/types/Profile'
+import { GetProfiles, Profile } from '../scripts/Profiles'
 
 import { ipcRenderer } from 'electron'
-import { GetShards, Shard } from '../scripts/types/Shard'
+import { GetMods } from '../scripts/Mods'
 
 interface TAppStateContext {
-  mods: Shard.Full[]
-  SetMods: React.Dispatch<React.SetStateAction<Shard.Full[]>>
+  mods: string[]
+  SetMods: React.Dispatch<React.SetStateAction<string[]>>
 
-  runtimes: Shard.Full[]
-  SetRuntimes: React.Dispatch<React.SetStateAction<Shard.Full[]>>
+  runtimes: string[]
+  SetRuntimes: React.Dispatch<React.SetStateAction<string[]>>
 
   versions: Version[]
   SetVersions: React.Dispatch<React.SetStateAction<Version[]>>
@@ -52,8 +52,8 @@ interface TAppStateContext {
 const AppStateContext = createContext<TAppStateContext | undefined>(undefined)
 
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
-  const [mods, SetMods] = useState<Shard.Full[]>([])
-  const [runtimes, SetRuntimes] = useState<Shard.Full[]>([])
+  const [mods, SetMods] = useState<string[]>([])
+  const [runtimes, SetRuntimes] = useState<string[]>([])
   const [versions, SetVersions] = useState<Version[]>([])
   const [profiles, SetProfiles] = useState<Profile[]>([])
   const [selected_profile, SetSelectedProfile] = useState(0)
@@ -69,9 +69,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     SetProfiles(GetProfiles())
 
-    const shards = GetShards()
-    SetRuntimes(shards.runtimes)
-    SetMods(shards.mods)
+    const modList = GetMods()
+    SetRuntimes(['Vanilla', ...modList.runtimeMods])
+    SetMods(modList.mods)
 
     const readConfig = GetLauncherConfig()
     SetKeepLauncherOpen(readConfig.keep_open ?? true)
@@ -87,21 +87,11 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const saveData = useCallback(() => {
     SetProfiles(profiles)
 
-    const mods = GetShards().mods.filter(shard => {
-      profiles[selected_profile]?.mods?.includes({ uuid: shard.meta.uuid, version: shard.meta.version })
-    }).map(mod => {
-      return mod.meta.name
-    })
-
-    const runtime = GetShards().runtimes.find(shard => {
-      return profiles[selected_profile]?.runtime?.uuid === shard.meta.uuid
-    })?.meta.name
-
     const launcherConfig: LauncherConfig = {
       developer_mode: developer_mode,
       keep_open: keep_launcher_open,
-      mods: mods,
-      runtime: runtime ?? '',
+      mods: profiles[selected_profile]?.mods ?? [],
+      runtime: profiles[selected_profile]?.runtime ?? '',
       selected_profile: selected_profile,
       ui_theme: ui_theme
     }

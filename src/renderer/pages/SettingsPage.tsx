@@ -28,7 +28,7 @@ export default function SettingsPage() {
   const isWindowsDevModeOn = IsDevModeEnabled()
 
   if (profile) {
-    minecraftVersion = versions.find(version => SemVersion.toPrimitive(version.sem_version) === profile.version.sem_version)
+    minecraftVersion = versions.find(version => SemVersion.toPrimitive(version.sem_version) === profile.minecraft_version)
 
     if (minecraftVersion) {
       isVerDownloaded = IsDownloaded(minecraftVersion.sem_version)
