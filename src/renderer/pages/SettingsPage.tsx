@@ -10,12 +10,13 @@ import MinecraftToggle from '../components/MinecraftToggle'
 import MinecraftRadialButtonPanel from '../components/MinecraftRadialButtonPanel'
 
 import * as fs from 'fs'
+import { Version } from '../scripts/types/Version'
 
 export default function SettingsPage() {
   const { keep_launcher_open, SetKeepLauncherOpen, developer_mode, SetDeveloperMode, ui_theme, SetUITheme } =
     UseAppState()
 
-  const { profiles, selected_profile, minecraft_versions } = UseAppState()
+  const { profiles, selected_profile, versions } = UseAppState()
   const [launcherCfg, setLauncherCfg] = useState<string>('')
 
   const profile = profiles[selected_profile]
@@ -27,11 +28,10 @@ export default function SettingsPage() {
   const isWindowsDevModeOn = IsDevModeEnabled()
 
   if (profile) {
-    const semVersion = SemVersion.fromPrimitive(profile.minecraft_version)
-    minecraftVersion = minecraft_versions.find(version => version.version.toString() === semVersion.toString())
+    minecraftVersion = versions.find(version => SemVersion.toPrimitive(version.sem_version) === profile.minecraft_version)
 
     if (minecraftVersion) {
-      isVerDownloaded = IsDownloaded(minecraftVersion.version)
+      isVerDownloaded = IsDownloaded(minecraftVersion.sem_version)
       isRegisteredVerOurs = IsRegistered(minecraftVersion)
       installDir = GetPackagePath() ?? 'Could not find installed.'
     }
@@ -102,7 +102,7 @@ export default function SettingsPage() {
 
       <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px] minecraft-seven text-[#BCBEC0] text-[14px] shrink-0 overflow-x-hidden">
         <p className="text-white">Debug Info</p>
-        <p>Minecraft Version: {minecraftVersion ? minecraftVersion.toString() : 'No version found.'}</p>
+        <p>Minecraft Version: {minecraftVersion ? Version.toString(minecraftVersion) : 'No version found.'}</p>
         <p>Is version downloaded: {isVerDownloaded ? 'true' : 'false'}</p>
         <p>Is Registered Version Ours: {isRegisteredVerOurs ? 'true' : 'false'}</p>
         <p>Is windows developer mode: {isWindowsDevModeOn ? 'enabled' : 'disabled'}</p>

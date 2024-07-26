@@ -1,6 +1,7 @@
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react'
 
-import { FetchMinecraftVersions, MinecraftVersion } from '../scripts/Versions'
+import { Version, GetCachedVersions } from '../scripts/types/Version'
+
 import { LauncherConfig, GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
 import { GetProfiles, Profile } from '../scripts/Profiles'
 
@@ -14,8 +15,8 @@ interface TAppStateContext {
   runtimes: string[]
   SetRuntimes: React.Dispatch<React.SetStateAction<string[]>>
 
-  minecraft_versions: MinecraftVersion[]
-  SetMinecraftVersions: React.Dispatch<React.SetStateAction<MinecraftVersion[]>>
+  versions: Version[]
+  SetVersions: React.Dispatch<React.SetStateAction<Version[]>>
 
   profiles: Profile[]
   SetProfiles: React.Dispatch<React.SetStateAction<Profile[]>>
@@ -53,7 +54,7 @@ const AppStateContext = createContext<TAppStateContext | undefined>(undefined)
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [mods, SetMods] = useState<string[]>([])
   const [runtimes, SetRuntimes] = useState<string[]>([])
-  const [minecraft_versions, SetMinecraftVersions] = useState<MinecraftVersion[]>([])
+  const [versions, SetVersions] = useState<Version[]>([])
   const [profiles, SetProfiles] = useState<Profile[]>([])
   const [selected_profile, SetSelectedProfile] = useState(0)
   const [ui_theme, SetUITheme] = useState('System')
@@ -78,9 +79,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     SetSelectedProfile(readConfig.selected_profile ?? 0)
     SetUITheme(readConfig.ui_theme ?? 'Light')
 
-    FetchMinecraftVersions().then(versions => {
-      SetMinecraftVersions(versions)
-    })
+    SetVersions(GetCachedVersions())
   }, [])
 
   const [hasInitialized, setHasInitialized] = useState(false)
@@ -120,8 +119,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         SetMods: SetMods,
         runtimes: runtimes,
         SetRuntimes: SetRuntimes,
-        minecraft_versions: minecraft_versions,
-        SetMinecraftVersions: SetMinecraftVersions,
+        versions: versions,
+        SetVersions: SetVersions,
         profiles: profiles,
         SetProfiles: SetProfiles,
         selected_profile: selected_profile,

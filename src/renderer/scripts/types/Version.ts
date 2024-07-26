@@ -5,6 +5,7 @@ import { Console } from './Console'
 import AJV_Instance from '../schemas/AJV_Instance'
 import { JSONSchemaType } from 'ajv'
 import * as fs from 'node:fs'
+import path from 'path'
 
 /////////////////////////////
 // EXPERIMENTAL VERSIONING //
@@ -24,30 +25,6 @@ export namespace Version {
   export function toString(data: Version) {
     return `${SemVersion.toPrimitive(data.sem_version)}${['', '-beta', '-preview'][data.format]}`
   }
-
-  // region Version.File
-  export interface File {
-    default_path: string
-    versions: Version.Fragment[]
-  }
-
-  export namespace File {
-    export const Schema: JSONSchemaType<Version.File> = {
-      type: 'object',
-      properties: {
-        default_path: { type: 'string' },
-        versions: {
-          type: 'array',
-          items: Version.Fragment.Schema
-        }
-      },
-      required: ['default_path', 'versions'],
-      additionalProperties: false
-    }
-
-    export const Validator = AJV_Instance.compile<Version.File>(Version.File.Schema)
-  }
-  // endregion
 
   // region Version.Fragment
   export interface Fragment {
@@ -112,6 +89,53 @@ export namespace Version {
     }
 
     export const Validator = AJV_Instance.compile<Version.Format>(Version.Format.Schema)
+  }
+  // endregion
+
+  // region Version.Local
+  export interface Local {
+    path: string,
+    uuid: string,
+    sem_version: SemVersion.Primitive,
+    format: Version.Format
+  }
+
+  export namespace Local {
+    export const Schema: JSONSchemaType<Version.Local> = {
+      type: 'object',
+      properties: {
+        path: { type: 'string' },
+        uuid: { type: 'string', format: 'uuid' },
+        sem_version: SemVersion.Primitive.Schema,
+        format: Version.Format.Schema
+      },
+      required: ['path', 'uuid', 'sem_version', 'format'],
+      additionalProperties: false
+    }
+  }
+  // endregion
+
+  // region Version.File
+  export interface File {
+    default_path: string
+    versions: Version.Local[]
+  }
+
+  export namespace File {
+    export const Schema: JSONSchemaType<Version.File> = {
+      type: 'object',
+      properties: {
+        default_path: { type: 'string' },
+        versions: {
+          type: 'array',
+          items: Version.Local.Schema
+        }
+      },
+      required: ['default_path', 'versions'],
+      additionalProperties: false
+    }
+
+    export const Validator = AJV_Instance.compile<Version.File>(Version.File.Schema)
   }
   // endregion
 }
@@ -195,13 +219,82 @@ export function GetCachedVersions() {
   }
 }
 
+export function FindCachedVersion(uuid: string): Version | undefined
+export function FindCachedVersion(version: SemVersion): Version | undefined
+export function FindCachedVersion(from: string | SemVersion): Version | undefined {
+  const cached_versions: Version[] = GetCachedVersions()
+
+  if (typeof from === 'string') {
+    return cached_versions.find(v => v.uuid === from)
+  }
+  else {
+    return cached_versions.find(v => SemVersion.toPrimitive(v.sem_version) === SemVersion.toPrimitive(from))
+  }
+}
+
 //////////////////////////////////////////////////
+
+export function RefreshVersionsFile() {
+  if (!fs.existsSync(FilePaths.Versions)) {
+    const default_version_file: Version.File = {
+      versions: [],
+      default_path: FolderPaths.Versions
+    }
+
+    const versions_file_string = JSON.stringify(default_version_file, undefined, 4)
+    fs.writeFileSync(FilePaths.Versions, versions_file_string)
+  }
+
+  const versions = GetVersions().filter(v => {
+    fs.existsSync(v.path)
+  })
+
+  if (fs.existsSync(FolderPaths.Versions)) {
+    const version_dirs = fs.readdirSync(FolderPaths.Versions, { withFileTypes: true }).filter(entry => entry.isDirectory())
+    for (const version_dir of version_dirs) {
+      const dir_path = path.join(version_dir.parentPath, version_dir.name)
+
+      if (!(versions.map(v => { return v.path }).includes(dir_path))) {
+        if (version_dir.name.startsWith('Minecraft-')) {
+          const sem_version = SemVersion.fromPrimitive(version_dir.name.slice('Minecraft-'.length))
+
+          const minecraft_version = FindCachedVersion(sem_version)
+
+          if (minecraft_version) {
+            versions.push({ path: dir_path, uuid: minecraft_version.uuid, sem_version: SemVersion.toPrimitive(minecraft_version.sem_version), format: minecraft_version.format })
+          }
+        }
+      }
+    }
+  }
+
+  if (fs.existsSync(FilePaths.Versions)) {
+    const version_file = GetVersionsFile()
+
+    version_file.versions = versions
+
+    fs.writeFileSync(FilePaths.Versions, JSON.stringify(version_file, undefined, 4))
+  }
+}
 
 export function GetVersionsFile(): Version.File {
   if (fs.existsSync(FilePaths.Versions)) {
     const text = fs.readFileSync(FilePaths.Versions, 'utf-8')
     const json = JSON.parse(text)
-    console.log(json)
+
+    if (Version.File.Validator(json)) {
+      return json as Version.File
+    }
+    else {
+      Console.Group(Console.ErrorStr('Failed to parse `versions.json`'), () => {
+        console.log(Version.File.Validator.errors)
+      })
+
+      return {
+        versions: [],
+        default_path: FolderPaths.Versions
+      }
+    }
   }
 
   return {
@@ -210,10 +303,16 @@ export function GetVersionsFile(): Version.File {
   }
 }
 
-export function GetVersions(): Version.Fragment[] {
+export function GetVersions(): Version.Local[] {
   return GetVersionsFile().versions
 }
 
 export function GetDefaultVersionPath(): string {
   return GetVersionsFile().default_path
+}
+
+export function FindVersionPath(version: Version): string | undefined {
+  return GetVersions().find(v => {
+    return v.uuid === version.uuid
+  })?.path
 }

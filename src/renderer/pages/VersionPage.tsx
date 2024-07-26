@@ -1,4 +1,4 @@
-import { GetInstalledVersionsFromFile, InstalledVersion, ValidateVersionsFile } from '../scripts/Versions'
+import { GetVersions, RefreshVersionsFile, Version } from '../scripts/types/Version'
 import { useState } from 'react'
 import { ipcRenderer } from 'electron'
 import PopupPanel from '../components/PopupPanel'
@@ -11,7 +11,7 @@ import ListItem from '../components/ListItem'
 import List from '../components/List'
 
 type VersionButtonProps = {
-  version: InstalledVersion
+  version: Version.Local
   onInspect: () => void
   onDelete: () => void
 }
@@ -37,7 +37,7 @@ const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => 
             } else {
               onDelete()
               Console.Group(Console.ActionStr(`Delete Version`), () => {
-                Console.Info(`Version: ${version.version.toString()}`)
+                Console.Info(`Version: ${version.sem_version}`)
                 Console.Group(Console.InfoStr('Path'), () => {
                   console.log(version.path)
                 })
@@ -63,7 +63,7 @@ const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => 
     <ListItem>
       <div className="flex flex-row w-full justify-between items-center">
         <div className="h-full flex flex-col justify-center items-center min-w-0 p-[8px]">
-          <p className="minecraft-seven text-[#FFFFFF] text-[16px]">{version.version.toString()}</p>
+          <p className="minecraft-seven text-[#FFFFFF] text-[16px]">{version.sem_version}</p>
           {/*<p className="minecraft-seven text-[#B1B2B5] text-[14px] overflow-ellipsis overflow-hidden whitespace-nowrap">{"Path:"} ({version.path})</p>*/}
         </div>
         <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-center">
@@ -94,15 +94,15 @@ const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => 
 }
 
 export default function VersionPage() {
-  ValidateVersionsFile()
-  const [versions, SetVersions] = useState<InstalledVersion[]>(GetInstalledVersionsFromFile())
+  RefreshVersionsFile()
+  const [versions, SetVersions] = useState<Version.Local[]>(GetVersions())
 
   function RefreshVersions() {
-    ValidateVersionsFile()
-    SetVersions(GetInstalledVersionsFromFile())
+    RefreshVersionsFile()
+    SetVersions(GetVersions())
   }
 
-  const [selected_version, SetSelectedVersion] = useState<InstalledVersion | undefined>(undefined)
+  const [selected_version, SetSelectedVersion] = useState<Version.Local | undefined>(undefined)
 
   return (
     <>
@@ -128,7 +128,9 @@ export default function VersionPage() {
         <PopupPanel>
           <div className="flex flex-row w-full justify-between items-center border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
             <p className="minecraft-seven text-white text-[14px] max-w-[400px]">
-              {selected_version.version.toString()}
+              {
+                selected_version.sem_version
+              }
             </p>
 
             <div
@@ -148,7 +150,7 @@ export default function VersionPage() {
             <p className="minecraft-seven text-[#BCBEC0] text-[12px] select-text">{selected_version.path}</p>
           </div>
           <div className="flex flex-col w-full border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-            <p className="minecraft-seven text-[#BCBEC0] text-[12px] select-text">{selected_version.version.uuid}</p>
+            <p className="minecraft-seven text-[#BCBEC0] text-[12px] select-text">{selected_version.uuid}</p>
           </div>
         </PopupPanel>
       )}

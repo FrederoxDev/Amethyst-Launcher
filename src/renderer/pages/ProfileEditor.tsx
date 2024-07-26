@@ -7,7 +7,7 @@ import { MinecraftButtonStyle } from '../components/MinecraftButtonStyle'
 import { UseAppState } from '../contexts/AppState'
 import { useNavigate } from 'react-router-dom'
 import { GetMods } from '../scripts/Mods'
-import { MinecraftVersionType } from '../scripts/Versions'
+import { Version } from '../scripts/types/Version'
 import ListItem from '../components/ListItem'
 import List from '../components/List'
 // import { GetDefaultInstallPath } from '../scripts/VersionManager'
@@ -19,7 +19,7 @@ export default function ProfileEditor() {
   const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<string>('')
   // const [profileInstallDir, setProfileInstallDir] = useState<string>(GetDefaultInstallPath())
 
-  const { mods, runtimes, minecraft_versions, profiles, SetProfiles, selected_profile, saveData, SetMods } =
+  const { mods, runtimes, versions, profiles, SetProfiles, selected_profile, saveData, SetMods } =
     UseAppState()
   const navigate = useNavigate()
 
@@ -109,9 +109,9 @@ export default function ProfileEditor() {
             value={profileMinecraftVersion}
             setValue={setProfileMinecraftVersion}
             // we don't support non-release versions right now so only show release lmao
-            options={minecraft_versions
-              .filter(ver => ver.versionType === MinecraftVersionType.Release)
-              .map(ver => ver.toString())}
+            options={versions
+              .filter(ver => ver.format === Version.Format.Release)
+              .map(ver => Version.toString(ver))}
             id="minecraft-version"
           />
           <Dropdown

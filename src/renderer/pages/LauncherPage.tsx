@@ -31,7 +31,7 @@ export default function LauncherPage() {
     SetIsLoading,
     error,
     SetError,
-    minecraft_versions,
+    versions,
     SetLoadingPercent
   } = UseAppState()
 
@@ -44,12 +44,12 @@ export default function LauncherPage() {
 
     const profile = profiles[selected_profile]
     const semVersion = SemVersion.fromPrimitive(profile.minecraft_version)
-    const minecraftVersion = minecraft_versions.find(
-      version => SemVersion.toPrimitive(version.version) === SemVersion.toPrimitive(semVersion)
+    const minecraftVersion = versions.find(
+      version => SemVersion.toPrimitive(version.sem_version) === SemVersion.toPrimitive(semVersion)
     )!
 
     if (minecraftVersion === undefined) {
-      throw new Error(`Version ${semVersion.toString()} not found`)
+      throw new Error(`Version ${SemVersion.toPrimitive(semVersion)} not found`)
     }
 
     SetError('')

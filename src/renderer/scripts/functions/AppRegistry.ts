@@ -1,5 +1,6 @@
 import { FolderPaths } from '../Paths'
-import { MinecraftVersion } from '../Versions'
+
+import { Version } from '../types/Version'
 
 import * as child from 'child_process'
 import * as path from 'path'
@@ -63,7 +64,7 @@ export async function UnregisterCurrent() {
   Console.EndGroup()
 }
 
-export async function RegisterVersion(version: MinecraftVersion) {
+export async function RegisterVersion(version: Version) {
   // Make sure no version is currently registered
   if (GetPackageID() !== undefined) {
     await UnregisterCurrent()
@@ -77,7 +78,7 @@ export async function RegisterVersion(version: MinecraftVersion) {
     // Register New Version
     const appxManifest = path.join(
       FolderPaths.Versions,
-      `Minecraft-${SemVersion.toPrimitive(version.version)}`,
+      `Minecraft-${SemVersion.toPrimitive(version.sem_version)}`,
       'AppxManifest.xml'
     )
 
