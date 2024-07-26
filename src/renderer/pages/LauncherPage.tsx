@@ -43,7 +43,7 @@ export default function LauncherPage() {
     }
 
     const profile = profiles[selected_profile]
-    const semVersion = SemVersion.fromPrimitive(profile.minecraft_version)
+    const semVersion = SemVersion.fromPrimitive(profile.version.sem_version)
     const minecraftVersion = versions.find(
       version => SemVersion.toPrimitive(version.sem_version) === SemVersion.toPrimitive(semVersion)
     )!
@@ -179,9 +179,9 @@ export default function LauncherPage() {
               <Dropdown
                 labelText="Profile"
                 options={profiles?.map(profile => profile.name)}
-                value={profiles[selected_profile]?.name}
-                setValue={value => {
-                  SetSelectedProfile(profiles.map(profile => profile.name).findIndex(e => e === value))
+                default_index={selected_profile}
+                setIndex={(value) => {
+                  SetSelectedProfile(value)
                 }}
                 id="profile-select"
               />

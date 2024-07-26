@@ -30,28 +30,32 @@ const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => 
       if (value.response === 0) return
       else if (value.response === 1) {
         // REMOVE VERSION
-        if (fs.existsSync(version.path)) {
-          fs.rm(version.path, { recursive: true }, err => {
-            if (err) {
-              Console.Error((err as Error).message)
-            } else {
-              onDelete()
-              Console.Group(Console.ActionStr(`Delete Version`), () => {
-                Console.Info(`Version: ${version.sem_version}`)
-                Console.Group(Console.InfoStr('Path'), () => {
-                  console.log(version.path)
+        if (version.path) {
+          if (fs.existsSync(version.path)) {
+            fs.rm(version.path, { recursive: true }, err => {
+              if (err) {
+                Console.Error((err as Error).message)
+              } else {
+                onDelete()
+                Console.Group(Console.ActionStr(`Delete Version`), () => {
+                  Console.Info(`Version: ${version.sem_version}`)
+                  Console.Group(Console.InfoStr('Path'), () => {
+                    console.log(version.path)
+                  })
                 })
-              })
-            }
-          })
+              }
+            })
+          }
         }
       }
     })
   }
 
   function OpenVersionLocation() {
-    if (fs.existsSync(version.path)) {
-      child.spawn(`explorer "${version.path}"`, { shell: true })
+    if (version.path) {
+      if (fs.existsSync(version.path)) {
+        child.spawn(`explorer "${version.path}"`, { shell: true })
+      }
     }
   }
 

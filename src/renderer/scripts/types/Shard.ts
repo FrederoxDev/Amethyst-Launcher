@@ -1,6 +1,10 @@
 import { JSONSchemaType } from 'ajv'
 import { SemVersion } from './SemVersion'
 import AJV_Instance from '../schemas/AJV_Instance'
+import fs from 'fs'
+import { FolderPaths } from '../Paths'
+import path from 'path'
+import { Console } from './Console'
 
 // region Shard
 export namespace Shard {
@@ -70,6 +74,10 @@ export namespace Shard {
     }
 
     export const Validator = AJV_Instance.compile<Full>(Schema)
+
+    export function toFragment(shard: Shard.Full): Shard.Fragment {
+      return { uuid: shard.meta.uuid, version: shard.meta.version }
+    }
   }
   // endregion
 
@@ -271,5 +279,57 @@ export namespace Shard {
     export const Validator = AJV_Instance.compile<Option>(Schema)
   }
   // endregion
+
+  // region Shard.List
+  export interface List {
+    mods: Full[]
+    runtimes: Full[]
+  }
+  // endregion
 }
 // endregion
+
+export function GetShards(): Shard.List {
+  if (fs.existsSync(FolderPaths.Mods)) {
+    const shards: Shard.List = {
+      mods: [],
+      runtimes: []
+    }
+
+    const mod_directories = fs.readdirSync(FolderPaths.Mods, { withFileTypes: true }).filter(entry => entry.isDirectory())
+    for (const mod_directory of mod_directories) {
+      const dir_path = path.join(mod_directory.parentPath, mod_directory.name)
+
+      const config_path = path.join(dir_path, 'mod.json')
+      if (fs.existsSync(config_path)) {
+        const text = fs.readFileSync(config_path, 'utf-8')
+        const json = JSON.parse(text)
+
+        if (Shard.Full.Validator(json)) {
+          switch (json.meta.format) {
+            case Shard.Format.Mod: {
+              shards.mods.push(json)
+              break
+            }
+            case Shard.Format.Runtime: {
+              shards.runtimes.push(json)
+              break
+            }
+          }
+        }
+        else {
+          Console.Group(Console.ErrorStr(`Failed to parse \`manifest.json\` in ${mod_directory.name}`), () => {
+            console.log(Shard.Full.Validator.errors)
+          })
+        }
+      }
+    }
+
+    return shards
+  } else {
+    return {
+      mods: [],
+      runtimes: []
+    }
+  }
+}
