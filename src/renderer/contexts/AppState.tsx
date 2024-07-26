@@ -4,11 +4,8 @@ import { FetchMinecraftVersions, MinecraftVersion } from '../scripts/Versions'
 import { LauncherConfig, GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
 import { GetProfiles, Profile } from '../scripts/Profiles'
 
-import { VersionsJSON } from '../scripts/Version'
-
 import { ipcRenderer } from 'electron'
 import { GetMods } from '../scripts/Mods'
-import * as Paths from '../scripts/Paths'
 
 interface TAppStateContext {
   mods: string[]
@@ -47,9 +44,6 @@ interface TAppStateContext {
   error: string
   SetError: React.Dispatch<React.SetStateAction<string>>
 
-  versions_file: VersionsJSON
-  SetVersionsFile: React.Dispatch<React.SetStateAction<VersionsJSON>>
-
   // Expose functions
   saveData: () => void
 }
@@ -69,11 +63,6 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [is_loading, SetIsLoading] = useState(false)
   const [status, SetStatus] = useState('')
   const [error, SetError] = useState('')
-
-  const [versions_file, SetVersionsFile] = useState<VersionsJSON>({
-    versions: [],
-    default_path: Paths.VersionsFolder
-  })
 
   // Initialize Data like all mods and existing profiles
   useEffect(() => {
@@ -151,9 +140,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         SetStatus: SetStatus,
         saveData,
         error: error,
-        SetError: SetError,
-        versions_file: versions_file,
-        SetVersionsFile: SetVersionsFile
+        SetError: SetError
       }}
     >
       {children}

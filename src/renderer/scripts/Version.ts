@@ -26,6 +26,30 @@ export namespace Version {
     return `${SemVersion.toPrimitive(data.sem_version)}${['', '-beta', '-preview'][data.format]}`
   }
 
+  // region Version.File
+  export interface File {
+    default_path: string
+    versions: Version.Fragment[]
+  }
+
+  export namespace File {
+    export const Schema: JSONSchemaType<Version.File> = {
+      type: 'object',
+      properties: {
+        default_path: { type: 'string' },
+        versions: {
+          type: 'array',
+          items: Version.Fragment.Schema
+        }
+      },
+      required: ['default_path', 'versions'],
+      additionalProperties: false
+    }
+
+    export const Validator = AJV_Instance.compile<Version.File>(Version.File.Schema)
+  }
+  // endregion
+
   // region Version.Fragment
   export interface Fragment {
     uuid: string
@@ -44,6 +68,34 @@ export namespace Version {
     }
 
     export const Validator = AJV_Instance.compile<Version.Fragment>(Version.Fragment.Schema)
+  }
+  // endregion
+
+  // region Version.Cached
+  export type Cached = [string, string, number]
+
+  export namespace Cached {
+    export const Schema: JSONSchemaType<Version.Cached> = {
+      type: 'array',
+      items: [{type: 'string'}, {type: 'string'}, {type: 'number'}],
+      minItems: 3,
+      maxItems: 3
+    }
+
+    export const Validator = AJV_Instance.compile<Version.Cached>(Version.Cached.Schema)
+
+    // region Version.Cached.File
+    export type File = Version.Cached[]
+
+    export namespace File {
+      export const Schema: JSONSchemaType<Version.Cached.File> = {
+        type: 'array',
+        items: Version.Cached.Schema
+      }
+
+      export const Validator = AJV_Instance.compile<Version.Cached.File>(Version.Cached.File.Schema)
+    }
+    // endregion
   }
   // endregion
 
@@ -66,36 +118,13 @@ export namespace Version {
 }
 // endregion
 
-// region VersionsJSON
-export interface VersionsJSON {
-  default_path: string
-  versions: Version.Fragment[]
-}
-export namespace VersionsJSON {
-  export const Schema: JSONSchemaType<VersionsJSON> = {
-    type: 'object',
-    properties: {
-      default_path: { type: 'string' },
-      versions: {
-        type: 'array',
-        items: Version.Fragment.Schema
-      }
-    },
-    required: ['default_path', 'versions'],
-    additionalProperties: false
-  }
-
-  export const Validator = AJV_Instance.compile<VersionsJSON>(VersionsJSON.Schema)
-}
-// endregion
-
 //////////////////////////////////////////////////
 
 export function ValidateVersionsFile() {
   const text = fs.readFileSync(VersionsFile, { encoding: 'utf8' })
   const json = JSON.parse(text)
 
-  VersionsJSON.Validator(json)
+  Version.File.Validator(json)
 }
 
 //////////////////////////////////////////////////
@@ -163,7 +192,7 @@ export function GetAvailableVersionData() {
 
 //////////////////////////////////////////////////
 
-export function GetVersionsFile(): VersionsJSON {
+export function GetVersionsFile(): Version.File {
   if (fs.existsSync(VersionsFile)) {
     const text = fs.readFileSync(VersionsFile, 'utf-8')
     const json = JSON.parse(text)
