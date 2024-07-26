@@ -1,5 +1,4 @@
 import { FilePaths, ValidatePath } from './Paths'
-import { Version } from './types/Version'
 
 import * as fs from 'fs'
 
@@ -8,7 +7,6 @@ export interface Profile {
   runtime: string
   mods: string[]
   minecraft_version: string
-  installed_version?: Version.Fragment
 }
 
 export function GetProfiles(): Profile[] {

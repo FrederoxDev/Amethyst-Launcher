@@ -26,27 +26,6 @@ export namespace Version {
     return `${SemVersion.toPrimitive(data.sem_version)}${['', '-beta', '-preview'][data.format]}`
   }
 
-  // region Version.Fragment
-  export interface Fragment {
-    uuid: string
-    path: string
-  }
-
-  export namespace Fragment {
-    export const Schema: JSONSchemaType<Fragment> = {
-      type: 'object',
-      properties: {
-        uuid: { type: 'string', format: 'uuid' },
-        path: { type: 'string' }
-      },
-      required: ['uuid', 'path'],
-      additionalProperties: false
-    }
-
-    export const Validator = AJV_Instance.compile<Fragment>(Schema)
-  }
-  // endregion
-
   // region Version.Cached
   export type Cached = [string, string, number]
 

@@ -10,7 +10,7 @@ import * as fs from 'fs'
 // region Profile
 export interface Profile {
   name: string
-  version: Version.Fragment
+  version: Version.Local
   icon_path?: string
   runtime?: Shard.Fragment
   mods?: Shard.Fragment[]
@@ -21,7 +21,7 @@ export namespace Profile {
     type: 'object',
     properties: {
       name: { type: 'string' },
-      version: Version.Fragment.Schema,
+      version: Version.Local.Schema,
       icon_path: { type: 'string', nullable: true },
       runtime: { oneOf: [Shard.Fragment.Schema], nullable: true },
       mods: {
@@ -40,12 +40,12 @@ export namespace Profile {
   export type File = Profile[]
 
   export namespace File {
-    export const Schema: JSONSchemaType<Profile.File> = {
+    export const Schema: JSONSchemaType<File> = {
       type: 'array',
       items: Profile.Schema
     }
 
-    export const Validator = AJV_Instance.compile<Profile.File>(Profile.File.Schema)
+    export const Validator = AJV_Instance.compile<File>(Schema)
   }
   // endregion
 }

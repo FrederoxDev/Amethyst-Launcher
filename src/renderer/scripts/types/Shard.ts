@@ -40,7 +40,7 @@ export namespace Shard {
     options?: Shard.Option[]
   }
   export namespace Full {
-    export const Schema: JSONSchemaType<Shard.Full> = {
+    export const Schema: JSONSchemaType<Full> = {
       type: 'object',
       properties: {
         meta: {
@@ -69,7 +69,7 @@ export namespace Shard {
       additionalProperties: false
     }
 
-    export const Validator = AJV_Instance.compile<Shard.Full>(Shard.Full.Schema)
+    export const Validator = AJV_Instance.compile<Full>(Schema)
   }
   // endregion
 
@@ -91,7 +91,7 @@ export namespace Shard {
     version: SemVersion.Primitive
   }
   export namespace Fragment {
-    export const Schema: JSONSchemaType<Shard.Fragment> = {
+    export const Schema: JSONSchemaType<Fragment> = {
       type: 'object',
       properties: {
         uuid: { type: 'string', format: 'uuid' },
@@ -101,7 +101,7 @@ export namespace Shard {
       additionalProperties: false
     }
 
-    export const Validator = AJV_Instance.compile<Shard.Fragment>(Shard.Fragment.Schema)
+    export const Validator = AJV_Instance.compile<Fragment>(Schema)
   }
   // endregion
 
@@ -112,21 +112,21 @@ export namespace Shard {
   }
 
   export namespace Format {
-    export const Schema: JSONSchemaType<Shard.Format> = {
+    export const Schema: JSONSchemaType<Format> = {
       type: 'number',
       enum: [0, 1]
     }
-    export const Validator = AJV_Instance.compile<Shard.Format>(Shard.Format.Schema)
+    export const Validator = AJV_Instance.compile<Format>(Schema)
   }
   // endregion
 
   // region Shard.Option
   export type Option =
-    | Shard.Option.Empty
-    | Shard.Option.Text
-    | Shard.Option.Toggle
-    | Shard.Option.Radial
-    | Shard.Option.Slider
+    | Option.Empty
+    | Option.Text
+    | Option.Toggle
+    | Option.Radial
+    | Option.Slider
 
   export namespace Option {
     export interface Empty {
@@ -136,13 +136,13 @@ export namespace Shard {
         description?: string
       }
     }
-    export interface Text extends Shard.Option.Empty {
+    export interface Text extends Empty {
       type: 'text'
     }
-    export interface Toggle extends Shard.Option.Empty {
+    export interface Toggle extends Empty {
       type: 'toggle'
     }
-    export interface Radial extends Shard.Option.Empty {
+    export interface Radial extends Empty {
       type: 'radial'
       properties: {
         label?: string
@@ -150,7 +150,7 @@ export namespace Shard {
         options: string[]
       }
     }
-    export interface Slider extends Shard.Option.Empty {
+    export interface Slider extends Empty {
       type: 'slider'
       properties: {
         label?: string
@@ -160,7 +160,7 @@ export namespace Shard {
       }
     }
 
-    export const Schema: JSONSchemaType<Shard.Option> = {
+    export const Schema: JSONSchemaType<Option> = {
       oneOf: [
         {
           type: 'object',
@@ -268,7 +268,7 @@ export namespace Shard {
       ]
     }
 
-    export const Validator = AJV_Instance.compile<Shard.Option>(Shard.Option.Schema)
+    export const Validator = AJV_Instance.compile<Option>(Schema)
   }
   // endregion
 }

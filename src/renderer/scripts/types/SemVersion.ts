@@ -66,12 +66,12 @@ export namespace SemVersion {
   export type Primitive = string
 
   export namespace Primitive {
-    export const Schema: JSONSchemaType<SemVersion.Primitive> = {
+    export const Schema: JSONSchemaType<Primitive> = {
       type: 'string',
       pattern: RegExp(/^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/).source
     }
 
-    export const Validator = AJV_Instance.compile<SemVersion.Primitive>(SemVersion.Primitive.Schema)
+    export const Validator = AJV_Instance.compile<Primitive>(Schema)
   }
   // endregion
 }
