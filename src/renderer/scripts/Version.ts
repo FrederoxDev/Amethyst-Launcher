@@ -1,11 +1,10 @@
-import { JSONSchemaType } from 'ajv'
-
+import { CachedVersionsFile, VersionsFile, VersionsFolder } from './Paths'
 import { SemVersion } from './SemVersion'
-import { VersionsFile, VersionsFolder } from './Paths'
-import * as fs from 'node:fs'
-import { CachedVersionsFile } from './Paths'
 import { Console } from './Console'
+
 import AJV_Instance from './AJV_Instance'
+import { JSONSchemaType } from 'ajv'
+import * as fs from 'node:fs'
 
 /////////////////////////////
 // EXPERIMENTAL VERSIONING //
@@ -129,7 +128,7 @@ export function ValidateVersionsFile() {
 
 //////////////////////////////////////////////////
 
-export async function FetchAvailableVersionData() {
+export async function FetchAvailableVersions() {
   let last_write_time: Date = new Date(0)
 
   if (fs.existsSync(CachedVersionsFile)) {
@@ -174,20 +173,26 @@ export async function FetchAvailableVersionData() {
   }
 }
 
-export function GetAvailableVersionData() {
+export function GetCachedVersions() {
   const text = fs.readFileSync(CachedVersionsFile, 'utf-8')
   const json = JSON.parse(text)
-  const versions: Version[] = []
 
-  for (const version of json) {
-    versions.push({
-      sem_version: SemVersion.fromPrimitive(version[0] as string),
-      uuid: version[1] as string,
-      format: version[2] as Version.Format
+  if (Version.Cached.File.Validator(json)) {
+    return json.map(version => {
+      return {
+        sem_version: SemVersion.fromPrimitive(version[0]),
+        uuid: version[1],
+        format: version[2]
+      } as Version
     })
   }
+  else {
+    Console.Group(Console.ErrorStr('Failed to parse `cached_versions.json`'), () => {
+      console.log(Version.Cached.File.Validator.errors)
+    })
 
-  return versions
+    return []
+  }
 }
 
 //////////////////////////////////////////////////
