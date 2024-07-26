@@ -14,10 +14,10 @@ export namespace Shard {
    *  author: string | string[]
    *  description?: string
    *  uuid: string // Must be UUID v4
-   *  version: SemVersionData
-   *  min_launcher_version: SemVersionData
+   *  version: SemVersion.Primitive
    *  format?: Shard.Format
    * }
+   * format_version: SemVersion.Primitive
    * options?: Shard.Option[]
    * ```
    *
