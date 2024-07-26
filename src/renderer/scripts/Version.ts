@@ -12,64 +12,80 @@ import AJV_Instance from './AJV_Instance'
 /////////////////////////////
 
 // region Version
+/**
+ * @description ### **`INTERNAL USE ONLY`**
+ */
 export interface Version {
   uuid: string
-  path: string
+  sem_version: SemVersion
+  format: Version.Format
 }
 
 export namespace Version {
-  export const Schema: JSONSchemaType<Version> = {
-    type: 'object',
-    properties: {
-      uuid: { type: 'string' },
-      path: { type: 'string' }
-    },
-    required: ['uuid', 'path'],
-    additionalProperties: false
+  export function toString(data: Version) {
+    return `${SemVersion.toPrimitive(data.sem_version)}${['', '-beta', '-preview'][data.format]}`
   }
+
+  // region Version.Fragment
+  export interface Fragment {
+    uuid: string
+    path: string
+  }
+
+  export namespace Fragment {
+    export const Schema: JSONSchemaType<Version.Fragment> = {
+      type: 'object',
+      properties: {
+        uuid: { type: 'string', format: 'uuid' },
+        path: { type: 'string' }
+      },
+      required: ['uuid', 'path'],
+      additionalProperties: false
+    }
+
+    export const Validator = AJV_Instance.compile<Version.Fragment>(Version.Fragment.Schema)
+  }
+  // endregion
+
+  // region Version.Format
+  export enum Format {
+    Release = 0,
+    Beta = 1,
+    Preview = 2
+  }
+
+  export namespace Format {
+    export const Schema: JSONSchemaType<Version.Format> = {
+      type: 'number',
+      enum: [0, 1, 2]
+    }
+
+    export const Validator = AJV_Instance.compile<Version.Format>(Version.Format.Schema)
+  }
+  // endregion
 }
 // endregion
 
-export enum VersionType {
-  Release = 0,
-  Beta = 1,
-  Preview = 2
-}
-
-// region VersionData
-export interface VersionData {
-  uuid: string
-  sem_version: SemVersion
-  type: VersionType
-}
-
-export namespace VersionData {
-  export function toString(data: VersionData) {
-    return `${SemVersion.toPrimitive(data.sem_version)}${['', '-beta', '-preview'][data.type]}`
-  }
-}
-// endregion
-
-// region VersionsFileData
-export interface VersionsFileData {
+// region VersionsJSON
+export interface VersionsJSON {
   default_path: string
-  versions: Version[]
+  versions: Version.Fragment[]
 }
-export namespace VersionsFileData {
-  export const Schema: JSONSchemaType<VersionsFileData> = {
+export namespace VersionsJSON {
+  export const Schema: JSONSchemaType<VersionsJSON> = {
     type: 'object',
     properties: {
       default_path: { type: 'string' },
       versions: {
         type: 'array',
-        items: Version.Schema
+        items: Version.Fragment.Schema
       }
     },
     required: ['default_path', 'versions'],
     additionalProperties: false
   }
 
-  export const Validator = AJV_Instance.compile<VersionsFileData>(Schema)
+  export const Validator = AJV_Instance.compile<VersionsJSON>(VersionsJSON.Schema)
 }
 // endregion
 
@@ -79,7 +95,7 @@ export function ValidateVersionsFile() {
   const text = fs.readFileSync(VersionsFile, { encoding: 'utf8' })
   const json = JSON.parse(text)
 
-  VersionsFileData.Validator(json)
+  VersionsJSON.Validator(json)
 }
 
 //////////////////////////////////////////////////
@@ -132,13 +148,13 @@ export async function FetchAvailableVersionData() {
 export function GetAvailableVersionData() {
   const text = fs.readFileSync(CachedVersionsFile, 'utf-8')
   const json = JSON.parse(text)
-  const versions: VersionData[] = []
+  const versions: Version[] = []
 
   for (const version of json) {
     versions.push({
       sem_version: SemVersion.fromPrimitive(version[0] as string),
       uuid: version[1] as string,
-      type: version[2] as VersionType
+      format: version[2] as Version.Format
     })
   }
 
@@ -147,7 +163,7 @@ export function GetAvailableVersionData() {
 
 //////////////////////////////////////////////////
 
-export function GetVersionsFile(): VersionsFileData {
+export function GetVersionsFile(): VersionsJSON {
   if (fs.existsSync(VersionsFile)) {
     const text = fs.readFileSync(VersionsFile, 'utf-8')
     const json = JSON.parse(text)
@@ -160,7 +176,7 @@ export function GetVersionsFile(): VersionsFileData {
   }
 }
 
-export function GetVersions(): Version[] {
+export function GetVersions(): Version.Fragment[] {
   return GetVersionsFile().versions
 }
 
