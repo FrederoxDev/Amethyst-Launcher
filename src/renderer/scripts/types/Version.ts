@@ -33,7 +33,7 @@ export namespace Version {
   }
 
   export namespace Fragment {
-    export const Schema: JSONSchemaType<Version.Fragment> = {
+    export const Schema: JSONSchemaType<Fragment> = {
       type: 'object',
       properties: {
         uuid: { type: 'string', format: 'uuid' },
@@ -43,7 +43,7 @@ export namespace Version {
       additionalProperties: false
     }
 
-    export const Validator = AJV_Instance.compile<Version.Fragment>(Version.Fragment.Schema)
+    export const Validator = AJV_Instance.compile<Fragment>(Schema)
   }
   // endregion
 
@@ -51,25 +51,25 @@ export namespace Version {
   export type Cached = [string, string, number]
 
   export namespace Cached {
-    export const Schema: JSONSchemaType<Version.Cached> = {
+    export const Schema: JSONSchemaType<Cached> = {
       type: 'array',
       items: [{type: 'string'}, {type: 'string'}, {type: 'number'}],
       minItems: 3,
       maxItems: 3
     }
 
-    export const Validator = AJV_Instance.compile<Version.Cached>(Version.Cached.Schema)
+    export const Validator = AJV_Instance.compile<Cached>(Schema)
 
     // region Version.Cached.File
-    export type File = Version.Cached[]
+    export type File = Cached[]
 
     export namespace File {
-      export const Schema: JSONSchemaType<Version.Cached.File> = {
+      export const Schema: JSONSchemaType<File> = {
         type: 'array',
-        items: Version.Cached.Schema
+        items: Cached.Schema
       }
 
-      export const Validator = AJV_Instance.compile<Version.Cached.File>(Version.Cached.File.Schema)
+      export const Validator = AJV_Instance.compile<File>(Schema)
     }
     // endregion
   }
@@ -83,12 +83,12 @@ export namespace Version {
   }
 
   export namespace Format {
-    export const Schema: JSONSchemaType<Version.Format> = {
+    export const Schema: JSONSchemaType<Format> = {
       type: 'number',
       enum: [0, 1, 2]
     }
 
-    export const Validator = AJV_Instance.compile<Version.Format>(Version.Format.Schema)
+    export const Validator = AJV_Instance.compile<Format>(Schema)
   }
   // endregion
 
@@ -97,45 +97,47 @@ export namespace Version {
     path: string,
     uuid: string,
     sem_version: SemVersion.Primitive,
-    format: Version.Format
+    format: Format
   }
 
   export namespace Local {
-    export const Schema: JSONSchemaType<Version.Local> = {
+    export const Schema: JSONSchemaType<Local> = {
       type: 'object',
       properties: {
         path: { type: 'string' },
         uuid: { type: 'string', format: 'uuid' },
         sem_version: SemVersion.Primitive.Schema,
-        format: Version.Format.Schema
+        format: Format.Schema
       },
       required: ['path', 'uuid', 'sem_version', 'format'],
       additionalProperties: false
     }
+
+    export const Validator = AJV_Instance.compile<Local>(Schema)
   }
   // endregion
 
   // region Version.File
   export interface File {
     default_path: string
-    versions: Version.Local[]
+    versions: Local[]
   }
 
   export namespace File {
-    export const Schema: JSONSchemaType<Version.File> = {
+    export const Schema: JSONSchemaType<File> = {
       type: 'object',
       properties: {
         default_path: { type: 'string' },
         versions: {
           type: 'array',
-          items: Version.Local.Schema
+          items: Local.Schema
         }
       },
       required: ['default_path', 'versions'],
       additionalProperties: false
     }
 
-    export const Validator = AJV_Instance.compile<Version.File>(Version.File.Schema)
+    export const Validator = AJV_Instance.compile<File>(Schema)
   }
   // endregion
 }
