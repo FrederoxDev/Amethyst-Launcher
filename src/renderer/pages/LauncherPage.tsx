@@ -107,7 +107,7 @@ export default function LauncherPage() {
     SetIsLoading(false)
     SetStatus('')
 
-    child.exec(`start minecraft:`)
+    child.spawn(`start minecraft:`, { shell: true})
   }
 
   const launchGame = async () => {
