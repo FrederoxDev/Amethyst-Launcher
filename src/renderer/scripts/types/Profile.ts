@@ -2,7 +2,7 @@ import { FilePaths, ValidatePath } from '../Paths'
 import AJV_Instance from '../schemas/AJV_Instance'
 import { Console } from './Console'
 import { Version } from './Version'
-import { Shard } from './Shard'
+import Shard from './Shard'
 
 import { JSONSchemaType } from 'ajv'
 import * as fs from 'fs'
