@@ -43,13 +43,12 @@ export default function LauncherPage() {
     }
 
     const profile = profiles[selected_profile]
-    const semVersion = SemVersion.fromPrimitive(profile.minecraft_version)
     const minecraftVersion = versions.find(
-      version => SemVersion.toPrimitive(version.sem_version) === SemVersion.toPrimitive(semVersion)
+      version => version.sem_version === profile.minecraft_version
     )!
 
     if (minecraftVersion === undefined) {
-      throw new Error(`Version ${SemVersion.toPrimitive(semVersion)} not found`)
+      throw new Error(`Version ${profile.minecraft_version} not found`)
     }
 
     SetError('')
@@ -63,18 +62,20 @@ export default function LauncherPage() {
       }
     }
 
+    const sem_version = SemVersion.fromPrimitive(profile.minecraft_version)
+
     // We create a lock file when starting the download
     // if we are doing a launch, and we detect it for the version we are targeting
     // there is a good chance the previous install/download failed and therefore remove it.
-    const didPreviousDownloadFail = IsLocked(semVersion)
+    const didPreviousDownloadFail = IsLocked(sem_version)
 
     if (didPreviousDownloadFail) {
-      CleanupInstall(semVersion, false)
+      CleanupInstall(sem_version, false)
     }
 
     // Check for the folder for the version we are targeting, if not present we need to fetch.
-    if (!IsDownloaded(semVersion)) {
-      CreateLock(semVersion)
+    if (!IsDownloaded(sem_version)) {
+      CreateLock(sem_version)
       Console.StartGroup(Console.ActionStr('Download Version'))
       {
         await DownloadVersion(minecraftVersion, SetStatus, SetLoadingPercent)
@@ -85,7 +86,7 @@ export default function LauncherPage() {
         await ExtractVersion(minecraftVersion, SetStatus, SetLoadingPercent)
       }
       Console.EndGroup()
-      CleanupInstall(semVersion, true)
+      CleanupInstall(sem_version, true)
 
       InstallProxy(minecraftVersion)
     }

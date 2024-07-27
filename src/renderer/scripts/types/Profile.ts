@@ -10,7 +10,7 @@ import * as fs from 'fs'
 // region Profile
 export interface Profile {
   name: string
-  version: Version.Local
+  version: Version
   runtime?: Shard.Fragment
   mods?: Shard.Fragment[],
   icon_path?: string
@@ -21,7 +21,7 @@ export namespace Profile {
     type: 'object',
     properties: {
       name: { type: 'string' },
-      version: Version.Local.Schema,
+      version: Version.Schema,
       runtime: { oneOf: [Shard.Fragment.Schema], nullable: true },
       mods: {
         type: 'array',

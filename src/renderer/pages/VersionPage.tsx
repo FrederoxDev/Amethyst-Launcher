@@ -11,7 +11,7 @@ import ListItem from '../components/ListItem'
 import List from '../components/List'
 
 type VersionButtonProps = {
-  version: Version.Local
+  version: Version
   onInspect: () => void
   onDelete: () => void
 }
@@ -30,28 +30,32 @@ const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => 
       if (value.response === 0) return
       else if (value.response === 1) {
         // REMOVE VERSION
-        if (fs.existsSync(version.path)) {
-          fs.rm(version.path, { recursive: true }, err => {
-            if (err) {
-              Console.Error((err as Error).message)
-            } else {
-              onDelete()
-              Console.Group(Console.ActionStr(`Delete Version`), () => {
-                Console.Info(`Version: ${version.sem_version}`)
-                Console.Group(Console.InfoStr('Path'), () => {
-                  console.log(version.path)
+        if (version.path) {
+          if (fs.existsSync(version.path)) {
+            fs.rm(version.path, { recursive: true }, err => {
+              if (err) {
+                Console.Error((err as Error).message)
+              } else {
+                onDelete()
+                Console.Group(Console.ActionStr(`Delete Version`), () => {
+                  Console.Info(`Version: ${version.sem_version}`)
+                  Console.Group(Console.InfoStr('Path'), () => {
+                    console.log(version.path)
+                  })
                 })
-              })
-            }
-          })
+              }
+            })
+          }
         }
       }
     })
   }
 
   function OpenVersionLocation() {
-    if (fs.existsSync(version.path)) {
-      child.spawn(`explorer "${version.path}"`, { shell: true })
+    if (version.path) {
+      if (fs.existsSync(version.path)) {
+        child.spawn(`explorer "${version.path}"`, { shell: true })
+      }
     }
   }
 
@@ -95,14 +99,14 @@ const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => 
 
 export default function VersionPage() {
   RefreshVersionsFile()
-  const [versions, SetVersions] = useState<Version.Local[]>(GetVersions())
+  const [versions, SetVersions] = useState<Version[]>(GetVersions())
 
   function RefreshVersions() {
     RefreshVersionsFile()
     SetVersions(GetVersions())
   }
 
-  const [selected_version, SetSelectedVersion] = useState<Version.Local | undefined>(undefined)
+  const [selected_version, SetSelectedVersion] = useState<Version | undefined>(undefined)
 
   return (
     <>

@@ -28,10 +28,10 @@ export default function SettingsPage() {
   const isWindowsDevModeOn = IsDevModeEnabled()
 
   if (profile) {
-    minecraftVersion = versions.find(version => SemVersion.toPrimitive(version.sem_version) === profile.minecraft_version)
+    minecraftVersion = versions.find(version => version.sem_version === profile.minecraft_version)
 
     if (minecraftVersion) {
-      isVerDownloaded = IsDownloaded(minecraftVersion.sem_version)
+      isVerDownloaded = IsDownloaded(SemVersion.fromPrimitive(minecraftVersion.sem_version))
       isRegisteredVerOurs = IsRegistered(minecraftVersion)
       installDir = GetPackagePath() ?? 'Could not find installed.'
     }

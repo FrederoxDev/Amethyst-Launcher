@@ -4,7 +4,6 @@ import { Version } from '../types/Version'
 
 import * as child from 'child_process'
 import * as path from 'path'
-import { SemVersion } from '../types/SemVersion'
 import { Console } from '../types/Console'
 
 // .node type so window.require is needed
@@ -78,7 +77,7 @@ export async function RegisterVersion(version: Version) {
     // Register New Version
     const appxManifest = path.join(
       FolderPaths.Versions,
-      `Minecraft-${SemVersion.toPrimitive(version.sem_version)}`,
+      `Minecraft-${version.sem_version}`,
       'AppxManifest.xml'
     )
 

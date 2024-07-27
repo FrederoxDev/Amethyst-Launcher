@@ -46,7 +46,7 @@ export async function DownloadVersion(
 ) {
   ValidatePath(FolderPaths.Versions)
 
-  const outputFile = path.join(FolderPaths.Versions, `Minecraft-${SemVersion.toPrimitive(version.sem_version)}.zip`)
+  const outputFile = path.join(FolderPaths.Versions, `Minecraft-${version.sem_version}.zip`)
 
   Console.Group(Console.InfoStr('File'), () => {
     console.log(outputFile)
@@ -90,8 +90,8 @@ export async function ExtractVersion(
   setStatus: React.Dispatch<React.SetStateAction<string>>,
   setLoadingPercent: React.Dispatch<React.SetStateAction<number>>
 ) {
-  const appxPath = path.join(FolderPaths.Versions, `Minecraft-${SemVersion.toPrimitive(version.sem_version)}.zip`)
-  const folderPath = path.join(FolderPaths.Versions, `Minecraft-${SemVersion.toPrimitive(version.sem_version)}`)
+  const appxPath = path.join(FolderPaths.Versions, `Minecraft-${version.sem_version}.zip`)
+  const folderPath = path.join(FolderPaths.Versions, `Minecraft-${version.sem_version}`)
 
   Console.Group(Console.InfoStr('File'), () => {
     console.log(appxPath)
@@ -142,7 +142,7 @@ export async function ExtractVersion(
 export function InstallProxy(version: Version) {
   const target_path = path.join(
     FolderPaths.Versions,
-    `Minecraft-${SemVersion.toPrimitive(version.sem_version)}`,
+    `Minecraft-${version.sem_version}`,
     'dxgi.dll'
   )
   const proxy_path = path.join(FolderPaths.App, 'build/public/proxy/dxgi.dll')
@@ -151,7 +151,7 @@ export function InstallProxy(version: Version) {
 }
 
 export function IsRegistered(version: Version) {
-  const fileName = `Minecraft-${SemVersion.toPrimitive(version.sem_version)}`
+  const fileName = `Minecraft-${version.sem_version}`
 
   return GetPackagePath() === `${FolderPaths.Versions}\\${fileName}`
 }

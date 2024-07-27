@@ -16,15 +16,47 @@ import path from 'path'
  * @description ### **`INTERNAL USE ONLY`**
  */
 export interface Version {
+  path?: string
   uuid: string
-  sem_version: SemVersion
+  sem_version: SemVersion.Primitive
   format: Version.Format
 }
 
 export namespace Version {
-  export function toString(data: Version) {
-    return `${SemVersion.toPrimitive(data.sem_version)}${['', '-beta', '-preview'][data.format]}`
+
+  // region Version.Format
+  export enum Format {
+    Release = 0,
+    Beta = 1,
+    Preview = 2
   }
+
+  export namespace Format {
+    export const Schema: JSONSchemaType<Format> = {
+      type: 'number',
+      enum: [0, 1, 2]
+    }
+
+    export const Validator = AJV_Instance.compile<Format>(Schema)
+  }
+  // endregion
+
+  export function toString(data: Version) {
+    return `${data.sem_version}${['', '-beta', '-preview'][data.format]}`
+  }
+
+  export const Schema: JSONSchemaType<Version> = {
+    type: 'object',
+    properties: {
+      path: { type: 'string', nullable: true },
+      uuid: { type: 'string', format: 'uuid'},
+      sem_version: SemVersion.Primitive.Schema,
+      format: Version.Format.Schema
+    },
+    required: ['uuid', 'sem_version', 'format']
+  }
+
+  export const Validator = AJV_Instance.compile<Version>(Schema)
 
   // region Version.Cached
   export type Cached = [string, string, number]
@@ -54,52 +86,10 @@ export namespace Version {
   }
   // endregion
 
-  // region Version.Format
-  export enum Format {
-    Release = 0,
-    Beta = 1,
-    Preview = 2
-  }
-
-  export namespace Format {
-    export const Schema: JSONSchemaType<Format> = {
-      type: 'number',
-      enum: [0, 1, 2]
-    }
-
-    export const Validator = AJV_Instance.compile<Format>(Schema)
-  }
-  // endregion
-
-  // region Version.Local
-  export interface Local {
-    path: string,
-    uuid: string,
-    sem_version: SemVersion.Primitive,
-    format: Format
-  }
-
-  export namespace Local {
-    export const Schema: JSONSchemaType<Local> = {
-      type: 'object',
-      properties: {
-        path: { type: 'string' },
-        uuid: { type: 'string', format: 'uuid' },
-        sem_version: SemVersion.Primitive.Schema,
-        format: Format.Schema
-      },
-      required: ['path', 'uuid', 'sem_version', 'format'],
-      additionalProperties: false
-    }
-
-    export const Validator = AJV_Instance.compile<Local>(Schema)
-  }
-  // endregion
-
   // region Version.File
   export interface File {
     default_path: string
-    versions: Local[]
+    versions: Version[]
   }
 
   export namespace File {
@@ -109,7 +99,7 @@ export namespace Version {
         default_path: { type: 'string' },
         versions: {
           type: 'array',
-          items: Local.Schema
+          items: Version.Schema
         }
       },
       required: ['default_path', 'versions'],
@@ -185,7 +175,7 @@ export function GetCachedVersions() {
   if (Version.Cached.File.Validator(json)) {
     return json.map(version => {
       return {
-        sem_version: SemVersion.fromPrimitive(version[0]),
+        sem_version: version[0],
         uuid: version[1],
         format: version[2]
       } as Version
@@ -200,17 +190,10 @@ export function GetCachedVersions() {
   }
 }
 
-export function FindCachedVersion(uuid: string): Version | undefined
-export function FindCachedVersion(version: SemVersion): Version | undefined
-export function FindCachedVersion(from: string | SemVersion): Version | undefined {
-  const cached_versions: Version[] = GetCachedVersions()
 
-  if (typeof from === 'string') {
-    return cached_versions.find(v => v.uuid === from)
-  }
-  else {
-    return cached_versions.find(v => SemVersion.toPrimitive(v.sem_version) === SemVersion.toPrimitive(from))
-  }
+export function FindCachedVersion(version: SemVersion.Primitive): Version | undefined {
+  const cached_versions: Version[] = GetCachedVersions()
+  return cached_versions.find(v => v.sem_version === version)
 }
 
 //////////////////////////////////////////////////
@@ -227,7 +210,10 @@ export function RefreshVersionsFile() {
   }
 
   const versions = GetVersions().filter(v => {
-    fs.existsSync(v.path)
+    if (v.path) {
+      return fs.existsSync(v.path)
+    }
+    return false
   })
 
   if (fs.existsSync(FolderPaths.Versions)) {
@@ -237,12 +223,10 @@ export function RefreshVersionsFile() {
 
       if (!(versions.map(v => { return v.path }).includes(dir_path))) {
         if (version_dir.name.startsWith('Minecraft-')) {
-          const sem_version = SemVersion.fromPrimitive(version_dir.name.slice('Minecraft-'.length))
-
-          const minecraft_version = FindCachedVersion(sem_version)
+          const minecraft_version = FindCachedVersion(version_dir.name.slice('Minecraft-'.length))
 
           if (minecraft_version) {
-            versions.push({ path: dir_path, uuid: minecraft_version.uuid, sem_version: SemVersion.toPrimitive(minecraft_version.sem_version), format: minecraft_version.format })
+            versions.push({ ...minecraft_version, path: dir_path })
           }
         }
       }
@@ -284,7 +268,7 @@ export function GetVersionsFile(): Version.File {
   }
 }
 
-export function GetVersions(): Version.Local[] {
+export function GetVersions(): Version[] {
   return GetVersionsFile().versions
 }
 
