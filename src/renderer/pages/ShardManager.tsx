@@ -27,12 +27,12 @@ const OpenShardsFolder = () => {
 }
 
 export default function ShardManager() {
-  const [shards, SetShards] = useState<Shard.UI[]>([])
+  const [shards, SetShards] = useState<Shard.Extra[]>([])
 
-  const [mods, SetMods] = useState<Shard.UI[]>([])
+  const [mods, SetMods] = useState<Shard.Extra[]>([])
   const [mod_index, SetModIndex] = useState<number | undefined>(undefined)
 
-  const [runtimes, SetRuntimes] = useState<Shard.UI[]>([])
+  const [runtimes, SetRuntimes] = useState<Shard.Extra[]>([])
   const [runtimes_index, SetRuntimeIndex] = useState<number | undefined>(undefined)
 
   useEffect(() => {
@@ -40,8 +40,8 @@ export default function ShardManager() {
   }, [])
 
   useEffect(() => {
-    const temp_mods: Shard.UI[] = []
-    const temp_runtimes: Shard.UI[] = []
+    const temp_mods: Shard.Extra[] = []
+    const temp_runtimes: Shard.Extra[] = []
 
     shards.map(shard => {
       switch (shard.data.meta.format) {
@@ -62,7 +62,7 @@ export default function ShardManager() {
   }, [shards])
 
   const ShardButton = (
-    shard: Shard.UI,
+    shard: Shard.Extra,
     index: number,
     selected_index: number | undefined,
     SetSelectedIndex: (index: number | undefined) => void

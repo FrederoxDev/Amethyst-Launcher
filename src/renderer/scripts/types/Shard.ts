@@ -176,6 +176,7 @@ export namespace Shard {
    * Contains minimal data. Mainly used **internally**
    *
    * ```ts
+   * name: string
    * uuid: string // Must be UUID v4
    * version: SemVersion.Primitive
    * ```
@@ -287,15 +288,15 @@ export namespace Shard {
   // endregion
 
   // region Shard.UI
-  export interface UI {
+  export interface Extra {
     path: string
     manifest_path: string
     icon_path?: string
     data: Shard.Full
   }
 
-  export namespace UI {
-    export const Schema: JSONSchemaType<UI> = {
+  export namespace Extra {
+    export const Schema: JSONSchemaType<Extra> = {
       type: 'object',
       properties: {
         path: { type: 'string' },
@@ -306,7 +307,7 @@ export namespace Shard {
       required: ['path', 'manifest_path', 'data']
     }
 
-    export const Validator = AJV_Instance.compile<UI>(Schema)
+    export const Validator = AJV_Instance.compile<Extra>(Schema)
   }
   // endregion
 }
@@ -340,8 +341,8 @@ export function GetShards(): Shard.Full[] {
   return shards
 }
 
-export function GetUIShards(): Shard.UI[] {
-  const shards: Shard.UI[] = []
+export function GetUIShards(): Shard.Extra[] {
+  const shards: Shard.Extra[] = []
 
   if (fs.existsSync(FolderPaths.Mods)) {
     const mod_directories = fs
