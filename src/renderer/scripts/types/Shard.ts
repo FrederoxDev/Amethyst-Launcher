@@ -341,7 +341,7 @@ export function GetShards(): Shard.Manifest[] {
   return shards
 }
 
-export function GetUIShards(): Shard.Extra[] {
+export function GetExtraShards(): Shard.Extra[] {
   const shards: Shard.Extra[] = []
 
   if (fs.existsSync(FolderPaths.Mods)) {
@@ -378,8 +378,24 @@ export function GetUIShards(): Shard.Extra[] {
   return shards
 }
 
-export function FindShard(shard: Shard.Fragment): Shard.Manifest | undefined {
+export function FindShard(fragment: Shard.Fragment): Shard.Manifest | undefined {
   const shards = GetShards()
 
-  return shards.filter(s => s.meta.uuid === shard.uuid).find(s => s.meta.version === shard.version)
+  return shards.filter(s => s.meta.uuid === fragment.uuid).find(s => s.meta.version === fragment.version)
+}
+
+export function FindShards(fragments: Shard.Fragment[]): Shard.Manifest[] {
+  const shards = GetShards()
+
+  const found: Shard.Manifest[] = []
+
+  for (const fragment of fragments) {
+    const found_shard = shards.filter(s => s.meta.uuid === fragment.uuid).find(s => s.meta.version === fragment.version)
+
+    if (found_shard) {
+      found.push(found_shard)
+    }
+  }
+
+  return found
 }

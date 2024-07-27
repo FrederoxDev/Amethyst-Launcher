@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import MinecraftButton from '../components/MinecraftButton'
 import { FolderPaths } from '../scripts/Paths'
 
-import { GetUIShards, Shard } from '../scripts/types/Shard'
+import { GetExtraShards, Shard } from '../scripts/types/Shard'
 
 import { clipboard } from 'electron'
 
@@ -36,7 +36,7 @@ export default function ShardManager() {
   const [runtimes_index, SetRuntimeIndex] = useState<number | undefined>(undefined)
 
   useEffect(() => {
-    SetShards(GetUIShards())
+    SetShards(GetExtraShards())
   }, [])
 
   useEffect(() => {
