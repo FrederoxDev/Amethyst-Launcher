@@ -75,11 +75,7 @@ export async function RegisterVersion(version: Version) {
   Console.StartGroup(Console.ActionStr('Register Version'))
   {
     // Register New Version
-    const appxManifest = path.join(
-      FolderPaths.Versions,
-      `Minecraft-${version.sem_version}`,
-      'AppxManifest.xml'
-    )
+    const appxManifest = path.join(FolderPaths.Versions, `Minecraft-${version.sem_version}`, 'AppxManifest.xml')
 
     Console.Group(Console.InfoStr('AppxManifest'), () => {
       console.log(appxManifest)

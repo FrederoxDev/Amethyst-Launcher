@@ -19,8 +19,7 @@ export default function ProfileEditor() {
   const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<string>('')
   // const [profileInstallDir, setProfileInstallDir] = useState<string>(GetDefaultInstallPath())
 
-  const { mods, runtimes, versions, profiles, SetProfiles, selected_profile, saveData, SetMods } =
-    UseAppState()
+  const { mods, runtimes, versions, profiles, SetProfiles, selected_profile, saveData, SetMods } = UseAppState()
   const navigate = useNavigate()
 
   if (profiles.length === 0) navigate('/profiles')
@@ -109,9 +108,7 @@ export default function ProfileEditor() {
             value={profileMinecraftVersion}
             setValue={setProfileMinecraftVersion}
             // we don't support non-release versions right now so only show release lmao
-            options={versions
-              .filter(ver => ver.format === Version.Format.Release)
-              .map(ver => Version.toString(ver))}
+            options={versions.filter(ver => ver.format === Version.Format.Release).map(ver => Version.toString(ver))}
             id="minecraft-version"
           />
           <Dropdown

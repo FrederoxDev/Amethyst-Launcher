@@ -25,12 +25,7 @@ export namespace Shard {
   // endregion
 
   // region Shard.Option
-  export type Option =
-    | Option.Empty
-    | Option.Text
-    | Option.Toggle
-    | Option.Radial
-    | Option.Slider
+  export type Option = Option.Empty | Option.Text | Option.Toggle | Option.Radial | Option.Slider
 
   export namespace Option {
     export interface Empty {
@@ -189,6 +184,7 @@ export namespace Shard {
    * @see {SemVersion.Primitive}
    */
   export interface Fragment {
+    name: string
     uuid: string
     version: SemVersion.Primitive
   }
@@ -197,6 +193,7 @@ export namespace Shard {
     export const Schema: JSONSchemaType<Fragment> = {
       type: 'object',
       properties: {
+        name: { type: 'string' },
         uuid: { type: 'string', format: 'uuid' },
         version: SemVersion.Primitive.Schema
       },
@@ -222,11 +219,13 @@ export namespace Shard {
    *  format?: Shard.Format
    * }
    * format_version: SemVersion.Primitive
+   * dependencies?: Shard.Fragment[]
    * options?: Shard.Option[]
    * ```
    *
    * @external
    * @see {Shard.Format}
+   * @see {Shard.Fragment}
    * @see {Shard.Option}
    * @see {SemVersion.Primitive}
    */
@@ -238,14 +237,15 @@ export namespace Shard {
       uuid: string
       version: SemVersion.Primitive
       format?: Shard.Format
-    },
+    }
     format_version: SemVersion.Primitive
+    dependencies?: Shard.Fragment[]
     options?: Shard.Option[]
   }
 
   export namespace Full {
     export function toFragment(shard: Shard.Full): Shard.Fragment {
-      return { uuid: shard.meta.uuid, version: shard.meta.version }
+      return { name: shard.meta.name, uuid: shard.meta.uuid, version: shard.meta.version }
     }
 
     export const Schema: JSONSchemaType<Full> = {
@@ -267,6 +267,11 @@ export namespace Shard {
           additionalProperties: false
         },
         format_version: SemVersion.Primitive.Schema,
+        dependencies: {
+          type: 'array',
+          items: Shard.Fragment.Schema,
+          nullable: true
+        },
         options: {
           type: 'array',
           items: Shard.Option.Schema,
@@ -283,9 +288,9 @@ export namespace Shard {
 
   // region Shard.UI
   export interface UI {
-    path: string,
-    manifest_path: string,
-    icon_path?: string,
+    path: string
+    manifest_path: string
+    icon_path?: string
     data: Shard.Full
   }
 
@@ -310,7 +315,9 @@ export function GetShards(): Shard.Full[] {
   const shards: Shard.Full[] = []
 
   if (fs.existsSync(FolderPaths.Mods)) {
-    const mod_directories = fs.readdirSync(FolderPaths.Mods, { withFileTypes: true }).filter(entry => entry.isDirectory())
+    const mod_directories = fs
+      .readdirSync(FolderPaths.Mods, { withFileTypes: true })
+      .filter(entry => entry.isDirectory())
     for (const mod_directory of mod_directories) {
       const dir_path = path.join(mod_directory.parentPath, mod_directory.name)
 
@@ -321,10 +328,9 @@ export function GetShards(): Shard.Full[] {
 
         if (Shard.Full.Validator(json)) {
           shards.push(json)
-        }
-        else {
+        } else {
           Console.Group(Console.ErrorStr(`Failed to parse "manifest.json" in ${mod_directory.name}`), () => {
-            console.log(...Shard.Full.Validator.errors as DefinedError[])
+            console.log(...(Shard.Full.Validator.errors as DefinedError[]))
           })
         }
       }
@@ -338,7 +344,9 @@ export function GetUIShards(): Shard.UI[] {
   const shards: Shard.UI[] = []
 
   if (fs.existsSync(FolderPaths.Mods)) {
-    const mod_directories = fs.readdirSync(FolderPaths.Mods, { withFileTypes: true }).filter(entry => entry.isDirectory())
+    const mod_directories = fs
+      .readdirSync(FolderPaths.Mods, { withFileTypes: true })
+      .filter(entry => entry.isDirectory())
     for (const mod_directory of mod_directories) {
       const dir_path = path.join(mod_directory.parentPath, mod_directory.name)
 
@@ -351,11 +359,15 @@ export function GetUIShards(): Shard.UI[] {
         const icon_exists = fs.existsSync(icon_path)
 
         if (Shard.Full.Validator(json)) {
-          shards.push({ path: dir_path, manifest_path: config_path, icon_path: icon_exists ? icon_path : undefined, data: json })
-        }
-        else {
+          shards.push({
+            path: dir_path,
+            manifest_path: config_path,
+            icon_path: icon_exists ? icon_path : undefined,
+            data: json
+          })
+        } else {
           Console.Group(Console.ErrorStr(`Failed to parse "manifest.json" in ${mod_directory.name}`), () => {
-            console.log(...Shard.Full.Validator.errors as DefinedError[])
+            console.log(...(Shard.Full.Validator.errors as DefinedError[]))
           })
         }
       }

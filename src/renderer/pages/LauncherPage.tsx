@@ -43,9 +43,7 @@ export default function LauncherPage() {
     }
 
     const profile = profiles[selected_profile]
-    const minecraftVersion = versions.find(
-      version => version.sem_version === profile.minecraft_version
-    )!
+    const minecraftVersion = versions.find(version => version.sem_version === profile.minecraft_version)!
 
     if (minecraftVersion === undefined) {
       throw new Error(`Version ${profile.minecraft_version} not found`)
@@ -107,7 +105,7 @@ export default function LauncherPage() {
     SetIsLoading(false)
     SetStatus('')
 
-    child.spawn(`start minecraft:`, { shell: true})
+    child.spawn(`start minecraft:`, { shell: true })
   }
 
   const launchGame = async () => {

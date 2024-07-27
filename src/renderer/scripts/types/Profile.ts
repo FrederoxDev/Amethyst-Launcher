@@ -12,7 +12,7 @@ export interface Profile {
   name: string
   version: Version
   runtime?: Shard.Fragment
-  mods?: Shard.Fragment[],
+  mods?: Shard.Fragment[]
   icon_path?: string
 }
 
@@ -59,8 +59,7 @@ export function GetProfiles(): Profile[] {
   const json = JSON.parse(text)
   if (Profile.File.Validator(json)) {
     return json
-  }
-  else {
+  } else {
     Console.Group(Console.ErrorStr('Failed to parse `profiles.json`'), () => {
       console.log(Profile.File.Validator.errors)
     })
@@ -74,8 +73,7 @@ export function SetProfiles(profiles: Profile[]) {
 
   if (Profile.File.Validator(profiles)) {
     fs.writeFileSync(FilePaths.Profiles, JSON.stringify(profiles, undefined, 4))
-  }
-  else {
+  } else {
     Console.Group(Console.ErrorStr('Failed to set `profiles.json`'), () => {
       console.log(Profile.File.Validator.errors)
     })

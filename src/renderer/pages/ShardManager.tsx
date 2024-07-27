@@ -27,7 +27,6 @@ const OpenShardsFolder = () => {
 }
 
 export default function ShardManager() {
-
   const [shards, SetShards] = useState<Shard.UI[]>([])
 
   const [mods, SetMods] = useState<Shard.UI[]>([])
@@ -62,8 +61,12 @@ export default function ShardManager() {
     SetRuntimes(temp_runtimes)
   }, [shards])
 
-  const ShardButton = (shard: Shard.UI, index: number, selected_index: number | undefined, SetSelectedIndex: (index: number | undefined) => void) => {
-
+  const ShardButton = (
+    shard: Shard.UI,
+    index: number,
+    selected_index: number | undefined,
+    SetSelectedIndex: (index: number | undefined) => void
+  ) => {
     let icon_path = shard.icon_path
 
     if (icon_path === undefined) {
@@ -82,26 +85,32 @@ export default function ShardManager() {
 
     return (
       <div key={index}>
-        <ListItem className="cursor-pointer" onClick={() => {
-          (selected_index === index) ? SetSelectedIndex(undefined) : SetSelectedIndex(index)
-        }}>
+        <ListItem
+          className="cursor-pointer"
+          onClick={() => {
+            selected_index === index ? SetSelectedIndex(undefined) : SetSelectedIndex(index)
+          }}
+        >
           <div className="p-[8px]">
             <div className="flex flex-row gap-[8px]">
               <div className="w-[30px] h-[30px] border-[3px] border-[#1E1E1F] box-content">
                 <img src={icon_path} className="w-full h-full pixelated" alt="" />
               </div>
               <p className="minecraft-seven text-white text-[14px]">{shard.data.meta.name}</p>
-              <p
-                className="minecraft-seven text-[#B1B2B5] text-[14px]">{shard.data.meta.version}</p>
+              <p className="minecraft-seven text-[#B1B2B5] text-[14px]">{shard.data.meta.version}</p>
             </div>
           </div>
         </ListItem>
-        <div className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${(selected_index === index) ? '' : 'hidden'}`}>
+        <div
+          className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${selected_index === index ? '' : 'hidden'}`}
+        >
           <p className="minecraft-seven text-white text-[14px] px-[4px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
-            {(typeof shard.data.meta.author === 'string') ? 'Author: ' + shard.data.meta.author : 'Authors: ' + shard.data.meta.author.join(', ')}
+            {typeof shard.data.meta.author === 'string'
+              ? 'Author: ' + shard.data.meta.author
+              : 'Authors: ' + shard.data.meta.author.join(', ')}
           </p>
           <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
-            {(shard.data.meta.description) ? 'Description: ' + shard.data.meta.description : ''}
+            {shard.data.meta.description ? 'Description: ' + shard.data.meta.description : ''}
           </p>
           <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
             {'UUID: ' + shard.data.meta.uuid}
@@ -110,19 +119,18 @@ export default function ShardManager() {
             {'Version: ' + shard.data.meta.version}
           </p>
           <div className="flex flex-row justify-between">
-            <p
-              className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+            <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
               {'Path: ' + shard.path}
             </p>
-            <div className="w-[24px] h-[24px] shrink-0 bg-[#313233] box-content border-[3px] border-[#1E1E1F] rounded-[3px] cursor-pointer hover:border-[#48494A] hover:bg-[#5a5b5c] active:border-[#4f913c] active:bg-[#3c8527]" onClick={
-              () => {
+            <div
+              className="w-[24px] h-[24px] shrink-0 bg-[#313233] box-content border-[3px] border-[#1E1E1F] rounded-[3px] cursor-pointer hover:border-[#48494A] hover:bg-[#5a5b5c] active:border-[#4f913c] active:bg-[#3c8527]"
+              onClick={() => {
                 clipboard.writeText(shard.path)
-              }
-            }>
+              }}
+            >
               <img src="/images/icons/copy-icon.png" className="w-full h-full pixelated" alt="" />
             </div>
           </div>
-
         </div>
       </div>
     )
@@ -135,23 +143,18 @@ export default function ShardManager() {
           <div className="flex flex-col gap-[24px]">
             <div className="flex flex-col w-full">
               <div className="flex flex-row w-full align-bottom">
-                <div
-                  className="border-[3px] bg-[#48494a] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
+                <div className="border-[3px] bg-[#48494a] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
                   <p className="minecraft-seven text-white text-[14px]">Runtimes</p>
                 </div>
                 <div className="flex flex-col grow-[1] h-fit mt-auto">
-                  <div
-                    className="mt-auto bg-[#1E1E1F] h-[3px] " />
-                  <div
-                    className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] bg-[#48494a] border-l-[#48494a] h-[7px] grow-[1]" />
+                  <div className="mt-auto bg-[#1E1E1F] h-[3px] " />
+                  <div className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] bg-[#48494a] border-l-[#48494a] h-[7px] grow-[1]" />
                 </div>
               </div>
               <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
-                {
-                  runtimes.map((shard, index) => {
-                    return ShardButton(shard, index, runtimes_index, SetRuntimeIndex)
-                  })
-                }
+                {runtimes.map((shard, index) => {
+                  return ShardButton(shard, index, runtimes_index, SetRuntimeIndex)
+                })}
               </div>
             </div>
 
@@ -161,19 +164,15 @@ export default function ShardManager() {
                   <p className="minecraft-seven text-white text-[14px]">Mods</p>
                 </div>
                 <div className="flex flex-col grow-[1] h-fit mt-auto">
-                  <div
-                    className="mt-auto bg-[#1E1E1F] h-[3px] " />
-                  <div
-                    className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] border-l-[#48494a] h-[7px] grow-[1]" />
+                  <div className="mt-auto bg-[#1E1E1F] h-[3px] " />
+                  <div className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] border-l-[#48494a] h-[7px] grow-[1]" />
                 </div>
               </div>
 
               <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
-                {
-                  mods.map((shard, index) => {
-                    return ShardButton(shard, index, mod_index, SetModIndex)
-                  })
-                }
+                {mods.map((shard, index) => {
+                  return ShardButton(shard, index, mod_index, SetModIndex)
+                })}
               </div>
             </div>
           </div>

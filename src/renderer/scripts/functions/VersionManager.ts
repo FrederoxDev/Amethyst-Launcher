@@ -140,11 +140,7 @@ export async function ExtractVersion(
 }
 
 export function InstallProxy(version: Version) {
-  const target_path = path.join(
-    FolderPaths.Versions,
-    `Minecraft-${version.sem_version}`,
-    'dxgi.dll'
-  )
+  const target_path = path.join(FolderPaths.Versions, `Minecraft-${version.sem_version}`, 'dxgi.dll')
   const proxy_path = path.join(FolderPaths.App, 'build/public/proxy/dxgi.dll')
 
   fs.copyFileSync(proxy_path, target_path)

@@ -23,7 +23,6 @@ export interface Version {
 }
 
 export namespace Version {
-
   // region Version.Format
   export enum Format {
     Release = 0,
@@ -49,7 +48,7 @@ export namespace Version {
     type: 'object',
     properties: {
       path: { type: 'string', nullable: true },
-      uuid: { type: 'string', format: 'uuid'},
+      uuid: { type: 'string', format: 'uuid' },
       sem_version: SemVersion.Primitive.Schema,
       format: Version.Format.Schema
     },
@@ -64,7 +63,7 @@ export namespace Version {
   export namespace Cached {
     export const Schema: JSONSchemaType<Cached> = {
       type: 'array',
-      items: [{type: 'string'}, {type: 'string'}, {type: 'number'}],
+      items: [{ type: 'string' }, { type: 'string' }, { type: 'number' }],
       minItems: 3,
       maxItems: 3
     }
@@ -180,8 +179,7 @@ export function GetCachedVersions() {
         format: version[2]
       } as Version
     })
-  }
-  else {
+  } else {
     Console.Group(Console.ErrorStr('Failed to parse `cached_versions.json`'), () => {
       console.log(Version.Cached.File.Validator.errors)
     })
@@ -189,7 +187,6 @@ export function GetCachedVersions() {
     return []
   }
 }
-
 
 export function FindCachedVersion(version: SemVersion.Primitive): Version | undefined {
   const cached_versions: Version[] = GetCachedVersions()
@@ -217,11 +214,19 @@ export function RefreshVersionsFile() {
   })
 
   if (fs.existsSync(FolderPaths.Versions)) {
-    const version_dirs = fs.readdirSync(FolderPaths.Versions, { withFileTypes: true }).filter(entry => entry.isDirectory())
+    const version_dirs = fs
+      .readdirSync(FolderPaths.Versions, { withFileTypes: true })
+      .filter(entry => entry.isDirectory())
     for (const version_dir of version_dirs) {
       const dir_path = path.join(version_dir.parentPath, version_dir.name)
 
-      if (!(versions.map(v => { return v.path }).includes(dir_path))) {
+      if (
+        !versions
+          .map(v => {
+            return v.path
+          })
+          .includes(dir_path)
+      ) {
         if (version_dir.name.startsWith('Minecraft-')) {
           const minecraft_version = FindCachedVersion(version_dir.name.slice('Minecraft-'.length))
 
@@ -249,8 +254,7 @@ export function GetVersionsFile(): Version.File {
 
     if (Version.File.Validator(json)) {
       return json as Version.File
-    }
-    else {
+    } else {
       Console.Group(Console.ErrorStr('Failed to parse `versions.json`'), () => {
         console.log(Version.File.Validator.errors)
       })

@@ -12,7 +12,9 @@ namespace UnvalidatedPaths {
     export const Amethyst: string = path.join(...[AppDataPath, 'Amethyst'])
     export const Launcher: string = path.join(...[Amethyst, 'Launcher'])
     export const Versions: string = path.join(...[Amethyst, 'Versions'])
-    export const MinecraftUWP: string = path.join(...[LocalAppDataPath, 'Packages', 'Microsoft.MinecraftUWP_8wekyb3d8bbwe'])
+    export const MinecraftUWP: string = path.join(
+      ...[LocalAppDataPath, 'Packages', 'Microsoft.MinecraftUWP_8wekyb3d8bbwe']
+    )
     export const ComMojang: string = path.join(...[MinecraftUWP, 'LocalState', 'games', 'com.mojang'])
     export const AmethystUWP: string = path.join(...[ComMojang, 'amethyst'])
     export const Mods: string = path.join(...[AmethystUWP, 'Mods'])
@@ -25,7 +27,6 @@ namespace UnvalidatedPaths {
     export const LauncherConfig: string = path.join(...[Folder.AmethystUWP, 'launcher_config.json'])
   }
 }
-
 
 export namespace FolderPaths {
   export const App: string = AppPath
@@ -48,8 +49,6 @@ export namespace FilePaths {
   export const Profiles: string = ValidatePath(UnvalidatedPaths.File.Profiles)
   export const LauncherConfig: string = ValidatePath(UnvalidatedPaths.File.LauncherConfig)
 }
-
-
 
 export function ValidatePath(in_path: string): string {
   if (!fs.existsSync(in_path)) {

@@ -77,7 +77,9 @@ export function GetMods(): ModList {
       runtimeMods: []
     }
 
-    const mod_directories = fs.readdirSync(FolderPaths.Mods, { withFileTypes: true }).filter(entry => entry.isDirectory())
+    const mod_directories = fs
+      .readdirSync(FolderPaths.Mods, { withFileTypes: true })
+      .filter(entry => entry.isDirectory())
 
     for (const mod_directory of mod_directories) {
       const dir_path = path.join(mod_directory.parentPath, mod_directory.name)
