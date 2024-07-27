@@ -46,7 +46,7 @@ export default function ShardManager() {
     <>
       <Panel>
         <div className="content_panel">
-          <p className="minecraft-seven text-white text-[14px]">Mod Manager</p>
+          <p className="minecraft-seven text-white text-[14px]">Shard Manager</p>
           <List>
             {
               shards.map((shard, index) => (
@@ -65,7 +65,7 @@ export default function ShardManager() {
         </div>
       </Panel>
 
-      { shard_index && (
+      { shard_index !== undefined && (
         <PopupPanel onExit={() => SetShardIndex(undefined)}>
           <div className="w-[500px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
             <div className="flex">
@@ -85,7 +85,16 @@ export default function ShardManager() {
             </div>
 
             <p className="minecraft-seven text-[#BCBEC0] text-[12px] max-w-[400px]">
-              {shards[shard_index].meta.description ?? ''}
+              { shards[shard_index].meta.description ?? '' }
+            </p>
+            <p className="minecraft-seven text-[#BCBEC0] text-[12px] max-w-[400px]">
+              { shards[shard_index].meta.uuid }
+            </p>
+            <p className="minecraft-seven text-[#BCBEC0] text-[12px] max-w-[400px]">
+              { shards[shard_index].meta.author }
+            </p>
+            <p className="minecraft-seven text-[#BCBEC0] text-[14px] max-w-[400px]">
+              { (shards[shard_index].meta.format === undefined || 0) ? 'Mod' : (shards[shard_index].meta.format === 1) ? 'Runtime' : '' }
             </p>
           </div>
         </PopupPanel>
