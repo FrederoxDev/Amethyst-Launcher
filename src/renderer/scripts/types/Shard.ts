@@ -206,7 +206,7 @@ export namespace Shard {
   }
   // endregion
 
-  // region Shard.Full
+  // region Shard.Manifest
   /**
    * Contains full data. Mainly used **externally**
    *
@@ -230,7 +230,7 @@ export namespace Shard {
    * @see {Shard.Option}
    * @see {SemVersion.Primitive}
    */
-  export interface Full {
+  export interface Manifest {
     meta: {
       name: string
       author: string | string[]
@@ -244,12 +244,12 @@ export namespace Shard {
     options?: Shard.Option[]
   }
 
-  export namespace Full {
-    export function toFragment(shard: Shard.Full): Shard.Fragment {
+  export namespace Manifest {
+    export function toFragment(shard: Shard.Manifest): Shard.Fragment {
       return { name: shard.meta.name, uuid: shard.meta.uuid, version: shard.meta.version }
     }
 
-    export const Schema: JSONSchemaType<Full> = {
+    export const Schema: JSONSchemaType<Manifest> = {
       type: 'object',
       properties: {
         meta: {
@@ -283,16 +283,16 @@ export namespace Shard {
       additionalProperties: false
     }
 
-    export const Validator = AJV_Instance.compile<Full>(Schema)
+    export const Validator = AJV_Instance.compile<Manifest>(Schema)
   }
   // endregion
 
-  // region Shard.UI
+  // region Shard.Extra
   export interface Extra {
     path: string
     manifest_path: string
     icon_path?: string
-    data: Shard.Full
+    data: Shard.Manifest
   }
 
   export namespace Extra {
@@ -302,7 +302,7 @@ export namespace Shard {
         path: { type: 'string' },
         manifest_path: { type: 'string' },
         icon_path: { type: 'string', nullable: true },
-        data: Full.Schema
+        data: Manifest.Schema
       },
       required: ['path', 'manifest_path', 'data']
     }
@@ -312,8 +312,8 @@ export namespace Shard {
   // endregion
 }
 
-export function GetShards(): Shard.Full[] {
-  const shards: Shard.Full[] = []
+export function GetShards(): Shard.Manifest[] {
+  const shards: Shard.Manifest[] = []
 
   if (fs.existsSync(FolderPaths.Mods)) {
     const mod_directories = fs
@@ -327,11 +327,11 @@ export function GetShards(): Shard.Full[] {
         const text = fs.readFileSync(config_path, 'utf-8')
         const json = JSON.parse(text)
 
-        if (Shard.Full.Validator(json)) {
+        if (Shard.Manifest.Validator(json)) {
           shards.push(json)
         } else {
           Console.Group(Console.ErrorStr(`Failed to parse "manifest.json" in ${mod_directory.name}`), () => {
-            console.log(...(Shard.Full.Validator.errors as DefinedError[]))
+            console.log(...(Shard.Manifest.Validator.errors as DefinedError[]))
           })
         }
       }
@@ -359,7 +359,7 @@ export function GetUIShards(): Shard.Extra[] {
         const icon_path = path.join(dir_path, 'icon.png')
         const icon_exists = fs.existsSync(icon_path)
 
-        if (Shard.Full.Validator(json)) {
+        if (Shard.Manifest.Validator(json)) {
           shards.push({
             path: dir_path,
             manifest_path: config_path,
@@ -368,7 +368,7 @@ export function GetUIShards(): Shard.Extra[] {
           })
         } else {
           Console.Group(Console.ErrorStr(`Failed to parse "manifest.json" in ${mod_directory.name}`), () => {
-            console.log(...(Shard.Full.Validator.errors as DefinedError[]))
+            console.log(...(Shard.Manifest.Validator.errors as DefinedError[]))
           })
         }
       }
@@ -378,7 +378,7 @@ export function GetUIShards(): Shard.Extra[] {
   return shards
 }
 
-export function FindShard(shard: Shard.Fragment): Shard.Full | undefined {
+export function FindShard(shard: Shard.Fragment): Shard.Manifest | undefined {
   const shards = GetShards()
 
   return shards.filter(s => s.meta.uuid === shard.uuid).find(s => s.meta.version === shard.version)
