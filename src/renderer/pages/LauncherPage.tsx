@@ -43,10 +43,10 @@ export default function LauncherPage() {
     }
 
     const profile = profiles[selected_profile]
-    const minecraftVersion = versions.find(version => version.sem_version === profile.minecraft_version)!
+    const minecraftVersion = versions.find(version => version.sem_version === profile.version.sem_version)!
 
     if (minecraftVersion === undefined) {
-      throw new Error(`Version ${profile.minecraft_version} not found`)
+      throw new Error(`Version ${profile.version.sem_version} not found`)
     }
 
     SetError('')
@@ -60,7 +60,7 @@ export default function LauncherPage() {
       }
     }
 
-    const sem_version = SemVersion.fromPrimitive(profile.minecraft_version)
+    const sem_version = SemVersion.fromPrimitive(profile.version.sem_version)
 
     // We create a lock file when starting the download
     // if we are doing a launch, and we detect it for the version we are targeting
@@ -126,6 +126,8 @@ export default function LauncherPage() {
     Console.EndGroup()
   }
 
+  const profile_names = profiles?.map(profile => profile.name)
+
   return (
     <Panel>
       <div className="flex flex-col justify-between h-full w-full">
@@ -177,10 +179,10 @@ export default function LauncherPage() {
             <div className="w-[30%] mt-auto">
               <Dropdown
                 labelText="Profile"
-                options={profiles?.map(profile => profile.name)}
-                value={profiles[selected_profile]?.name}
-                setValue={value => {
-                  SetSelectedProfile(profiles.map(profile => profile.name).findIndex(e => e === value))
+                options={profile_names}
+                default_index={profile_names.indexOf(profiles[selected_profile]?.name)}
+                SetIndex={index => {
+                  SetSelectedProfile(index)
                 }}
                 id="profile-select"
               />

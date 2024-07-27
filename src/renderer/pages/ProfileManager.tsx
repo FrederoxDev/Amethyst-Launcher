@@ -5,7 +5,7 @@ import MinecraftButton from '../components/MinecraftButton'
 import Profile from '../scripts/types/Profile'
 import List from '../components/List'
 import ListItem from '../components/ListItem'
-// import { GetLatestVersion } from '../scripts/types/Version'
+import { GetLatestVersion } from '../scripts/types/Version'
 import { GetProfiles } from '../scripts/types/Profile'
 
 const ProfileButton = ({ profile, index }: { profile: Profile; index: number }) => {
@@ -30,8 +30,8 @@ const ProfileButton = ({ profile, index }: { profile: Profile; index: number }) 
 }
 
 export default function ProfileManager() {
-  // const navigate = useNavigate()
-  // const { profiles, SetProfiles, SetSelectedProfile } = UseAppState()
+  const navigate = useNavigate()
+  const { profiles, SetProfiles, SetSelectedProfile } = UseAppState()
 
   return (
     <Panel>
@@ -46,14 +46,14 @@ export default function ProfileManager() {
           <MinecraftButton
             text="Create new profile"
             onClick={() => {
-              // const default_profile: Profile = {
-              //   name: 'New Profile',
-              //   version: GetLatestVersion()
-              // }
-              // const newProfiles = [...profiles, default_profile]
-              // SetProfiles(newProfiles)
-              // SetSelectedProfile(newProfiles.length - 1)
-              // navigate('/profile-editor')
+              const default_profile: Profile = {
+                name: 'New Profile',
+                version: GetLatestVersion()
+              }
+              const newProfiles = [...profiles, default_profile]
+              SetProfiles(newProfiles)
+              SetSelectedProfile(newProfiles.length - 1)
+              navigate('/profile-editor')
             }}
           />
         </div>

@@ -6,78 +6,104 @@ import MinecraftButton from '../components/MinecraftButton'
 import { MinecraftButtonStyle } from '../components/MinecraftButtonStyle'
 import { UseAppState } from '../contexts/AppState'
 import { useNavigate } from 'react-router-dom'
-import { GetMods } from '../scripts/Mods'
-import { Version } from '../scripts/types/Version'
+import { GetLatestVersion, Version } from '../scripts/types/Version'
 import ListItem from '../components/ListItem'
 import List from '../components/List'
+import Shard, { GetShards } from '../scripts/types/Shard'
+import { GetProfiles } from '../scripts/types/Profile'
 // import { GetDefaultInstallPath } from '../scripts/VersionManager'
 
 export default function ProfileEditor() {
   const [profileName, setProfileName] = useState('')
-  const [profileActiveMods, setProfileActiveMods] = useState<string[]>([])
-  const [profileRuntime, setProfileRuntime] = useState<string>('')
-  const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<string>('')
+  const [profileActiveMods, setProfileActiveMods] = useState<Shard.Fragment[] | undefined>([])
+  const [profileRuntime, setProfileRuntime] = useState<Shard.Fragment | undefined>(undefined)
+  const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<Version>(GetLatestVersion())
   // const [profileInstallDir, setProfileInstallDir] = useState<string>(GetDefaultInstallPath())
 
   const { mods, runtimes, versions, profiles, SetProfiles, selected_profile, saveData, SetMods } = UseAppState()
   const navigate = useNavigate()
 
-  if (profiles.length === 0) navigate('/profiles')
+  if (profiles.length === 0) navigate('/profile-manager')
 
-  const toggleModActive = (name: string) => {
-    if (profileActiveMods.includes(name)) {
-      const newActive = profileActiveMods.filter(m => m !== name)
-      setProfileActiveMods(newActive)
-    } else {
-      const newActive = [...profileActiveMods, name]
+  const toggleModActive = (mod: Shard.Manifest) => {
+    if (profileActiveMods) {
+
+      const active_mod_uuids = profileActiveMods.map(m => m.uuid)
+
+      if (active_mod_uuids.includes(mod.meta.uuid)) {
+        const newActive = profileActiveMods.filter(m => m.uuid !== mod.meta.uuid)
+        setProfileActiveMods(newActive)
+      } else {
+        const newActive = [...profileActiveMods, Shard.Manifest.toFragment(mod)]
+        setProfileActiveMods(newActive)
+      }
+    }
+    // no active mods, so this mod must be toggling to active. just add it to the active mods
+    else {
+      const newActive = [Shard.Manifest.toFragment(mod)]
+      console.log(newActive)
       setProfileActiveMods(newActive)
     }
   }
 
-  const ModButton = ({ name }: { name: string }) => {
+  const ModButton = ({ mod }: { mod: Shard.Manifest }) => {
     return (
       <ListItem
         className="cursor-pointer"
         onClick={() => {
-          if (profileRuntime === 'Vanilla') {
+          if (profileRuntime === undefined) {
             alert('Cannot add mods to a vanilla profile')
             return
           }
 
-          toggleModActive(name)
+          toggleModActive(mod)
         }}
       >
         <div className="p-[4px]">
-          <p className="minecraft-seven text-white">{name}</p>
+          <p className="minecraft-seven text-white">{mod.meta.name}</p>
         </div>
       </ListItem>
     )
   }
 
   const loadProfile = useCallback(() => {
-    const profile = profiles[selected_profile]
-    setProfileName(profile?.name ?? 'New Profile')
-    setProfileRuntime(profile?.runtime ?? 'Vanilla')
-    setProfileActiveMods(profile?.mods ?? [])
-    setProfileMinecraftVersion(profile?.minecraft_version ?? '1.21.0.3')
-  }, [profiles, selected_profile])
+    const profile = GetProfiles()[selected_profile]
+
+    if (profile) {
+      setProfileName(profile.name)
+      setProfileRuntime(profile.runtime)
+      setProfileActiveMods(profile.mods)
+      setProfileMinecraftVersion(profile.version)
+    }
+
+  }, [selected_profile])
 
   const saveProfile = () => {
+
+
+    if (profileRuntime) {
+
+      const runtime_uuids = runtimes.map(r => r.meta.uuid)
+
+      if (!runtime_uuids.includes(profileRuntime.uuid)) {
+        setProfileRuntime(undefined)
+      }
+    }
+
+    if (profileActiveMods) {
+      const mod_uuids = mods.map(m => m.meta.uuid)
+
+      const newMods = profileActiveMods.filter(mod => mod_uuids.includes(mod.uuid))
+      setProfileActiveMods(newMods)
+    }
+
     profiles[selected_profile].name = profileName
-
-    // Verify the vanilla runtime still exists
-    if (!(profileRuntime in runtimes)) setProfileRuntime('Vanilla')
-
-    // Ensure all mods still exist
-    const newMods = profileActiveMods.filter(mod => mods.includes(mod))
-    SetMods(newMods)
-
     profiles[selected_profile].runtime = profileRuntime
     profiles[selected_profile].mods = profileActiveMods
-    profiles[selected_profile].minecraft_version = profileMinecraftVersion
+    profiles[selected_profile].version = profileMinecraftVersion
 
     saveData()
-    navigate('/profiles')
+    navigate('/profile-manager')
   }
 
   const deleteProfile = () => {
@@ -85,17 +111,60 @@ export default function ProfileEditor() {
     SetProfiles(profiles)
 
     saveData()
-    navigate('/profiles')
+    navigate('/profile-manager')
   }
 
   useEffect(() => {
-    const { mods } = GetMods()
-    SetMods(mods)
+    const shards = GetShards()
+
+    SetMods(shards.filter(s => s.meta.format === 0 || s.meta.format === undefined))
   }, [SetMods])
 
   useEffect(() => {
     loadProfile()
   }, [loadProfile])
+
+  const release_versions = versions.filter(ver => ver.format === Version.Format.Release)
+  const version_uuids = release_versions.map(v => v.uuid)
+  const version_names = release_versions.map(v => Version.toString(v))
+
+  const runtime_options = [undefined, ...runtimes]
+  const runtime_names = runtime_options.map(r => {
+    if (r) {
+      return r.meta.name
+    }
+    else return 'Vanilla'
+  })
+  const runtime_uuids = runtime_options.map(r => {
+    if (r) {
+      return r.meta.uuid
+    }
+    else return ''
+  })
+
+  let runtime_index = 0
+  if (profileRuntime) {
+    runtime_index = runtime_uuids.indexOf(profileRuntime.uuid)
+  }
+
+  let active_mods: Shard.Manifest[] = []
+  let inactive_mods: Shard.Manifest[] = mods
+
+  if (profileActiveMods) {
+    const active_mod_uuids = profileActiveMods.map(m => m.uuid)
+
+    active_mods = mods.filter(mod => {
+      return active_mod_uuids.includes(mod.meta.uuid)
+    })
+
+    inactive_mods = mods.filter(mod => {
+      return !active_mod_uuids.includes(mod.meta.uuid)
+    })
+  }
+
+  console.log(active_mods)
+  console.log(inactive_mods)
+
 
   return (
     <Panel>
@@ -105,24 +174,33 @@ export default function ProfileEditor() {
           <TextInput label="Profile Name" text={profileName} setText={setProfileName} />
           <Dropdown
             labelText="Minecraft Version"
-            value={profileMinecraftVersion}
-            setValue={setProfileMinecraftVersion}
+            default_index={version_uuids.indexOf(profileMinecraftVersion.uuid)}
+            SetIndex={
+              (index) => {
+                setProfileMinecraftVersion(release_versions[index])
+              }
+            }
             // we don't support non-release versions right now so only show release lmao
-            options={versions.filter(ver => ver.format === Version.Format.Release).map(ver => Version.toString(ver))}
+            options={version_names}
             id="minecraft-version"
           />
           <Dropdown
             labelText="Runtime"
-            value={profileRuntime}
-            setValue={setProfileRuntime}
-            options={runtimes}
+            default_index={runtime_index}
+            SetIndex={(index) => {
+              if (runtime_options[index]) {
+                setProfileRuntime(Shard.Manifest.toFragment(runtime_options[index]))
+              }
+              else setProfileRuntime(undefined)
+            }}
+            options={runtime_names}
             id="runtime-mod"
           />
           {/*<TextInput label="Install Directory" text={profileInstallDir} setText={setProfileInstallDir} />*/}
         </div>
 
         {/* Mod Selection */}
-        {profileRuntime === 'Vanilla' ? (
+        {profileRuntime === undefined ? (
           <div className="flex-grow flex justify-around">
             <div className="h-full flex flex-col"></div>
           </div>
@@ -131,21 +209,21 @@ export default function ProfileEditor() {
             <div className="w-[50%] h-full flex flex-col">
               <p className="text-white minecraft-seven text-[14px]">Active Mods</p>
               <List>
-                {mods
-                  .filter(mod => profileActiveMods.includes(mod))
-                  .map((mod, index) => (
-                    <ModButton name={mod} key={index} />
-                  ))}
+                {
+                  active_mods.map((mod, index) => {
+                    return <ModButton mod={mod} key={index} />
+                  })
+                }
               </List>
             </div>
             <div className=" w-[50%] h-full flex flex-col">
               <p className="text-white minecraft-seven text-[14px]">Inactive Mods</p>
               <List>
-                {mods
-                  .filter(mod => !profileActiveMods.includes(mod))
-                  .map((mod, index) => (
-                    <ModButton name={mod} key={index} />
-                  ))}
+                {
+                  inactive_mods.map((mod, index) => {
+                    return <ModButton mod={mod} key={index} />
+                  })
+                }
               </List>
             </div>
           </div>

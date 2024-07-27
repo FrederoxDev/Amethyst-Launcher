@@ -3,20 +3,19 @@ import React, { createContext, ReactNode, useCallback, useContext, useEffect, us
 import { Version, GetCachedVersions } from '../scripts/types/Version'
 
 import { LauncherConfig, GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
-import { GetProfiles, Profile } from '../scripts/types/Profile'
+import { GetProfiles, SetProfiles as SetProfilesFile, Profile } from '../scripts/types/Profile'
 
 import { ipcRenderer } from 'electron'
-import { GetMods } from '../scripts/Mods'
-import { FindExtraShard, FindExtraShards } from '../scripts/types/Shard'
+import Shard, { FindExtraShard, FindExtraShards, GetShards } from '../scripts/types/Shard'
 
 import * as path from 'path'
 
 interface TAppStateContext {
-  mods: string[]
-  SetMods: React.Dispatch<React.SetStateAction<string[]>>
+  mods: Shard.Manifest[]
+  SetMods: React.Dispatch<React.SetStateAction<Shard.Manifest[]>>
 
-  runtimes: string[]
-  SetRuntimes: React.Dispatch<React.SetStateAction<string[]>>
+  runtimes: Shard.Manifest[]
+  SetRuntimes: React.Dispatch<React.SetStateAction<Shard.Manifest[]>>
 
   versions: Version[]
   SetVersions: React.Dispatch<React.SetStateAction<Version[]>>
@@ -55,8 +54,8 @@ interface TAppStateContext {
 const AppStateContext = createContext<TAppStateContext | undefined>(undefined)
 
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
-  const [mods, SetMods] = useState<string[]>([])
-  const [runtimes, SetRuntimes] = useState<string[]>([])
+  const [mods, SetMods] = useState<Shard.Manifest[]>([])
+  const [runtimes, SetRuntimes] = useState<Shard.Manifest[]>([])
   const [versions, SetVersions] = useState<Version[]>([])
   const [profiles, SetProfiles] = useState<Profile[]>([])
   const [selected_profile, SetSelectedProfile] = useState(0)
@@ -72,9 +71,10 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     SetProfiles(GetProfiles())
 
-    const modList = GetMods()
-    SetRuntimes(['Vanilla', ...modList.runtimeMods])
-    SetMods(modList.mods)
+    const shards = GetShards()
+
+    SetRuntimes(shards.filter(s => s.meta.format === 1))
+    SetMods(shards.filter(s => s.meta.format === 0 || s.meta.format === undefined))
 
     const readConfig = GetLauncherConfig()
     SetKeepLauncherOpen(readConfig.keep_open ?? true)
@@ -88,23 +88,23 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [hasInitialized, setHasInitialized] = useState(false)
 
   const saveData = useCallback(() => {
-    SetProfiles(profiles)
+    SetProfilesFile(profiles)
 
-    let mod_folders: string[] = []
-    let runtime_folder: string = ''
+    let mods: string[] = []
+    let runtime: string = 'Vanilla'
 
     if (profiles[selected_profile]) {
       if (profiles[selected_profile].mods) {
-        const mods = FindExtraShards(profiles[selected_profile]?.mods ?? [])
+        const mod_shards = FindExtraShards(profiles[selected_profile]?.mods ?? [])
 
-        mod_folders = mods.map(m => path.dirname(m.path))
+        mods = mod_shards.map(m => path.basename(m.path))
       }
 
       if (profiles[selected_profile].runtime) {
         const found = FindExtraShard(profiles[selected_profile]?.runtime)
 
         if (found) {
-          runtime_folder = path.dirname(found.path)
+          runtime = path.basename(found.path)
         }
       }
     }
@@ -113,8 +113,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     const launcherConfig: LauncherConfig = {
       developer_mode: developer_mode,
       keep_open: keep_launcher_open,
-      mods: mod_folders,
-      runtime: runtime_folder,
+      mods: mods,
+      runtime: runtime,
       selected_profile: selected_profile,
       ui_theme: ui_theme
     }
