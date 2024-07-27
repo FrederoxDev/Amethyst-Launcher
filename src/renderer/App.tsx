@@ -92,12 +92,11 @@ export default function App() {
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/versions" element={<VersionPage />} />
             </Routes>
-
-            <UpdatePage></UpdatePage>
-            <DropWindow></DropWindow>
           </div>
         </div>
       </div>
+      <UpdatePage></UpdatePage>
+      <DropWindow></DropWindow>
     </AppStateProvider>
   )
 }

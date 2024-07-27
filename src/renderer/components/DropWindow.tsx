@@ -103,7 +103,7 @@ export default function DropWindow() {
 
   return (
     <div
-      className={`absolute w-full h-full top-0 left-0 pointer-events-none ${hovered ? 'opacity-100' : 'opacity-0'} transition-opacity ease-out duration-150`}
+      className={`absolute w-full h-full top-0 left-0 pointer-events-none ${hovered ? 'opacity-100' : 'opacity-0'} transition-opacity ease-out duration-[150ms]`}
     >
       <div className="absolute pointer-events-none w-full h-full bg-black top-0 left-0 opacity-80" />
 
