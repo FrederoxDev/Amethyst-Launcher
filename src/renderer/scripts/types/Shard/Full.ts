@@ -39,6 +39,10 @@ export interface Full {
 }
 
 export namespace Full {
+  export function toFragment(shard: Shard.Full): Shard.Fragment {
+    return { uuid: shard.meta.uuid, version: shard.meta.version }
+  }
+
   export const Schema: JSONSchemaType<Full> = {
     type: 'object',
     properties: {
