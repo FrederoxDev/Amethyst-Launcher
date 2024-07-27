@@ -280,6 +280,30 @@ export namespace Shard {
     export const Validator = AJV_Instance.compile<Full>(Schema)
   }
   // endregion
+
+  // region Shard.UI
+  export interface UI {
+    path: string,
+    manifest_path: string,
+    icon_path?: string,
+    data: Shard.Full
+  }
+
+  export namespace UI {
+    export const Schema: JSONSchemaType<UI> = {
+      type: 'object',
+      properties: {
+        path: { type: 'string' },
+        manifest_path: { type: 'string' },
+        icon_path: { type: 'string', nullable: true },
+        data: Full.Schema
+      },
+      required: ['path', 'manifest_path', 'data']
+    }
+
+    export const Validator = AJV_Instance.compile<UI>(Schema)
+  }
+  // endregion
 }
 
 export function GetShards(): Shard.Full[] {
@@ -297,6 +321,37 @@ export function GetShards(): Shard.Full[] {
 
         if (Shard.Full.Validator(json)) {
           shards.push(json)
+        }
+        else {
+          Console.Group(Console.ErrorStr(`Failed to parse "manifest.json" in ${mod_directory.name}`), () => {
+            console.log(...Shard.Full.Validator.errors as DefinedError[])
+          })
+        }
+      }
+    }
+  }
+
+  return shards
+}
+
+export function GetUIShards(): Shard.UI[] {
+  const shards: Shard.UI[] = []
+
+  if (fs.existsSync(FolderPaths.Mods)) {
+    const mod_directories = fs.readdirSync(FolderPaths.Mods, { withFileTypes: true }).filter(entry => entry.isDirectory())
+    for (const mod_directory of mod_directories) {
+      const dir_path = path.join(mod_directory.parentPath, mod_directory.name)
+
+      const config_path = path.join(dir_path, 'manifest.json')
+      if (fs.existsSync(config_path)) {
+        const text = fs.readFileSync(config_path, 'utf-8')
+        const json = JSON.parse(text)
+
+        const icon_path = path.join(dir_path, 'icon.png')
+        const icon_exists = fs.existsSync(icon_path)
+
+        if (Shard.Full.Validator(json)) {
+          shards.push({ path: dir_path, manifest_path: config_path, icon_path: icon_exists ? icon_path : undefined, data: json })
         }
         else {
           Console.Group(Console.ErrorStr(`Failed to parse "manifest.json" in ${mod_directory.name}`), () => {

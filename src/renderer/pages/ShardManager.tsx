@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import MinecraftButton from '../components/MinecraftButton'
 import { FolderPaths } from '../scripts/Paths'
 
-import { GetShards, Shard } from '../scripts/types/Shard'
+import { GetUIShards, Shard } from '../scripts/types/Shard'
+
+import { clipboard } from 'electron'
 
 // import PopupPanel from '../components/PopupPanel'
 import * as fs from 'fs'
@@ -26,24 +28,24 @@ const OpenShardsFolder = () => {
 
 export default function ShardManager() {
 
-  const [shards, SetShards] = useState<Shard.Full[]>([])
+  const [shards, SetShards] = useState<Shard.UI[]>([])
 
-  const [mods, SetMods] = useState<Shard.Full[]>([])
+  const [mods, SetMods] = useState<Shard.UI[]>([])
   const [mod_index, SetModIndex] = useState<number | undefined>(undefined)
 
-  const [runtimes, SetRuntimes] = useState<Shard.Full[]>([])
+  const [runtimes, SetRuntimes] = useState<Shard.UI[]>([])
   const [runtimes_index, SetRuntimeIndex] = useState<number | undefined>(undefined)
 
   useEffect(() => {
-    SetShards(GetShards())
+    SetShards(GetUIShards())
   }, [])
 
   useEffect(() => {
-    const temp_mods: Shard.Full[] = []
-    const temp_runtimes: Shard.Full[] = []
+    const temp_mods: Shard.UI[] = []
+    const temp_runtimes: Shard.UI[] = []
 
     shards.map(shard => {
-      switch (shard.meta.format) {
+      switch (shard.data.meta.format) {
         default:
           temp_mods.push(shard)
           break
@@ -60,36 +62,67 @@ export default function ShardManager() {
     SetRuntimes(temp_runtimes)
   }, [shards])
 
-  const ShardButton = (shard: Shard.Full, index: number, selected_index: number | undefined, SetSelectedIndex: (index: number | undefined) => void) => {
+  const ShardButton = (shard: Shard.UI, index: number, selected_index: number | undefined, SetSelectedIndex: (index: number | undefined) => void) => {
+
+    let icon_path = shard.icon_path
+
+    if (icon_path === undefined) {
+      switch (shard.data.meta.format) {
+        default:
+          icon_path = `/images/icons/page-icon.png`
+          break
+        case 0:
+          icon_path = `/images/icons/page-icon.png`
+          break
+        case 1:
+          icon_path = `/images/icons/book-icon.png`
+          break
+      }
+    }
+
     return (
       <div key={index}>
         <ListItem className="cursor-pointer" onClick={() => {
           (selected_index === index) ? SetSelectedIndex(undefined) : SetSelectedIndex(index)
         }}>
           <div className="p-[8px]">
-            <div className="flex flex-row">
-              <p className="minecraft-seven text-white text-[14px] px-[4px]">{shard.meta.name}</p>
+            <div className="flex flex-row gap-[8px]">
+              <div className="w-[30px] h-[30px] border-[3px] border-[#1E1E1F] box-content">
+                <img src={icon_path} className="w-full h-full pixelated" alt="" />
+              </div>
+              <p className="minecraft-seven text-white text-[14px]">{shard.data.meta.name}</p>
               <p
-                className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px]">{shard.meta.version}</p>
+                className="minecraft-seven text-[#B1B2B5] text-[14px]">{shard.data.meta.version}</p>
             </div>
           </div>
         </ListItem>
-        <div
-          className={`border-[3px] m-[-3px] border-[#1e1e1f] ${(selected_index === index) ? '' : 'hidden'} transition-[max-height] duration-[0.5] ease-in-out`}>
-          <div className="w-full h-fit p-[8px] bg-[#313233] border-[0px] border-[#333334]">
-            <p className="minecraft-seven text-white text-[14px] px-[4px]">
-              {(typeof shard.meta.author === 'string') ? 'Author: ' + shard.meta.author : 'Authors: ' + shard.meta.author.join(', ')}
+        <div className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${(selected_index === index) ? '' : 'hidden'}`}>
+          <p className="minecraft-seven text-white text-[14px] px-[4px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+            {(typeof shard.data.meta.author === 'string') ? 'Author: ' + shard.data.meta.author : 'Authors: ' + shard.data.meta.author.join(', ')}
+          </p>
+          <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+            {(shard.data.meta.description) ? 'Description: ' + shard.data.meta.description : ''}
+          </p>
+          <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+            {'UUID: ' + shard.data.meta.uuid}
+          </p>
+          <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+            {'Version: ' + shard.data.meta.version}
+          </p>
+          <div className="flex flex-row justify-between">
+            <p
+              className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+              {'Path: ' + shard.path}
             </p>
-            <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px]">
-              {(shard.meta.description) ? 'Description: ' + shard.meta.description : ''}
-            </p>
-            <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px]">
-              {'UUID: ' + shard.meta.uuid}
-            </p>
-            <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px]">
-              {'Version: ' + shard.meta.version}
-            </p>
+            <div className="w-[24px] h-[24px] shrink-0 bg-[#313233] box-content border-[3px] border-[#1E1E1F] rounded-[3px] cursor-pointer hover:border-[#48494A] hover:bg-[#5a5b5c] active:border-[#4f913c] active:bg-[#3c8527]" onClick={
+              () => {
+                clipboard.writeText(shard.path)
+              }
+            }>
+              <img src="/images/icons/copy-icon.png" className="w-full h-full pixelated" alt="" />
+            </div>
           </div>
+
         </div>
       </div>
     )
@@ -98,7 +131,7 @@ export default function ShardManager() {
   return (
     <>
       <div className="w-full h-full flex flex-col gap-[8px]">
-        <div className="content_panel h-fit max-h-full overflow-y-auto scrollbar">
+        <div className="content_panel h-fit max-h-full overflow-y-auto overflow-x-hidden scrollbar">
           <div className="flex flex-col gap-[24px]">
             <div className="flex flex-col w-full">
               <div className="flex flex-row w-full align-bottom">
