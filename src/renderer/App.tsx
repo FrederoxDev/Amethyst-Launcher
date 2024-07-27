@@ -7,7 +7,6 @@ import ProfileEditor from './pages/ProfileEditor'
 import ProfilePage from './pages/ProfilePage'
 import SettingsPage from './pages/SettingsPage'
 import UpdatePage from './pages/UpdatePage'
-import ModsPage from './pages/ModsPage'
 import VersionPage from './pages/VersionPage'
 import DropWindow from './components/DropWindow'
 import ShardManager from './pages/ShardManager'
@@ -49,20 +48,12 @@ export default function App() {
                     <img src="images/icons/chest-icon.png" className="w-full h-full pixelated" alt="" />
                   </div>
                 </Link>
-                <Link to="/mods" draggable={false}>
-                  <div
-                    className="w-[46px] h-[46px]"
-                    style={location.pathname === '/mods' ? highlightedIcon : unselectedIcon}
-                  >
-                    <img src="images/icons/shulker-icon.png" className="w-full h-full pixelated" alt="" />
-                  </div>
-                </Link>
                 <Link to="/shard-manager" draggable={false}>
                   <div
                     className="w-[46px] h-[46px]"
                     style={location.pathname === '/shard-manager' ? highlightedIcon : unselectedIcon}
                   >
-                    <img src="images/icons/debug-icon.png" className="w-full h-full pixelated" alt="" />
+                    <img src="images/icons/shulker-icon.png" className="w-full h-full pixelated" alt="" />
                   </div>
                 </Link>
                 <Link to="/versions" draggable={false}>
@@ -87,7 +78,6 @@ export default function App() {
               <Route path="/" element={<LauncherPage />} />
               <Route path="/profiles" element={<ProfilePage />} />
               <Route path="/profile-editor" element={<ProfileEditor />} />
-              <Route path="/mods" element={<ModsPage />} />
               <Route path="/shard-manager" element={<ShardManager />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/versions" element={<VersionPage />} />
