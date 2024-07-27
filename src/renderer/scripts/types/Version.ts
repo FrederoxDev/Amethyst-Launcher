@@ -285,3 +285,9 @@ export function FindVersionPath(version: Version): string | undefined {
     return v.uuid === version.uuid
   })?.path
 }
+
+export function GetLatestVersion(format: Version.Format = Version.Format.Release) {
+  const versions = GetVersions().filter(v => v.format === format)
+
+  return versions[versions.length - 1]
+}

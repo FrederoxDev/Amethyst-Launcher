@@ -22,7 +22,7 @@ export namespace Profile {
     properties: {
       name: { type: 'string' },
       version: Version.Schema,
-      runtime: { oneOf: [Shard.Fragment.Schema], nullable: true },
+      runtime: { ...Shard.Fragment.Schema, nullable: true },
       mods: {
         type: 'array',
         items: Shard.Fragment.Schema,
@@ -50,6 +50,8 @@ export namespace Profile {
   // endregion
 }
 // endregion Profile
+
+export default Profile
 
 export function GetProfiles(): Profile[] {
   if (!fs.existsSync(FilePaths.Profiles)) return []

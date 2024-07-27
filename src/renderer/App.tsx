@@ -4,12 +4,12 @@ import Title from './components/Title'
 import { AppStateProvider } from './contexts/AppState'
 import LauncherPage from './pages/LauncherPage'
 import ProfileEditor from './pages/ProfileEditor'
-import ProfilePage from './pages/ProfilePage'
 import SettingsPage from './pages/SettingsPage'
 import UpdatePage from './pages/UpdatePage'
 import VersionPage from './pages/VersionPage'
 import DropWindow from './components/DropWindow'
 import ShardManager from './pages/ShardManager'
+import ProfileManager from './pages/ProfileManager'
 
 export default function App() {
   const location = useLocation()
@@ -40,10 +40,10 @@ export default function App() {
                     <img src="images/icons/crafting-icon.png" className="w-full h-full pixelated" alt="" />
                   </div>
                 </Link>
-                <Link to="/profiles" draggable={false}>
+                <Link to="/profile-manager" draggable={false}>
                   <div
                     className="w-[46px] h-[46px]"
-                    style={location.pathname === '/profiles' ? highlightedIcon : unselectedIcon}
+                    style={location.pathname === '/profile-manager' ? highlightedIcon : unselectedIcon}
                   >
                     <img src="images/icons/chest-icon.png" className="w-full h-full pixelated" alt="" />
                   </div>
@@ -76,7 +76,7 @@ export default function App() {
           <div className="view_container w-[calc(100%-80px)]">
             <Routes>
               <Route path="/" element={<LauncherPage />} />
-              <Route path="/profiles" element={<ProfilePage />} />
+              <Route path="/profile-manager" element={<ProfileManager />} />
               <Route path="/profile-editor" element={<ProfileEditor />} />
               <Route path="/shard-manager" element={<ShardManager />} />
               <Route path="/settings" element={<SettingsPage />} />

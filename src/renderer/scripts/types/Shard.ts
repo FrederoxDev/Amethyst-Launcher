@@ -6,8 +6,6 @@ import { DefinedError, JSONSchemaType } from 'ajv'
 import { SemVersion } from './SemVersion'
 import AJV_Instance from '../schemas/AJV_Instance'
 
-export default Shard
-
 export namespace Shard {
   // region Shard.Format
   export enum Format {
@@ -312,6 +310,8 @@ export namespace Shard {
   // endregion
 }
 
+export default Shard
+
 export function GetShards(): Shard.Manifest[] {
   const shards: Shard.Manifest[] = []
 
@@ -391,6 +391,28 @@ export function FindShards(fragments: Shard.Fragment[]): Shard.Manifest[] {
 
   for (const fragment of fragments) {
     const found_shard = shards.filter(s => s.meta.uuid === fragment.uuid).find(s => s.meta.version === fragment.version)
+
+    if (found_shard) {
+      found.push(found_shard)
+    }
+  }
+
+  return found
+}
+
+export function FindExtraShard(fragment: Shard.Fragment): Shard.Extra | undefined {
+  const shards = GetExtraShards()
+
+  return shards.filter(s => s.data.meta.uuid === fragment.uuid).find(s => s.data.meta.version === fragment.version)
+}
+
+export function FindExtraShards(fragments: Shard.Fragment[]): Shard.Extra[] {
+  const shards = GetExtraShards()
+
+  const found: Shard.Extra[] = []
+
+  for (const fragment of fragments) {
+    const found_shard = shards.filter(s => s.data.meta.uuid === fragment.uuid).find(s => s.data.meta.version === fragment.version)
 
     if (found_shard) {
       found.push(found_shard)

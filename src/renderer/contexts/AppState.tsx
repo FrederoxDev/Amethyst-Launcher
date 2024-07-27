@@ -3,10 +3,13 @@ import React, { createContext, ReactNode, useCallback, useContext, useEffect, us
 import { Version, GetCachedVersions } from '../scripts/types/Version'
 
 import { LauncherConfig, GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
-import { GetProfiles, Profile } from '../scripts/Profiles'
+import { GetProfiles, Profile } from '../scripts/types/Profile'
 
 import { ipcRenderer } from 'electron'
 import { GetMods } from '../scripts/Mods'
+import { FindExtraShard, FindExtraShards } from '../scripts/types/Shard'
+
+import * as path from 'path'
 
 interface TAppStateContext {
   mods: string[]
@@ -87,11 +90,31 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const saveData = useCallback(() => {
     SetProfiles(profiles)
 
+    let mod_folders: string[] = []
+    let runtime_folder: string = ''
+
+    if (profiles[selected_profile]) {
+      if (profiles[selected_profile].mods) {
+        const mods = FindExtraShards(profiles[selected_profile]?.mods ?? [])
+
+        mod_folders = mods.map(m => path.dirname(m.path))
+      }
+
+      if (profiles[selected_profile].runtime) {
+        const found = FindExtraShard(profiles[selected_profile]?.runtime)
+
+        if (found) {
+          runtime_folder = path.dirname(found.path)
+        }
+      }
+    }
+
+
     const launcherConfig: LauncherConfig = {
       developer_mode: developer_mode,
       keep_open: keep_launcher_open,
-      mods: profiles[selected_profile]?.mods ?? [],
-      runtime: profiles[selected_profile]?.runtime ?? '',
+      mods: mod_folders,
+      runtime: runtime_folder,
       selected_profile: selected_profile,
       ui_theme: ui_theme
     }
