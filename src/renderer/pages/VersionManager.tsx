@@ -97,7 +97,7 @@ const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => 
   )
 }
 
-export default function VersionPage() {
+export default function VersionManager() {
   RefreshVersionsFile()
   const [versions, SetVersions] = useState<Version[]>(GetVersions())
 

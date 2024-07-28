@@ -91,7 +91,7 @@ export default function ShardManager() {
             selected_index === index ? SetSelectedIndex(undefined) : SetSelectedIndex(index)
           }}
         >
-          <div className="p-[8px]">
+          <div className="flex flex-row justify-between items-center p-[8px]">
             <div className="flex flex-row gap-[8px]">
               <div className="w-[30px] h-[30px] border-[3px] border-[#1E1E1F] box-content">
                 <img src={icon_path} className="w-full h-full pixelated" alt="" />
@@ -99,27 +99,30 @@ export default function ShardManager() {
               <p className="minecraft-seven text-white text-[14px]">{shard.data.meta.name}</p>
               <p className="minecraft-seven text-[#B1B2B5] text-[14px]">{shard.data.meta.version}</p>
             </div>
+            <div className="w-[30px] h-[30px] p-[10px]">
+              <img src={selected_index === index ? `/images/icons/chevron-up.png` : `/images/icons/chevron-down.png`} className="w-full h-full pixelated" alt="" />
+            </div>
           </div>
         </ListItem>
         <div
           className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${selected_index === index ? '' : 'hidden'}`}
         >
-          <p className="minecraft-seven text-white text-[14px] px-[4px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+          <p className="minecraft-seven text-white text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
             {typeof shard.data.meta.author === 'string'
               ? 'Author: ' + shard.data.meta.author
               : 'Authors: ' + shard.data.meta.author.join(', ')}
           </p>
-          <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+          <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
             {shard.data.meta.description ? 'Description: ' + shard.data.meta.description : ''}
           </p>
-          <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+          <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
             {'UUID: ' + shard.data.meta.uuid}
           </p>
-          <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+          <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
             {'Version: ' + shard.data.meta.version}
           </p>
           <div className="flex flex-row justify-between">
-            <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+            <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
               {'Path: ' + shard.path}
             </p>
             <div

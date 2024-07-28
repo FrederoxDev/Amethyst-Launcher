@@ -19,9 +19,9 @@ const ProfileButton = ({ profile, index }: { profile: Profile; index: number }) 
 
   return (
     <ListItem onClick={() => openProfile(profile, index)} className="cursor-pointer">
-      <div className="p-[8px]">
-        <p className="minecraft-seven text-white text-[14px] px-[4px]">{profile.name}</p>
-        <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px]">
+      <div className="flex flex-col gap-[4px] p-[8px]">
+        <p className="minecraft-seven text-white text-[14px]">{profile.name}</p>
+        <p className="minecraft-seven text-[#B1B2B5] text-[14px]">
           {profile.version.sem_version} ({profile.runtime?.name ?? 'Vanilla'})
         </p>
       </div>

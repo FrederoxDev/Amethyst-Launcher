@@ -15,7 +15,7 @@ export default function Dropdown({ id, labelText, options, default_index, SetInd
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-[4px]">
       <label htmlFor={id} className="minecraft-seven text-white text-[14px]">
         {labelText}
       </label>

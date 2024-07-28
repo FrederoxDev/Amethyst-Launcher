@@ -19,7 +19,7 @@ import child from 'child_process'
 import Panel from '../components/Panel'
 import { Console } from '../scripts/types/Console'
 
-export default function LauncherPage() {
+export default function Launcher() {
   const {
     profiles,
     selected_profile,
@@ -155,8 +155,8 @@ export default function LauncherPage() {
 
         <div className="flex flex-col justify-end grow w-full">
           {/* Not affiliated disclaimer */}
-          <div className="bg-[#0c0c0cc5] w-fit ml-auto rounded-t-[3px]">
-            <p className="minecraft-seven text-white px-[4px] text-[13px]">
+          <div className="bg-[#0c0c0cc5] w-fit ml-auto rounded-t-[3px] p-[4px]">
+            <p className="minecraft-seven text-white text-[13px]">
               Not approved by or associated with Mojang or Microsoft
             </p>
           </div>

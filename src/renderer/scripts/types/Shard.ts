@@ -23,10 +23,24 @@ export namespace Shard {
   // endregion
 
   // region Shard.Option
-  export type Option = Option.Empty | Option.Text | Option.Toggle | Option.Radial | Option.Slider
+  export type Option = Option.Text | Option.Toggle | Option.Radial | Option.Slider
 
   export namespace Option {
-    export interface Empty {
+    export type Value = string | boolean | number
+
+    export namespace Value {
+      export const Schema: JSONSchemaType<Value> = {
+        oneOf: [
+          { type: 'string'},
+          { type: 'boolean'},
+          { type: 'number'}
+        ]
+      }
+
+      export const Validator = AJV_Instance.compile<Value>(Schema)
+    }
+
+    interface Empty {
       type: string
       properties?: {
         label?: string
@@ -59,26 +73,6 @@ export namespace Shard {
 
     export const Schema: JSONSchemaType<Option> = {
       oneOf: [
-        {
-          type: 'object',
-          properties: {
-            type: {
-              type: 'string',
-              const: 'empty'
-            },
-            properties: {
-              type: 'object',
-              properties: {
-                label: { type: 'string', nullable: true },
-                description: { type: 'string', nullable: true }
-              },
-              nullable: true,
-              additionalProperties: false
-            }
-          },
-          required: ['type'],
-          additionalProperties: false
-        },
         {
           type: 'object',
           properties: {
@@ -186,6 +180,7 @@ export namespace Shard {
     name: string
     uuid: string
     version: SemVersion.Primitive
+    options?: Option.Value[]
   }
 
   export namespace Fragment {
@@ -194,9 +189,14 @@ export namespace Shard {
       properties: {
         name: { type: 'string' },
         uuid: { type: 'string', format: 'uuid' },
-        version: SemVersion.Primitive.Schema
+        version: SemVersion.Primitive.Schema,
+        options: {
+          type: 'array',
+          nullable: true,
+          items: Option.Value.Schema
+        }
       },
-      required: ['uuid', 'version'],
+      required: ['name', 'uuid', 'version'],
       additionalProperties: false
     }
 

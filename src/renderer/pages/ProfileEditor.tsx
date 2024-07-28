@@ -164,71 +164,86 @@ export default function ProfileEditor() {
   
   return (
     <Panel>
-      <div className="content_panel">
-        {/* Settings */}
-        <div className="flex flex-col gap-[8px]">
-          <TextInput label="Profile Name" text={profileName} setText={setProfileName} />
-          <Dropdown
-            labelText="Minecraft Version"
-            default_index={version_uuids.indexOf(profileMinecraftVersion.uuid)}
-            SetIndex={
-              (index) => {
-                setProfileMinecraftVersion(release_versions[index])
-              }
-            }
-            // we don't support non-release versions right now so only show release lmao
-            options={version_names}
-            id="minecraft-version"
-          />
-          <Dropdown
-            labelText="Runtime"
-            default_index={runtime_index}
-            SetIndex={(index) => {
-              if (runtime_options[index]) {
-                setProfileRuntime(Shard.Manifest.toFragment(runtime_options[index]))
-              }
-              else setProfileRuntime(undefined)
-            }}
-            options={runtime_names}
-            id="runtime-mod"
-          />
-          {/*<TextInput label="Install Directory" text={profileInstallDir} setText={setProfileInstallDir} />*/}
+      <div className="flex flex-col gap-[8px] w-full h-full">
+        <div className="w-full shrink-0">
+          <div className="content_panel">
+            <div className="flex flex-row gap-[8px]">
+              <div className="w-[40px] h-[40px] border-[3px] border-[#1E1E1F] box-content">
+                <img src={profiles[selected_profile]?.icon_path ?? `/images/icons/earth-icon.png`} className="w-full h-full pixelated" alt="" />
+              </div>
+              <div className="flex flex-col gap-[2px] justify-center">
+                <p className="minecraft-seven text-white text-[16px]">{profiles[selected_profile]?.name}</p>
+                <p className="minecraft-seven text-[#B1B2B5] text-[14px]">{`${profiles[selected_profile]?.runtime?.name ?? 'Vanilla'}  ${ profiles[selected_profile]?.version.sem_version }`}</p>
+              </div>
+            </div>
+          </div>
         </div>
-
-        {/* Mod Selection */}
-        {profileRuntime === undefined ? (
-          <div className="flex-grow flex justify-around">
-            <div className="h-full flex flex-col"></div>
-          </div>
-        ) : (
-          <div className="bg-[#48494a] flex-grow flex justify-around gap-[8px]">
-            <div className="w-[50%] h-full flex flex-col">
-              <p className="text-white minecraft-seven text-[14px]">Active Mods</p>
-              <List>
-                {
-                  active_mods.map((mod, index) => {
-                    return <ModButton mod={mod} key={index} />
-                  })
+        <div className="content_panel">
+          {/* Settings */}
+          <div className="flex flex-col gap-[8px]">
+            <TextInput label="Profile Name" text={profileName} setText={setProfileName} />
+            <Dropdown
+              labelText="Minecraft Version"
+              default_index={version_uuids.indexOf(profileMinecraftVersion.uuid)}
+              SetIndex={
+                (index) => {
+                  setProfileMinecraftVersion(release_versions[index])
                 }
-              </List>
-            </div>
-            <div className=" w-[50%] h-full flex flex-col">
-              <p className="text-white minecraft-seven text-[14px]">Inactive Mods</p>
-              <List>
-                {
-                  inactive_mods.map((mod, index) => {
-                    return <ModButton mod={mod} key={index} />
-                  })
+              }
+              // we don't support non-release versions right now so only show release lmao
+              options={version_names}
+              id="minecraft-version"
+            />
+            <Dropdown
+              labelText="Runtime"
+              default_index={runtime_index}
+              SetIndex={(index) => {
+                if (runtime_options[index]) {
+                  setProfileRuntime(Shard.Manifest.toFragment(runtime_options[index]))
                 }
-              </List>
-            </div>
+                else setProfileRuntime(undefined)
+              }}
+              options={runtime_names}
+              id="runtime-mod"
+            />
+            {/*<TextInput label="Install Directory" text={profileInstallDir} setText={setProfileInstallDir} />*/}
           </div>
-        )}
 
-        {/* Profile Actions */}
-        <div className="flex justify-around gap-[8px]">
-          <MinecraftButton text="Save Profile" onClick={() => saveProfile()} />
-          <MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} onClick={() => deleteProfile()} />
+          {/* Mod Selection */}
+          {profileRuntime === undefined ? (
+            <div className="flex-grow flex justify-around">
+              <div className="h-full flex flex-col"></div>
+            </div>
+          ) : (
+            <div className="bg-[#48494a] flex-grow flex justify-around gap-[8px]">
+              <div className="w-[50%] h-full flex flex-col">
+                <p className="text-white minecraft-seven text-[14px]">Active Mods</p>
+                <List>
+                  {
+                    active_mods.map((mod, index) => {
+                      return <ModButton mod={mod} key={index} />
+                    })
+                  }
+                </List>
+              </div>
+              <div className=" w-[50%] h-full flex flex-col">
+                <p className="text-white minecraft-seven text-[14px]">Inactive Mods</p>
+                <List>
+                  {
+                    inactive_mods.map((mod, index) => {
+                      return <ModButton mod={mod} key={index} />
+                    })
+                  }
+                </List>
+              </div>
+            </div>
+          )}
+
+          {/* Profile Actions */}
+          <div className="flex justify-around gap-[8px]">
+            <MinecraftButton text="Save Profile" onClick={() => saveProfile()} />
+            <MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} onClick={() => deleteProfile()} />
+          </div>
         </div>
       </div>
     </Panel>

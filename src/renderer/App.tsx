@@ -2,11 +2,11 @@ import { CSSProperties } from 'react'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import Title from './components/Title'
 import { AppStateProvider } from './contexts/AppState'
-import LauncherPage from './pages/LauncherPage'
+import Launcher from './pages/Launcher'
 import ProfileEditor from './pages/ProfileEditor'
-import SettingsPage from './pages/SettingsPage'
-import UpdatePage from './pages/UpdatePage'
-import VersionPage from './pages/VersionPage'
+import Settings from './pages/Settings'
+import Update from './pages/Update'
+import VersionManager from './pages/VersionManager'
 import DropWindow from './components/DropWindow'
 import ShardManager from './pages/ShardManager'
 import ProfileManager from './pages/ProfileManager'
@@ -75,17 +75,17 @@ export default function App() {
           </div>
           <div className="view_container w-[calc(100%-80px)]">
             <Routes>
-              <Route path="/" element={<LauncherPage />} />
+              <Route path="/" element={<Launcher />} />
               <Route path="/profile-manager" element={<ProfileManager />} />
               <Route path="/profile-editor" element={<ProfileEditor />} />
               <Route path="/shard-manager" element={<ShardManager />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/versions" element={<VersionPage />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/versions" element={<VersionManager />} />
             </Routes>
           </div>
         </div>
       </div>
-      <UpdatePage></UpdatePage>
+      <Update></Update>
       <DropWindow></DropWindow>
     </AppStateProvider>
   )

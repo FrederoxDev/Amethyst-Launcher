@@ -21,6 +21,7 @@
   image-rendering: auto;
   letter-spacing: 0.5px;
   align-content: center;
+  line-height: 1;
 }
 
 .minecraft-five {
@@ -28,6 +29,7 @@
   image-rendering: auto;
   letter-spacing: 0.5px;
   align-content: center;
+  line-height: 1;
 }
 
 .minecraft-ten {
@@ -35,6 +37,7 @@
   image-rendering: auto;
   letter-spacing: 0.1px;
   align-content: center;
+  line-height: 1;
 }
 
 /*@media (prefers-color-scheme: dark) {*/

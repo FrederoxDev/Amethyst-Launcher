@@ -12,7 +12,7 @@ import MinecraftRadialButtonPanel from '../components/MinecraftRadialButtonPanel
 import * as fs from 'fs'
 import { Version } from '../scripts/types/Version'
 
-export default function SettingsPage() {
+export default function Settings() {
   const { keep_launcher_open, SetKeepLauncherOpen, developer_mode, SetDeveloperMode, ui_theme, SetUITheme } =
     UseAppState()
 
@@ -58,34 +58,30 @@ export default function SettingsPage() {
       style={{ scrollbarWidth: 'none' }}
     >
       <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-        <div className="flex items-center justify-center">
-          <div>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-[4px]">
             <p className="minecraft-seven text-white text-[14px]">{'Keep launcher open'}</p>
             <p className="minecraft-seven text-[#BCBEC0] text-[12px]">
               {'Prevents the launcher from closing after launching the game.'}
             </p>
           </div>
-          <div className="ml-auto">
-            <MinecraftToggle isChecked={keep_launcher_open} setIsChecked={SetKeepLauncherOpen} />
-          </div>
+          <MinecraftToggle isChecked={keep_launcher_open} setIsChecked={SetKeepLauncherOpen} />
         </div>
       </div>
 
       <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-        <div className="flex items-center justify-center">
-          <div>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-[4px]">
             <p className="minecraft-seven text-white text-[14px]">{'Developer mode'}</p>
             <p className="minecraft-seven text-[#BCBEC0] text-[12px]">
               {'Enables hot-reloading and prompting to attach a debugger.'}
             </p>
           </div>
-          <div className="ml-auto">
-            <MinecraftToggle isChecked={developer_mode} setIsChecked={SetDeveloperMode} />
-          </div>
+          <MinecraftToggle isChecked={developer_mode} setIsChecked={SetDeveloperMode} />
         </div>
       </div>
 
-      <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+      <div className="flex flex-col gap-[8px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
         <p className="minecraft-seven text-white text-[14px]">UI Theme</p>
         <MinecraftRadialButtonPanel
           elements={[
@@ -100,15 +96,25 @@ export default function SettingsPage() {
         />
       </div>
 
-      <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px] minecraft-seven text-[#BCBEC0] text-[14px] shrink-0 overflow-x-hidden">
+
+      <div className="flex flex-col gap-[8px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px] minecraft-seven text-[#BCBEC0] text-[14px] shrink-0 overflow-x-hidden">
         <p className="text-white">Debug Info</p>
-        <p>Minecraft Version: {minecraftVersion ? Version.toString(minecraftVersion) : 'No version found.'}</p>
-        <p>Is version downloaded: {isVerDownloaded ? 'true' : 'false'}</p>
-        <p>Is Registered Version Ours: {isRegisteredVerOurs ? 'true' : 'false'}</p>
-        <p>Is windows developer mode: {isWindowsDevModeOn ? 'enabled' : 'disabled'}</p>
-        <p>Install path: {installDir}</p>
-        <p>Amethyst Folder: {FolderPaths.Amethyst}</p>
-        <p>Minecraft Folder: {FolderPaths.MinecraftUWP}</p>
+        <div className="flex flex-col gap-[8px]">
+          <div className="flex flex-col gap-[2px]">
+            <p>Version: {minecraftVersion ? Version.toString(minecraftVersion) : 'No version found.'}</p>
+            <p>Downloaded: {isVerDownloaded ? 'true' : 'false'}</p>
+            <p>Registered: {isRegisteredVerOurs ? 'true' : 'false'}</p>
+            <p>Path: {installDir}</p>
+          </div>
+
+          <p>Developer Mode: {isWindowsDevModeOn ? 'true' : 'false'}</p>
+
+          <div className="flex flex-col gap-[2px]">
+            <p>Amethyst Folder: {FolderPaths.Amethyst}</p>
+            <p>Minecraft Folder: {FolderPaths.MinecraftUWP}</p>
+          </div>
+
+        </div>
       </div>
 
       <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
