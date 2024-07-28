@@ -176,9 +176,6 @@ export default function ShardManager() {
               </div>
             </div>
           </div>
-          {/*<div className="mt-auto w-full h-fit">*/}
-          {/*  <MinecraftButton text="Open Mods Folder" onClick={OpenShardsFolder} />*/}
-          {/*</div>*/}
         </div>
         <div className="content_panel h-fit mt-auto">
           <div className="w-full h-fit">
@@ -186,41 +183,6 @@ export default function ShardManager() {
           </div>
         </div>
       </div>
-
-      {/*{shard_index !== undefined && (*/}
-      {/*  <PopupPanel onExit={() => SetShardIndex(undefined)}>*/}
-      {/*    <div className="w-[500px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">*/}
-      {/*      <div className="flex">*/}
-      {/*        <p className="minecraft-seven text-white text-[14px] max-w-[400px]">{shards[shard_index].meta.name}</p>*/}
-      {/*        <div*/}
-      {/*          className="p-[4px] justify-center items-center ml-auto cursor-pointer"*/}
-      {/*          onClick={() => SetShardIndex(undefined)}*/}
-      {/*        >*/}
-      {/*          <svg width="12" height="12" viewBox="0 0 12 12">*/}
-      {/*            <polygon*/}
-      {/*              className="fill-[#FFFFFF]"*/}
-      {/*              fillRule="evenodd"*/}
-      {/*              points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"*/}
-      {/*            />*/}
-      {/*          </svg>*/}
-      {/*        </div>*/}
-      {/*      </div>*/}
-
-      {/*      <p className="minecraft-seven text-[#BCBEC0] text-[12px] max-w-[400px]">*/}
-      {/*        { shards[shard_index].meta.description ?? '' }*/}
-      {/*      </p>*/}
-      {/*      <p className="minecraft-seven text-[#BCBEC0] text-[12px] max-w-[400px]">*/}
-      {/*        { shards[shard_index].meta.uuid }*/}
-      {/*      </p>*/}
-      {/*      <p className="minecraft-seven text-[#BCBEC0] text-[12px] max-w-[400px]">*/}
-      {/*        { shards[shard_index].meta.author }*/}
-      {/*      </p>*/}
-      {/*      <p className="minecraft-seven text-[#BCBEC0] text-[14px] max-w-[400px]">*/}
-      {/*        { (shards[shard_index].meta.format === undefined || 0) ? 'Mod' : (shards[shard_index].meta.format === 1) ? 'Runtime' : '' }*/}
-      {/*      </p>*/}
-      {/*    </div>*/}
-      {/*  </PopupPanel>*/}
-      {/*)}*/}
     </>
   )
 }
