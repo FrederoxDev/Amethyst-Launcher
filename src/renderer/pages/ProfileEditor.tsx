@@ -161,11 +161,7 @@ export default function ProfileEditor() {
       return !active_mod_uuids.includes(mod.meta.uuid)
     })
   }
-
-  console.log(active_mods)
-  console.log(inactive_mods)
-
-
+  
   return (
     <Panel>
       <div className="content_panel">

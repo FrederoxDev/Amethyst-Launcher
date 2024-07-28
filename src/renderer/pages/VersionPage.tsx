@@ -72,24 +72,24 @@ const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => 
         </div>
         <div className="shrink-0 flex flex-row p-[8px] gap-[8px] justify-right items-center">
           <div
-            className="cursor-pointer w-[32px] h-[32px] bg-[#333334] hover:bg-[#FF000080] rounded-[4px] p-[4px]"
+            className="shrink-0 cursor-pointer w-[24px] h-[24px] bg-[#333334] hover:bg-[#FF000080] box-content border-[3px] border-[#1E1E1F] rounded-[3px]"
             onClick={() => DeleteVersion()}
           >
-            <img src="images/icons/delete-icon.png" className="w-[24px] h-[24px]" alt="" />
+            <img src="images/icons/delete-icon.png" className="w-full h-full pixelated" alt="" />
           </div>
 
           <div
-            className="cursor-pointer w-[32px] h-[32px] bg-[#333334] hover:bg-[#5a5b5c] rounded-[4px] p-[4px]"
+            className="w-[24px] h-[24px] shrink-0 bg-[#313233] box-content border-[3px] border-[#1E1E1F] rounded-[3px] cursor-pointer hover:border-[#5a5b5c] hover:bg-[#48494A] active:border-[#4f913c] active:bg-[#3c8527]"
             onClick={() => OpenVersionLocation()}
           >
-            <img src="images/icons/open-folder-icon.png" className="w-[24px] h-[24px]" alt="" />
+            <img src="images/icons/open-folder-icon.png" className="w-full h-full pixelated" alt="" />
           </div>
 
           <div
-            className="cursor-pointer w-[32px] h-[32px] bg-[#333334] hover:bg-[#5a5b5c] rounded-[4px] p-[4px]"
+            className="w-[24px] h-[24px] shrink-0 bg-[#313233] box-content border-[3px] border-[#1E1E1F] rounded-[3px] cursor-pointer hover:border-[#5a5b5c] hover:bg-[#48494A] active:border-[#4f913c] active:bg-[#3c8527]"
             onClick={() => InspectVersion()}
           >
-            <img src="images/icons/info-icon.png" className="w-[24px] h-[24px]" alt="" />
+            <img src="images/icons/info-icon.png" className="w-full h-full pixelated" alt="" />
           </div>
         </div>
       </div>
