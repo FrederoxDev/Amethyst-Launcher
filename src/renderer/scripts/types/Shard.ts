@@ -267,7 +267,7 @@ export namespace Shard {
   }
 
   export namespace Manifest {
-    export function toFragment(shard: Shard.Manifest): Shard.Reference {
+    export function toReference(shard: Shard.Manifest): Shard.Reference {
       return { name: shard.meta.name, uuid: shard.meta.uuid, version: shard.meta.version }
     }
 
@@ -314,19 +314,23 @@ export namespace Shard {
     path: string
     manifest_path: string
     icon_path?: string
-    data: Shard.Manifest
+    manifest: Shard.Manifest
   }
 
   export namespace Extra {
+    export function toReference(shard: Shard.Extra): Shard.Reference {
+      return Shard.Manifest.toReference(shard.manifest)
+    }
+
     export const Schema: JSONSchemaType<Extra> = {
       type: 'object',
       properties: {
         path: { type: 'string' },
         manifest_path: { type: 'string' },
         icon_path: { type: 'string', nullable: true },
-        data: Manifest.Schema
+        manifest: Manifest.Schema
       },
-      required: ['path', 'manifest_path', 'data']
+      required: ['path', 'manifest_path', 'manifest']
     }
 
     export const Validator = AJV_Instance.compile<Extra>(Schema)
@@ -388,7 +392,7 @@ export function GetExtraShards(): Shard.Extra[] {
             path: dir_path,
             manifest_path: config_path,
             icon_path: icon_exists ? icon_path : undefined,
-            data: json
+            manifest: json
           })
         } else {
           Console.Group(Console.ErrorStr(`Failed to parse "manifest.json" in ${mod_directory.name}`), () => {
@@ -427,7 +431,7 @@ export function FindShards(fragments: Shard.Reference[]): Shard.Manifest[] {
 export function FindExtraShard(fragment: Shard.Reference): Shard.Extra | undefined {
   const shards = GetExtraShards()
 
-  return shards.filter(s => s.data.meta.uuid === fragment.uuid).find(s => s.data.meta.version === fragment.version)
+  return shards.filter(s => s.manifest.meta.uuid === fragment.uuid).find(s => s.manifest.meta.version === fragment.version)
 }
 
 export function FindExtraShards(fragments: Shard.Reference[]): Shard.Extra[] {
@@ -436,7 +440,7 @@ export function FindExtraShards(fragments: Shard.Reference[]): Shard.Extra[] {
   const found: Shard.Extra[] = []
 
   for (const fragment of fragments) {
-    const found_shard = shards.filter(s => s.data.meta.uuid === fragment.uuid).find(s => s.data.meta.version === fragment.version)
+    const found_shard = shards.filter(s => s.manifest.meta.uuid === fragment.uuid).find(s => s.manifest.meta.version === fragment.version)
 
     if (found_shard) {
       found.push(found_shard)

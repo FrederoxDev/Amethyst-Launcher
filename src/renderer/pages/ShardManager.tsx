@@ -40,7 +40,7 @@ export default function ShardManager() {
     const temp_runtimes: Shard.Extra[] = []
 
     shards.map(shard => {
-      switch (shard.data.meta.format) {
+      switch (shard.manifest.meta.format) {
         default:
           temp_mods.push(shard)
           break
@@ -61,7 +61,7 @@ export default function ShardManager() {
     let icon_path = shard.icon_path
 
     if (icon_path === undefined) {
-      switch (shard.data.meta.format) {
+      switch (shard.manifest.meta.format) {
         default:
           icon_path = `/images/icons/page-icon.png`
           break
@@ -87,8 +87,8 @@ export default function ShardManager() {
               <div className="w-[30px] h-[30px] border-[3px] border-[#1E1E1F] box-content">
                 <img src={icon_path} className="w-full h-full pixelated" alt="" />
               </div>
-              <p className="minecraft-seven text-white text-[14px]">{shard.data.meta.name}</p>
-              <p className="minecraft-seven text-[#B1B2B5] text-[14px]">{shard.data.meta.version}</p>
+              <p className="minecraft-seven text-white text-[14px]">{shard.manifest.meta.name}</p>
+              <p className="minecraft-seven text-[#B1B2B5] text-[14px]">{shard.manifest.meta.version}</p>
             </div>
             <div className="w-[30px] h-[30px] p-[10px]">
               <img src={selected_index === index ? `/images/icons/chevron-up.png` : `/images/icons/chevron-down.png`} className="w-full h-full pixelated" alt="" />
@@ -99,18 +99,18 @@ export default function ShardManager() {
           className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${selected_index === index ? '' : 'hidden'}`}
         >
           <p className="minecraft-seven text-white text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
-            {typeof shard.data.meta.author === 'string'
-              ? 'Author: ' + shard.data.meta.author
-              : 'Authors: ' + shard.data.meta.author.join(', ')}
+            {typeof shard.manifest.meta.author === 'string'
+              ? 'Author: ' + shard.manifest.meta.author
+              : 'Authors: ' + shard.manifest.meta.author.join(', ')}
           </p>
           <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
-            {shard.data.meta.description ? 'Description: ' + shard.data.meta.description : ''}
+            {shard.manifest.meta.description ? 'Description: ' + shard.manifest.meta.description : ''}
           </p>
           <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
-            {'UUID: ' + shard.data.meta.uuid}
+            {'UUID: ' + shard.manifest.meta.uuid}
           </p>
           <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
-            {'Version: ' + shard.data.meta.version}
+            {'Version: ' + shard.manifest.meta.version}
           </p>
           <div className="flex flex-row justify-between">
             <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
