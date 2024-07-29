@@ -34,38 +34,37 @@ export default function ProfileEditor() {
       SetProfileMods(profile.mods)
       SetProfileVersion(profile.version)
     }
-
-    if (profile === undefined) {
+    else {
       navigate('/profile-manager')
     }
-    if (profile_runtime === undefined) {
+
+    if (profile.runtime === undefined) {
       SetSubPage('Settings')
     }
-  }, [navigate, profile, profile_runtime])
+  }, [navigate, profile])
 
+  const ModButton = useCallback(({ mod }: { mod: Shard.Manifest }) => {
+    const ToggleMod = (mod: Shard.Manifest) => {
+      if (profile_mods) {
 
-  const ToggleMod = useCallback((mod: Shard.Manifest) => {
-    if (profile_mods) {
+        const active_mod_uuids = profile_mods.map(m => m.uuid)
 
-      const active_mod_uuids = profile_mods.map(m => m.uuid)
-
-      if (active_mod_uuids.includes(mod.meta.uuid)) {
-        const newActive = profile_mods.filter(m => m.uuid !== mod.meta.uuid)
-        SetProfileMods(newActive)
-      } else {
-        const newActive = [...profile_mods, Shard.Manifest.toFragment(mod)]
+        if (active_mod_uuids.includes(mod.meta.uuid)) {
+          const newActive = profile_mods.filter(m => m.uuid !== mod.meta.uuid)
+          SetProfileMods(newActive)
+        } else {
+          const newActive = [...profile_mods, Shard.Manifest.toFragment(mod)]
+          SetProfileMods(newActive)
+        }
+      }
+      // no active mods, so this mod must be toggling to active. just add it to the active mods
+      else {
+        const newActive = [Shard.Manifest.toFragment(mod)]
+        console.log(newActive)
         SetProfileMods(newActive)
       }
     }
-    // no active mods, so this mod must be toggling to active. just add it to the active mods
-    else {
-      const newActive = [Shard.Manifest.toFragment(mod)]
-      console.log(newActive)
-      SetProfileMods(newActive)
-    }
-  }, [profile_mods])
 
-  const ModButton = useCallback(({ mod }: { mod: Shard.Manifest }) => {
     return (
       <ListItem className="cursor-pointer" onClick={() => ToggleMod(mod)}>
         <div className="p-[4px]">
@@ -73,7 +72,7 @@ export default function ProfileEditor() {
         </div>
       </ListItem>
     )
-  }, [ToggleMod])
+  }, [profile_mods])
 
   const SaveProfile = () => {
     if (profile_runtime) {
