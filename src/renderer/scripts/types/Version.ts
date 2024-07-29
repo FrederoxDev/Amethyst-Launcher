@@ -286,7 +286,7 @@ export function FindVersionPath(version: Version): string | undefined {
   })?.path
 }
 
-export function GetLatestVersion(format: Version.Format = Version.Format.Release) {
+export function GetLatestVersion(format: Version.Format = Version.Format.Release): Version {
   const versions = GetVersions().filter(v => v.format === format)
 
   return versions[versions.length - 1]
