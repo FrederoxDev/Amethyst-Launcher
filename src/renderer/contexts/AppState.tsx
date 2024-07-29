@@ -48,7 +48,7 @@ interface TAppStateContext {
   SetError: React.Dispatch<React.SetStateAction<string>>
 
   // Expose functions
-  saveData: () => void
+  SaveState: () => void
 }
 
 const AppStateContext = createContext<TAppStateContext | undefined>(undefined)
@@ -76,35 +76,37 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     SetRuntimes(shards.filter(s => s.meta.format === 1))
     SetMods(shards.filter(s => s.meta.format === 0 || s.meta.format === undefined))
 
-    const readConfig = GetLauncherConfig()
-    SetKeepLauncherOpen(readConfig.keep_open ?? true)
-    SetDeveloperMode(readConfig.developer_mode ?? false)
-    SetSelectedProfile(readConfig.selected_profile ?? 0)
-    SetUITheme(readConfig.ui_theme ?? 'Light')
+    const launcher_config = GetLauncherConfig()
+    SetKeepLauncherOpen(launcher_config.keep_open ?? true)
+    SetDeveloperMode(launcher_config.developer_mode ?? false)
+    SetSelectedProfile(launcher_config.selected_profile ?? 0)
+    SetUITheme(launcher_config.ui_theme ?? 'Light')
 
     SetVersions(GetCachedVersions())
   }, [])
 
-  const [hasInitialized, setHasInitialized] = useState(false)
+  const [initialized, SetInitialized] = useState(false)
 
-  const saveData = useCallback(() => {
+  const SaveState = useCallback(() => {
     SetProfilesFile(profiles)
 
-    let mods: string[] = []
-    let runtime: string = 'Vanilla'
+    let profile_mods: string[] = []
+    let profile_runtime: string = 'Vanilla'
 
-    if (profiles[selected_profile]) {
-      if (profiles[selected_profile].mods) {
-        const mod_shards = FindExtraShards(profiles[selected_profile]?.mods ?? [])
+    const profile = profiles[selected_profile]
 
-        mods = mod_shards.map(m => path.basename(m.path))
+    if (profile) {
+      if (profile.mods) {
+        const mod_shards = FindExtraShards(profile.mods)
+
+        profile_mods = mod_shards.map(m => path.basename(m.path))
       }
 
-      if (profiles[selected_profile].runtime) {
-        const found = FindExtraShard(profiles[selected_profile]?.runtime)
+      if (profile.runtime) {
+        const found = FindExtraShard(profile.runtime)
 
         if (found) {
-          runtime = path.basename(found.path)
+          profile_runtime = path.basename(found.path)
         }
       }
     }
@@ -113,8 +115,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     const launcherConfig: LauncherConfig = {
       developer_mode: developer_mode,
       keep_open: keep_launcher_open,
-      mods: mods,
-      runtime: runtime,
+      mods: profile_mods,
+      runtime: profile_runtime,
       selected_profile: selected_profile,
       ui_theme: ui_theme
     }
@@ -123,13 +125,13 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   }, [profiles, developer_mode, keep_launcher_open, selected_profile, ui_theme])
 
   useEffect(() => {
-    if (!hasInitialized) {
-      setHasInitialized(true)
+    if (!initialized) {
+      SetInitialized(true)
       return
     }
 
-    saveData()
-  }, [profiles, selected_profile, keep_launcher_open, developer_mode, hasInitialized, saveData])
+    SaveState()
+  }, [profiles, selected_profile, keep_launcher_open, developer_mode, initialized, SaveState])
 
   useEffect(() => {
     ipcRenderer.send('WINDOW_UI_THEME', ui_theme)
@@ -160,7 +162,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         SetIsLoading: SetIsLoading,
         status,
         SetStatus: SetStatus,
-        saveData,
+        SaveState: SaveState,
         error: error,
         SetError: SetError
       }}
