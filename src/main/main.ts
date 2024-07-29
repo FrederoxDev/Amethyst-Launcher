@@ -52,6 +52,30 @@ windowMenu.append(new MenuItem({ role: 'toggleDevTools' }))
 windowMenu.append(new MenuItem({ role: 'reload' }))
 Menu.setApplicationMenu(windowMenu)
 
+const hasSingleInstanceLock = app.requestSingleInstanceLock()
+// Other window is open, so don't create a new one
+if (hasSingleInstanceLock === false) {
+  app.quit()
+}
+// No window is open so create new
+else {
+  app.on('ready', () => {
+    mainWindow = createWindow()
+
+    mainWindow.webContents.once('did-finish-load', () => {
+      mainWindow.show()
+    })
+  })
+
+  app.on('second-instance', () => {
+    // When second instance is started, restore and focus on existing one.
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+    }
+  })
+}
+
 ipcMain.on('TITLE_BAR_ACTION', (event, args) => {
   switch (args) {
     case 'TOGGLE_MAXIMIZED':
@@ -104,30 +128,6 @@ ipcMain.handle('show-dialog', async (event, args) => {
 ipcMain.handle('show-message', async (event, args) => {
   return await dialog.showMessageBox(args)
 })
-
-const hasSingleInstanceLock = app.requestSingleInstanceLock()
-// Other window is open, so don't create a new one
-if (hasSingleInstanceLock === false) {
-  app.quit()
-}
-// No window is open so create new
-else {
-  app.on('ready', () => {
-    mainWindow = createWindow()
-
-    mainWindow.webContents.once('did-finish-load', () => {
-      mainWindow.show()
-    })
-  })
-
-  app.on('second-instance', () => {
-    // When second instance is started, restore and focus on existing one.
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore()
-      mainWindow.focus()
-    }
-  })
-}
 
 ipcMain.handle('get-app-version', () => {
   return app.getVersion()
