@@ -11,9 +11,13 @@ import * as fs from 'fs'
 export interface Profile {
   name: string
   version: Version
-  runtime?: Shard.Fragment
-  mods?: Shard.Fragment[]
   icon_path?: string
+  runtime?: Shard.Reference
+  mods?: Shard.Reference[]
+  options?: {
+    shard: Shard.Reference,
+    values: Shard.Option.Value[]
+  }[]
 }
 
 export namespace Profile {
@@ -22,13 +26,28 @@ export namespace Profile {
     properties: {
       name: { type: 'string' },
       version: Version.Schema,
-      runtime: { ...Shard.Fragment.Schema, nullable: true },
+      icon_path: { type: 'string', nullable: true },
+      runtime: { ...Shard.Reference.Schema, nullable: true },
       mods: {
         type: 'array',
-        items: Shard.Fragment.Schema,
+        items: Shard.Reference.Schema,
         nullable: true
       },
-      icon_path: { type: 'string', nullable: true }
+      options: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            shard: Shard.Reference.Schema,
+            values: {
+              type: 'array',
+              items: Shard.Option.Value.Schema
+            }
+          },
+          required: ['shard', 'values'],
+        },
+        nullable: true
+      }
     },
     required: ['name', 'version'],
     additionalProperties: false

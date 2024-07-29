@@ -26,6 +26,7 @@ export namespace Shard {
   export type Option = Option.Text | Option.Toggle | Option.Radial | Option.Slider
 
   export namespace Option {
+    // region Shard.Option.Value
     export type Value = string | boolean | number
 
     export namespace Value {
@@ -39,123 +40,152 @@ export namespace Shard {
 
       export const Validator = AJV_Instance.compile<Value>(Schema)
     }
+    // endregion
 
-    interface Empty {
-      type: string
-      properties?: {
-        label?: string
+    // region Shard.Option.Text
+    export interface Text  {
+      type: 'text'
+      properties: {
+        label: string
         description?: string
+        default_value: string
       }
     }
-    export interface Text extends Empty {
-      type: 'text'
+
+    export namespace Text {
+      export const Schema: JSONSchemaType<Text> = {
+        type: 'object',
+        properties: {
+          type: { type: 'string', const: 'text' },
+          properties: {
+            type: 'object',
+            properties: {
+              label: { type: 'string' },
+              description: { type: 'string', nullable: true },
+              default_value: { type: 'string' }
+            },
+            required: ['label', 'default_value']
+          }
+        },
+        required: ['type', 'properties']
+      }
+
+      export const Validator = AJV_Instance.compile<Text>(Schema)
     }
-    export interface Toggle extends Empty {
+    // endregion
+
+    // region Shard.Option.Toggle
+    export interface Toggle  {
       type: 'toggle'
+      properties: {
+        label: string
+        description?: string,
+        default_value: boolean
+      }
     }
-    export interface Radial extends Empty {
+
+    export namespace Toggle {
+      export const Schema: JSONSchemaType<Toggle> = {
+        type: 'object',
+        properties: {
+          type: { type: 'string', const: 'toggle' },
+          properties: {
+            type: 'object',
+            properties: {
+              label: { type: 'string' },
+              description: { type: 'string', nullable: true },
+              default_value: { type: 'boolean' }
+            },
+            required: ['label', 'default_value']
+          }
+        },
+        required: ['type', 'properties']
+      }
+
+      export const Validator = AJV_Instance.compile<Toggle>(Schema)
+    }
+    // endregion
+
+    // region Shard.Option.Radial
+    export interface Radial {
       type: 'radial'
       properties: {
-        label?: string
+        label: string
         description?: string
         options: string[]
+        default_value: number
       }
     }
-    export interface Slider extends Empty {
+
+    export namespace Radial {
+      export const Schema: JSONSchemaType<Radial> = {
+        type: 'object',
+        properties: {
+          type: { type: 'string', const: 'radial' },
+          properties: {
+            type: 'object',
+            properties: {
+              label: { type: 'string' },
+              description: { type: 'string', nullable: true },
+              options: {
+                type: 'array',
+                items: { type: 'string' }
+              },
+              default_value: { type: 'number' }
+            },
+            required: ['label', 'options', 'default_value']
+          }
+        },
+        required: ['type', 'properties']
+      }
+
+      export const Validator = AJV_Instance.compile<Radial>(Schema)
+    }
+    // endregion
+
+    // region Shard.Option.Slider
+    export interface Slider {
       type: 'slider'
       properties: {
-        label?: string
+        label: string
         description?: string
         min: number
         max: number
+        default_value: number
       }
     }
 
+    export namespace Slider {
+      export const Schema: JSONSchemaType<Slider> = {
+        type: 'object',
+        properties: {
+          type: { type: 'string', const: 'slider' },
+          properties: {
+            type: 'object',
+            properties: {
+              label: { type: 'string' },
+              description: { type: 'string', nullable: true },
+              min: { type: 'number' },
+              max: { type: 'number' },
+              default_value: { type: 'number' }
+            },
+            required: ['label', 'min', 'max', 'default_value']
+          }
+        },
+        required: ['type', 'properties']
+      }
+
+      export const Validator = AJV_Instance.compile<Slider>(Schema)
+    }
+    // endregion
+
+
     export const Schema: JSONSchemaType<Option> = {
       oneOf: [
-        {
-          type: 'object',
-          properties: {
-            type: {
-              type: 'string',
-              const: 'text'
-            },
-            properties: {
-              type: 'object',
-              properties: {
-                label: { type: 'string', nullable: true },
-                description: { type: 'string', nullable: true }
-              },
-              nullable: true,
-              additionalProperties: false
-            }
-          },
-          required: ['type'],
-          additionalProperties: false
-        },
-        {
-          type: 'object',
-          properties: {
-            type: {
-              type: 'string',
-              const: 'toggle'
-            },
-            properties: {
-              type: 'object',
-              properties: {
-                label: { type: 'string', nullable: true },
-                description: { type: 'string', nullable: true }
-              },
-              nullable: true,
-              additionalProperties: false
-            }
-          },
-          required: ['type'],
-          additionalProperties: false
-        },
-        {
-          type: 'object',
-          properties: {
-            type: {
-              type: 'string',
-              const: 'radial'
-            },
-            properties: {
-              type: 'object',
-              properties: {
-                label: { type: 'string', nullable: true },
-                description: { type: 'string', nullable: true },
-                options: { type: 'array', items: { type: 'string' } }
-              },
-              required: ['options'],
-              additionalProperties: false
-            }
-          },
-          required: ['type', 'properties'],
-          additionalProperties: false
-        },
-        {
-          type: 'object',
-          properties: {
-            type: {
-              type: 'string',
-              const: 'slider'
-            },
-            properties: {
-              type: 'object',
-              properties: {
-                label: { type: 'string', nullable: true },
-                description: { type: 'string', nullable: true },
-                min: { type: 'number' },
-                max: { type: 'number' }
-              },
-              required: ['min', 'max'],
-              additionalProperties: false
-            }
-          },
-          required: ['type', 'properties'],
-          additionalProperties: false
-        }
+        Text.Schema,
+        Toggle.Schema,
+        Radial.Schema,
+        Slider.Schema
       ]
     }
 
@@ -163,7 +193,7 @@ export namespace Shard {
   }
   // endregion
 
-  // region Shard.Fragment
+  // region Shard.Reference
   /**
    * Contains minimal data. Mainly used **internally**
    *
@@ -176,31 +206,25 @@ export namespace Shard {
    * @internal
    * @see {SemVersion.Primitive}
    */
-  export interface Fragment {
+  export interface Reference {
     name: string
     uuid: string
     version: SemVersion.Primitive
-    options?: Option.Value[]
   }
 
-  export namespace Fragment {
-    export const Schema: JSONSchemaType<Fragment> = {
+  export namespace Reference {
+    export const Schema: JSONSchemaType<Reference> = {
       type: 'object',
       properties: {
         name: { type: 'string' },
         uuid: { type: 'string', format: 'uuid' },
-        version: SemVersion.Primitive.Schema,
-        options: {
-          type: 'array',
-          nullable: true,
-          items: Option.Value.Schema
-        }
+        version: SemVersion.Primitive.Schema
       },
       required: ['name', 'uuid', 'version'],
       additionalProperties: false
     }
 
-    export const Validator = AJV_Instance.compile<Fragment>(Schema)
+    export const Validator = AJV_Instance.compile<Reference>(Schema)
   }
   // endregion
 
@@ -224,7 +248,7 @@ export namespace Shard {
    *
    * @external
    * @see {Shard.Format}
-   * @see {Shard.Fragment}
+   * @see {Shard.Reference}
    * @see {Shard.Option}
    * @see {SemVersion.Primitive}
    */
@@ -238,12 +262,12 @@ export namespace Shard {
       format?: Shard.Format
     }
     format_version: SemVersion.Primitive
-    dependencies?: Shard.Fragment[]
+    dependencies?: Shard.Reference[]
     options?: Shard.Option[]
   }
 
   export namespace Manifest {
-    export function toFragment(shard: Shard.Manifest): Shard.Fragment {
+    export function toFragment(shard: Shard.Manifest): Shard.Reference {
       return { name: shard.meta.name, uuid: shard.meta.uuid, version: shard.meta.version }
     }
 
@@ -268,7 +292,7 @@ export namespace Shard {
         format_version: SemVersion.Primitive.Schema,
         dependencies: {
           type: 'array',
-          items: Shard.Fragment.Schema,
+          items: Shard.Reference.Schema,
           nullable: true
         },
         options: {
@@ -378,13 +402,13 @@ export function GetExtraShards(): Shard.Extra[] {
   return shards
 }
 
-export function FindShard(fragment: Shard.Fragment): Shard.Manifest | undefined {
+export function FindShard(fragment: Shard.Reference): Shard.Manifest | undefined {
   const shards = GetShards()
 
   return shards.filter(s => s.meta.uuid === fragment.uuid).find(s => s.meta.version === fragment.version)
 }
 
-export function FindShards(fragments: Shard.Fragment[]): Shard.Manifest[] {
+export function FindShards(fragments: Shard.Reference[]): Shard.Manifest[] {
   const shards = GetShards()
 
   const found: Shard.Manifest[] = []
@@ -400,13 +424,13 @@ export function FindShards(fragments: Shard.Fragment[]): Shard.Manifest[] {
   return found
 }
 
-export function FindExtraShard(fragment: Shard.Fragment): Shard.Extra | undefined {
+export function FindExtraShard(fragment: Shard.Reference): Shard.Extra | undefined {
   const shards = GetExtraShards()
 
   return shards.filter(s => s.data.meta.uuid === fragment.uuid).find(s => s.data.meta.version === fragment.version)
 }
 
-export function FindExtraShards(fragments: Shard.Fragment[]): Shard.Extra[] {
+export function FindExtraShards(fragments: Shard.Reference[]): Shard.Extra[] {
   const shards = GetExtraShards()
 
   const found: Shard.Extra[] = []

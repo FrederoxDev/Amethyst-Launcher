@@ -15,8 +15,8 @@ import { GetProfiles } from '../scripts/types/Profile'
 
 export default function ProfileEditor() {
   const [profileName, setProfileName] = useState('')
-  const [profileActiveMods, setProfileActiveMods] = useState<Shard.Fragment[] | undefined>([])
-  const [profileRuntime, setProfileRuntime] = useState<Shard.Fragment | undefined>(undefined)
+  const [profileActiveMods, setProfileActiveMods] = useState<Shard.Reference[] | undefined>([])
+  const [profileRuntime, setProfileRuntime] = useState<Shard.Reference | undefined>(undefined)
   const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<Version>(GetLatestVersion())
   // const [profileInstallDir, setProfileInstallDir] = useState<string>(GetDefaultInstallPath())
 
