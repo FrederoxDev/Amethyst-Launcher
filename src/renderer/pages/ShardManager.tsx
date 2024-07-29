@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import MinecraftButton from '../components/MinecraftButton'
 import { FolderPaths } from '../scripts/Paths'
 
@@ -27,7 +27,7 @@ const OpenShardsFolder = () => {
 }
 
 export default function ShardManager() {
-  const [shards, SetShards] = useState<Shard.Extra[]>([])
+  const [shards] = useState<Shard.Extra[]>(GetExtraShards)
 
   const [mods, SetMods] = useState<Shard.Extra[]>([])
   const [mod_index, SetModIndex] = useState<number | undefined>(undefined)
@@ -35,11 +35,7 @@ export default function ShardManager() {
   const [runtimes, SetRuntimes] = useState<Shard.Extra[]>([])
   const [runtimes_index, SetRuntimeIndex] = useState<number | undefined>(undefined)
 
-  useEffect(() => {
-    SetShards(GetExtraShards())
-  }, [])
-
-  useEffect(() => {
+  useMemo(() => {
     const temp_mods: Shard.Extra[] = []
     const temp_runtimes: Shard.Extra[] = []
 
@@ -61,12 +57,7 @@ export default function ShardManager() {
     SetRuntimes(temp_runtimes)
   }, [shards])
 
-  const ShardButton = (
-    shard: Shard.Extra,
-    index: number,
-    selected_index: number | undefined,
-    SetSelectedIndex: (index: number | undefined) => void
-  ) => {
+  const ShardButton = (shard: Shard.Extra, index: number, selected_index: number | undefined, SetSelectedIndex: (index: number | undefined) => void) => {
     let icon_path = shard.icon_path
 
     if (icon_path === undefined) {
