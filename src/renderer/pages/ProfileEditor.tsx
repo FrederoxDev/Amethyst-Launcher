@@ -7,8 +7,6 @@ import { MinecraftButtonStyle } from '../components/MinecraftButtonStyle'
 import { UseAppState } from '../contexts/AppState'
 import { useNavigate } from 'react-router-dom'
 import { /** GetDefaultVersionPath, */ GetLatestVersion, Version } from '../scripts/types/Version'
-import ListItem from '../components/ListItem'
-import List from '../components/List'
 import Shard, { FindExtraShard, FindExtraShards } from '../scripts/types/Shard'
 
 export default function ProfileEditor() {
@@ -41,48 +39,19 @@ export default function ProfileEditor() {
         const mods_extra = FindExtraShards(profile.mods)
         SetProfileMods(mods_extra)
       }
+
+      if (profile.runtime === undefined) {
+        SetSubPage('Settings')
+      }
     }
     else {
       navigate('/profile-manager')
     }
 
-    if (profile.runtime === undefined) {
-      SetSubPage('Settings')
-    }
+
   }, [navigate, profile])
 
-  // const ModButton = useCallback(({ mod }: { mod: Shard.Extra }) => {
-  //   const ToggleMod = (mod: Shard.Extra) => {
-  //     if (profile_mods) {
-  //
-  //       const active_mod_uuids = profile_mods.map(m => m.manifest.meta.uuid)
-  //
-  //       if (active_mod_uuids.includes(mod.manifest.meta.uuid)) {
-  //         const newActive = profile_mods.filter(m => m.manifest.meta.uuid !== mod.manifest.meta.uuid)
-  //         SetProfileMods(newActive)
-  //       } else {
-  //         const newActive = [...profile_mods, mod]
-  //         SetProfileMods(newActive)
-  //       }
-  //     }
-  //     // no active mods, so this mod must be toggling to active. just add it to the active mods
-  //     else {
-  //       const newActive = [mod]
-  //       console.log(newActive)
-  //       SetProfileMods(newActive)
-  //     }
-  //   }
-  //
-  //   return (
-  //     <ListItem className="cursor-pointer" onClick={() => ToggleMod(mod)}>
-  //       <div className="p-[4px]">
-  //         <p className="minecraft-seven text-white">{mod.manifest.meta.name}</p>
-  //       </div>
-  //     </ListItem>
-  //   )
-  // }, [profile_mods])
-
-  const ModButton = useCallback((mod: Shard.Extra, active: boolean, index: number, selected_index: number, SetSelectedIndex: (index: number) => void) => {
+  const ModButton = useCallback((mod: Shard.Extra, active: boolean, index: number, selected_mod: Shard.Extra | undefined, SetSelectedMod: (index: Shard.Extra | undefined) => void) => {
     let icon_path = mod.icon_path
 
     if (icon_path === undefined) {
@@ -100,6 +69,10 @@ export default function ProfileEditor() {
     }
 
     const ToggleMod = (mod: Shard.Extra) => {
+      if (is_selected) {
+        SetSelectedMod(undefined)
+      }
+
       if (profile_mods) {
 
         const active_mod_uuids = profile_mods.map(m => m.manifest.meta.uuid)
@@ -120,11 +93,13 @@ export default function ProfileEditor() {
       }
     }
 
+    const is_selected = selected_mod ? (mod.manifest.meta.uuid === selected_mod.manifest.meta.uuid && mod.manifest.meta.version === selected_mod.manifest.meta.version) : false
+
     return (
       <div key={index}>
-        <div className="list_item flex flex-row">
-          <div className="list_item_border cursor-pointer">
-            <div className="flex flex-row justify-between items-center p-[8px]">
+        <div className="list_item flex flex-row cursor-pointer">
+          <div className="flex flex-grow list_item_border cursor-pointer" onClick={() => SetSelectedMod(is_selected ? undefined : mod) }>
+            <div className="flex flex-row w-full justify-between items-center p-[8px]">
               <div className="flex flex-row gap-[8px]">
                 <div className="w-[30px] h-[30px] border-[3px] border-[#1E1E1F] box-content">
                   <img src={icon_path} className="w-full h-full pixelated" alt="" />
@@ -133,16 +108,30 @@ export default function ProfileEditor() {
                 <p className="minecraft-seven text-[#B1B2B5] text-[14px]">{mod.manifest.meta.version}</p>
               </div>
               <div className="w-[30px] h-[30px] p-[10px]">
-                <img src={`/images/icons/chevron-up.png`} className="w-full h-full pixelated" alt="" />
+                <img src={is_selected ? `/images/icons/chevron-up.png` : `/images/icons/chevron-down.png`} className="w-full h-full pixelated" alt="" />
               </div>
             </div>
           </div>
-          <div className="list_item_border cursor-pointer" onClick={() => ToggleMod(mod)}>
+          <div className="w-[58px] h-[58px] p-[8px] flex justify-center items-center list_item_border cursor-pointer" onClick={() => ToggleMod(mod)}>
             {
-              active ? <img src="/images/icons/remove.png" alt="" /> : <img src="/images/icons/add.png" alt="" />
+              active ? <img src="/images/icons/remove.png" className="pixelated" alt="" /> :
+                <img src="/images/icons/add.png" className="pixelated" alt="" />
             }
-
           </div>
+        </div>
+        <div
+          className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${is_selected ? '' : 'hidden'}`}
+        >
+          <p
+            className="minecraft-seven text-white text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+            {typeof mod.manifest.meta.author === 'string'
+              ? 'Author: ' + mod.manifest.meta.author
+              : 'Authors: ' + mod.manifest.meta.author.join(', ')}
+          </p>
+          <p
+            className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+            {mod.manifest.meta.description ? 'Description: ' + mod.manifest.meta.description : ''}
+          </p>
         </div>
       </div>
     )
@@ -196,7 +185,7 @@ export default function ProfileEditor() {
     return [version_uuids, version_names, version_options]
   }, [versions])
 
-  const [runtime_names, runtime_options, runtime_index] = useMemo(() =>{
+  const [runtime_names, runtime_options, runtime_index] = useMemo(() => {
     const runtime_options = [undefined, ...runtimes]
 
     const runtime_names = runtime_options.map(r => {
@@ -205,11 +194,10 @@ export default function ProfileEditor() {
       } else return 'Vanilla'
     })
 
-    const runtime_uuids =  runtime_options.map(r => {
+    const runtime_uuids = runtime_options.map(r => {
       if (r) {
         return r.manifest.meta.uuid
-      }
-      else return ''
+      } else return ''
     })
 
     const runtime_index = profile_runtime !== undefined ? runtime_uuids.indexOf(profile_runtime.manifest.meta.uuid) : 0
@@ -235,6 +223,9 @@ export default function ProfileEditor() {
       return [[], mods]
     }
   }, [mods, profile_mods])
+
+  const [selected_active_mod, SetSelectedActiveMod] = useState<Shard.Extra | undefined>(undefined)
+  const [selected_inactive_mod, SetSelectedInactiveMod] = useState<Shard.Extra | undefined>(undefined)
   
   return (
     <Panel>
@@ -292,7 +283,7 @@ export default function ProfileEditor() {
                       {
                         active_mods.length > 0 ?
                           active_mods.map((mod, index) => {
-                            return ModButton(mod, true, index)
+                            return ModButton(mod, true, index, selected_active_mod, SetSelectedActiveMod)
                           })
 
                           :
@@ -320,7 +311,7 @@ export default function ProfileEditor() {
                       {
                         inactive_mods.length > 0 ?
                           inactive_mods.map((mod, index) => {
-                            return ModButton(mod, false, index)
+                            return ModButton(mod, false, index, selected_inactive_mod, SetSelectedInactiveMod)
                           })
 
                           :
