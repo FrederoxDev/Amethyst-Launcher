@@ -9,7 +9,6 @@ import { clipboard } from 'electron'
 // import PopupPanel from '../components/PopupPanel'
 import * as fs from 'fs'
 import * as child from 'child_process'
-import ListItem from '../components/ListItem'
 
 const OpenShardsFolder = () => {
   // Don't reveal in explorer unless there is an existing minecraft folder
@@ -76,25 +75,22 @@ export default function ShardManager() {
 
     return (
       <div key={index}>
-        <ListItem
-          className="cursor-pointer"
-          onClick={() => {
-            selected_index === index ? SetSelectedIndex(undefined) : SetSelectedIndex(index)
-          }}
-        >
-          <div className="flex flex-row justify-between items-center p-[8px]">
-            <div className="flex flex-row gap-[8px]">
-              <div className="w-[30px] h-[30px] border-[3px] border-[#1E1E1F] box-content">
-                <img src={icon_path} className="w-full h-full pixelated" alt="" />
+        <div className="m-[-3px] border-[3px] border-[#1E1E1F] cursor-pointer" onClick={() => {  SetSelectedIndex(selected_index === index ? undefined : index) }}>
+          <div className="inset_button">
+            <div className="flex flex-row justify-between items-center p-[8px]">
+              <div className="flex flex-row gap-[8px]">
+                <div className="w-[30px] h-[30px] border-[3px] border-[#1E1E1F] box-content">
+                  <img src={icon_path} className="w-full h-full pixelated" alt="" />
+                </div>
+                <p className="minecraft-seven text-white text-[14px]">{shard.manifest.meta.name}</p>
+                <p className="minecraft-seven text-[#B1B2B5] text-[14px]">{shard.manifest.meta.version}</p>
               </div>
-              <p className="minecraft-seven text-white text-[14px]">{shard.manifest.meta.name}</p>
-              <p className="minecraft-seven text-[#B1B2B5] text-[14px]">{shard.manifest.meta.version}</p>
-            </div>
-            <div className="w-[30px] h-[30px] p-[10px]">
-              <img src={selected_index === index ? `/images/icons/chevron-up.png` : `/images/icons/chevron-down.png`} className="w-full h-full pixelated" alt="" />
-            </div>
+              <div className="w-[30px] h-[30px] p-[10px]">
+                <img src={selected_index === index ? `/images/icons/chevron-up.png` : `/images/icons/chevron-down.png`} className="w-full h-full pixelated" alt="" />
+              </div>
           </div>
-        </ListItem>
+          </div>
+        </div>
         <div
           className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${selected_index === index ? '' : 'hidden'}`}
         >

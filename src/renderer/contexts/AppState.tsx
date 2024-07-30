@@ -116,7 +116,6 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-
     const launcherConfig: LauncherConfig = {
       developer_mode: developer_mode,
       keep_open: keep_launcher_open,

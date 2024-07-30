@@ -7,6 +7,7 @@
 @import url('./panel.css');
 @import url('./list.css');
 @import url('./text.css');
+@import url('./inset_button.css');
 
 @tailwind base;
 @tailwind components;

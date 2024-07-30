@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import Panel from '../components/Panel'
 import TextInput from '../components/TextInput'
 import Dropdown from '../components/Dropdown'
@@ -18,14 +18,14 @@ export default function ProfileEditor() {
 
   const [sub_page, SetSubPage] = useState<string>('Mods')
 
-  const { mods, runtimes, versions, profiles, SetProfiles, selected_profile, SaveState } = UseAppState()
+  const { mods, runtimes, versions, profiles, selected_profile, SaveState } = UseAppState()
   const navigate = useNavigate()
 
   const profile = useMemo(() => {
     return profiles[selected_profile]
   }, [profiles, selected_profile])
 
-  useEffect(() => {
+  useMemo(() => {
     if (profile) {
       SetProfileName(profile.name)
       SetProfileVersion(profile.version)
@@ -47,8 +47,6 @@ export default function ProfileEditor() {
     else {
       navigate('/profile-manager')
     }
-
-
   }, [navigate, profile])
 
   const ModButton = useCallback((mod: Shard.Extra, active: boolean, index: number, selected_mod: Shard.Extra | undefined, SetSelectedMod: (index: Shard.Extra | undefined) => void) => {
@@ -98,7 +96,7 @@ export default function ProfileEditor() {
     return (
       <div key={index}>
         <div className="list_item flex flex-row cursor-pointer">
-          <div className="flex flex-grow list_item_border cursor-pointer" onClick={() => SetSelectedMod(is_selected ? undefined : mod) }>
+          <div className="flex flex-grow inset_button cursor-pointer" onClick={() => SetSelectedMod(is_selected ? undefined : mod) }>
             <div className="flex flex-row w-full justify-between items-center p-[8px]">
               <div className="flex flex-row gap-[8px]">
                 <div className="w-[30px] h-[30px] border-[3px] border-[#1E1E1F] box-content">
@@ -112,7 +110,7 @@ export default function ProfileEditor() {
               </div>
             </div>
           </div>
-          <div className="w-[58px] h-[58px] p-[8px] flex justify-center items-center list_item_border cursor-pointer" onClick={() => ToggleMod(mod)}>
+          <div className="w-[58px] h-[58px] p-[8px] flex justify-center items-center inset_button cursor-pointer" onClick={() => ToggleMod(mod)}>
             {
               active ? <img src="/images/icons/remove.png" className="pixelated" alt="" /> :
                 <img src="/images/icons/add.png" className="pixelated" alt="" />
@@ -137,41 +135,31 @@ export default function ProfileEditor() {
     )
   }, [profile_mods])
 
-  const SaveProfile = () => {
-    if (profile_runtime) {
+  useMemo(() => {
+    if (profile) {
+      profile.name = profile_name
+      profile.version = profile_version
 
-      const runtime_uuids = runtimes.map(r => r.manifest.meta.uuid)
-
-      if (!runtime_uuids.includes(profile_runtime.manifest.meta.uuid)) {
-        SetProfileRuntime(undefined)
+      if (profile_runtime) {
+        profile.runtime = Shard.Extra.toReference(profile_runtime)
+        if (profile_mods) {
+          profile.mods = profile_mods.map(m => Shard.Extra.toReference(m))
+        }
+        else {
+          profile.mods = undefined
+        }
       }
+      else {
+        profile.runtime = undefined
+        profile.mods = undefined
+      }
+
+      SaveState()
     }
-
-    if (profile_mods) {
-      const mod_uuids = mods.map(m => m.manifest.meta.uuid)
-
-      const newMods = profile_mods.filter(mod => mod_uuids.includes(mod.manifest.meta.uuid))
-      SetProfileMods(newMods)
-    }
-
-    profiles[selected_profile].name = profile_name
-    profiles[selected_profile].version = profile_version
-
-    if (profile_runtime) {
-      profiles[selected_profile].runtime = Shard.Extra.toReference(profile_runtime)
-    }
-
-    if (profile_mods) {
-      profiles[selected_profile].mods = profile_mods.map(m => Shard.Extra.toReference(m))
-    }
-
-    SaveState()
-    navigate('/profile-manager')
-  }
+  }, [SaveState, profile, profile_mods, profile_name, profile_runtime, profile_version])
 
   const DeleteProfile = () => {
     profiles.splice(selected_profile, 1)
-    SetProfiles(profiles)
 
     SaveState()
     navigate('/profile-manager')
@@ -236,18 +224,19 @@ export default function ProfileEditor() {
                  className="w-full h-full pixelated" alt="" />
           </div>
           <div className="flex flex-row gap-[8px] justify-between flex-grow h-[48px] border-[3px] border-[#1E1E1F] bg-[#48494a] box-content overflow-hidden">
-              <div className="flex flex-row gap-[8px] p-[8px] justify-between">
-                <div className="flex flex-col gap-[2px]">
-                  <p className="minecraft-seven text-white text-[18px]">{profile_name}</p>
-                  <p className="minecraft-seven text-[#B1B2B5] text-[12px] mt-auto">{`${profile_runtime?.manifest.meta.name ?? 'Vanilla'} ${profile_version.sem_version}`}</p>
-                </div>
+            <div className="flex flex-row gap-[8px] p-[8px] justify-between">
+              <div className="flex flex-col gap-[2px]">
+                <p className="minecraft-seven text-white text-[18px]">{profile_name}</p>
+                <p
+                  className="minecraft-seven text-[#B1B2B5] text-[12px] mt-auto">{`${profile_runtime?.manifest.meta.name ?? 'Vanilla'} ${profile_version.sem_version}`}</p>
               </div>
+            </div>
             <div className="flex flex-row gap-[4px] p-[4px] ">
               {
                 profile_runtime !== undefined && (
                   <div className="flex w-fit border-[3px] border-[#1E1E1F] cursor-pointer"
                        onClick={() => SetSubPage('Mods')}>
-                    <div className="flex justify-center p-[4px] list_item_border">
+                    <div className="flex justify-center p-[4px] inset_button">
                       <p className="minecraft-seven text-white text-[14px]">{'Mods'}</p>
                     </div>
                   </div>
@@ -255,13 +244,17 @@ export default function ProfileEditor() {
               }
               <div className="flex w-fit border-[3px] border-[#1E1E1F] cursor-pointer"
                    onClick={() => SetSubPage('Settings')}>
-                <div className="flex justify-center p-[4px] list_item_border">
+                <div className="flex justify-center p-[4px] inset_button">
                   <p className="minecraft-seven text-white text-[14px]">{'Settings'}</p>
                 </div>
+              </div>
+              <div className="flex p-[8px] w-fit justify-center items-center cursor-pointer" onClick={() => navigate('/profile-manager')}>
+                <img src='/images/icons/close-icon.png'  className="w-[24px] h-[24px] pixelated" alt="" />
               </div>
             </div>
           </div>
         </div>
+
         <div className="content_panel h-fit max-h-full overflow-y-auto overflow-x-hidden scrollbar">
           {
             sub_page === 'Mods' && (
@@ -361,9 +354,7 @@ export default function ProfileEditor() {
 
                 {/* Profile Actions */}
                 <div className="flex justify-around gap-[8px]">
-                  <MinecraftButton text="Save Profile" onClick={() => SaveProfile()} />
-                  <MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn}
-                                   onClick={() => DeleteProfile()} />
+                  <MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} onClick={() => DeleteProfile()} />
                 </div>
               </>
             )
