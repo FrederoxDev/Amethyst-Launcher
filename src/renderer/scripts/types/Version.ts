@@ -287,7 +287,7 @@ export function FindVersionPath(version: Version): string | undefined {
 }
 
 export function GetLatestVersion(format: Version.Format = Version.Format.Release): Version {
-  const versions = GetVersions().filter(v => v.format === format)
+  const versions = GetCachedVersions().filter(v => v.format === format)
 
   return versions[versions.length - 1]
 }
