@@ -128,7 +128,7 @@ export default function ShardManager() {
 
   return (
     <>
-      <div className="w-full h-full flex flex-col gap-[8px]">
+      <div className="w-full h-full flex flex-col justify-between gap-[8px]">
         <div className="content_panel h-fit max-h-full overflow-y-auto overflow-x-hidden scrollbar">
           <div className="flex flex-col gap-[24px]">
             <div className="flex flex-col w-full">
@@ -167,7 +167,7 @@ export default function ShardManager() {
             </div>
           </div>
         </div>
-        <div className="content_panel h-fit mt-auto">
+        <div className="content_panel h-fit">
           <div className="w-full h-fit">
             <MinecraftButton text="Open Mods Folder" onClick={OpenShardsFolder} />
           </div>
