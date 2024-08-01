@@ -1,4 +1,3 @@
-import Dropdown from '../components/Dropdown'
 import MinecraftButton from '../components/MinecraftButton'
 import { UseAppState } from '../contexts/AppState'
 import { SemVersion } from '../scripts/types/SemVersion'
@@ -18,6 +17,7 @@ import { GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
 import child from 'child_process'
 import Panel from '../components/Panel'
 import { Console } from '../scripts/types/Console'
+import React from 'react'
 
 export default function Launcher() {
   const {
@@ -177,15 +177,30 @@ export default function Launcher() {
           {/* Profile Selector & Play Button */}
           <div className="flex flex-row gap-[8px] border-[#1E1E1F] border-[3px] p-[8px] bg-[#48494A]">
             <div className="w-[30%] mt-auto">
-              <Dropdown
-                labelText="Profile"
-                options={profile_names}
-                default_index={profile_names.indexOf(profiles[selected_profile]?.name)}
-                SetIndex={index => {
-                  SetSelectedProfile(index)
-                }}
-                id="profile-select"
-              />
+              <div className="flex flex-col gap-[4px]">
+                <label htmlFor={"profile-select"} className="minecraft-seven text-white text-[14px]">
+                  {"Profile"}
+                </label>
+                {profile_names.length > 0 ? (
+                  <select
+                    name={"profile-select"}
+                    id={"profile-select"}
+                    onChange={event => {
+                      SetSelectedProfile(event.target.selectedIndex)
+                    }}
+                    value={profile_names[profile_names.indexOf(profiles[selected_profile]?.name)]}
+                    className="border-[3px] border-[#1E1E1F] bg-[#313233] w-full h-[25px] text-white minecraft-seven text-[12px]"
+                  >
+                    {profile_names.map((option, index) => (
+                      <option value={option} key={index} className="text-white font-sans">
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="border-[3px] border-[#1E1E1F] bg-[#313233] w-full h-[25px]" />
+                )}
+              </div>
             </div>
 
             <div className="w-[70%]">
