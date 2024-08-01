@@ -217,7 +217,7 @@ export default function ProfileEditor() {
   
   return (
     <Panel>
-      <div className="flex flex-col gap-[8px] w-full h-full">
+      <div className=" w-full h-full flex flex-col gap-[8px] overflow-hidden">
         <div className="flex flex-row gap-[8px]">
           <div className="w-[48px] h-[48px] border-[3px] border-[#1E1E1F] box-content">
             <img src={profile?.icon_path ?? `/images/icons/earth-icon.png`}
@@ -261,7 +261,7 @@ export default function ProfileEditor() {
                 <div className="content_panel h-fit max-h-full overflow-y-auto overflow-x-hidden scrollbar">
                   <div className="flex flex-col gap-[24px]">
                     <div className="flex flex-col w-full">
-                      <div className="flex flex-row w-full align-bottom">
+                      <div className="flex flex-row w-full">
                         <div className="border-[3px] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
                           <p className="minecraft-seven text-white text-[14px]">Active Mods</p>
                         </div>
@@ -289,7 +289,7 @@ export default function ProfileEditor() {
                       </div>
                     </div>
                     <div className="flex flex-col w-full">
-                      <div className="flex flex-row w-full align-bottom">
+                      <div className="flex flex-row w-full">
                         <div className="border-[3px] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
                           <p className="minecraft-seven text-white text-[14px]">Inactive Mods</p>
                         </div>
@@ -325,42 +325,42 @@ export default function ProfileEditor() {
           {
             sub_page === 'Settings' && (
               <>
-                <div className="w-full h-full flex flex-col justify-between gap-[8px]">
-                  <div className="content_panel h-fit max-h-full overflow-y-auto overflow-x-hidden scrollbar">
-                    <div className="flex flex-col gap-[8px]">
-                      <TextInput label="Profile Name" text={profile_name} setText={SetProfileName} />
-                      <Dropdown
-                        labelText="Minecraft Version"
-                        default_index={version_uuids.indexOf(profile_version.uuid)}
-                        SetIndex={
-                          (index) => {
-                            SetProfileVersion(version_options[index])
-                          }
-                        }
-                        // we don't support non-release versions right now so only show release lmao
-                        options={version_names}
-                        id="minecraft-version"
-                      />
-                      <Dropdown
-                        labelText="Runtime"
-                        default_index={runtime_index}
-                        SetIndex={(index) => {
-                          if (runtime_options[index]) {
-                            SetProfileRuntime(runtime_options[index])
-                          } else SetProfileRuntime(undefined)
-                        }}
-                        options={runtime_names}
-                        id="runtime-mod"
-                      />
-                      {/*<TextInput label="Install Directory" text={profileInstallDir} setText={setProfileInstallDir} />*/}
-                    </div>
+                <div className="flex flex-col border-[3px] border-[#1E1E1F] bg-[#48494A] flex-shrink h-fit max-h-full overflow-y-auto overflow-x-hidden scrollbar">
+                  <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+                    <TextInput label="Profile name" text={profile_name} setText={SetProfileName} />
                   </div>
 
-                  {/* Profile Actions */}
-                  <div className="content_panel h-fit">
-                    <div className="w-full h-fit">
-                      <MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} onClick={() => DeleteProfile()} />
-                    </div>
+                  <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+                    <Dropdown
+                      labelText="Version"
+                      default_index={version_uuids.indexOf(profile_version.uuid)}
+                      SetIndex={
+                        (index) => {
+                          SetProfileVersion(version_options[index])
+                        }
+                      }
+                      // we don't support non-release versions right now so only show release lmao
+                      options={version_names}
+                      id="minecraft-version"
+                    />
+                  </div>
+
+                  <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+                    <Dropdown
+                      labelText="Runtime"
+                      default_index={runtime_index}
+                      SetIndex={(index) => {
+                        if (runtime_options[index]) {
+                          SetProfileRuntime(runtime_options[index])
+                        } else SetProfileRuntime(undefined)
+                      }}
+                      options={runtime_names}
+                      id="runtime-mod"
+                    />
+                  </div>
+                  {/*<TextInput label="Install Directory" text={profileInstallDir} setText={setProfileInstallDir} />*/}
+                  <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+                    <MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} onClick={() => DeleteProfile()} />
                   </div>
                 </div>
               </>
