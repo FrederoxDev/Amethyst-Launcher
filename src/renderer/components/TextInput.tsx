@@ -1,3 +1,5 @@
+import React from 'react'
+
 export type TextInputProps = {
   label: string
   text: string
