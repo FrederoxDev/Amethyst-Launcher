@@ -94,7 +94,7 @@ export default function ShardManager() {
         <div
           className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${selected_index === index ? '' : 'hidden'}`}
         >
-          <p className="minecraft-seven text-white text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+          <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
             {typeof shard.manifest.meta.author === 'string'
               ? 'Author: ' + shard.manifest.meta.author
               : 'Authors: ' + shard.manifest.meta.author.join(', ')}
