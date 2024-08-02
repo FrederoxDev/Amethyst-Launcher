@@ -27,7 +27,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           npm run format
-          git commit -am "Manual Format"
+          git commit -am "Format"
           git push https://github.com/${{ github.repository }} HEAD:main
         env:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
