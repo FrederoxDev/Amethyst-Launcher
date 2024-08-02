@@ -21,13 +21,10 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
-      - name: Install Dependencies
-        run: npm install
-
       - name: Format and Push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          npm run format
+          npx prettier --write src/**/*
           git commit -am "Format"
           git push https://github.com/${{ github.repository }} HEAD:main
