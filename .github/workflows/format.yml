@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  manual-format:
+  format:
     runs-on: windows-latest
     strategy:
       matrix:
