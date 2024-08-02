@@ -4,6 +4,8 @@ on:
 
 jobs:
   format:
+    permissions:
+      contents: write
     runs-on: windows-latest
     strategy:
       matrix:
@@ -29,5 +31,3 @@ jobs:
           npm run format
           git commit -am "Format"
           git push https://github.com/${{ github.repository }} HEAD:main
-        env:
-          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
