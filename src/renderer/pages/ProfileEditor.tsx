@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import Panel from '../components/Panel'
 import TextInput from '../components/TextInput'
 import Dropdown from '../components/Dropdown'
@@ -6,15 +6,16 @@ import MinecraftButton from '../components/MinecraftButton'
 import { MinecraftButtonStyle } from '../components/MinecraftButtonStyle'
 import { UseAppState } from '../contexts/AppState'
 import { useNavigate } from 'react-router-dom'
-import { /** GetDefaultVersionPath, */ GetLatestVersion, Version } from '../scripts/types/Version'
+import { GetDefaultVersionPath, GetLatestVersion, Version } from '../scripts/types/Version'
 import Shard, { FindExtraShard, FindExtraShards } from '../scripts/types/Shard'
+import path from 'path'
 
 export default function ProfileEditor() {
   const [profile_name, SetProfileName] = useState('')
   const [profile_mods, SetProfileMods] = useState<Shard.Extra[] | undefined>(undefined)
   const [profile_runtime, SetProfileRuntime] = useState<Shard.Extra | undefined>(undefined)
   const [profile_version, SetProfileVersion] = useState<Version>(GetLatestVersion)
-  // const [profile_path, SetProfilePath] = useState<string>(GetDefaultVersionPath)
+  const [profile_path, SetProfilePath] = useState<string | undefined>(undefined)
 
   const [sub_page, SetSubPage] = useState<string>('Mods')
 
@@ -29,6 +30,10 @@ export default function ProfileEditor() {
     if (profile) {
       SetProfileName(profile.name)
       SetProfileVersion(profile.version)
+
+      if (profile.version.path) {
+        SetProfilePath(profile.version.path)
+      }
 
       if (profile.runtime) {
         const runtime_extra = FindExtraShard(profile.runtime)
@@ -138,7 +143,7 @@ export default function ProfileEditor() {
   useMemo(() => {
     if (profile) {
       profile.name = profile_name
-      profile.version = profile_version
+      profile.version = { ...profile_version, path: profile_path }
 
       if (profile_runtime) {
         profile.runtime = Shard.Extra.toReference(profile_runtime)
@@ -156,7 +161,11 @@ export default function ProfileEditor() {
 
       SaveState()
     }
-  }, [SaveState, profile, profile_mods, profile_name, profile_runtime, profile_version])
+  }, [SaveState, profile, profile_mods, profile_name, profile_runtime, profile_version, profile_path])
+  
+  useMemo(() => {
+    SetProfilePath(path.join(GetDefaultVersionPath(), `Minecraft-${profile_version.sem_version}`))
+  }, [profile_version])
 
   const DeleteProfile = () => {
     profiles.splice(selected_profile, 1)
@@ -369,9 +378,19 @@ export default function ProfileEditor() {
                       id="runtime-mod"
                     />
                   </div>
-                  {/*<TextInput label="Install Directory" text={profileInstallDir} setText={setProfileInstallDir} />*/}
                   <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-                    <MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn} onClick={() => DeleteProfile()} />
+                    <div className="flex flex-col gap-[4px]">
+                      <p className="minecraft-seven text-white text-[14px]">{"Install Directory"}</p>
+                      <div className="flex border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233] justify-center p-[4px]">
+                        <p className="w-full minecraft-seven bg-transparent text-white text-[12px]">
+                          {path.join(GetDefaultVersionPath(), `Minecraft-${profile_version.sem_version}`)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+                    <MinecraftButton text="Delete Profile" style={MinecraftButtonStyle.Warn}
+                                     onClick={() => DeleteProfile()} />
                   </div>
                 </div>
               </>

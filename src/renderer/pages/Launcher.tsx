@@ -1,6 +1,5 @@
 import MinecraftButton from '../components/MinecraftButton'
 import { UseAppState } from '../contexts/AppState'
-import { SemVersion } from '../scripts/types/SemVersion'
 import { IsDevModeEnabled, TryEnableDevMode } from '../scripts/functions/DeveloperMode'
 import {
   CleanupInstall,
@@ -31,7 +30,6 @@ export default function Launcher() {
     SetIsLoading,
     error,
     SetError,
-    versions,
     SetLoadingPercent
   } = UseAppState()
 
@@ -43,9 +41,9 @@ export default function Launcher() {
     }
 
     const profile = profiles[selected_profile]
-    const minecraftVersion = versions.find(version => version.sem_version === profile.version.sem_version)!
+    const version = profile.version
 
-    if (minecraftVersion === undefined) {
+    if (version === undefined) {
       throw new Error(`Version ${profile.version.sem_version} not found`)
     }
 
@@ -60,43 +58,41 @@ export default function Launcher() {
       }
     }
 
-    const sem_version = SemVersion.fromPrimitive(profile.version.sem_version)
-
     // We create a lock file when starting the download
     // if we are doing a launch, and we detect it for the version we are targeting
     // there is a good chance the previous install/download failed and therefore remove it.
-    const didPreviousDownloadFail = IsLocked(sem_version)
+    const didPreviousDownloadFail = IsLocked(version)
 
     if (didPreviousDownloadFail) {
-      CleanupInstall(sem_version, false)
+      CleanupInstall(version, false)
     }
 
     // Check for the folder for the version we are targeting, if not present we need to fetch.
-    if (!IsDownloaded(sem_version)) {
-      CreateLock(sem_version)
+    if (!IsDownloaded(version)) {
+      CreateLock(version)
       Console.StartGroup(Console.ActionStr('Download Version'))
       {
-        await DownloadVersion(minecraftVersion, SetStatus, SetLoadingPercent)
+        await DownloadVersion(version, SetStatus, SetLoadingPercent)
       }
       Console.EndGroup()
       Console.StartGroup(Console.ActionStr('Extract Version'))
       {
-        await ExtractVersion(minecraftVersion, SetStatus, SetLoadingPercent)
+        await ExtractVersion(version, SetStatus, SetLoadingPercent)
       }
       Console.EndGroup()
-      CleanupInstall(sem_version, true)
+      CleanupInstall(version, true)
 
-      InstallProxy(minecraftVersion)
+      InstallProxy(version)
     }
 
     // Only register the game if needed
-    if (!IsRegistered(minecraftVersion)) {
+    if (!IsRegistered(version)) {
       SetStatus('Unregistering Version')
       SetLoadingPercent(0)
       await UnregisterCurrent()
       SetStatus('Registering Version')
       SetLoadingPercent(0.5)
-      await RegisterVersion(minecraftVersion)
+      await RegisterVersion(version)
       SetLoadingPercent(1)
 
       SetLauncherConfig(GetLauncherConfig())

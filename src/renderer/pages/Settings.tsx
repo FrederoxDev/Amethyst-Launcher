@@ -1,5 +1,4 @@
 import { UseAppState } from '../contexts/AppState'
-import { SemVersion } from '../scripts/types/SemVersion'
 import { IsRegistered, IsDownloaded } from '../scripts/functions/VersionManager'
 import { GetPackagePath } from '../scripts/functions/AppRegistry'
 import { FolderPaths, FilePaths } from '../scripts/Paths'
@@ -16,11 +15,10 @@ export default function Settings() {
   const { keep_launcher_open, SetKeepLauncherOpen, developer_mode, SetDeveloperMode, ui_theme, SetUITheme } =
     UseAppState()
 
-  const { profiles, selected_profile, versions } = UseAppState()
+  const { profiles, selected_profile } = UseAppState()
   const [launcherCfg, setLauncherCfg] = useState<string>('')
 
   const profile = profiles[selected_profile]
-  let minecraftVersion = undefined
   let isVerDownloaded = false
   let isRegisteredVerOurs = false
   let installDir = ''
@@ -28,13 +26,9 @@ export default function Settings() {
   const isWindowsDevModeOn = IsDevModeEnabled()
 
   if (profile) {
-    minecraftVersion = versions.find(version => version.sem_version === profile.version.sem_version)
-
-    if (minecraftVersion) {
-      isVerDownloaded = IsDownloaded(SemVersion.fromPrimitive(minecraftVersion.sem_version))
-      isRegisteredVerOurs = IsRegistered(minecraftVersion)
-      installDir = GetPackagePath() ?? 'Could not find installed.'
-    }
+    isVerDownloaded = IsDownloaded(profile.version)
+    isRegisteredVerOurs = IsRegistered(profile.version)
+    installDir = GetPackagePath() ?? 'Could not find installed.'
   }
 
   const updateCfgText = () => {
@@ -101,7 +95,7 @@ export default function Settings() {
         <p className="text-white">Debug Info</p>
         <div className="flex flex-col gap-[8px]">
           <div className="flex flex-col gap-[2px]">
-            <p>Version: {minecraftVersion ? Version.toString(minecraftVersion) : 'No version found.'}</p>
+            <p>Version: {profile.version ? Version.toString(profile.version) : 'No version found.'}</p>
             <p>Downloaded: {isVerDownloaded ? 'true' : 'false'}</p>
             <p>Registered: {isRegisteredVerOurs ? 'true' : 'false'}</p>
             <p>Path: {installDir}</p>
