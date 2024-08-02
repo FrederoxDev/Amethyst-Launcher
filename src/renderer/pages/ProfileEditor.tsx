@@ -95,7 +95,7 @@ export default function ProfileEditor() {
 
     return (
       <div key={index}>
-        <div className="list_item flex flex-row cursor-pointer">
+        <div className="list_item flex flex-row">
           <div className="flex flex-grow inset_button cursor-pointer" onClick={() => SetSelectedMod(is_selected ? undefined : mod) }>
             <div className="flex flex-row w-full justify-between items-center p-[8px]">
               <div className="flex flex-row gap-[8px]">
@@ -121,7 +121,7 @@ export default function ProfileEditor() {
           className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${is_selected ? '' : 'hidden'}`}
         >
           <p
-            className="minecraft-seven text-white text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+            className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
             {typeof mod.manifest.meta.author === 'string'
               ? 'Author: ' + mod.manifest.meta.author
               : 'Authors: ' + mod.manifest.meta.author.join(', ')}
