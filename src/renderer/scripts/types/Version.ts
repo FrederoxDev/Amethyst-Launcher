@@ -208,7 +208,7 @@ export function RefreshVersionsFile() {
 
   const versions = GetVersions().filter(v => {
     if (v.path) {
-      return fs.existsSync(v.path)
+      return fs.existsSync(path.join(v.path, v.sem_version))
     }
     return false
   })
@@ -223,12 +223,14 @@ export function RefreshVersionsFile() {
       if (
         !versions
           .map(v => {
-            return v.path
+            if (v.path) {
+              return path.join(v.path, v.sem_version)
+            }
           })
           .includes(dir_path)
       ) {
-        if (version_dir.name.startsWith('Minecraft-')) {
-          const minecraft_version = FindCachedVersion(version_dir.name.slice('Minecraft-'.length))
+        if (SemVersion.Primitive.Validator(version_dir.name)) {
+          const minecraft_version = FindCachedVersion(version_dir.name)
 
           if (minecraft_version) {
             versions.push({ ...minecraft_version, path: dir_path })
