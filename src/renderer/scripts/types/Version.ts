@@ -113,15 +113,6 @@ export namespace Version {
 
 //////////////////////////////////////////////////
 
-export function ValidateVersionsFile() {
-  const text = fs.readFileSync(FilePaths.Versions, { encoding: 'utf8' })
-  const json = JSON.parse(text)
-
-  Version.File.Validator(json)
-}
-
-//////////////////////////////////////////////////
-
 export async function FetchAvailableVersions() {
   let last_write_time: Date = new Date(0)
 
@@ -246,6 +237,17 @@ export function RefreshVersionsFile() {
     version_file.versions = versions
 
     fs.writeFileSync(FilePaths.Versions, JSON.stringify(version_file, undefined, 4))
+  }
+}
+
+export function SetVersionsFile(file: Version.File) {
+  if (Version.File.Validator(file)) {
+    const text = JSON.stringify(file, undefined, 4)
+    fs.writeFileSync(FilePaths.Versions, text)
+  }
+  else {
+    console.error('Invalid Versions File')
+    console.error(Version.File.Validator.errors)
   }
 }
 
