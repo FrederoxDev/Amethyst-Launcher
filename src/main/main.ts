@@ -76,7 +76,7 @@ else {
   })
 }
 
-ipcMain.on('TITLE_BAR_ACTION', (event, args) => {
+ipcMain.on('TITLE_BAR_ACTION', (_event, args) => {
   switch (args) {
     case 'TOGGLE_MAXIMIZED':
       mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize()
@@ -92,7 +92,7 @@ ipcMain.on('TITLE_BAR_ACTION', (event, args) => {
   }
 })
 
-ipcMain.on('WINDOW_UI_THEME', (event, args) => {
+ipcMain.on('WINDOW_UI_THEME', (_event, args) => {
   switch (args) {
     case 'Light':
       nativeTheme.themeSource = 'light'
@@ -121,11 +121,11 @@ ipcMain.handle('get-localappdata-path', () => {
   return process.env.LOCALAPPDATA
 })
 
-ipcMain.handle('show-dialog', async (event, args) => {
+ipcMain.handle('show-dialog', async (_event, args) => {
   return await dialog.showOpenDialog(args)
 })
 
-ipcMain.handle('show-message', async (event, args) => {
+ipcMain.handle('show-message', async (_event, args) => {
   return await dialog.showMessageBox(args)
 })
 
@@ -137,11 +137,11 @@ ipcMain.handle('check-for-updates', () => {
   autoUpdater.checkForUpdates().then()
 })
 
-ipcMain.handle('set-auto-download', (event, bool) => {
+ipcMain.handle('set-auto-download', (_event, bool) => {
   autoUpdater.autoDownload = bool
 })
 
-ipcMain.handle('set-auto-install-on-app-quit', (event, bool) => {
+ipcMain.handle('set-auto-install-on-app-quit', (_event, bool) => {
   autoUpdater.autoInstallOnAppQuit = bool
 })
 
