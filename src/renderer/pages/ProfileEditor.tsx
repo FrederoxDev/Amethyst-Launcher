@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import { GetDefaultVersionPath, GetLatestVersion, Version } from '../scripts/types/Version'
 import Shard, { FindExtraShard, FindExtraShards } from '../scripts/types/Shard'
 import path from 'path'
+import { ipcRenderer } from 'electron'
 
 export default function ProfileEditor() {
   const [profile_name, SetProfileName] = useState('')
@@ -16,6 +17,7 @@ export default function ProfileEditor() {
   const [profile_runtime, SetProfileRuntime] = useState<Shard.Extra | undefined>(undefined)
   const [profile_version, SetProfileVersion] = useState<Version>(GetLatestVersion)
   const [profile_path, SetProfilePath] = useState<string | undefined>(undefined)
+  // const [is_default_path, SetIsDefaultPath] = useState<boolean>(false)
 
   const [sub_page, SetSubPage] = useState<string>('Mods')
 
@@ -224,6 +226,22 @@ export default function ProfileEditor() {
   const [selected_active_mod, SetSelectedActiveMod] = useState<Shard.Extra | undefined>(undefined)
   const [selected_inactive_mod, SetSelectedInactiveMod] = useState<Shard.Extra | undefined>(undefined)
   
+  const SelectPath = useCallback(() => {
+    const args: Electron.OpenDialogOptions = {
+      defaultPath: profile_path,
+      properties: ['openDirectory']
+    }
+    
+    ipcRenderer.invoke('show-dialog', args).then((result: Electron.OpenDialogReturnValue) => {
+      if (result.canceled) return
+      else {
+        const path = result.filePaths[0]
+
+        SetProfilePath(path)
+      }
+    })
+  }, [profile_path])
+  
   return (
     <Panel>
       <div className=" w-full h-full flex flex-col gap-[8px] overflow-hidden">
@@ -380,11 +398,19 @@ export default function ProfileEditor() {
                   </div>
                   <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
                     <div className="flex flex-col gap-[4px]">
-                      <p className="minecraft-seven text-white text-[14px]">{"Install Directory"}</p>
-                      <div className="flex border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233] justify-center p-[4px]">
-                        <p className="w-full minecraft-seven bg-transparent text-white text-[12px]">
-                          {path.join(GetDefaultVersionPath(), `Minecraft-${profile_version.sem_version}`)}
-                        </p>
+                      <p className="minecraft-seven text-white text-[14px]">{'Install Directory'}</p>
+                      <div className="flex flex-row flex-grow gap-[3px]">
+                        <div
+                          className="min-w-0 flex flex-grow border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233] justify-center p-[4px]">
+                          <p className="w-full minecraft-seven bg-transparent text-white text-[12px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+                            {
+                              path.join(GetDefaultVersionPath(), `Minecraft-${profile_version.sem_version}`)
+                            }
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233] justify-center p-[4px] cursor-pointer" onClick={SelectPath}>
+                          <img src={'/images/icons/open-icon.png'} alt=''/>
+                        </div>
                       </div>
                     </div>
                   </div>
