@@ -8,7 +8,6 @@ import { UseAppState } from '../contexts/AppState'
 import { useNavigate } from 'react-router-dom'
 import { GetDefaultVersionPath, GetLatestVersion, Version } from '../scripts/types/Version'
 import Shard, { FindExtraShard, FindExtraShards } from '../scripts/types/Shard'
-import path from 'path'
 import { ipcRenderer } from 'electron'
 
 export default function ProfileEditor() {
@@ -16,8 +15,7 @@ export default function ProfileEditor() {
   const [profile_mods, SetProfileMods] = useState<Shard.Extra[] | undefined>(undefined)
   const [profile_runtime, SetProfileRuntime] = useState<Shard.Extra | undefined>(undefined)
   const [profile_version, SetProfileVersion] = useState<Version>(GetLatestVersion)
-  const [profile_path, SetProfilePath] = useState<string | undefined>(undefined)
-  // const [is_default_path, SetIsDefaultPath] = useState<boolean>(false)
+  const [profile_path, SetProfilePath] = useState<string | undefined>(GetDefaultVersionPath)
 
   const [sub_page, SetSubPage] = useState<string>('Mods')
 
@@ -164,10 +162,6 @@ export default function ProfileEditor() {
       SaveState()
     }
   }, [SaveState, profile, profile_mods, profile_name, profile_runtime, profile_version, profile_path])
-  
-  useMemo(() => {
-    SetProfilePath(path.join(GetDefaultVersionPath(), `Minecraft-${profile_version.sem_version}`))
-  }, [profile_version])
 
   const DeleteProfile = () => {
     profiles.splice(selected_profile, 1)
@@ -404,7 +398,7 @@ export default function ProfileEditor() {
                           className="min-w-0 flex flex-grow border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233] justify-center p-[4px]">
                           <p className="w-full minecraft-seven bg-transparent text-white text-[12px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
                             {
-                              path.join(GetDefaultVersionPath(), `Minecraft-${profile_version.sem_version}`)
+                              profile_path
                             }
                           </p>
                         </div>
