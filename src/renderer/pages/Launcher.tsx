@@ -17,6 +17,7 @@ import child from 'child_process'
 import Panel from '../components/Panel'
 import { Console } from '../scripts/types/Console'
 import React from 'react'
+import { GetVersionsFile, SetVersionsFile } from '../scripts/types/Version'
 
 export default function Launcher() {
   const {
@@ -83,6 +84,12 @@ export default function Launcher() {
       CleanupInstall(version, true)
 
       InstallProxy(version)
+
+      const versions_file = GetVersionsFile()
+
+      versions_file.versions.push(version)
+
+      SetVersionsFile(versions_file)
     }
 
     // Only register the game if needed
