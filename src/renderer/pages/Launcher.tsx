@@ -159,7 +159,7 @@ export default function Launcher() {
 
           {/* Loading bar */}
           <div
-            className={`bg-[#313233] ${status || is_loading ? 'h-[25px]' : 'h-0'} transition-all duration-300 ease-in-out`}
+            className={`flex items-center bg-[#313233] ${status || is_loading ? 'h-[25px]' : 'h-0'} transition-all duration-300 ease-in-out`}
           >
             <div
               className={`bg-[#3C8527] absolute ${is_loading ? 'min-h-[25px]' : 'min-h-0'} transition-all duration-300 ease-in-out`}
