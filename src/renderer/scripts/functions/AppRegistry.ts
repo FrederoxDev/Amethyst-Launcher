@@ -64,33 +64,45 @@ export async function UnregisterCurrent() {
 }
 
 export async function RegisterVersion(version: Version) {
-  // Make sure no version is currently registered
-  if (GetPackageID() !== undefined) {
-    await UnregisterCurrent()
+  if (version.path) {
+    // Make sure no version is currently registered
     if (GetPackageID() !== undefined) {
-      throw new Error('Incorrect version is still registered')
+      await UnregisterCurrent()
+      if (GetPackageID() !== undefined) {
+        throw new Error('Incorrect version is still registered')
+      }
     }
-  }
 
-  Console.StartGroup(Console.ActionStr('Register Version'))
-  {
-    // Register New Version
-    const appxManifest = path.join(FolderPaths.Versions, `Minecraft-${version.sem_version}`, 'AppxManifest.xml')
+    Console.StartGroup(Console.ActionStr('Register Version'))
+    {
 
-    Console.Group(Console.InfoStr('AppxManifest'), () => {
-      console.log(appxManifest)
-    })
+      // Register New Version
+      const appxManifest = path.join(version.path, version.sem_version, 'AppxManifest.xml')
 
-    const registerCmd = `powershell -ExecutionPolicy Bypass -Command "& { Add-AppxPackage -Path "${appxManifest}" -Register }"`
-    await new Promise(resolved => {
-      const exec_proc = child.exec(registerCmd)
-
-      exec_proc.on('exit', exit_code => {
-        resolved(exit_code)
+      Console.Group(Console.InfoStr('AppxManifest'), () => {
+        console.log(appxManifest)
       })
-    })
 
-    Console.Result('Successful')
+      const registerCmd = `powershell -ExecutionPolicy Bypass -Command "& { Add-AppxPackage -Path '${appxManifest}' -Register }"`
+      await new Promise(resolved => {
+        const exec_proc = child.exec(registerCmd)
+
+        exec_proc.on('error', (err) => {
+          console.log(err)
+        })
+
+        exec_proc.on('exit', exit_code => {
+          resolved(exit_code)
+        })
+      })
+
+      Console.Result('Successful')
+    }
+    Console.EndGroup()
+
+    console.log(GetPackagePath())
   }
-  Console.EndGroup()
+  else {
+    throw new Error('Version path is undefined')
+  }
 }
