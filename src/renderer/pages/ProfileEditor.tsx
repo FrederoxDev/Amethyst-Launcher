@@ -19,12 +19,12 @@ export default function ProfileEditor() {
 
   const [sub_page, SetSubPage] = useState<string>('Mods')
 
-  const { mods, runtimes, versions, profiles, selected_profile, SaveState } = UseAppState()
+  const { mods, runtimes, versions, profiles, active_profile, SaveState } = UseAppState()
   const navigate = useNavigate()
 
   const profile = useMemo(() => {
-    return profiles[selected_profile]
-  }, [profiles, selected_profile])
+    if (active_profile) return profiles[active_profile]
+  }, [profiles, active_profile])
 
   useMemo(() => {
     if (profile) {
@@ -183,7 +183,7 @@ export default function ProfileEditor() {
   }, [SaveState, profile, profile_mods, profile_name, profile_runtime, profile_version, profile_path])
 
   const DeleteProfile = () => {
-    profiles.splice(selected_profile, 1)
+    if (active_profile) profiles.splice(active_profile, 1)
 
     SaveState()
     navigate('/profile-manager')
