@@ -72,6 +72,15 @@ export namespace SemVersion {
     }
 
     export const Validator = AJV_Instance.compile<Primitive>(Schema)
+
+    export function Match(string: string): SemVersion.Primitive | undefined {
+      const regex = RegExp(/^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?/).source
+      const matches = string.match(regex)
+
+      if (matches) {
+        return matches[0]
+      }
+    }
   }
   // endregion
 }
