@@ -19,7 +19,7 @@ export default function ProfileEditor() {
 
   const [sub_page, SetSubPage] = useState<string>('Mods')
 
-  const { mods, runtimes, versions, profiles, active_profile, SaveState } = UseAppState()
+  const { mods, runtimes, versions, profiles, active_profile, show_all_versions, SaveState } = UseAppState()
   const navigate = useNavigate()
 
   const profile = useMemo(() => {
@@ -187,19 +187,25 @@ export default function ProfileEditor() {
   }, [SaveState, profile, profile_mods, profile_name, profile_runtime, profile_version, profile_path])
 
   const DeleteProfile = () => {
-    if (active_profile) profiles.splice(active_profile, 1)
+    if (active_profile !== undefined) {
+      profiles.splice(active_profile, 1)
+    }
+
+    navigate('/profile-manager')
 
     SaveState()
-    navigate('/profile-manager')
   }
 
   const [version_uuids, version_names, version_options] = useMemo(() => {
     const version_options = versions.filter(ver => ver.format === Version.Format.Release)
+    if (show_all_versions) {
+      version_options.push(GetLatestVersion(Version.Format.Preview))
+    }
     const version_uuids = version_options.map(v => v.uuid)
     const version_names = version_options.map(v => Version.Cached.toString(v))
 
     return [version_uuids, version_names, version_options]
-  }, [versions])
+  }, [show_all_versions, versions])
 
   const [runtime_names, runtime_options, runtime_index] = useMemo(() => {
     const runtime_options = [undefined, ...runtimes]
@@ -274,7 +280,7 @@ export default function ProfileEditor() {
               <div className="flex flex-col gap-[2px]">
                 <p className="minecraft-seven text-white text-[18px]">{profile_name}</p>
                 <p
-                  className="minecraft-seven text-[#B1B2B5] text-[12px] mt-auto">{`${profile_runtime?.manifest.meta.name ?? 'Vanilla'} ${profile_version.sem_version}`}</p>
+                  className="minecraft-seven text-[#B1B2B5] text-[12px] mt-auto">{`${Version.Cached.toString(profile_version)} (${profile_runtime?.manifest.meta.name ?? 'Vanilla'})`}</p>
               </div>
             </div>
             <div className="flex flex-row h-full border-y-[3px] border-y-[#1E1E1F] bg-[#48494a] overflow-hidden">
