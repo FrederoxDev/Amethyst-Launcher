@@ -20,3 +20,23 @@ export namespace Config {
 
   export const Validator = AJV_Instance.compile<Config>(Schema)
 }
+
+export interface RuntimeConfig {
+  developer_mode: boolean,
+  runtime: string,
+  mods: string[]
+}
+
+export namespace RuntimeConfig {
+  export const Schema: JSONSchemaType<RuntimeConfig> = {
+    type: 'object',
+    properties: {
+      developer_mode: { type: 'boolean' },
+      runtime: { type: 'string'},
+      mods: { type: 'array', items: { type: 'string'} },
+    },
+    required: ['developer_mode', 'runtime', 'mods'],
+  }
+
+  export const Validator = AJV_Instance.compile<RuntimeConfig>(Schema)
+}
