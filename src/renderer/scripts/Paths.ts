@@ -9,22 +9,22 @@ const LocalAppDataPath: string = await ipcRenderer.invoke('get-localappdata-path
 
 namespace UnvalidatedPaths {
   export namespace Folder {
-    export const Amethyst: string = path.join(...[AppDataPath, 'Amethyst'])
-    export const Launcher: string = path.join(...[Amethyst, 'Launcher'])
-    export const Versions: string = path.join(...[Amethyst, 'Versions'])
-    export const MinecraftUWP: string = path.join(
-      ...[LocalAppDataPath, 'Packages', 'Microsoft.MinecraftUWP_8wekyb3d8bbwe']
-    )
-    export const ComMojang: string = path.join(...[MinecraftUWP, 'LocalState', 'games', 'com.mojang'])
-    export const AmethystUWP: string = path.join(...[ComMojang, 'amethyst'])
-    export const Mods: string = path.join(...[AmethystUWP, 'Mods'])
+    export const Amethyst: string = path.join(AppDataPath, 'Amethyst')
+    export const Launcher: string = path.join(Amethyst, 'Launcher')
+    export const Versions: string = path.join(Amethyst, 'Versions')
+    export const MinecraftUWP: string = path.join(LocalAppDataPath, 'Packages', 'Microsoft.MinecraftUWP_8wekyb3d8bbwe')
+    export const ComMojang: string = path.join(MinecraftUWP, 'LocalState', 'games', 'com.mojang')
+    export const AmethystUWP: string = path.join(ComMojang, 'amethyst')
+    export const Mods: string = path.join(AmethystUWP, 'Mods')
   }
 
   export namespace File {
-    export const Versions: string = path.join(...[Folder.Launcher, 'versions.json'])
-    export const CachedVersions: string = path.join(...[Folder.Launcher, 'cached_versions.json'])
-    export const Profiles: string = path.join(...[Folder.Launcher, 'profiles.json'])
-    export const LauncherConfig: string = path.join(...[Folder.AmethystUWP, 'launcher_config.json'])
+    export const Config: string = path.join(Folder.Launcher, 'config.json')
+    export const Versions: string = path.join(Folder.Launcher, 'versions.json')
+    export const CachedVersions: string = path.join(Folder.Launcher, 'cached_versions.json')
+    export const Profiles: string = path.join(Folder.Launcher, 'profiles.json')
+    // TODO: Change runtime config file name to 'runtime_config.json'
+    export const RuntimeConfig: string = path.join(Folder.AmethystUWP, 'launcher_config.json')
   }
 }
 
@@ -44,10 +44,11 @@ export namespace FolderPaths {
 }
 
 export namespace FilePaths {
+  export const Config: string = ValidatePath(UnvalidatedPaths.File.Config)
   export const Versions: string = ValidatePath(UnvalidatedPaths.File.Versions)
   export const CachedVersions: string = ValidatePath(UnvalidatedPaths.File.CachedVersions)
   export const Profiles: string = ValidatePath(UnvalidatedPaths.File.Profiles)
-  export const LauncherConfig: string = ValidatePath(UnvalidatedPaths.File.LauncherConfig)
+  export const RuntimeConfig: string = ValidatePath(UnvalidatedPaths.File.RuntimeConfig)
 }
 
 export function ValidatePath(in_path: string): string {
