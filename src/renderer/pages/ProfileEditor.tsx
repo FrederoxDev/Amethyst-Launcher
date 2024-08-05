@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Panel from '../components/Panel'
 import TextInput from '../components/TextInput'
 import Dropdown from '../components/Dropdown'
@@ -23,7 +23,7 @@ export default function ProfileEditor() {
   const navigate = useNavigate()
 
   const profile = useMemo(() => {
-    if (active_profile) return profiles[active_profile]
+    if (active_profile !== undefined) return profiles[active_profile]
   }, [profiles, active_profile])
 
   useMemo(() => {
@@ -48,10 +48,14 @@ export default function ProfileEditor() {
       if (profile.runtime === undefined) {
         SetSubPage('Settings')
       }
-    } else {
+    }
+  }, [profile])
+
+  useEffect(() => {
+    if (profile === undefined) {
       navigate('/profile-manager')
     }
-  }, [navigate, profile])
+  })
 
   const ModButton = useCallback(
     (
