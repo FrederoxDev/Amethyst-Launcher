@@ -31,11 +31,7 @@ export namespace Shard {
 
     export namespace Value {
       export const Schema: JSONSchemaType<Value> = {
-        oneOf: [
-          { type: 'string'},
-          { type: 'boolean'},
-          { type: 'number'}
-        ]
+        oneOf: [{ type: 'string' }, { type: 'boolean' }, { type: 'number' }]
       }
 
       export const Validator = AJV_Instance.compile<Value>(Schema)
@@ -43,7 +39,7 @@ export namespace Shard {
     // endregion
 
     // region Shard.Option.Text
-    export interface Text  {
+    export interface Text {
       type: 'text'
       properties: {
         label: string
@@ -75,11 +71,11 @@ export namespace Shard {
     // endregion
 
     // region Shard.Option.Toggle
-    export interface Toggle  {
+    export interface Toggle {
       type: 'toggle'
       properties: {
         label: string
-        description?: string,
+        description?: string
         default_value: boolean
       }
     }
@@ -179,14 +175,8 @@ export namespace Shard {
     }
     // endregion
 
-
     export const Schema: JSONSchemaType<Option> = {
-      oneOf: [
-        Text.Schema,
-        Toggle.Schema,
-        Radial.Schema,
-        Slider.Schema
-      ]
+      oneOf: [Text.Schema, Toggle.Schema, Radial.Schema, Slider.Schema]
     }
 
     export const Validator = AJV_Instance.compile<Option>(Schema)
@@ -431,7 +421,9 @@ export function FindShards(fragments: Shard.Reference[]): Shard.Manifest[] {
 export function FindExtraShard(fragment: Shard.Reference): Shard.Extra | undefined {
   const shards = GetExtraShards()
 
-  return shards.filter(s => s.manifest.meta.uuid === fragment.uuid).find(s => s.manifest.meta.version === fragment.version)
+  return shards
+    .filter(s => s.manifest.meta.uuid === fragment.uuid)
+    .find(s => s.manifest.meta.version === fragment.version)
 }
 
 export function FindExtraShards(fragments: Shard.Reference[]): Shard.Extra[] {
@@ -440,7 +432,9 @@ export function FindExtraShards(fragments: Shard.Reference[]): Shard.Extra[] {
   const found: Shard.Extra[] = []
 
   for (const fragment of fragments) {
-    const found_shard = shards.filter(s => s.manifest.meta.uuid === fragment.uuid).find(s => s.manifest.meta.version === fragment.version)
+    const found_shard = shards
+      .filter(s => s.manifest.meta.uuid === fragment.uuid)
+      .find(s => s.manifest.meta.version === fragment.version)
 
     if (found_shard) {
       found.push(found_shard)

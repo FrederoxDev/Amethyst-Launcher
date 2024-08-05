@@ -1,5 +1,3 @@
-import { FolderPaths } from '../Paths'
-
 import { Version } from '../types/Version'
 
 import * as child from 'child_process'
@@ -75,7 +73,6 @@ export async function RegisterVersion(version: Version) {
 
     Console.StartGroup(Console.ActionStr('Register Version'))
     {
-
       // Register New Version
       const appxManifest = path.join(version.path, version.sem_version, 'AppxManifest.xml')
 
@@ -87,7 +84,7 @@ export async function RegisterVersion(version: Version) {
       await new Promise(resolved => {
         const exec_proc = child.exec(registerCmd)
 
-        exec_proc.on('error', (err) => {
+        exec_proc.on('error', err => {
           console.log(err)
         })
 
@@ -101,8 +98,7 @@ export async function RegisterVersion(version: Version) {
     Console.EndGroup()
 
     console.log(GetPackagePath())
-  }
-  else {
+  } else {
     throw new Error('Version path is undefined')
   }
 }

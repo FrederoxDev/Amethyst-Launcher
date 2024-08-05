@@ -10,12 +10,12 @@
 }
 
 .inset_button:hover {
-    background-color: #58585A;
+    background-color: #58585a;
 
-    border-bottom-color: #3E3E3F;
-    border-right-color: #3E3E3F;
-    border-top-color: #68686A;
-    border-left-color: #68686A;
+    border-bottom-color: #3e3e3f;
+    border-right-color: #3e3e3f;
+    border-top-color: #68686a;
+    border-left-color: #68686a;
 }
 
 .inset_button:active {

@@ -5,7 +5,13 @@ import { Console } from '../scripts/types/Console'
 
 import * as fs from 'fs'
 
-const VersionButton = (version: Version, index: number, selected_index: number | undefined, SetSelectedIndex: (index: number | undefined) => void, OnDelete: () => void) => {
+const VersionButton = (
+  version: Version,
+  index: number,
+  selected_index: number | undefined,
+  SetSelectedIndex: (index: number | undefined) => void,
+  OnDelete: () => void
+) => {
   function DeleteVersion() {
     const message_args = {
       message: 'Are you sure you want to delete this version?\n\nThis is an irreversible action!',
@@ -48,19 +54,30 @@ const VersionButton = (version: Version, index: number, selected_index: number |
   return (
     <div key={index}>
       <div className="list_item flex flex-row">
-        <div className="flex flex-grow inset_button cursor-pointer" onClick={() => { SetSelectedIndex(selected_index === index ? undefined : index)}}>
+        <div
+          className="flex flex-grow inset_button cursor-pointer"
+          onClick={() => {
+            SetSelectedIndex(selected_index === index ? undefined : index)
+          }}
+        >
           <div className="flex flex-row w-full justify-between items-center p-[8px]">
             <div className="flex flex-row gap-[8px]">
               <p className="minecraft-seven text-white text-[14px]">{version.sem_version}</p>
               <p className="minecraft-seven text-[#B1B2B5] text-[14px]">{version_format}</p>
             </div>
             <div className="w-[30px] h-[30px] p-[10px]">
-              <img src={selected_index === index ? `/images/icons/chevron-up.png` : `/images/icons/chevron-down.png`}
-                   className="w-full h-full pixelated" alt="" />
+              <img
+                src={selected_index === index ? `/images/icons/chevron-up.png` : `/images/icons/chevron-down.png`}
+                className="w-full h-full pixelated"
+                alt=""
+              />
             </div>
           </div>
         </div>
-        <div className="w-[58px] h-[58px] p-[8px] flex justify-center items-center inset_button cursor-pointer" onClick={() => DeleteVersion()}>
+        <div
+          className="w-[58px] h-[58px] p-[8px] flex justify-center items-center inset_button cursor-pointer"
+          onClick={() => DeleteVersion()}
+        >
           <img src="/images/icons/delete-icon.png" className="pixelated" alt="" />
         </div>
       </div>
@@ -79,24 +96,22 @@ const VersionButton = (version: Version, index: number, selected_index: number |
           className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
           {'Format: ' + version.format}
         </p>
-        {
-          version.path !== undefined && (
-            <div className="flex flex-row justify-between">
-              <p
-                className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
-                {'Path: ' + version.path}
-              </p>
-              <div
-                className="w-[24px] h-[24px] shrink-0 bg-[#313233] box-content border-[3px] border-[#1E1E1F] rounded-[3px] cursor-pointer hover:border-[#48494A] hover:bg-[#5a5b5c] active:border-[#4f913c] active:bg-[#3c8527]"
-                onClick={() => {
-                  if (version.path) clipboard.writeText(version.path)
-                }}
-              >
-                <img src="/images/icons/copy-icon.png" className="w-full h-full pixelated" alt="" />
-              </div>
+        {version.path !== undefined && (
+          <div className="flex flex-row justify-between">
+            <p
+              className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+              {'Path: ' + version.path}
+            </p>
+            <div
+              className="w-[24px] h-[24px] shrink-0 bg-[#313233] box-content border-[3px] border-[#1E1E1F] rounded-[3px] cursor-pointer hover:border-[#48494A] hover:bg-[#5a5b5c] active:border-[#4f913c] active:bg-[#3c8527]"
+              onClick={() => {
+                if (version.path) clipboard.writeText(version.path)
+              }}
+            >
+              <img src="/images/icons/copy-icon.png" className="w-full h-full pixelated" alt="" />
             </div>
-          )
-        }
+          </div>
+        )}
       </div>
     </div>
   )

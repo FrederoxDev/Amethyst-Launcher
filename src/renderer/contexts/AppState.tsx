@@ -1,9 +1,9 @@
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react'
 
-import { Version, GetCachedVersions } from '../scripts/types/Version'
+import { GetCachedVersions, Version } from '../scripts/types/Version'
 
-import { LauncherConfig, GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
-import { GetProfiles, SetProfiles as SetProfilesFile, Profile } from '../scripts/types/Profile'
+import { GetLauncherConfig, LauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
+import { GetProfiles, Profile, SetProfiles as SetProfilesFile } from '../scripts/types/Profile'
 
 import { ipcRenderer } from 'electron'
 import Shard, { FindExtraShard, FindExtraShards, GetExtraShards } from '../scripts/types/Shard'
@@ -17,7 +17,7 @@ interface TAppStateContext {
   runtimes: Shard.Extra[]
   SetRuntimes: React.Dispatch<React.SetStateAction<Shard.Extra[]>>
 
-  shards: Shard.Extra[],
+  shards: Shard.Extra[]
   SetShards: React.Dispatch<React.SetStateAction<Shard.Extra[]>>
 
   versions: Version.Cached[]

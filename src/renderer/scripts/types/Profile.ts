@@ -15,7 +15,7 @@ export interface Profile {
   runtime?: Shard.Reference
   mods?: Shard.Reference[]
   options?: {
-    shard: Shard.Reference,
+    shard: Shard.Reference
     values: Shard.Option.Value[]
   }[]
 }
@@ -44,7 +44,7 @@ export namespace Profile {
               items: Shard.Option.Value.Schema
             }
           },
-          required: ['shard', 'values'],
+          required: ['shard', 'values']
         },
         nullable: true
       }

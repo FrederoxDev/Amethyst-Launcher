@@ -1,4 +1,4 @@
-import { FolderPaths, FilePaths } from '../Paths'
+import { FilePaths, FolderPaths } from '../Paths'
 import { SemVersion } from './SemVersion'
 import { Console } from './Console'
 
@@ -59,8 +59,8 @@ export namespace Version {
 
   // region Version.Cached
   export interface Cached {
-    uuid: string,
-    sem_version: SemVersion.Primitive,
+    uuid: string
+    sem_version: SemVersion.Primitive
     format: Version.Format
   }
 
@@ -103,7 +103,7 @@ export namespace Version {
 
   // region Version.File
   export interface File {
-    default_path: string,
+    default_path: string
     tracking_paths: string[]
     versions: Version[]
   }
@@ -115,7 +115,7 @@ export namespace Version {
         default_path: { type: 'string' },
         tracking_paths: {
           type: 'array',
-          items: { type: 'string' },
+          items: { type: 'string' }
         },
         versions: {
           type: 'array',
@@ -266,8 +266,7 @@ export function SetVersionsFile(file: Version.File) {
   if (Version.File.Validator(file)) {
     const text = JSON.stringify(file, undefined, 4)
     fs.writeFileSync(FilePaths.Versions, text)
-  }
-  else {
+  } else {
     console.error('Invalid Versions File')
     console.error(Version.File.Validator.errors)
   }
@@ -280,8 +279,7 @@ export function GetVersionsFile(): Version.File {
 
     if (Version.File.Validator(json)) {
       return json as Version.File
-    }
-    else {
+    } else {
       Console.Group(Console.ErrorStr('Failed to parse `versions.json`'), () => {
         console.log(Version.File.Validator.errors)
       })

@@ -1,4 +1,4 @@
-import { FolderPaths, ValidatePath, DeletePath } from '../Paths'
+import { DeletePath, FolderPaths, ValidatePath } from '../Paths'
 import { GetPackagePath } from './AppRegistry'
 import { Extractor } from '../backend/Extractor'
 import { download } from '../backend/MinecraftVersionDownloader'
@@ -13,8 +13,7 @@ export function IsDownloaded(version: Version) {
   if (version.path) {
     const version_path = path.join(version.path, version.sem_version)
     return fs.existsSync(version_path)
-  }
-  else {
+  } else {
     throw new Error('Version path is undefined')
   }
 }
@@ -23,8 +22,7 @@ export function IsLocked(version: Version) {
   if (version.path) {
     const lock_path = path.join(version.path, `${version.sem_version}.lock`)
     return fs.existsSync(lock_path)
-  }
-  else {
+  } else {
     throw new Error('Version path is undefined')
   }
 }
@@ -35,8 +33,7 @@ export function CreateLock(version: Version) {
     ValidatePath(lock_path)
     const handle = fs.openSync(lock_path, 'w')
     fs.close(handle)
-  }
-  else {
+  } else {
     throw new Error('Version path is undefined')
   }
 }
@@ -52,8 +49,7 @@ export function CleanupInstall(version: Version, successful: boolean) {
       const folderPath = path.join(version.path, version.sem_version)
       DeletePath(folderPath)
     }
-  }
-  else {
+  } else {
     throw new Error('Version path is undefined')
   }
 }
@@ -103,8 +99,7 @@ export async function DownloadVersion(
         })
       }
     )
-  }
-  else {
+  } else {
     throw new Error('Version path is undefined')
   }
 }
@@ -162,8 +157,7 @@ export async function ExtractVersion(
         setStatus('Successfully extracted the downloaded version!')
       }
     )
-  }
-  else {
+  } else {
     throw new Error('Version path is undefined')
   }
 }
@@ -174,8 +168,7 @@ export function InstallProxy(version: Version) {
     const proxy_path = path.join(FolderPaths.App, 'build/public/proxy/dxgi.dll')
 
     fs.copyFileSync(proxy_path, target_path)
-  }
-  else {
+  } else {
     throw new Error('Version path is undefined')
   }
 }
@@ -183,8 +176,7 @@ export function InstallProxy(version: Version) {
 export function IsRegistered(version: Version) {
   if (version.path) {
     return GetPackagePath() === path.join(version.path, version.sem_version)
-  }
-  else {
+  } else {
     throw new Error('Version path is undefined')
   }
 }

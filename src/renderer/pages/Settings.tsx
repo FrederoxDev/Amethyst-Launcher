@@ -1,7 +1,7 @@
 import { UseAppState } from '../contexts/AppState'
-import { IsRegistered, IsDownloaded } from '../scripts/functions/VersionManager'
+import { IsDownloaded, IsRegistered } from '../scripts/functions/VersionManager'
 import { GetPackagePath } from '../scripts/functions/AppRegistry'
-import { FolderPaths, FilePaths } from '../scripts/Paths'
+import { FilePaths, FolderPaths } from '../scripts/Paths'
 import { IsDevModeEnabled } from '../scripts/functions/DeveloperMode'
 import ReadOnlyTextBox from '../components/ReadOnlyTextBox'
 import { useEffect, useState } from 'react'
@@ -90,7 +90,6 @@ export default function Settings() {
         />
       </div>
 
-
       <div className="flex flex-col gap-[8px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px] minecraft-seven text-[#BCBEC0] text-[14px] shrink-0 overflow-x-hidden">
         <p className="text-white">Debug Info</p>
         <div className="flex flex-col gap-[8px]">
@@ -107,7 +106,6 @@ export default function Settings() {
             <p>Amethyst Folder: {FolderPaths.Amethyst}</p>
             <p>Minecraft Folder: {FolderPaths.MinecraftUWP}</p>
           </div>
-
         </div>
       </div>
 

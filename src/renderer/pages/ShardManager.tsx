@@ -56,7 +56,12 @@ export default function ShardManager() {
     SetRuntimes(temp_runtimes)
   }, [shards])
 
-  const ShardButton = (shard: Shard.Extra, index: number, selected_index: number | undefined, SetSelectedIndex: (index: number | undefined) => void) => {
+  const ShardButton = (
+    shard: Shard.Extra,
+    index: number,
+    selected_index: number | undefined,
+    SetSelectedIndex: (index: number | undefined) => void
+  ) => {
     let icon_path = shard.icon_path
 
     if (icon_path === undefined) {
@@ -75,7 +80,12 @@ export default function ShardManager() {
 
     return (
       <div key={index}>
-        <div className="m-[-3px] border-[3px] border-[#1E1E1F] cursor-pointer" onClick={() => {  SetSelectedIndex(selected_index === index ? undefined : index) }}>
+        <div
+          className="m-[-3px] border-[3px] border-[#1E1E1F] cursor-pointer"
+          onClick={() => {
+            SetSelectedIndex(selected_index === index ? undefined : index)
+          }}
+        >
           <div className="inset_button">
             <div className="flex flex-row justify-between items-center p-[8px]">
               <div className="flex flex-row gap-[8px]">
@@ -86,9 +96,13 @@ export default function ShardManager() {
                 <p className="minecraft-seven text-[#B1B2B5] text-[14px]">{shard.manifest.meta.version}</p>
               </div>
               <div className="w-[30px] h-[30px] p-[10px]">
-                <img src={selected_index === index ? `/images/icons/chevron-up.png` : `/images/icons/chevron-down.png`} className="w-full h-full pixelated" alt="" />
+                <img
+                  src={selected_index === index ? `/images/icons/chevron-up.png` : `/images/icons/chevron-down.png`}
+                  className="w-full h-full pixelated"
+                  alt=""
+                />
               </div>
-          </div>
+            </div>
           </div>
         </div>
         <div

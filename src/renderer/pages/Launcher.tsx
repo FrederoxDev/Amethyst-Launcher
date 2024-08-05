@@ -181,13 +181,13 @@ export default function Launcher() {
           <div className="flex flex-row gap-[8px] border-[#1E1E1F] border-[3px] p-[8px] bg-[#48494A]">
             <div className="w-[30%] mt-auto">
               <div className="flex flex-col gap-[4px]">
-                <label htmlFor={"profile-select"} className="minecraft-seven text-white text-[14px]">
-                  {"Profile"}
+                <label htmlFor={'profile-select'} className="minecraft-seven text-white text-[14px]">
+                  {'Profile'}
                 </label>
                 {profile_names.length > 0 ? (
                   <select
-                    name={"profile-select"}
-                    id={"profile-select"}
+                    name={'profile-select'}
+                    id={'profile-select'}
                     onChange={event => {
                       SetSelectedProfile(event.target.selectedIndex)
                     }}

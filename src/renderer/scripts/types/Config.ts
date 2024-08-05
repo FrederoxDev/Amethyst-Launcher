@@ -15,15 +15,15 @@ export namespace Config {
       active_profile: { type: 'number', nullable: true },
       dev_mode: { type: 'boolean' }
     },
-    required: ['theme', 'dev_mode'],
+    required: ['theme', 'dev_mode']
   }
 
   export const Validator = AJV_Instance.compile<Config>(Schema)
 }
 
 export interface RuntimeConfig {
-  developer_mode: boolean,
-  runtime: string,
+  developer_mode: boolean
+  runtime: string
   mods: string[]
 }
 
@@ -32,10 +32,10 @@ export namespace RuntimeConfig {
     type: 'object',
     properties: {
       developer_mode: { type: 'boolean' },
-      runtime: { type: 'string'},
-      mods: { type: 'array', items: { type: 'string'} },
+      runtime: { type: 'string' },
+      mods: { type: 'array', items: { type: 'string' } }
     },
-    required: ['developer_mode', 'runtime', 'mods'],
+    required: ['developer_mode', 'runtime', 'mods']
   }
 
   export const Validator = AJV_Instance.compile<RuntimeConfig>(Schema)
