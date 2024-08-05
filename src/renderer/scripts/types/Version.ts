@@ -87,7 +87,8 @@ export namespace Version {
 
   // region Version.File
   export interface File {
-    default_path: string
+    default_path: string,
+    tracking_paths: string[]
     versions: Version[]
   }
 
@@ -96,6 +97,10 @@ export namespace Version {
       type: 'object',
       properties: {
         default_path: { type: 'string' },
+        tracking_paths: {
+          type: 'array',
+          items: { type: 'string' },
+        },
         versions: {
           type: 'array',
           items: Version.Schema
@@ -189,8 +194,9 @@ export function FindCachedVersion(version: SemVersion.Primitive): Version | unde
 export function RefreshVersionsFile() {
   if (!fs.existsSync(FilePaths.Versions)) {
     const default_version_file: Version.File = {
-      versions: [],
-      default_path: FolderPaths.Versions
+      default_path: FolderPaths.Versions,
+      tracking_paths: [],
+      versions: []
     }
 
     const versions_file_string = JSON.stringify(default_version_file, undefined, 4)
@@ -262,17 +268,13 @@ export function GetVersionsFile(): Version.File {
       Console.Group(Console.ErrorStr('Failed to parse `versions.json`'), () => {
         console.log(Version.File.Validator.errors)
       })
-
-      return {
-        versions: [],
-        default_path: FolderPaths.Versions
-      }
     }
   }
 
   return {
-    versions: [],
-    default_path: FolderPaths.Versions
+    default_path: FolderPaths.Versions,
+    tracking_paths: [],
+    versions: []
   }
 }
 
