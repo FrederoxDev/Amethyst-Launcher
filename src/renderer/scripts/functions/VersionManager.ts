@@ -11,7 +11,7 @@ import * as path from 'path'
 
 export function IsDownloaded(version: Version) {
   if (version.path) {
-    const version_path = path.join(version.path, version.sem_version)
+    const version_path = path.join(version.path, Version.toString(version))
     return fs.existsSync(version_path)
   } else {
     throw new Error('Version path is undefined')
@@ -20,7 +20,7 @@ export function IsDownloaded(version: Version) {
 
 export function IsLocked(version: Version) {
   if (version.path) {
-    const lock_path = path.join(version.path, `${version.sem_version}.lock`)
+    const lock_path = path.join(version.path, `${Version.toString(version)}.lock`)
     return fs.existsSync(lock_path)
   } else {
     throw new Error('Version path is undefined')
@@ -29,7 +29,7 @@ export function IsLocked(version: Version) {
 
 export function CreateLock(version: Version) {
   if (version.path) {
-    const lock_path = path.join(version.path, `${version.sem_version}.lock`)
+    const lock_path = path.join(version.path, `${Version.toString(version)}.lock`)
     ValidatePath(lock_path)
     const handle = fs.openSync(lock_path, 'w')
     fs.close(handle)
@@ -40,13 +40,13 @@ export function CreateLock(version: Version) {
 
 export function CleanupInstall(version: Version, successful: boolean) {
   if (version.path) {
-    const appxPath = path.join(version.path, `${version.sem_version}.zip`)
-    const lockPath = path.join(version.path, `${version.sem_version}.lock`)
+    const appxPath = path.join(version.path, `${Version.toString(version)}.zip`)
+    const lockPath = path.join(version.path, `${Version.toString(version)}.lock`)
     DeletePath(appxPath)
     DeletePath(lockPath)
 
     if (!successful) {
-      const folderPath = path.join(version.path, version.sem_version)
+      const folderPath = path.join(version.path, Version.toString(version))
       DeletePath(folderPath)
     }
   } else {
@@ -62,7 +62,7 @@ export async function DownloadVersion(
   if (version.path) {
     ValidatePath(version.path)
 
-    const output_file = path.join(version.path, `${version.sem_version}.zip`)
+    const output_file = path.join(version.path, `${Version.toString(version)}.zip`)
 
     Console.Group(Console.InfoStr('File'), () => {
       console.log(output_file)
@@ -110,8 +110,8 @@ export async function ExtractVersion(
   setLoadingPercent: React.Dispatch<React.SetStateAction<number>>
 ) {
   if (version.path) {
-    const appxPath = path.join(version.path, `${version.sem_version}.zip`)
-    const folderPath = path.join(version.path, version.sem_version)
+    const appxPath = path.join(version.path, `${Version.toString(version)}.zip`)
+    const folderPath = path.join(version.path, Version.toString(version))
 
     Console.Group(Console.InfoStr('File'), () => {
       console.log(appxPath)
@@ -164,7 +164,7 @@ export async function ExtractVersion(
 
 export function InstallProxy(version: Version) {
   if (version.path) {
-    const target_path = path.join(version.path, version.sem_version, 'dxgi.dll')
+    const target_path = path.join(version.path, Version.toString(version), 'dxgi.dll')
     const proxy_path = path.join(FolderPaths.App, 'build/public/proxy/dxgi.dll')
 
     fs.copyFileSync(proxy_path, target_path)
@@ -175,7 +175,7 @@ export function InstallProxy(version: Version) {
 
 export function IsRegistered(version: Version) {
   if (version.path) {
-    return GetPackagePath() === path.join(version.path, version.sem_version)
+    return GetPackagePath() === path.join(version.path, Version.toString(version))
   } else {
     throw new Error('Version path is undefined')
   }
