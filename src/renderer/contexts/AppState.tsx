@@ -83,9 +83,10 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     SetMods(shards.filter(s => s.manifest.meta.format === 0 || s.manifest.meta.format === undefined))
 
     SetDeveloperMode(config.developer_mode)
+    SetShowAllVersions(config.show_all_versions)
     SetActiveProfile(config.active_profile)
     SetTheme(config.theme)
-  }, [config.active_profile, config.developer_mode, config.theme, shards])
+  }, [config.active_profile, config.developer_mode, config.show_all_versions, config.theme, shards])
 
   const [initialized, SetInitialized] = useState(false)
 
