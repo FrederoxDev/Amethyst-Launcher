@@ -26,19 +26,22 @@ export namespace Config {
   export const Validator = AJV_Instance.compile<Config>(Schema)
 
   export function Get(): Config {
-    const text = fs.readFileSync(FilePaths.Config, 'utf-8')
-    const data = JSON.parse(text)
+    if (fs.existsSync(FilePaths.Config)) {
+      const text = fs.readFileSync(FilePaths.Config, 'utf-8')
+      const data = JSON.parse(text)
 
-    if (Config.Validator(data)) {
-      return data
-    } else {
-      console.error(Config.Validator.errors)
-      return {
-        active_profile: undefined,
-        developer_mode: false,
-        show_all_versions: false,
-        theme: 'System'
+      if (Config.Validator(data)) {
+        return data
+      } else {
+        console.error(Config.Validator.errors)
       }
+    }
+
+    return {
+      active_profile: undefined,
+      developer_mode: false,
+      show_all_versions: false,
+      theme: 'System'
     }
   }
 
@@ -74,18 +77,21 @@ export namespace RuntimeConfig {
   export const Validator = AJV_Instance.compile<RuntimeConfig>(Schema)
 
   export function Get(): RuntimeConfig {
-    const text = fs.readFileSync(FilePaths.RuntimeConfig, 'utf-8')
-    const data = JSON.parse(text)
+    if (fs.existsSync(FilePaths.Config)) {
+      const text = fs.readFileSync(FilePaths.RuntimeConfig, 'utf-8')
+      const data = JSON.parse(text)
 
-    if (RuntimeConfig.Validator(data)) {
-      return data
-    } else {
-      console.error(RuntimeConfig.Validator.errors)
-      return {
-        developer_mode: false,
-        runtime: 'Vanilla',
-        mods: []
+      if (RuntimeConfig.Validator(data)) {
+        return data
+      } else {
+        console.error(RuntimeConfig.Validator.errors)
       }
+    }
+
+    return {
+      developer_mode: false,
+      runtime: 'Vanilla',
+      mods: []
     }
   }
 
