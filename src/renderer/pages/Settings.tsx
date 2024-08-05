@@ -1,14 +1,13 @@
 import { UseAppState } from '../contexts/AppState'
 import { IsDownloaded, IsRegistered } from '../scripts/functions/VersionManager'
 import { GetPackagePath } from '../scripts/functions/AppRegistry'
-import { FilePaths, FolderPaths } from '../scripts/Paths'
+import { FolderPaths } from '../scripts/Paths'
 import { IsDevModeEnabled } from '../scripts/functions/DeveloperMode'
 import ReadOnlyTextBox from '../components/ReadOnlyTextBox'
 import { useMemo, useState } from 'react'
 import MinecraftToggle from '../components/MinecraftToggle'
 import MinecraftRadialButtonPanel from '../components/MinecraftRadialButtonPanel'
 
-import * as fs from 'fs'
 import { Version } from '../scripts/types/Version'
 
 export default function Settings() {
@@ -20,10 +19,13 @@ export default function Settings() {
     show_all_versions,
     SetShowAllVersions,
     profiles,
-    active_profile
+    active_profile,
+    config,
+    runtime_config
   } = UseAppState()
 
   const [config_text, SetConfigText] = useState<string>('')
+  const [runtime_config_text, SetRuntimeConfigText] = useState<string>('')
 
   let isVerDownloaded = false
   let isRegisteredVerOurs = false
@@ -41,14 +43,14 @@ export default function Settings() {
   }
 
   useMemo(() => {
-    if (!fs.existsSync(FilePaths.RuntimeConfig)) {
-      SetConfigText('Launcher config does not exist...')
-      return
-    }
+    const text = JSON.stringify(config, undefined, 4)
+    SetConfigText(text)
+  }, [config])
 
-    const data = fs.readFileSync(FilePaths.RuntimeConfig, 'utf-8')
-    SetConfigText(data)
-  }, [])
+  useMemo(() => {
+    const text = JSON.stringify(runtime_config, undefined, 4)
+    SetRuntimeConfigText(text)
+  }, [runtime_config])
 
   return (
     <div
@@ -58,9 +60,9 @@ export default function Settings() {
       <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-[4px]">
-            <p className="minecraft-seven text-white text-[14px]">{'Keep launcher open'}</p>
+            <p className="minecraft-seven text-white text-[14px]">{'Show all versions'}</p>
             <p className="minecraft-seven text-[#BCBEC0] text-[12px]">
-              {'Prevents the launcher from closing after launching the game.'}
+              {'Enables beta and preview versions in the profile editor'}
             </p>
           </div>
           <MinecraftToggle isChecked={show_all_versions} setIsChecked={SetShowAllVersions} />
@@ -79,7 +81,8 @@ export default function Settings() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-[8px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+      <div
+        className="flex flex-col gap-[8px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
         <p className="minecraft-seven text-white text-[14px]">UI Theme</p>
         <MinecraftRadialButtonPanel
           elements={[
@@ -94,7 +97,8 @@ export default function Settings() {
         />
       </div>
 
-      <div className="flex flex-col gap-[8px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px] minecraft-seven text-[#BCBEC0] text-[14px] shrink-0 overflow-x-hidden">
+      <div
+        className="flex flex-col gap-[8px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px] minecraft-seven text-[#BCBEC0] text-[14px] shrink-0 overflow-x-hidden">
         <p className="text-white">Debug Info</p>
         <div className="flex flex-col gap-[8px]">
           <div className="flex flex-col gap-[2px]">
@@ -115,6 +119,10 @@ export default function Settings() {
 
       <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
         <ReadOnlyTextBox text={config_text ?? ' '} label="Launcher Config" />
+      </div>
+
+      <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+        <ReadOnlyTextBox text={runtime_config_text ?? ' '} label="Runtime Config" />
       </div>
     </div>
   )
