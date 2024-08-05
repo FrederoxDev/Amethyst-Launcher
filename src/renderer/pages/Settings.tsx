@@ -4,7 +4,7 @@ import { GetPackagePath } from '../scripts/functions/AppRegistry'
 import { FilePaths, FolderPaths } from '../scripts/Paths'
 import { IsDevModeEnabled } from '../scripts/functions/DeveloperMode'
 import ReadOnlyTextBox from '../components/ReadOnlyTextBox'
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import MinecraftToggle from '../components/MinecraftToggle'
 import MinecraftRadialButtonPanel from '../components/MinecraftRadialButtonPanel'
 
@@ -12,39 +12,43 @@ import * as fs from 'fs'
 import { Version } from '../scripts/types/Version'
 
 export default function Settings() {
-  const { keep_launcher_open, SetKeepLauncherOpen, developer_mode, SetDeveloperMode, ui_theme, SetUITheme } =
-    UseAppState()
+  const {
+    developer_mode,
+    SetDeveloperMode,
+    theme,
+    SetTheme,
+    show_all_versions,
+    SetShowAllVersions,
+    profiles,
+    active_profile
+  } = UseAppState()
 
-  const { profiles, selected_profile } = UseAppState()
-  const [launcherCfg, setLauncherCfg] = useState<string>('')
+  const [config_text, SetConfigText] = useState<string>('')
 
-  const profile = profiles[selected_profile]
   let isVerDownloaded = false
   let isRegisteredVerOurs = false
   let installDir = ''
 
   const isWindowsDevModeOn = IsDevModeEnabled()
 
-  if (profile) {
+  let profile = undefined
+
+  if (active_profile) {
+    profile = profiles[active_profile]
     isVerDownloaded = IsDownloaded(profile.version)
     isRegisteredVerOurs = IsRegistered(profile.version)
     installDir = GetPackagePath() ?? 'Could not find installed.'
   }
 
-  const updateCfgText = () => {
+  useMemo(() => {
     if (!fs.existsSync(FilePaths.RuntimeConfig)) {
-      setLauncherCfg('Launcher config does not exist...')
+      SetConfigText('Launcher config does not exist...')
       return
     }
 
     const data = fs.readFileSync(FilePaths.RuntimeConfig, 'utf-8')
-    setLauncherCfg(data)
-  }
-
-  useEffect(() => {
-    const timer = setTimeout(updateCfgText, 0)
-    return () => clearTimeout(timer)
-  }, [profiles, selected_profile, keep_launcher_open, developer_mode, ui_theme])
+    SetConfigText(data)
+  }, [])
 
   return (
     <div
@@ -59,7 +63,7 @@ export default function Settings() {
               {'Prevents the launcher from closing after launching the game.'}
             </p>
           </div>
-          <MinecraftToggle isChecked={keep_launcher_open} setIsChecked={SetKeepLauncherOpen} />
+          <MinecraftToggle isChecked={show_all_versions} setIsChecked={SetShowAllVersions} />
         </div>
       </div>
 
@@ -83,9 +87,9 @@ export default function Settings() {
             { text: 'Dark', value: 'Dark' },
             { text: 'System', value: 'System' }
           ]}
-          default_selected_value={ui_theme}
+          default_selected_value={theme}
           onChange={value => {
-            SetUITheme(value)
+            SetTheme(value as 'Light' | 'Dark' | 'System')
           }}
         />
       </div>
@@ -94,7 +98,7 @@ export default function Settings() {
         <p className="text-white">Debug Info</p>
         <div className="flex flex-col gap-[8px]">
           <div className="flex flex-col gap-[2px]">
-            <p>Version: {profile?.version ? Version.toString(profile.version) : 'No version found.'}</p>
+            <p>Version: {profile ? Version.toString(profile.version) : 'No version found.'}</p>
             <p>Downloaded: {isVerDownloaded ? 'true' : 'false'}</p>
             <p>Registered: {isRegisteredVerOurs ? 'true' : 'false'}</p>
             <p>Path: {installDir}</p>
@@ -110,7 +114,7 @@ export default function Settings() {
       </div>
 
       <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-        <ReadOnlyTextBox text={launcherCfg ?? ' '} label="Launcher Config" />
+        <ReadOnlyTextBox text={config_text ?? ' '} label="Launcher Config" />
       </div>
     </div>
   )
