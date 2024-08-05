@@ -50,6 +50,9 @@ interface TAppStateContext {
   error: string
   SetError: React.Dispatch<React.SetStateAction<string>>
 
+  config: Config
+  runtime_config: RuntimeConfig
+
   // Expose functions
   SaveState: () => void
 }
@@ -59,9 +62,9 @@ const AppStateContext = createContext<TAppStateContext | undefined>(undefined)
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [mods, SetMods] = useState<Shard.Extra[]>([])
   const [runtimes, SetRuntimes] = useState<Shard.Extra[]>([])
-  const [shards, SetShards] = useState<Shard.Extra[]>([])
-  const [versions, SetVersions] = useState<Version.Cached[]>([])
-  const [profiles, SetProfiles] = useState<Profile[]>([])
+  const [shards, SetShards] = useState<Shard.Extra[]>(GetExtraShards)
+  const [versions, SetVersions] = useState<Version.Cached[]>(GetCachedVersions)
+  const [profiles, SetProfiles] = useState<Profile[]>(GetProfiles)
   const [theme, SetTheme] = useState<'Light' | 'Dark' | 'System'>('System')
   const [developer_mode, SetDeveloperMode] = useState<boolean>(false)
   const [active_profile, SetActiveProfile] = useState<number | undefined>(undefined)
@@ -71,24 +74,18 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [status, SetStatus] = useState<string>('')
   const [error, SetError] = useState<string>('')
 
+  const [config, SetConfig] = useState<Config>(Config.Get)
+  const [runtime_config, SetRuntimeConfig] = useState<RuntimeConfig>(RuntimeConfig.Get)
+
   // Initialize Data like all mods and existing profiles
   useEffect(() => {
-    SetProfiles(GetProfiles())
-
-    const shards = GetExtraShards()
-
-    SetShards(shards)
     SetRuntimes(shards.filter(s => s.manifest.meta.format === 1))
     SetMods(shards.filter(s => s.manifest.meta.format === 0 || s.manifest.meta.format === undefined))
-
-    const config = Config.Get()
 
     SetDeveloperMode(config.developer_mode)
     SetActiveProfile(config.active_profile)
     SetTheme(config.theme)
-
-    SetVersions(GetCachedVersions())
-  }, [])
+  }, [config.active_profile, config.developer_mode, config.theme, shards])
 
   const [initialized, SetInitialized] = useState(false)
 
@@ -98,7 +95,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     let profile_mods: string[] = []
     let profile_runtime: string = 'Vanilla'
 
-    if (active_profile) {
+    if (active_profile !== undefined) {
       const profile = profiles[active_profile]
       if (profile.mods) {
         const mod_shards = FindExtraShards(profile.mods)
@@ -131,6 +128,11 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     Config.Set(config)
     RuntimeConfig.Set(runtime_config)
   }, [profiles, active_profile, developer_mode, theme, show_all_versions])
+
+  useEffect(() => {
+    SetRuntimeConfig(RuntimeConfig.Get)
+    SetConfig(Config.Get)
+  }, [active_profile, developer_mode, profiles, show_all_versions, theme])
 
   useEffect(() => {
     if (!initialized) {
@@ -176,7 +178,10 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         SetStatus: SetStatus,
         SaveState: SaveState,
         error: error,
-        SetError: SetError
+        SetError: SetError,
+
+        config: config,
+        runtime_config: runtime_config
       }}
     >
       {children}
