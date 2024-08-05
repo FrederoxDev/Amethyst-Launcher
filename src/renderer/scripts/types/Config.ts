@@ -8,6 +8,7 @@ export interface Config {
   theme: 'Light' | 'Dark' | 'System'
   active_profile: number | undefined
   dev_mode: boolean
+  all_versions: boolean
 }
 
 export namespace Config {
@@ -16,7 +17,8 @@ export namespace Config {
     properties: {
       theme: { type: 'string', oneOf: [{ const: 'Light' }, { const: 'Dark' }, { const: 'System' }] },
       active_profile: { type: 'number', nullable: true },
-      dev_mode: { type: 'boolean' }
+      dev_mode: { type: 'boolean' },
+      all_versions: { type: 'boolean' }
     },
     required: ['theme', 'dev_mode']
   }
@@ -34,6 +36,7 @@ export namespace Config {
       return {
         active_profile: undefined,
         dev_mode: false,
+        all_versions: false,
         theme: 'System'
       }
     }
