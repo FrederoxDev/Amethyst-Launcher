@@ -17,7 +17,7 @@ import child from 'child_process'
 import Panel from '../components/Panel'
 import { Console } from '../scripts/types/Console'
 import React from 'react'
-import { GetVersionsFile, SetVersionsFile } from '../scripts/types/Version'
+import { GetVersionsFile, SetVersionsFile, Version } from '../scripts/types/Version'
 
 export default function Launcher() {
   const {
@@ -37,7 +37,7 @@ export default function Launcher() {
   const LaunchGame = async () => {
     if (is_loading) return
 
-    if (profiles.length === 0 || !active_profile) {
+    if (profiles.length === 0 || active_profile === undefined) {
       throw new Error('Cannot launch without a profile')
     }
 
@@ -83,7 +83,10 @@ export default function Launcher() {
       Console.EndGroup()
       CleanupInstall(version, true)
 
-      InstallProxy(version)
+      if (version.format === Version.Format.Release) {
+        console.log('proxy install')
+        InstallProxy(version)
+      }
 
       const versions_file = GetVersionsFile()
 
