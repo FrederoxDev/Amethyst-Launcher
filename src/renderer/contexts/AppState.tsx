@@ -20,8 +20,8 @@ interface TAppStateContext {
   shards: Shard.Extra[],
   SetShards: React.Dispatch<React.SetStateAction<Shard.Extra[]>>
 
-  versions: Version[]
-  SetVersions: React.Dispatch<React.SetStateAction<Version[]>>
+  versions: Version.Cached[]
+  SetVersions: React.Dispatch<React.SetStateAction<Version.Cached[]>>
 
   profiles: Profile[]
   SetProfiles: React.Dispatch<React.SetStateAction<Profile[]>>
@@ -60,7 +60,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [mods, SetMods] = useState<Shard.Extra[]>([])
   const [runtimes, SetRuntimes] = useState<Shard.Extra[]>([])
   const [shards, SetShards] = useState<Shard.Extra[]>([])
-  const [versions, SetVersions] = useState<Version[]>([])
+  const [versions, SetVersions] = useState<Version.Cached[]>([])
   const [profiles, SetProfiles] = useState<Profile[]>([])
   const [selected_profile, SetSelectedProfile] = useState(0)
   const [ui_theme, SetUITheme] = useState('System')
