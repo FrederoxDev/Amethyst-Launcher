@@ -91,7 +91,6 @@ export async function DownloadVersion(
           Console.Group(Console.ResultStr('Failed', true), () => {
             Console.Error('Version download failed')
           })
-          throw new Error('Failed to download Minecraft!')
         }
         const end_time = performance.now()
         Console.Group(Console.ResultStr('Successful'), () => {
@@ -146,7 +145,6 @@ export async function ExtractVersion(
           Console.Group(Console.ResultStr('Failed', true), () => {
             Console.Error('Version extract failed')
           })
-          throw new Error('Version extract failed')
         }
 
         const end_time = performance.now()
