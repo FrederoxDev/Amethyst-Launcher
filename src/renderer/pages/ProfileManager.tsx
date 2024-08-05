@@ -6,13 +6,13 @@ import { GetDefaultVersionPath, GetLatestVersion } from '../scripts/types/Versio
 import { useCallback } from 'react'
 
 export default function ProfileManager() {
-  const { profiles, SetProfiles, SetSelectedProfile } = UseAppState()
+  const { profiles, SetProfiles, SetActiveProfile } = UseAppState()
   const navigate = useNavigate()
 
   const ProfileButton = useCallback(
     (profile: Profile, index: number) => {
       const OpenProfile = (index: number) => {
-        SetSelectedProfile(index)
+        SetActiveProfile(index)
         navigate('/profile-editor')
       }
 
@@ -40,7 +40,7 @@ export default function ProfileManager() {
         </div>
       )
     },
-    [SetSelectedProfile, navigate]
+    [SetActiveProfile, navigate]
   )
 
   return (
@@ -86,7 +86,7 @@ export default function ProfileManager() {
                 }
                 const newProfiles = [...profiles, default_profile]
                 SetProfiles(newProfiles)
-                SetSelectedProfile(newProfiles.length - 1)
+                SetActiveProfile(newProfiles.length - 1)
                 navigate('/profile-editor')
               }}
             />
