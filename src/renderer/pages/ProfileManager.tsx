@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { UseAppState } from '../contexts/AppState'
 import MinecraftButton from '../components/MinecraftButton'
 import Profile from '../scripts/types/Profile'
-import { GetLatestVersion } from '../scripts/types/Version'
+import { GetDefaultVersionPath, GetLatestVersion } from '../scripts/types/Version'
 import { useCallback } from 'react'
 
 
@@ -76,7 +76,7 @@ export default function ProfileManager() {
               onClick={() => {
                 const default_profile: Profile = {
                   name: 'New Profile',
-                  version: GetLatestVersion()
+                  version: { ...GetLatestVersion(), path: GetDefaultVersionPath() }
                 }
                 const newProfiles = [...profiles, default_profile]
                 SetProfiles(newProfiles)
