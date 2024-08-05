@@ -7,8 +7,8 @@ import path from 'path'
 export interface Config {
   theme: 'Light' | 'Dark' | 'System'
   active_profile: number | undefined
-  dev_mode: boolean
-  all_versions: boolean
+  developer_mode: boolean
+  show_all_versions: boolean
 }
 
 export namespace Config {
@@ -17,10 +17,10 @@ export namespace Config {
     properties: {
       theme: { type: 'string', oneOf: [{ const: 'Light' }, { const: 'Dark' }, { const: 'System' }] },
       active_profile: { type: 'number', nullable: true },
-      dev_mode: { type: 'boolean' },
-      all_versions: { type: 'boolean' }
+      developer_mode: { type: 'boolean' },
+      show_all_versions: { type: 'boolean' }
     },
-    required: ['theme', 'dev_mode']
+    required: ['theme', 'developer_mode', 'show_all_versions']
   }
 
   export const Validator = AJV_Instance.compile<Config>(Schema)
@@ -35,8 +35,8 @@ export namespace Config {
       console.error(Config.Validator.errors)
       return {
         active_profile: undefined,
-        dev_mode: false,
-        all_versions: false,
+        developer_mode: false,
+        show_all_versions: false,
         theme: 'System'
       }
     }
