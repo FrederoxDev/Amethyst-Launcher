@@ -106,7 +106,7 @@ export namespace Version {
           items: Version.Schema
         }
       },
-      required: ['default_path', 'versions'],
+      required: ['default_path', 'tracking_paths', 'versions'],
       additionalProperties: false
     }
 
@@ -191,7 +191,7 @@ export function FindCachedVersion(version: SemVersion.Primitive): Version | unde
 
 //////////////////////////////////////////////////
 
-export function RefreshVersionsFile() {
+export function RefreshVersionsFile(): void {
   if (!fs.existsSync(FilePaths.Versions)) {
     const default_version_file: Version.File = {
       default_path: FolderPaths.Versions,
@@ -264,7 +264,8 @@ export function GetVersionsFile(): Version.File {
 
     if (Version.File.Validator(json)) {
       return json as Version.File
-    } else {
+    }
+    else {
       Console.Group(Console.ErrorStr('Failed to parse `versions.json`'), () => {
         console.log(Version.File.Validator.errors)
       })
