@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { UseAppState } from '../contexts/AppState'
 import MinecraftButton from '../components/MinecraftButton'
 import Profile from '../scripts/types/Profile'
-import { GetDefaultVersionPath, GetLatestVersion } from '../scripts/types/Version'
+import { GetDefaultVersionPath, GetLatestVersion, Version } from '../scripts/types/Version'
 import { useCallback } from 'react'
 
 export default function ProfileManager() {
@@ -33,7 +33,7 @@ export default function ProfileManager() {
             <div className="flex flex-col gap-[2px]">
               <p className="minecraft-seven text-white text-[14px]">{profile.name}</p>
               <p className="minecraft-seven text-[#B1B2B5] text-[14px]">
-                {profile.version.sem_version} ({profile.runtime?.name ?? 'Vanilla'})
+                {`${Version.toString(profile.version)} (${profile.runtime?.name ?? 'Vanilla'})`}
               </p>
             </div>
           </div>
