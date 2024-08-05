@@ -182,8 +182,6 @@ export function InstallProxy(version: Version) {
 
 export function IsRegistered(version: Version) {
   if (version.path) {
-    console.log(path.join(version.path, version.sem_version))
-    console.log(GetPackagePath())
     return GetPackagePath() === path.join(version.path, version.sem_version)
   }
   else {
