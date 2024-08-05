@@ -221,7 +221,7 @@ export function RefreshVersionsFile(): void {
 
   const versions = GetVersions().filter(v => {
     if (v.path) {
-      return fs.existsSync(path.join(v.path, v.sem_version))
+      return fs.existsSync(path.join(v.path, Version.toString(v)))
     }
     return false
   })
@@ -237,17 +237,20 @@ export function RefreshVersionsFile(): void {
         !versions
           .map(v => {
             if (v.path) {
-              return path.join(v.path, v.sem_version)
+              return path.join(v.path, Version.toString(v))
             }
           })
           .includes(dir_path)
       ) {
-        if (SemVersion.Primitive.Validator(version_dir.name)) {
-          const minecraft_version = FindCachedVersion(version_dir.name)
+        const sem_version = SemVersion.Primitive.Match(version_dir.name)
+        if (SemVersion.Primitive.Validator(sem_version)) {
+          const minecraft_version = FindCachedVersion(sem_version)
 
           if (minecraft_version) {
             versions.push({ ...minecraft_version, path: dir_path })
           }
+        } else {
+          console.error(SemVersion.Primitive.Validator.errors)
         }
       }
     }
