@@ -32,12 +32,12 @@ export default function Settings() {
   }
 
   const updateCfgText = () => {
-    if (!fs.existsSync(FilePaths.LauncherConfig)) {
+    if (!fs.existsSync(FilePaths.RuntimeConfig)) {
       setLauncherCfg('Launcher config does not exist...')
       return
     }
 
-    const data = fs.readFileSync(FilePaths.LauncherConfig, 'utf-8')
+    const data = fs.readFileSync(FilePaths.RuntimeConfig, 'utf-8')
     setLauncherCfg(data)
   }
 
@@ -95,7 +95,7 @@ export default function Settings() {
         <p className="text-white">Debug Info</p>
         <div className="flex flex-col gap-[8px]">
           <div className="flex flex-col gap-[2px]">
-            <p>Version: {profile.version ? Version.toString(profile.version) : 'No version found.'}</p>
+            <p>Version: {profile?.version ? Version.toString(profile.version) : 'No version found.'}</p>
             <p>Downloaded: {isVerDownloaded ? 'true' : 'false'}</p>
             <p>Registered: {isRegisteredVerOurs ? 'true' : 'false'}</p>
             <p>Path: {installDir}</p>
