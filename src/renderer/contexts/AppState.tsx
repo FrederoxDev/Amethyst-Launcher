@@ -2,13 +2,13 @@ import React, { createContext, ReactNode, useCallback, useContext, useEffect, us
 
 import { GetCachedVersions, Version } from '../scripts/types/Version'
 
-import { GetLauncherConfig, LauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
 import { GetProfiles, Profile, SetProfiles as SetProfilesFile } from '../scripts/types/Profile'
 
 import { ipcRenderer } from 'electron'
 import Shard, { FindExtraShard, FindExtraShards, GetExtraShards } from '../scripts/types/Shard'
 
 import * as path from 'path'
+import { Config, RuntimeConfig } from '../scripts/types/Config'
 
 interface TAppStateContext {
   mods: Shard.Extra[]
@@ -26,17 +26,17 @@ interface TAppStateContext {
   profiles: Profile[]
   SetProfiles: React.Dispatch<React.SetStateAction<Profile[]>>
 
-  selected_profile: number
-  SetSelectedProfile: React.Dispatch<React.SetStateAction<number>>
-
-  ui_theme: string
-  SetUITheme: React.Dispatch<React.SetStateAction<string>>
-
-  keep_launcher_open: boolean
-  SetKeepLauncherOpen: React.Dispatch<React.SetStateAction<boolean>>
+  theme: string
+  SetTheme: React.Dispatch<React.SetStateAction<'Light' | 'Dark' | 'System'>>
 
   developer_mode: boolean
   SetDeveloperMode: React.Dispatch<React.SetStateAction<boolean>>
+
+  active_profile: number | undefined
+  SetActiveProfile: React.Dispatch<React.SetStateAction<number | undefined>>
+
+  show_all_versions: boolean
+  SetShowAllVersions: React.Dispatch<React.SetStateAction<boolean>>
 
   loading_percent: number
   SetLoadingPercent: React.Dispatch<React.SetStateAction<number>>
@@ -62,14 +62,14 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [shards, SetShards] = useState<Shard.Extra[]>([])
   const [versions, SetVersions] = useState<Version.Cached[]>([])
   const [profiles, SetProfiles] = useState<Profile[]>([])
-  const [selected_profile, SetSelectedProfile] = useState(0)
-  const [ui_theme, SetUITheme] = useState('System')
-  const [keep_launcher_open, SetKeepLauncherOpen] = useState(true)
-  const [developer_mode, SetDeveloperMode] = useState(false)
-  const [loading_percent, SetLoadingPercent] = useState(0)
-  const [is_loading, SetIsLoading] = useState(false)
-  const [status, SetStatus] = useState('')
-  const [error, SetError] = useState('')
+  const [theme, SetTheme] = useState<'Light' | 'Dark' | 'System'>('System')
+  const [developer_mode, SetDeveloperMode] = useState<boolean>(false)
+  const [active_profile, SetActiveProfile] = useState<number | undefined>(undefined)
+  const [show_all_versions, SetShowAllVersions] = useState<boolean>(false)
+  const [loading_percent, SetLoadingPercent] = useState<number>(0)
+  const [is_loading, SetIsLoading] = useState<boolean>(false)
+  const [status, SetStatus] = useState<string>('')
+  const [error, SetError] = useState<string>('')
 
   // Initialize Data like all mods and existing profiles
   useEffect(() => {
@@ -81,11 +81,11 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     SetRuntimes(shards.filter(s => s.manifest.meta.format === 1))
     SetMods(shards.filter(s => s.manifest.meta.format === 0 || s.manifest.meta.format === undefined))
 
-    const launcher_config = GetLauncherConfig()
-    SetKeepLauncherOpen(launcher_config.keep_open ?? true)
-    SetDeveloperMode(launcher_config.developer_mode ?? false)
-    SetSelectedProfile(launcher_config.selected_profile ?? 0)
-    SetUITheme(launcher_config.ui_theme ?? 'Light')
+    const config = Config.Get()
+
+    SetDeveloperMode(config.developer_mode)
+    SetActiveProfile(config.active_profile)
+    SetTheme(config.theme)
 
     SetVersions(GetCachedVersions())
   }, [])
@@ -98,9 +98,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     let profile_mods: string[] = []
     let profile_runtime: string = 'Vanilla'
 
-    const profile = profiles[selected_profile]
-
-    if (profile) {
+    if (active_profile) {
+      const profile = profiles[active_profile]
       if (profile.mods) {
         const mod_shards = FindExtraShards(profile.mods)
 
@@ -116,17 +115,22 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    const launcherConfig: LauncherConfig = {
+    const config: Config = {
+      theme: theme,
+      active_profile: active_profile,
       developer_mode: developer_mode,
-      keep_open: keep_launcher_open,
-      mods: profile_mods,
-      runtime: profile_runtime,
-      selected_profile: selected_profile,
-      ui_theme: ui_theme
+      show_all_versions: show_all_versions
     }
 
-    SetLauncherConfig(launcherConfig)
-  }, [profiles, developer_mode, keep_launcher_open, selected_profile, ui_theme])
+    const runtime_config: RuntimeConfig = {
+      developer_mode: developer_mode,
+      runtime: profile_runtime,
+      mods: profile_mods
+    }
+
+    Config.Set(config)
+    RuntimeConfig.Set(runtime_config)
+  }, [profiles, active_profile, developer_mode, theme, show_all_versions])
 
   useEffect(() => {
     if (!initialized) {
@@ -135,11 +139,11 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     }
 
     SaveState()
-  }, [profiles, selected_profile, keep_launcher_open, developer_mode, initialized, SaveState])
+  }, [profiles, active_profile, developer_mode, initialized, SaveState])
 
   useEffect(() => {
-    ipcRenderer.send('WINDOW_UI_THEME', ui_theme)
-  }, [ui_theme])
+    ipcRenderer.send('WINDOW_UI_THEME', theme)
+  }, [theme])
 
   return (
     <AppStateContext.Provider
@@ -154,14 +158,16 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         SetVersions: SetVersions,
         profiles: profiles,
         SetProfiles: SetProfiles,
-        selected_profile: selected_profile,
-        SetSelectedProfile: SetSelectedProfile,
-        ui_theme: ui_theme,
-        SetUITheme: SetUITheme,
-        keep_launcher_open: keep_launcher_open,
-        SetKeepLauncherOpen: SetKeepLauncherOpen,
+
+        theme: theme,
+        SetTheme: SetTheme,
         developer_mode: developer_mode,
         SetDeveloperMode: SetDeveloperMode,
+        active_profile: active_profile,
+        SetActiveProfile: SetActiveProfile,
+        show_all_versions: show_all_versions,
+        SetShowAllVersions: SetShowAllVersions,
+
         loading_percent: loading_percent,
         SetLoadingPercent: SetLoadingPercent,
         is_loading: is_loading,
