@@ -16,7 +16,7 @@ import path from 'path'
  * @description ### **`INTERNAL USE ONLY`**
  */
 export interface Version {
-  path?: string
+  path: string
   uuid: string
   sem_version: SemVersion.Primitive
   format: Version.Format
@@ -47,36 +47,52 @@ export namespace Version {
   export const Schema: JSONSchemaType<Version> = {
     type: 'object',
     properties: {
-      path: { type: 'string', nullable: true },
+      path: { type: 'string' },
       uuid: { type: 'string', format: 'uuid' },
       sem_version: SemVersion.Primitive.Schema,
       format: Version.Format.Schema
     },
-    required: ['uuid', 'sem_version', 'format']
+    required: ['path', 'uuid', 'sem_version', 'format']
   }
 
   export const Validator = AJV_Instance.compile<Version>(Schema)
 
   // region Version.Cached
-  export type Cached = [string, string, number]
+  export interface Cached {
+    uuid: string,
+    sem_version: SemVersion.Primitive,
+    format: Version.Format
+  }
 
   export namespace Cached {
     export const Schema: JSONSchemaType<Cached> = {
-      type: 'array',
-      items: [{ type: 'string' }, { type: 'string' }, { type: 'number' }],
-      minItems: 3,
-      maxItems: 3
+      type: 'object',
+      properties: {
+        uuid: { type: 'string', format: 'uuid' },
+        sem_version: SemVersion.Primitive.Schema,
+        format: Version.Format.Schema
+      },
+      required: ['uuid', 'sem_version', 'format']
     }
 
     export const Validator = AJV_Instance.compile<Cached>(Schema)
 
+    export function toString(data: Version.Cached) {
+      return `${data.sem_version}${['', '-beta', '-preview'][data.format]}`
+    }
+
     // region Version.Cached.File
-    export type File = Cached[]
+    export type File = [string, string, number][]
 
     export namespace File {
       export const Schema: JSONSchemaType<File> = {
         type: 'array',
-        items: Cached.Schema
+        items: {
+          type: 'array',
+          items: [{ type: 'string' }, { type: 'string' }, { type: 'number' }],
+          minItems: 3,
+          maxItems: 3
+        }
       }
 
       export const Validator = AJV_Instance.compile<File>(Schema)
@@ -173,7 +189,7 @@ export function GetCachedVersions() {
         sem_version: version[0],
         uuid: version[1],
         format: version[2]
-      } as Version
+      } as Version.Cached
     })
   } else {
     Console.Group(Console.ErrorStr('Failed to parse `cached_versions.json`'), () => {
@@ -184,8 +200,8 @@ export function GetCachedVersions() {
   }
 }
 
-export function FindCachedVersion(version: SemVersion.Primitive): Version | undefined {
-  const cached_versions: Version[] = GetCachedVersions()
+export function FindCachedVersion(version: SemVersion.Primitive): Version.Cached | undefined {
+  const cached_versions: Version.Cached[] = GetCachedVersions()
   return cached_versions.find(v => v.sem_version === version)
 }
 
@@ -293,7 +309,7 @@ export function FindVersionPath(version: Version): string | undefined {
   })?.path
 }
 
-export function GetLatestVersion(format: Version.Format = Version.Format.Release): Version {
+export function GetLatestVersion(format: Version.Format = Version.Format.Release): Version.Cached {
   const versions = GetCachedVersions().filter(v => v.format === format)
 
   return versions[versions.length - 1]
