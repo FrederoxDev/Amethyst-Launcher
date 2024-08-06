@@ -278,9 +278,9 @@ export default function ProfileEditor() {
                   <p
                     className="minecraft-seven text-[#B1B2B5] text-[12px] mt-auto">{`${Version.Cached.toString(profile_version)} (${profile_runtime?.manifest.meta.name ?? 'Vanilla'})`}</p>
                 </div>
-                <div className="flex flex-row border-[3px] my-[4px] border-[#1E1E1F] bg-[#48494a] overflow-hidden">
-                  {profile_runtime !== undefined &&
-                    (sub_page === 'Mods' ? (
+                {profile_runtime !== undefined &&
+                  (<div className="flex flex-row border-[3px] my-[4px] border-[#1E1E1F] bg-[#48494a] overflow-hidden">
+                    {sub_page === 'Mods' ? (
                       <div className="flex justify-center p-[6px] bg-[#48494A] border-[3px] border-[#48494A]">
                         <p className="minecraft-seven text-white text-[14px]">{'Mods'}</p>
                       </div>
@@ -291,7 +291,7 @@ export default function ProfileEditor() {
                       >
                         <p className="minecraft-seven text-white text-[14px]">{'Mods'}</p>
                       </div>
-                    ))}
+                    )}
                   {sub_page === 'Settings' ? (
                     <div className="flex justify-center p-[6px] bg-[#48494A] border-[3px] border-[#48494A]">
                       <p className="minecraft-seven text-white text-[14px]">{'Settings'}</p>
@@ -304,7 +304,8 @@ export default function ProfileEditor() {
                       <p className="minecraft-seven text-white text-[14px]">{'Settings'}</p>
                     </div>
                   )}
-                </div>
+                  </div>)
+                }
               </div>
               <div
                 className="flex p-[8px] w-[48px] h-full justify-center items-center cursor-pointer"
