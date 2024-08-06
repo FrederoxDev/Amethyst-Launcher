@@ -27,20 +27,26 @@ export default function Settings() {
   const [config_text, SetConfigText] = useState<string>('')
   const [runtime_config_text, SetRuntimeConfigText] = useState<string>('')
 
-  let isVerDownloaded = false
-  let isRegisteredVerOurs = false
-  let installDir = ''
-
   const isWindowsDevModeOn = IsDevModeEnabled()
 
-  let profile = undefined
+  const profile = useMemo(() => {
+    if (active_profile !== undefined) {
+      return profiles[active_profile]
+    }
+  }, [active_profile, profiles])
 
-  if (active_profile) {
-    profile = profiles[active_profile]
-    isVerDownloaded = IsDownloaded(profile.version)
-    isRegisteredVerOurs = IsRegistered(profile.version)
-    installDir = GetPackagePath() ?? 'Could not find installed.'
-  }
+  const [isVerDownloaded, isRegisteredVerOurs] = useMemo(() => {
+    if (profile) {
+      const isVerDownloaded = IsDownloaded(profile.version)
+      const isRegisteredVerOurs = IsRegistered(profile.version)
+
+      return [isVerDownloaded, isRegisteredVerOurs]
+    } else {
+      return [false, false]
+    }
+  }, [profile])
+
+  const installDir = GetPackagePath() ?? 'Could not find installed.'
 
   useMemo(() => {
     const text = JSON.stringify(config, undefined, 4)
