@@ -141,6 +141,16 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   }, [profiles, active_profile, developer_mode, initialized, SaveState])
 
   useEffect(() => {
+    if (active_profile && profiles[active_profile] === undefined) {
+      if (profiles.length > 0) {
+        SetActiveProfile(profiles.length - 1)
+      } else {
+        SetActiveProfile(undefined)
+      }
+    }
+  }, [active_profile, profiles])
+
+  useEffect(() => {
     ipcRenderer.send('WINDOW_UI_THEME', theme)
   }, [theme])
 
