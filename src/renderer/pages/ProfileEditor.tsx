@@ -197,7 +197,7 @@ export default function ProfileEditor() {
   }
 
   const [version_uuids, version_names, version_options] = useMemo(() => {
-    const version_options = versions.filter(ver => ver.format === Version.Format.Release)
+    const version_options = versions.filter(ver => ver.format === Version.Format.Release).reverse()
     const version_uuids = version_options.map(v => v.uuid)
     const version_names = version_options.map(v => Version.Cached.toString(v))
 
