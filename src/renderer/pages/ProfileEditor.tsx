@@ -19,7 +19,7 @@ export default function ProfileEditor() {
 
   const [sub_page, SetSubPage] = useState<string>('Mods')
 
-  const { mods, runtimes, versions, profiles, active_profile, show_all_versions, SaveState } = UseAppState()
+  const { mods, runtimes, versions, profiles, active_profile, SaveState } = UseAppState()
   const navigate = useNavigate()
 
   const profile = useMemo(() => {
@@ -198,14 +198,11 @@ export default function ProfileEditor() {
 
   const [version_uuids, version_names, version_options] = useMemo(() => {
     const version_options = versions.filter(ver => ver.format === Version.Format.Release)
-    if (show_all_versions) {
-      version_options.push(GetLatestVersion(Version.Format.Preview))
-    }
     const version_uuids = version_options.map(v => v.uuid)
     const version_names = version_options.map(v => Version.Cached.toString(v))
 
     return [version_uuids, version_names, version_options]
-  }, [show_all_versions, versions])
+  }, [versions])
 
   const [runtime_names, runtime_options, runtime_index] = useMemo(() => {
     const runtime_options = [undefined, ...runtimes]
