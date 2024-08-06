@@ -207,64 +207,6 @@ export function FindCachedVersion(version: SemVersion.Primitive): Version.Cached
 
 //////////////////////////////////////////////////
 
-export function RefreshVersionsFile(): void {
-  if (!fs.existsSync(FilePaths.Versions)) {
-    const default_version_file: Version.File = {
-      default_path: FolderPaths.Versions,
-      tracking_paths: [],
-      versions: []
-    }
-
-    const versions_file_string = JSON.stringify(default_version_file, undefined, 4)
-    fs.writeFileSync(FilePaths.Versions, versions_file_string)
-  }
-
-  const versions = GetVersions().filter(v => {
-    if (v.path) {
-      return fs.existsSync(path.join(v.path, Version.toString(v)))
-    }
-    return false
-  })
-
-  if (fs.existsSync(FolderPaths.Versions)) {
-    const version_dirs = fs
-      .readdirSync(FolderPaths.Versions, { withFileTypes: true })
-      .filter(entry => entry.isDirectory())
-    for (const version_dir of version_dirs) {
-      const dir_path = path.join(version_dir.parentPath, version_dir.name)
-
-      if (
-        !versions
-          .map(v => {
-            if (v.path) {
-              return path.join(v.path, Version.toString(v))
-            }
-          })
-          .includes(dir_path)
-      ) {
-        const sem_version = SemVersion.Primitive.Match(version_dir.name)
-        if (SemVersion.Primitive.Validator(sem_version)) {
-          const minecraft_version = FindCachedVersion(sem_version)
-
-          if (minecraft_version) {
-            versions.push({ ...minecraft_version, path: dir_path })
-          }
-        } else {
-          console.error(SemVersion.Primitive.Validator.errors)
-        }
-      }
-    }
-  }
-
-  if (fs.existsSync(FilePaths.Versions)) {
-    const version_file = GetVersionsFile()
-
-    version_file.versions = versions
-
-    fs.writeFileSync(FilePaths.Versions, JSON.stringify(version_file, undefined, 4))
-  }
-}
-
 export function SetVersionsFile(file: Version.File) {
   if (Version.File.Validator(file)) {
     const text = JSON.stringify(file, undefined, 4)
@@ -296,12 +238,80 @@ export function GetVersionsFile(): Version.File {
   }
 }
 
+export function RefreshVersionsFile(): void {
+  if (!fs.existsSync(FilePaths.Versions)) {
+    const default_version_file: Version.File = {
+      default_path: FolderPaths.Versions,
+      tracking_paths: [],
+      versions: []
+    }
+
+    const versions_file_string = JSON.stringify(default_version_file, undefined, 4)
+    fs.writeFileSync(FilePaths.Versions, versions_file_string)
+  }
+
+  const file = GetVersionsFile()
+
+  file.versions = file.versions.filter(v => {
+    return fs.existsSync(path.join(v.path, Version.toString(v)))
+  })
+
+  // scan tracking paths for any installed versions not listed
+  const scan_paths = [...file.tracking_paths, file.default_path]
+
+  for (const scan_path of scan_paths) {
+    if (fs.existsSync(scan_path)) {
+      const version_dirs = fs
+        .readdirSync(scan_path, { withFileTypes: true })
+        .filter(entry => entry.isDirectory())
+
+      // if scan path doesn't have child paths remove from tracking paths
+      if (version_dirs.length === 0) {
+        const tracking_index = file.tracking_paths.indexOf(scan_path)
+        if (tracking_index !== -1) {
+          file.tracking_paths.splice(tracking_index, 1)
+        }
+      }
+
+      for (const version_dir of version_dirs) {
+        const dir_path = path.join(version_dir.parentPath, version_dir.name)
+
+        if (!file.versions.map(v => {
+          return path.join(v.path, Version.toString(v))
+        }).includes(dir_path)) {
+          const sem_version = SemVersion.Primitive.Match(version_dir.name)
+          if (SemVersion.Primitive.Validator(sem_version)) {
+            const minecraft_version = FindCachedVersion(sem_version)
+
+            if (minecraft_version) {
+              file.versions.push({ ...minecraft_version, path: dir_path })
+            }
+          }
+        }
+      }
+    }
+    // if scan path doesn't exist then remove from tracking paths
+    else {
+      const tracking_index = file.tracking_paths.indexOf(scan_path)
+      if (tracking_index !== -1) {
+        file.tracking_paths.splice(tracking_index, 1)
+      }
+    }
+  }
+
+  SetVersionsFile(file)
+}
+
 export function GetVersions(): Version[] {
   return GetVersionsFile().versions
 }
 
 export function GetDefaultVersionPath(): string {
   return GetVersionsFile().default_path
+}
+
+export function GetTrackingPaths(): string[] {
+  return GetVersionsFile().tracking_paths
 }
 
 export function FindVersionPath(version: Version): string | undefined {
@@ -314,4 +324,13 @@ export function GetLatestVersion(format: Version.Format = Version.Format.Release
   const versions = GetCachedVersions().filter(v => v.format === format)
 
   return versions[versions.length - 1]
+}
+
+export function AddTrackingPath(path: string) {
+  const file = GetVersionsFile()
+
+  if (!file.tracking_paths.includes(path)) {
+    file.tracking_paths.push(path)
+    SetVersionsFile(file)
+  }
 }
