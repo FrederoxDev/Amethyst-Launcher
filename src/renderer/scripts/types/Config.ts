@@ -8,7 +8,6 @@ export interface Config {
   theme: 'Light' | 'Dark' | 'System'
   active_profile: number | undefined
   developer_mode: boolean
-  show_all_versions: boolean
 }
 
 export namespace Config {
@@ -17,10 +16,9 @@ export namespace Config {
     properties: {
       theme: { type: 'string', oneOf: [{ const: 'Light' }, { const: 'Dark' }, { const: 'System' }] },
       active_profile: { type: 'number', nullable: true },
-      developer_mode: { type: 'boolean' },
-      show_all_versions: { type: 'boolean' }
+      developer_mode: { type: 'boolean' }
     },
-    required: ['theme', 'developer_mode', 'show_all_versions']
+    required: ['theme', 'developer_mode']
   }
 
   export const Validator = AJV_Instance.compile<Config>(Schema)
@@ -40,7 +38,6 @@ export namespace Config {
     return {
       active_profile: undefined,
       developer_mode: false,
-      show_all_versions: false,
       theme: 'System'
     }
   }
