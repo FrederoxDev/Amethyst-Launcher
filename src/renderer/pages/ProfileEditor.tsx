@@ -19,7 +19,7 @@ export default function ProfileEditor() {
 
   const [sub_page, SetSubPage] = useState<string>('Mods')
 
-  const { mods, runtimes, versions, profiles, active_profile, SaveState } = UseAppState()
+  const { mods, runtimes, versions, profiles, active_profile, SetActiveProfile, SaveState } = UseAppState()
   const navigate = useNavigate()
 
   const profile = useMemo(() => {
@@ -189,6 +189,7 @@ export default function ProfileEditor() {
   const DeleteProfile = () => {
     if (active_profile !== undefined) {
       profiles.splice(active_profile, 1)
+      SetActiveProfile(profiles.length - 1)
     }
 
     navigate('/profile-manager')
