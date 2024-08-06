@@ -17,7 +17,7 @@ import child from 'child_process'
 import Panel from '../components/Panel'
 import { Console } from '../scripts/types/Console'
 import React from 'react'
-import { GetVersionsFile, SetVersionsFile, Version } from '../scripts/types/Version'
+import { AddTrackingPath, GetVersionsFile, SetVersionsFile, Version } from '../scripts/types/Version'
 
 export default function Launcher() {
   const {
@@ -88,10 +88,10 @@ export default function Launcher() {
         InstallProxy(version)
       }
 
+      AddTrackingPath(version.path)
+
       const versions_file = GetVersionsFile()
-
       versions_file.versions.push(version)
-
       SetVersionsFile(versions_file)
     }
 
