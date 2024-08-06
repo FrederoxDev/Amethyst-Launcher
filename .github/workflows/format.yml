@@ -1,0 +1,30 @@
+name: Format
+on:
+  workflow_dispatch:
+
+jobs:
+  format:
+    permissions:
+      contents: write
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        node-version: [ 20.x ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Format and Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          npx prettier --write src/**/*
+          git commit -am "Format"
+          git push https://github.com/${{ github.repository }} HEAD:main
