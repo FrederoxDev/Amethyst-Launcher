@@ -90,18 +90,15 @@ export default function ProfileEditor() {
           const active_mod_uuids = profile_mods.map(m => m.manifest.meta.uuid)
 
           if (active_mod_uuids.includes(mod.manifest.meta.uuid)) {
-            const newActive = profile_mods.filter(m => m.manifest.meta.uuid !== mod.manifest.meta.uuid)
-            SetProfileMods(newActive)
+            const active = profile_mods.filter(m => m.manifest.meta.uuid !== mod.manifest.meta.uuid)
+            SetProfileMods(active)
           } else {
-            const newActive = [...profile_mods, mod]
-            SetProfileMods(newActive)
+            SetProfileMods([...profile_mods, mod])
           }
         }
         // no active mods, so this mod must be toggling to active. just add it to the active mods
         else {
-          const newActive = [mod]
-          console.log(newActive)
-          SetProfileMods(newActive)
+          SetProfileMods([mod])
         }
       }
 
@@ -274,45 +271,47 @@ export default function ProfileEditor() {
             />
           </div>
           <div className="flex flex-row flex-grow gap-[-3px]">
-            <div className="flex flex-row p-[8px] justify-between flex-grow h-full border-[3px] border-[#1E1E1F] bg-[#48494a] overflow-hidden">
-              <div className="flex flex-col gap-[2px]">
-                <p className="minecraft-seven text-white text-[18px]">{profile_name}</p>
-                <p
-                  className="minecraft-seven text-[#B1B2B5] text-[12px] mt-auto">{`${Version.Cached.toString(profile_version)} (${profile_runtime?.manifest.meta.name ?? 'Vanilla'})`}</p>
+            <div className="flex flex-row flex-grow h-full border-[3px] border-[#1E1E1F] bg-[#48494a] overflow-hidden">
+              <div className="flex flex-row flex-grow justify-between">
+                <div className="flex flex-col p-[8px] gap-[2px]">
+                  <p className="minecraft-seven text-white text-[18px]">{profile_name}</p>
+                  <p
+                    className="minecraft-seven text-[#B1B2B5] text-[12px] mt-auto">{`${Version.Cached.toString(profile_version)} (${profile_runtime?.manifest.meta.name ?? 'Vanilla'})`}</p>
+                </div>
+                <div className="flex flex-row border-[3px] my-[4px] border-[#1E1E1F] bg-[#48494a] overflow-hidden">
+                  {profile_runtime !== undefined &&
+                    (sub_page === 'Mods' ? (
+                      <div className="flex justify-center p-[6px] bg-[#48494A] border-[3px] border-[#48494A]">
+                        <p className="minecraft-seven text-white text-[14px]">{'Mods'}</p>
+                      </div>
+                    ) : (
+                      <div
+                        className="flex justify-center p-[6px] inset_button cursor-pointer"
+                        onClick={() => SetSubPage('Mods')}
+                      >
+                        <p className="minecraft-seven text-white text-[14px]">{'Mods'}</p>
+                      </div>
+                    ))}
+                  {sub_page === 'Settings' ? (
+                    <div className="flex justify-center p-[6px] bg-[#48494A] border-[3px] border-[#48494A]">
+                      <p className="minecraft-seven text-white text-[14px]">{'Settings'}</p>
+                    </div>
+                  ) : (
+                    <div
+                      className="flex justify-center p-[6px] inset_button cursor-pointer"
+                      onClick={() => SetSubPage('Settings')}
+                    >
+                      <p className="minecraft-seven text-white text-[14px]">{'Settings'}</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="flex flex-row h-full border-y-[3px] border-y-[#1E1E1F] bg-[#48494a] overflow-hidden">
-              {profile_runtime !== undefined &&
-                (sub_page === 'Mods' ? (
-                  <div className="flex justify-center p-[12px] bg-[#48494A] border-[3px] border-[#48494A]">
-                    <p className="minecraft-seven text-white text-[14px]">{'Mods'}</p>
-                  </div>
-                ) : (
-                  <div
-                    className="flex justify-center p-[12px] inset_button cursor-pointer"
-                    onClick={() => SetSubPage('Mods')}
-                  >
-                    <p className="minecraft-seven text-white text-[14px]">{'Mods'}</p>
-                  </div>
-                ))}
-              {sub_page === 'Settings' ? (
-                <div className="flex justify-center p-[12px] bg-[#48494A] border-[3px] border-[#48494A]">
-                  <p className="minecraft-seven text-white text-[14px]">{'Settings'}</p>
-                </div>
-              ) : (
-                <div
-                  className="flex justify-center p-[12px] inset_button cursor-pointer"
-                  onClick={() => SetSubPage('Settings')}
-                >
-                  <p className="minecraft-seven text-white text-[14px]">{'Settings'}</p>
-                </div>
-              )}
-            </div>
-            <div
-              className="flex p-[8px] w-[54px] h-full border-[3px] border-[#1E1E1F] bg-[#48494a] justify-center items-center cursor-pointer"
-              onClick={() => navigate('/profile-manager')}
-            >
-              <img src="/images/icons/close-icon.png" className="w-[24px] h-[24px] pixelated" alt="" />
+              <div
+                className="flex p-[8px] w-[48px] h-full justify-center items-center cursor-pointer"
+                onClick={() => navigate('/profile-manager')}
+              >
+                <img src="/images/icons/close-icon.png" className="w-[24px] h-[24px] pixelated" alt="" />
+              </div>
             </div>
           </div>
         </div>
