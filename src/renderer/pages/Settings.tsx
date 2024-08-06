@@ -16,8 +16,6 @@ export default function Settings() {
     SetDeveloperMode,
     theme,
     SetTheme,
-    show_all_versions,
-    SetShowAllVersions,
     profiles,
     active_profile,
     config,
@@ -63,17 +61,17 @@ export default function Settings() {
       className="flex flex-col h-fit max-h-full border-[3px] border-[#1E1E1F] bg-[#48494a] overflow-y-auto"
       style={{ scrollbarWidth: 'none' }}
     >
-      <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-[4px]">
-            <p className="minecraft-seven text-white text-[14px]">{'Show all versions'}</p>
-            <p className="minecraft-seven text-[#BCBEC0] text-[12px]">
-              {'Enables beta and preview versions in the profile editor'}
-            </p>
-          </div>
-          <MinecraftToggle isChecked={show_all_versions} setIsChecked={SetShowAllVersions} />
-        </div>
-      </div>
+      {/*<div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">*/}
+      {/*  <div className="flex items-center justify-between">*/}
+      {/*    <div className="flex flex-col gap-[4px]">*/}
+      {/*      <p className="minecraft-seven text-white text-[14px]">{'Show all versions'}</p>*/}
+      {/*      <p className="minecraft-seven text-[#BCBEC0] text-[12px]">*/}
+      {/*        {'Enables beta and preview versions in the profile editor'}*/}
+      {/*      </p>*/}
+      {/*    </div>*/}
+      {/*    <MinecraftToggle isChecked={show_all_versions} setIsChecked={SetShowAllVersions} />*/}
+      {/*  </div>*/}
+      {/*</div>*/}
 
       <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
         <div className="flex items-center justify-between">
