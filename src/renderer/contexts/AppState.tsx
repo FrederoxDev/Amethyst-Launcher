@@ -35,9 +35,6 @@ interface TAppStateContext {
   active_profile: number | undefined
   SetActiveProfile: React.Dispatch<React.SetStateAction<number | undefined>>
 
-  show_all_versions: boolean
-  SetShowAllVersions: React.Dispatch<React.SetStateAction<boolean>>
-
   loading_percent: number
   SetLoadingPercent: React.Dispatch<React.SetStateAction<number>>
 
@@ -68,7 +65,6 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [theme, SetTheme] = useState<'Light' | 'Dark' | 'System'>('System')
   const [developer_mode, SetDeveloperMode] = useState<boolean>(false)
   const [active_profile, SetActiveProfile] = useState<number | undefined>(undefined)
-  const [show_all_versions, SetShowAllVersions] = useState<boolean>(false)
   const [loading_percent, SetLoadingPercent] = useState<number>(0)
   const [is_loading, SetIsLoading] = useState<boolean>(false)
   const [status, SetStatus] = useState<string>('')
@@ -83,10 +79,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     SetMods(shards.filter(s => s.manifest.meta.format === 0 || s.manifest.meta.format === undefined))
 
     SetDeveloperMode(config.developer_mode)
-    SetShowAllVersions(config.show_all_versions)
     SetActiveProfile(config.active_profile)
     SetTheme(config.theme)
-  }, [config.active_profile, config.developer_mode, config.show_all_versions, config.theme, shards])
+  }, [config.active_profile, config.developer_mode, config.theme, shards])
 
   const [initialized, SetInitialized] = useState(false)
 
@@ -118,8 +113,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     const config: Config = {
       theme: theme,
       active_profile: active_profile,
-      developer_mode: developer_mode,
-      show_all_versions: show_all_versions
+      developer_mode: developer_mode
     }
 
     const runtime_config: RuntimeConfig = {
@@ -130,12 +124,12 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 
     Config.Set(config)
     RuntimeConfig.Set(runtime_config)
-  }, [profiles, active_profile, developer_mode, theme, show_all_versions])
+  }, [profiles, active_profile, developer_mode, theme])
 
   useEffect(() => {
     SetRuntimeConfig(RuntimeConfig.Get)
     SetConfig(Config.Get)
-  }, [active_profile, developer_mode, profiles, show_all_versions, theme])
+  }, [active_profile, developer_mode, profiles, theme])
 
   useEffect(() => {
     if (!initialized) {
@@ -170,8 +164,6 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         SetDeveloperMode: SetDeveloperMode,
         active_profile: active_profile,
         SetActiveProfile: SetActiveProfile,
-        show_all_versions: show_all_versions,
-        SetShowAllVersions: SetShowAllVersions,
 
         loading_percent: loading_percent,
         SetLoadingPercent: SetLoadingPercent,
