@@ -84,15 +84,16 @@ export default function Launcher() {
       CleanupInstall(version, true)
 
       if (version.format === Version.Format.Release) {
-        console.log('proxy install')
         InstallProxy(version)
       }
-
-      AddTrackingPath(version.path)
 
       const versions_file = GetVersionsFile()
       versions_file.versions.push(version)
       SetVersionsFile(versions_file)
+
+      if (version.path !== versions_file.default_path) {
+        AddTrackingPath(version.path)
+      }
     }
 
     // Only register the game if needed
