@@ -70,13 +70,13 @@ export default function ProfileEditor() {
       if (icon_path === undefined) {
         switch (mod.manifest.meta.format) {
           default:
-            icon_path = `/images/icons/page-icon.png`
+            icon_path = `images/icons/page-icon.png`
             break
           case 0:
-            icon_path = `/images/icons/page-icon.png`
+            icon_path = `images/icons/page-icon.png`
             break
           case 1:
-            icon_path = `/images/icons/book-icon.png`
+            icon_path = `images/icons/book-icon.png`
             break
         }
       }
@@ -124,7 +124,7 @@ export default function ProfileEditor() {
                 </div>
                 <div className="w-[30px] h-[30px] p-[10px]">
                   <img
-                    src={is_selected ? `/images/icons/chevron-up.png` : `/images/icons/chevron-down.png`}
+                    src={is_selected ? `images/icons/chevron-up.png` : `images/icons/chevron-down.png`}
                     className="w-full h-full pixelated"
                     alt=""
                   />
@@ -136,9 +136,9 @@ export default function ProfileEditor() {
               onClick={() => ToggleMod(mod)}
             >
               {active ? (
-                <img src="/images/icons/remove.png" className="pixelated" alt="" />
+                <img src="images/icons/remove.png" className="pixelated" alt="" />
               ) : (
-                <img src="/images/icons/add.png" className="pixelated" alt="" />
+                <img src="images/icons/add.png" className="pixelated" alt="" />
               )}
             </div>
           </div>
@@ -265,7 +265,7 @@ export default function ProfileEditor() {
         <div className="flex flex-row gap-[8px] h-[54px]">
           <div className="w-[54px] h-full border-[3px] border-[#1E1E1F]">
             <img
-              src={profile?.icon_path ?? `/images/icons/earth-icon.png`}
+              src={profile?.icon_path ?? `images/icons/earth-icon.png`}
               className="w-full h-full pixelated"
               alt=""
             />
@@ -310,7 +310,7 @@ export default function ProfileEditor() {
                 className="flex p-[8px] w-[48px] h-full justify-center items-center cursor-pointer"
                 onClick={() => navigate('/profile-manager')}
               >
-                <img src="/images/icons/close-icon.png" className="w-[24px] h-[24px] pixelated" alt="" />
+                <img src="images/icons/close-icon.png" className="w-[24px] h-[24px] pixelated" alt="" />
               </div>
             </div>
           </div>
@@ -428,7 +428,7 @@ export default function ProfileEditor() {
                       className="flex shrink-0 border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233] justify-center p-[4px] cursor-pointer"
                       onClick={SelectPath}
                     >
-                      <img src={'/images/icons/open-icon.png'} alt="" />
+                      <img src={'images/icons/open-icon.png'} alt="" />
                     </div>
                   </div>
                 </div>

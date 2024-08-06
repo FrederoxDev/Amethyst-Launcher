@@ -25,7 +25,7 @@ export default function ProfileManager() {
           <div className="flex flex-row gap-[8px] items-center p-[8px] inset_button">
             <div className="w-[30px] h-[30px] border-[3px] border-[#1E1E1F] box-content">
               <img
-                src={profile?.icon_path ?? `/images/icons/earth-icon.png`}
+                src={profile?.icon_path ?? `images/icons/earth-icon.png`}
                 className="w-full h-full pixelated"
                 alt=""
               />

@@ -63,6 +63,7 @@ else {
     mainWindow = createWindow()
 
     mainWindow.webContents.once('did-finish-load', () => {
+      mainWindow.webContents.setZoomLevel(0)
       mainWindow.show()
     })
   })

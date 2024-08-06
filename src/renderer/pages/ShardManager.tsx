@@ -67,13 +67,13 @@ export default function ShardManager() {
     if (icon_path === undefined) {
       switch (shard.manifest.meta.format) {
         default:
-          icon_path = `/images/icons/page-icon.png`
+          icon_path = `images/icons/page-icon.png`
           break
         case 0:
-          icon_path = `/images/icons/page-icon.png`
+          icon_path = `images/icons/page-icon.png`
           break
         case 1:
-          icon_path = `/images/icons/book-icon.png`
+          icon_path = `images/icons/book-icon.png`
           break
       }
     }
@@ -97,7 +97,7 @@ export default function ShardManager() {
               </div>
               <div className="w-[30px] h-[30px] p-[10px]">
                 <img
-                  src={selected_index === index ? `/images/icons/chevron-up.png` : `/images/icons/chevron-down.png`}
+                  src={selected_index === index ? `images/icons/chevron-up.png` : `images/icons/chevron-down.png`}
                   className="w-full h-full pixelated"
                   alt=""
                 />
@@ -132,7 +132,7 @@ export default function ShardManager() {
                 clipboard.writeText(shard.path)
               }}
             >
-              <img src="/images/icons/copy-icon.png" className="w-full h-full pixelated" alt="" />
+              <img src="images/icons/copy-icon.png" className="w-full h-full pixelated" alt="" />
             </div>
           </div>
         </div>

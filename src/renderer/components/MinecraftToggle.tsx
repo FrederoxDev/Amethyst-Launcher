@@ -14,11 +14,11 @@ export default function MinecraftToggle({ isChecked, setIsChecked }: MinecraftTo
     <div className="toggle_panel" onClick={handleCheckboxChange}>
       <div className="toggle_base">
         <div className="toggle_base_on">
-          <img className="toggle_base_on_image" src="/images/button/on-state.png" alt="" />
+          <img className="toggle_base_on_image" src="images/button/on-state.png" alt="" />
         </div>
 
         <div className="toggle_base_off">
-          <img className="toggle_base_off_image" src="/images/button/off-state.png" alt="" />
+          <img className="toggle_base_off_image" src="images/button/off-state.png" alt="" />
         </div>
       </div>
 

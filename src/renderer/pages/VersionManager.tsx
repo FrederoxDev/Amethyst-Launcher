@@ -70,7 +70,7 @@ const VersionButton = (
             </div>
             <div className="w-[30px] h-[30px] p-[10px]">
               <img
-                src={selected_index === index ? `/images/icons/chevron-up.png` : `/images/icons/chevron-down.png`}
+                src={selected_index === index ? `images/icons/chevron-up.png` : `images/icons/chevron-down.png`}
                 className="w-full h-full pixelated"
                 alt=""
               />
@@ -81,7 +81,7 @@ const VersionButton = (
           className="w-[58px] h-[58px] p-[8px] flex justify-center items-center inset_button cursor-pointer"
           onClick={() => DeleteVersion()}
         >
-          <img src="/images/icons/delete-icon.png" className="pixelated" alt="" />
+          <img src="images/icons/delete-icon.png" className="pixelated" alt="" />
         </div>
       </div>
       <div
@@ -111,7 +111,7 @@ const VersionButton = (
                 if (version.path) clipboard.writeText(version.path)
               }}
             >
-              <img src="/images/icons/copy-icon.png" className="w-full h-full pixelated" alt="" />
+              <img src="images/icons/copy-icon.png" className="w-full h-full pixelated" alt="" />
             </div>
           </div>
         )}
