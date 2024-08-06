@@ -106,17 +106,23 @@ export default function Settings() {
         <p className="text-white">Debug Info</p>
         <div className="flex flex-col gap-[8px]">
           <div className="flex flex-col gap-[2px]">
-            <p>Version: {profile ? Version.toString(profile.version) : 'No version found.'}</p>
-            <p>Downloaded: {isVerDownloaded ? 'true' : 'false'}</p>
-            <p>Registered: {isRegisteredVerOurs ? 'true' : 'false'}</p>
-            <p>Path: {installDir}</p>
+            <p
+              className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">Version: {profile ? Version.toString(profile.version) : 'No version found.'}</p>
+            <p
+              className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">Downloaded: {isVerDownloaded ? 'true' : 'false'}</p>
+            <p
+              className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">Registered: {isRegisteredVerOurs ? 'true' : 'false'}</p>
+            <p className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">Path: {installDir}</p>
           </div>
 
-          <p>Developer Mode: {isWindowsDevModeOn ? 'true' : 'false'}</p>
+          <p className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">Developer
+            Mode: {isWindowsDevModeOn ? 'true' : 'false'}</p>
 
           <div className="flex flex-col gap-[2px]">
-            <p>Amethyst Folder: {FolderPaths.Amethyst}</p>
-            <p>Minecraft Folder: {FolderPaths.MinecraftUWP}</p>
+            <p className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">Amethyst
+              Folder: {FolderPaths.Amethyst}</p>
+            <p className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">Minecraft
+              Folder: {FolderPaths.MinecraftUWP}</p>
           </div>
         </div>
       </div>
