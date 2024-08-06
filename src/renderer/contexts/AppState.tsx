@@ -98,17 +98,19 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 
     if (active_profile !== undefined) {
       const profile = profiles[active_profile]
-      if (profile.mods) {
-        const mod_shards = FindExtraShards(profile.mods)
+      if (profile) {
+        if (profile.mods) {
+          const mod_shards = FindExtraShards(profile.mods)
 
-        profile_mods = mod_shards.map(m => path.basename(m.path))
-      }
+          profile_mods = mod_shards.map(m => path.basename(m.path))
+        }
 
-      if (profile.runtime) {
-        const found = FindExtraShard(profile.runtime)
+        if (profile.runtime) {
+          const found = FindExtraShard(profile.runtime)
 
-        if (found) {
-          profile_runtime = path.basename(found.path)
+          if (found) {
+            profile_runtime = path.basename(found.path)
+          }
         }
       }
     }
