@@ -64,7 +64,7 @@ export default function DropWindow() {
     function ImportZIP(zip_path: string) {
       try {
         const zip_name = path.basename(zip_path)
-        const extracted_folder_path = path.join(FolderPaths.Mods, zip_name.slice(0, -'.zip'.length))
+        const extracted_folder_path = path.join(FolderPaths.Mods, zip_name.slice(-'.zip'.length))
         console.log(extracted_folder_path)
         Extractor.extractFile(zip_path, extracted_folder_path, [], undefined, success => {
           if (!success) {

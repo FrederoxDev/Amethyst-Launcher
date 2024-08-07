@@ -68,11 +68,15 @@ else {
     })
   })
 
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, argv) => {
     // When second instance is started, restore and focus on existing one.
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore()
       mainWindow.focus()
+
+      if (argv[2]) {
+        mainWindow.webContents.send('import-shard', argv[2])
+      }
     }
   })
 }
@@ -108,6 +112,10 @@ ipcMain.on('WINDOW_UI_THEME', (_event, args) => {
       nativeTheme.themeSource = 'system'
       break
   }
+})
+
+ipcMain.handle('get-process-argv', () => {
+  return process.argv
 })
 
 ipcMain.handle('get-app-path', () => {
