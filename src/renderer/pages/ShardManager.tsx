@@ -207,7 +207,7 @@ export default function ShardManager() {
         </div>
         <div className="content_panel h-fit">
           <div className="w-full h-fit">
-            <MinecraftButton text="Open shards folder" onClick={OpenShardsFolder} />
+            <MinecraftButton text="Open folder" onClick={OpenShardsFolder} />
           </div>
         </div>
       </div>
