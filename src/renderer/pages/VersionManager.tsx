@@ -149,7 +149,7 @@ export default function VersionManager() {
             </div>
             <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
               {
-                versions.length < 0 ?
+                versions.length > 0 ?
                   versions.map((version, index) => {
                     return VersionButton(version, index, selected_version, SetSelectedVersion, RefreshVersions)
                   })
