@@ -1,6 +1,6 @@
 .radial_button_base {
   width: 100%;
-  height: 51px;
+  height: 54px;
   margin: -1.5px;
 }
 
@@ -22,6 +22,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 8px;
 }
 
 .radial_button_top.selected {
@@ -79,71 +80,33 @@
   background-color: #3c8527;
 }
 
-/*@media (prefers-color-scheme: dark) {*/
-/*  .radial_button_top {*/
-/*    border-top-color: #6d6d6e;*/
-/*    border-left-color: #6d6d6e;*/
-/*    border-right-color: #5a5b5c;*/
-/*    border-bottom-color: #5a5b5c;*/
-/*    background-color: #48494a;*/
-/*  }*/
+.radial_button_top.dark {
+  border-top-color: #6d6d6e;
+  border-left-color: #6d6d6e;
+  border-right-color: #5a5b5c;
+  border-bottom-color: #5a5b5c;
+  background-color: #48494a;
+}
 
-/*  .radial_button_side {*/
-/*    background-color: #313233;*/
-/*  }*/
+.radial_button_side.dark {
+  background-color: #313233;
+}
 
-/*  .radial_button_text {*/
-/*    color: #ffffff;*/
-/*  }*/
+.radial_button_text.dark {
+  color: #ffffff;
+}
 
-/*  .radial_button_top:hover {*/
-/*    border-color: #68686a;*/
-/*    background-color: #58585a;*/
-/*  }*/
+.radial_button_top.dark:hover {
+  border-color: #68686a;
+  background-color: #58585a;
+}
 
-/*  .radial_button_top.selected {*/
-/*    border-top-color: #5a5b5c;*/
-/*    border-left-color: #5a5b5c;*/
-/*    border-right-color: #454647;*/
-/*    border-bottom-color: #454647;*/
+.radial_button_top.dark.selected {
+  border-top-color: #5a5b5c;
+  border-left-color: #5a5b5c;
+  border-right-color: #454647;
+  border-bottom-color: #454647;
 
-/*    background-color: #313233;*/
-/*  }*/
-/*}*/
+  background-color: #313233;
+}
 
-/*@media (prefers-color-scheme: light) {*/
-/*  .radial_button_top {*/
-/*    border-top-color: #ecedee;*/
-/*    border-left-color: #ecedee;*/
-/*    border-right-color: #e3e3e5;*/
-/*    border-bottom-color: #e3e3e5;*/
-
-/*    background-color: #d0d1d4;*/
-/*  }*/
-
-/*  .radial_button_side {*/
-/*    background-color: #58585a;*/
-/*  }*/
-
-/*  .radial_button_text {*/
-/*    color: #1e1e1f;*/
-/*  }*/
-
-/*  .radial_button_top:hover {*/
-/*    border-top-color: #eff0f0;*/
-/*    border-left-color: #eff0f0;*/
-/*    border-right-color: #e0e0e1;*/
-/*    border-bottom-color: #e0e0e1;*/
-
-/*    background-color: #b1b2b5;*/
-/*  }*/
-
-/*  .radial_button_top.selected {*/
-/*    border-top-color: #639d52;*/
-/*    border-left-color: #639d52;*/
-/*    border-right-color: #4f913c;*/
-/*    border-bottom-color: #4f913c;*/
-
-/*    background-color: #3c8527;*/
-/*  }*/
-/*}*/
