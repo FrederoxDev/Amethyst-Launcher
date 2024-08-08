@@ -134,7 +134,7 @@ export default function Launcher() {
     Console.EndGroup()
   }
 
-  const profile_names = profiles?.map(profile => profile.name)
+  // const profile_names = profiles?.map(profile => profile.name)
 
   return (
     <Panel>
