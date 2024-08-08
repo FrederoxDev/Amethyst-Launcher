@@ -13,7 +13,6 @@ export default function MinecraftDropdown({ options, selected_index, SetIndex }:
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-
     const handleClickOutside = (event: MouseEvent) => {
       if (ref.current && !ref.current.contains(event.target as Node)) {
         SetOpen(false)
