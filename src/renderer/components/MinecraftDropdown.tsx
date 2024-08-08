@@ -1,27 +1,45 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 type DropdownProps = {
   options: React.ReactNode[]
-  default_index: number
+  selected_index: number
   SetIndex: (index: number) => void
 }
 
-export default function MinecraftDropdown({ options, default_index, SetIndex }: DropdownProps) {
+export default function MinecraftDropdown({ options, selected_index, SetIndex }: DropdownProps) {
 
-  const [show_options, SetShowOptions] = useState<boolean>(false)
+  const [open, SetOpen] = useState<boolean>(false)
+
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        SetOpen(false)
+      }
+    }
+
+    window.addEventListener('click', handleClickOutside)
+
+    return () => {
+      window.removeEventListener('click', handleClickOutside)
+    }
+  }, [])
 
   return (
-    <div className="relative" onClick={() => SetShowOptions(!show_options)}>
+    <div ref={ref} className="flex flex-row w-fit shrink-0 gap-[8px] items-center px-[8px] inset_button relative"
+         onClick={() => SetOpen(!open)}>
       {
-        options[default_index]
+        options[selected_index]
       }
 
       {
-        show_options && (
-          <div className="absolute">
+        open && (
+          <div className="flex flex-row w-fit shrink-0 gap-[8px] items-center px-[8px] inset_button absolute">
             {
               options.map((option, index) => {
-                if (index !== default_index) {
+                if (index !== selected_index) {
                   return (
                     <div onClick={() => SetIndex(index)}>
                       {option}
