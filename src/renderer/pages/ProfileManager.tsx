@@ -6,13 +6,13 @@ import { GetDefaultVersionPath, GetLatestVersion, Version } from '../scripts/typ
 import { useCallback } from 'react'
 
 export default function ProfileManager() {
-  const { profiles, SetProfiles, SetActiveProfile } = UseAppState()
+  const { profiles, SetProfiles, SetIndex$ProfileEditor } = UseAppState()
   const navigate = useNavigate()
 
   const ProfileButton = useCallback(
     (profile: Profile, index: number) => {
       const OpenProfile = (index: number) => {
-        SetActiveProfile(index)
+        SetIndex$ProfileEditor(index)
         navigate('/profile-editor')
       }
 
@@ -40,7 +40,7 @@ export default function ProfileManager() {
         </div>
       )
     },
-    [SetActiveProfile, navigate]
+    [SetIndex$ProfileEditor, navigate]
   )
 
   return (
@@ -89,9 +89,8 @@ export default function ProfileManager() {
                   name: 'New Profile',
                   version: { ...GetLatestVersion(), path: GetDefaultVersionPath() }
                 }
-                const newProfiles = [...profiles, default_profile]
-                SetProfiles(newProfiles)
-                SetActiveProfile(newProfiles.length - 1)
+                SetIndex$ProfileEditor(profiles.length)
+                SetProfiles([...profiles, default_profile])
                 navigate('/profile-editor')
               }}
             />
