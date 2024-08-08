@@ -93,31 +93,5 @@ export default function ProfileManager() {
         </div>
       </div>
     </>
-
-    // <Panel>
-    //   <div className="content_panel">
-    //     <p className="minecraft-seven text-white text-[14px]">Profile Editor</p>
-    //     <List>
-    //       {GetProfiles().map((profile, index) => {
-    //         return <ProfileButton profile={profile} index={index} key={index} />
-    //       })}
-    //     </List>
-    //     <div className="bg-[#48494A] h-fit">
-    //       <MinecraftButton
-    //         text="Create new profile"
-    //         onClick={() => {
-    //           const default_profile: Profile = {
-    //             name: 'New Profile',
-    //             version: GetLatestVersion()
-    //           }
-    //           const newProfiles = [...profiles, default_profile]
-    //           SetProfiles(newProfiles)
-    //           SetSelectedProfile(newProfiles.length - 1)
-    //           navigate('/profile-editor')
-    //         }}
-    //       />
-    //     </div>
-    //   </div>
-    // </Panel>
   )
 }
