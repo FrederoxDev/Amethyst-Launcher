@@ -26,6 +26,9 @@ interface TAppStateContext {
   profiles: Profile[]
   SetProfiles: React.Dispatch<React.SetStateAction<Profile[]>>
 
+  index$profile_editor: number | undefined
+  SetIndex$ProfileEditor: React.Dispatch<React.SetStateAction<number | undefined>>
+
   theme: string
   SetTheme: React.Dispatch<React.SetStateAction<'Light' | 'Dark' | 'System'>>
 
@@ -57,14 +60,22 @@ interface TAppStateContext {
 const AppStateContext = createContext<TAppStateContext | undefined>(undefined)
 
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
+  // CACHE
   const [mods, SetMods] = useState<Shard.Extra[]>([])
   const [runtimes, SetRuntimes] = useState<Shard.Extra[]>([])
   const [shards, SetShards] = useState<Shard.Extra[]>(GetExtraShards)
   const [versions, SetVersions] = useState<Version.Cached[]>(GetCachedVersions)
   const [profiles, SetProfiles] = useState<Profile[]>(GetProfiles)
+
+  // PROFILE EDITOR
+  const [index$profile_editor, SetIndex$ProfileEditor] = useState<number | undefined>(undefined)
+
+  // CONFIG
   const [theme, SetTheme] = useState<'Light' | 'Dark' | 'System'>('System')
   const [developer_mode, SetDeveloperMode] = useState<boolean>(false)
   const [active_profile, SetActiveProfile] = useState<number | undefined>(undefined)
+
+  // STATUS
   const [loading_percent, SetLoadingPercent] = useState<number>(0)
   const [is_loading, SetIsLoading] = useState<boolean>(false)
   const [status, SetStatus] = useState<string>('')
@@ -167,6 +178,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         SetVersions: SetVersions,
         profiles: profiles,
         SetProfiles: SetProfiles,
+
+        index$profile_editor: index$profile_editor,
+        SetIndex$ProfileEditor: SetIndex$ProfileEditor,
 
         theme: theme,
         SetTheme: SetTheme,
