@@ -18,7 +18,6 @@ import Panel from '../components/Panel'
 import { Console } from '../scripts/types/Console'
 import React from 'react'
 import { AddTrackingPath, GetVersionsFile, SetVersionsFile, Version } from '../scripts/types/Version'
-import MinecraftDropdown from '../components/MinecraftDropdown'
 
 export default function Launcher() {
   const {
@@ -134,7 +133,7 @@ export default function Launcher() {
     Console.EndGroup()
   }
 
-  // const profile_names = profiles?.map(profile => profile.name)
+  const profile_names = profiles?.map(profile => profile.name)
 
   return (
     <Panel>
@@ -184,57 +183,57 @@ export default function Launcher() {
 
           {/* Profile Selector & Play Button */}
           <div className="flex flex-row gap-[8px] border-[#1E1E1F] border-[3px] p-[8px] bg-[#48494A]">
-            {/*<div className="w-[30%] mt-auto">*/}
-            {/*  <div className="flex flex-col gap-[4px]">*/}
-            {/*    <label htmlFor={'profile-select'} className="minecraft-seven text-white text-[14px]">*/}
-            {/*      {'Profile'}*/}
-            {/*    </label>*/}
-            {/*    {profile_names.length > 0 ? (*/}
-            {/*      <select*/}
-            {/*        name={'profile-select'}*/}
-            {/*        id={'profile-select'}*/}
-            {/*        onChange={event => {*/}
-            {/*          SetActiveProfile(event.target.selectedIndex)*/}
-            {/*        }}*/}
-            {/*        value={active_profile && profile_names[profile_names.indexOf(profiles[active_profile]?.name)]}*/}
-            {/*        className="border-[3px] border-[#1E1E1F] bg-[#313233] w-full h-[25px] text-white minecraft-seven text-[12px]"*/}
-            {/*      >*/}
-            {/*        {profile_names.map((option, index) => (*/}
-            {/*          <option value={option} key={index} className="text-white font-sans">*/}
-            {/*            {option}*/}
-            {/*          </option>*/}
-            {/*        ))}*/}
-            {/*      </select>*/}
-            {/*    ) : (*/}
-            {/*      <div className="border-[3px] border-[#1E1E1F] bg-[#313233] w-full h-[25px]" />*/}
-            {/*    )}*/}
-            {/*  </div>*/}
-            {/*</div>*/}
-            {
-              active_profile !== undefined && (
-                <MinecraftDropdown options={
-                  profiles.map((profile) => {
-                    return (
-                      <>
-                        <div className="w-[30px] h-[30px] border-[3px] border-[#1E1E1F] box-content">
-                          <img
-                            src={profile.icon_path ?? `images/icons/earth-icon.png`}
-                            className="w-full h-full pixelated"
-                            alt=""
-                          />
-                        </div>
-                        <div className="flex flex-col gap-[2px]">
-                          <p className="minecraft-seven text-white text-[14px]">{profile.name}</p>
-                          <p className="minecraft-seven text-[#B1B2B5] text-[14px]">
-                            {`${Version.toString(profile.version)} (${profile.runtime?.name ?? 'Vanilla'})`}
-                          </p>
-                        </div>
-                      </>
-                    )
-                  })
-                } selected_index={active_profile} SetIndex={SetActiveProfile} />
-              )
-            }
+            <div className="w-[30%] mt-auto">
+              <div className="flex flex-col gap-[4px]">
+                <label htmlFor={'profile-select'} className="minecraft-seven text-white text-[14px]">
+                  {'Profile'}
+                </label>
+                {profile_names.length > 0 ? (
+                  <select
+                    name={'profile-select'}
+                    id={'profile-select'}
+                    onChange={event => {
+                      SetActiveProfile(event.target.selectedIndex)
+                    }}
+                    value={active_profile && profile_names[profile_names.indexOf(profiles[active_profile]?.name)]}
+                    className="border-[3px] border-[#1E1E1F] bg-[#313233] w-full h-[25px] text-white minecraft-seven text-[12px]"
+                  >
+                    {profile_names.map((option, index) => (
+                      <option value={option} key={index} className="text-white font-sans">
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="border-[3px] border-[#1E1E1F] bg-[#313233] w-full h-[25px]" />
+                )}
+              </div>
+            </div>
+            {/*{*/}
+            {/*  active_profile !== undefined && (*/}
+            {/*    <MinecraftDropdown options={*/}
+            {/*      profiles.map((profile) => {*/}
+            {/*        return (*/}
+            {/*          <div className="flex flex-row w-fit shrink-0 gap-[8px] items-center p-[8px]">*/}
+            {/*            <div className="w-[30px] h-[30px] border-[3px] border-[#1E1E1F] box-content">*/}
+            {/*              <img*/}
+            {/*                src={profile.icon_path ?? `images/icons/earth-icon.png`}*/}
+            {/*                className="w-full h-full pixelated"*/}
+            {/*                alt=""*/}
+            {/*              />*/}
+            {/*            </div>*/}
+            {/*            <div className="flex flex-col gap-[2px]">*/}
+            {/*              <p className="minecraft-seven text-white text-[14px]">{profile.name}</p>*/}
+            {/*              <p className="minecraft-seven text-[#B1B2B5] text-[14px]">*/}
+            {/*                {`${Version.toString(profile.version)} (${profile.runtime?.name ?? 'Vanilla'})`}*/}
+            {/*              </p>*/}
+            {/*            </div>*/}
+            {/*          </div>*/}
+            {/*        )*/}
+            {/*      })*/}
+            {/*    } selected_index={active_profile} SetIndex={SetActiveProfile} />*/}
+            {/*  )*/}
+            {/*}*/}
 
             <MinecraftButton text="Launch Game" onClick={launchGame} />
           </div>
