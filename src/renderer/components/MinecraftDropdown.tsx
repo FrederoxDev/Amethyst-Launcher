@@ -27,11 +27,14 @@ export default function MinecraftDropdown({ options, selected_index, SetIndex }:
   }, [])
 
   return (
-    <div ref={ref} className="flex flex-row w-fit shrink-0 gap-[8px] items-center px-[8px] inset_button relative"
+    <div ref={ref} className="flex flex-row w-fit shrink-0 relative"
          onClick={() => SetOpen(!open)}>
-      {
-        options[selected_index]
-      }
+      <div className="flex flex-row w-fit shrink-0 gap-[8px] items-center px-[8px] inset_button ">
+        {
+          options[selected_index]
+        }
+      </div>
+
 
       {
         open && (
