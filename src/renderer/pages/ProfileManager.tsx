@@ -60,23 +60,18 @@ export default function ProfileManager() {
             </div>
 
             <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
-              {
-                profiles.length > 0 ?
-                  (
-                    profiles.map((profile, index) => {
-                      return ProfileButton(profile, index)
-                    })
-                  )
-                  :
-                  (
-                    <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
-                      <p className="minecraft-seven text-[14px] text-white">No profiles</p>
-                      <p className="minecraft-seven text-[14px] text-[#B1B2B5]">
-                        Create a new profile by clicking "Create New Profile" below
-                      </p>
-                    </div>
-                  )
-              }
+              {profiles.length > 0 ? (
+                profiles.map((profile, index) => {
+                  return ProfileButton(profile, index)
+                })
+              ) : (
+                <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
+                  <p className="minecraft-seven text-[14px] text-white">No profiles</p>
+                  <p className="minecraft-seven text-[14px] text-[#B1B2B5]">
+                    Create a new profile by clicking "Create New Profile" below
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

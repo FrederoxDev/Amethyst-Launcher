@@ -11,16 +11,8 @@ import MinecraftRadialButtonPanel from '../components/MinecraftRadialButtonPanel
 import { Version } from '../scripts/types/Version'
 
 export default function Settings() {
-  const {
-    developer_mode,
-    SetDeveloperMode,
-    theme,
-    SetTheme,
-    profiles,
-    active_profile,
-    config,
-    runtime_config
-  } = UseAppState()
+  const { developer_mode, SetDeveloperMode, theme, SetTheme, profiles, active_profile, config, runtime_config } =
+    UseAppState()
 
   const [config_text, SetConfigText] = useState<string>('')
   const [runtime_config_text, SetRuntimeConfigText] = useState<string>('')
@@ -106,23 +98,29 @@ export default function Settings() {
         <p className="text-white">Debug Info</p>
         <div className="flex flex-col gap-[8px]">
           <div className="flex flex-col gap-[2px]">
-            <p
-              className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">Version: {profile ? Version.toString(profile.version) : 'No version found.'}</p>
-            <p
-              className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">Downloaded: {isVerDownloaded ? 'true' : 'false'}</p>
-            <p
-              className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">Registered: {isRegisteredVerOurs ? 'true' : 'false'}</p>
+            <p className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+              Version: {profile ? Version.toString(profile.version) : 'No version found.'}
+            </p>
+            <p className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+              Downloaded: {isVerDownloaded ? 'true' : 'false'}
+            </p>
+            <p className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+              Registered: {isRegisteredVerOurs ? 'true' : 'false'}
+            </p>
             <p className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">Path: {installDir}</p>
           </div>
 
-          <p className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">Developer
-            Mode: {isWindowsDevModeOn ? 'true' : 'false'}</p>
+          <p className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+            Developer Mode: {isWindowsDevModeOn ? 'true' : 'false'}
+          </p>
 
           <div className="flex flex-col gap-[2px]">
-            <p className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">Amethyst
-              Folder: {FolderPaths.Amethyst}</p>
-            <p className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">Minecraft
-              Folder: {FolderPaths.MinecraftUWP}</p>
+            <p className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+              Amethyst Folder: {FolderPaths.Amethyst}
+            </p>
+            <p className="min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+              Minecraft Folder: {FolderPaths.MinecraftUWP}
+            </p>
           </div>
         </div>
       </div>

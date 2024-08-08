@@ -32,7 +32,7 @@ ipcRenderer.on('import-shard', (_event, args) => {
   ImportShard(args)
 })
 
-ipcRenderer.invoke('get-process-argv').then((args) => {
+ipcRenderer.invoke('get-process-argv').then(args => {
   function ImportShard(shard_path: string) {
     try {
       const zip_name = path.basename(shard_path)

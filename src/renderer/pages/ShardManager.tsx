@@ -156,21 +156,18 @@ export default function ShardManager() {
                 </div>
               </div>
               <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
-                {
-                  runtimes.length > 0 ?
-                    (runtimes.map((shard, index) => {
-                      return ShardButton(shard, index, runtimes_index, SetRuntimeIndex)
-                    }))
-                    :
-                    (
-                      <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
-                        <p className="minecraft-seven text-[14px] text-white">No runtimes</p>
-                        <p className="minecraft-seven text-[14px] text-[#B1B2B5]">
-                          Import a new runtime to use it in the launcher.
-                        </p>
-                      </div>
-                    )
-                }
+                {runtimes.length > 0 ? (
+                  runtimes.map((shard, index) => {
+                    return ShardButton(shard, index, runtimes_index, SetRuntimeIndex)
+                  })
+                ) : (
+                  <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
+                    <p className="minecraft-seven text-[14px] text-white">No runtimes</p>
+                    <p className="minecraft-seven text-[14px] text-[#B1B2B5]">
+                      Import a new runtime to use it in the launcher.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -186,21 +183,18 @@ export default function ShardManager() {
               </div>
 
               <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
-                {
-                  mods.length > 0 ?
-                    (mods.map((shard, index) => {
-                      return ShardButton(shard, index, mod_index, SetModIndex)
-                    }))
-                    :
-                    (
-                      <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
-                        <p className="minecraft-seven text-[14px] text-white">No mods</p>
-                        <p className="minecraft-seven text-[14px] text-[#B1B2B5]">
-                          Import a new mod to use it in the launcher.
-                        </p>
-                      </div>
-                    )
-                }
+                {mods.length > 0 ? (
+                  mods.map((shard, index) => {
+                    return ShardButton(shard, index, mod_index, SetModIndex)
+                  })
+                ) : (
+                  <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
+                    <p className="minecraft-seven text-[14px] text-white">No mods</p>
+                    <p className="minecraft-seven text-[14px] text-[#B1B2B5]">
+                      Import a new mod to use it in the launcher.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

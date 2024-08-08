@@ -273,16 +273,11 @@ export default function ProfileEditor() {
       <div className=" w-full h-full flex flex-col gap-[8px] overflow-hidden">
         <div className="flex flex-row gap-[8px] h-[54px]">
           <div className="w-[54px] h-full border-[3px] border-[#1E1E1F]">
-            <img
-              src={profile?.icon_path ?? `images/icons/earth-icon.png`}
-              className="w-full h-full pixelated"
-              alt=""
-            />
+            <img src={profile?.icon_path ?? `images/icons/earth-icon.png`} className="w-full h-full pixelated" alt="" />
           </div>
           <div className="flex flex-row flex-grow gap-[4px]">
             <div className="flex flex-row flex-grow h-full border-[3px] border-[#1E1E1F] bg-[#48494a] overflow-hidden">
-              <div
-                className="flex flex-row flex-grow justify-between">
+              <div className="flex flex-row flex-grow justify-between">
                 <div className="flex flex-col p-[8px] gap-[2px]">
                   <p className="minecraft-seven text-white text-[18px]">{profile_name}</p>
                   <p
@@ -290,17 +285,22 @@ export default function ProfileEditor() {
                 </div>
               </div>
             </div>
-            {profile_runtime !== undefined &&
-              (
-                <div className="flex shrink-0">
-                  <MinecraftRadialButtonPanel dark={true} default_selected_value={sub_page}
-                                              elements={[{ text: 'Mods', value: 'Mods' }, {
-                                                text: 'Settings',
-                                                value: 'Settings'
-                                              }]} onChange={(selected_value) => SetSubPage(selected_value)} />
-                </div>
-              )
-            }
+            {profile_runtime !== undefined && (
+              <div className="flex shrink-0">
+                <MinecraftRadialButtonPanel
+                  dark={true}
+                  default_selected_value={sub_page}
+                  elements={[
+                    { text: 'Mods', value: 'Mods' },
+                    {
+                      text: 'Settings',
+                      value: 'Settings'
+                    }
+                  ]}
+                  onChange={selected_value => SetSubPage(selected_value)}
+                />
+              </div>
+            )}
             <div
               className="flex border-[3px] border-[#1E1E1F] bg-[#48494a] p-[8px] w-[54px] h-full justify-center items-center cursor-pointer"
               onClick={() => navigate('/profile-manager')}

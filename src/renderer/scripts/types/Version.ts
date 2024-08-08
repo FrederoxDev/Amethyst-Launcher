@@ -261,9 +261,7 @@ export function RefreshVersionsFile(): void {
 
   for (const scan_path of scan_paths) {
     if (fs.existsSync(scan_path)) {
-      const version_dirs = fs
-        .readdirSync(scan_path, { withFileTypes: true })
-        .filter(entry => entry.isDirectory())
+      const version_dirs = fs.readdirSync(scan_path, { withFileTypes: true }).filter(entry => entry.isDirectory())
 
       // if scan path doesn't have child paths remove from tracking paths
       if (version_dirs.length === 0) {
@@ -276,9 +274,13 @@ export function RefreshVersionsFile(): void {
       for (const version_dir of version_dirs) {
         const dir_path = path.join(version_dir.parentPath, version_dir.name)
 
-        if (!file.versions.map(v => {
-          return path.join(v.path, Version.toString(v))
-        }).includes(dir_path)) {
+        if (
+          !file.versions
+            .map(v => {
+              return path.join(v.path, Version.toString(v))
+            })
+            .includes(dir_path)
+        ) {
           const sem_version = SemVersion.Primitive.Match(version_dir.name)
           if (SemVersion.Primitive.Validator(sem_version)) {
             const minecraft_version = FindCachedVersion(sem_version)

@@ -103,4 +103,3 @@ export namespace RuntimeConfig {
     }
   }
 }
-
