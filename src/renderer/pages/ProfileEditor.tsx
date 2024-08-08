@@ -195,7 +195,7 @@ export default function ProfileEditor() {
   const DeleteProfile = () => {
     if (index !== undefined) {
       profiles.splice(index, 1)
-      SetIndex(profiles.length - 1)
+      SetIndex(undefined)
     }
 
     navigate('/profile-manager')
