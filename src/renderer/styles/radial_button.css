@@ -14,6 +14,7 @@
 .radial_button_border.selected {
   transform: translateY(5px);
   height: calc(100% - 5px);
+  cursor: default;
 }
 
 .radial_button_top {
