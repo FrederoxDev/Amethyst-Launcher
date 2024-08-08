@@ -27,9 +27,9 @@ export default function MinecraftDropdown({ options, selected_index, SetIndex }:
   }, [])
 
   return (
-    <div ref={ref} className="flex flex-row w-fit shrink-0 relative"
+    <div ref={ref} className="flex flex-row shrink-0 relative border-[3px] border-[#1E1E1F]"
          onClick={() => SetOpen(!open)}>
-      <div className="flex flex-row w-fit shrink-0 gap-[8px] items-center px-[8px] inset_button ">
+      <div className="flex flex-row w-fit shrink-0 gap-[8px] items-center inset_button ">
         {
           options[selected_index]
         }
@@ -38,12 +38,14 @@ export default function MinecraftDropdown({ options, selected_index, SetIndex }:
 
       {
         open && (
-          <div className="flex flex-row w-fit shrink-0 gap-[8px] items-center px-[8px] inset_button absolute">
+          <div
+            className="flex flex-col w-fit absolute border-[3px] border-[#1E1E1F] top-auto bottom-full overflow-y-auto scrollbar max-h-[200px] bg-[#48494A]">
             {
               options.map((option, index) => {
                 if (index !== selected_index) {
                   return (
-                    <div onClick={() => SetIndex(index)}>
+                    <div className="flex flex-row w-full shrink-0 gap-[8px] items-center inset_button"
+                         onClick={() => SetIndex(index)}>
                       {option}
                     </div>
                   )
