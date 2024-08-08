@@ -215,7 +215,7 @@ export default function Launcher() {
                 <MinecraftDropdown options={
                   profiles.map((profile) => {
                     return (
-                      <div className="flex flex-row w-fit shrink-0 gap-[8px] items-center px-[8px] inset_button">
+                      <>
                         <div className="w-[30px] h-[30px] border-[3px] border-[#1E1E1F] box-content">
                           <img
                             src={profile.icon_path ?? `images/icons/earth-icon.png`}
@@ -229,10 +229,10 @@ export default function Launcher() {
                             {`${Version.toString(profile.version)} (${profile.runtime?.name ?? 'Vanilla'})`}
                           </p>
                         </div>
-                      </div>
+                      </>
                     )
                   })
-                } default_index={active_profile} SetIndex={SetActiveProfile} />
+                } selected_index={active_profile} SetIndex={SetActiveProfile} />
               )
             }
 
