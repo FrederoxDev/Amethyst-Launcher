@@ -31,7 +31,8 @@ export default function Launcher() {
     SetIsLoading,
     error,
     SetError,
-    SetLoadingPercent
+    SetLoadingPercent,
+    UpdateRuntimeConfig
   } = UseAppState()
 
   const LaunchGame = async () => {
@@ -108,6 +109,9 @@ export default function Launcher() {
 
       SetLauncherConfig(GetLauncherConfig())
     }
+
+    // Update Runtime Config
+    UpdateRuntimeConfig(profile)
 
     SetIsLoading(false)
     SetStatus('')

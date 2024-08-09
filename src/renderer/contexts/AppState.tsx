@@ -6,9 +6,8 @@ import { GetProfiles, Profile, SetProfiles as SetProfilesFile } from '../scripts
 
 import { ipcRenderer } from 'electron'
 import Shard, { FindExtraShard, FindExtraShards, GetExtraShards } from '../scripts/types/Shard'
-
-import * as path from 'path'
 import { Config, RuntimeConfig } from '../scripts/types/Config'
+import path from 'path'
 
 interface TAppStateContext {
   mods: Shard.Extra[]
@@ -55,6 +54,8 @@ interface TAppStateContext {
 
   // Expose functions
   SaveState: () => void
+
+  UpdateRuntimeConfig: (profile: Profile) => void
 }
 
 const AppStateContext = createContext<TAppStateContext | undefined>(undefined)
@@ -99,32 +100,34 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const SaveState = useCallback(() => {
     SetProfilesFile(profiles)
 
-    let profile_mods: string[] = []
-    let profile_runtime: string = 'Vanilla'
-
-    if (active_profile !== undefined) {
-      const profile = profiles[active_profile]
-      if (profile) {
-        if (profile.mods) {
-          const mod_shards = FindExtraShards(profile.mods)
-
-          profile_mods = mod_shards.map(m => path.basename(m.path))
-        }
-
-        if (profile.runtime) {
-          const found = FindExtraShard(profile.runtime)
-
-          if (found) {
-            profile_runtime = path.basename(found.path)
-          }
-        }
-      }
-    }
-
     const config: Config = {
       theme: theme,
       active_profile: active_profile,
       developer_mode: developer_mode
+    }
+
+    Config.Set(config)
+    SetConfig(config)
+  }, [profiles, active_profile, developer_mode, theme])
+
+  const UpdateRuntimeConfig = useCallback((profile: Profile) => {
+    let profile_mods: string[] = []
+    let profile_runtime: string = 'Vanilla'
+
+    if (profile) {
+      if (profile.mods) {
+        const mod_shards = FindExtraShards(profile.mods)
+
+        profile_mods = mod_shards.map(m => path.basename(m.path))
+      }
+
+      if (profile.runtime) {
+        const found = FindExtraShard(profile.runtime)
+
+        if (found) {
+          profile_runtime = path.basename(found.path)
+        }
+      }
     }
 
     const runtime_config: RuntimeConfig = {
@@ -133,14 +136,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       mods: profile_mods
     }
 
-    Config.Set(config)
     RuntimeConfig.Set(runtime_config)
-  }, [profiles, active_profile, developer_mode, theme])
-
-  useEffect(() => {
     SetRuntimeConfig(RuntimeConfig.Get)
-    SetConfig(Config.Get)
-  }, [active_profile, developer_mode, profiles, theme])
+  }, [developer_mode])
 
   useEffect(() => {
     if (!initialized) {
@@ -200,7 +198,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         SetError: SetError,
 
         config: config,
-        runtime_config: runtime_config
+        runtime_config: runtime_config,
+
+        UpdateRuntimeConfig: UpdateRuntimeConfig
       }}
     >
       {children}
