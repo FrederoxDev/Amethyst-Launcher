@@ -2,7 +2,7 @@ import { FolderPaths } from '../Paths'
 import * as fs from 'node:fs'
 import path from 'path'
 import { Console } from './Console'
-import { DefinedError, JSONSchemaType } from 'ajv'
+import { JSONSchemaType } from 'ajv'
 import { SemVersion } from './SemVersion'
 import AJV_Instance from '../schemas/AJV_Instance'
 
@@ -349,7 +349,7 @@ export function GetShards(): Shard.Manifest[] {
           shards.push(json)
         } else {
           Console.Group(Console.ErrorStr(`Failed to parse "manifest.json" in ${mod_directory.name}`), () => {
-            console.log(...(Shard.Manifest.Validator.errors as DefinedError[]))
+            console.log(AJV_Instance.errorsText(Shard.Manifest.Validator.errors, { separator: '\n' }))
           })
         }
       }
@@ -386,7 +386,7 @@ export function GetExtraShards(): Shard.Extra[] {
           })
         } else {
           Console.Group(Console.ErrorStr(`Failed to parse "manifest.json" in ${mod_directory.name}`), () => {
-            console.log(...(Shard.Manifest.Validator.errors as DefinedError[]))
+            console.log(AJV_Instance.errorsText(Shard.Manifest.Validator.errors, { separator: '\n' }))
           })
         }
       }
