@@ -55,7 +55,7 @@ interface TAppStateContext {
   // Expose functions
   SaveState: () => void
 
-  UpdateRuntimeConfig: (profile: Profile) => void
+  UpdateProxyConfig: (profile: Profile) => void
 }
 
 const AppStateContext = createContext<TAppStateContext | undefined>(undefined)
@@ -83,7 +83,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [error, SetError] = useState<string>('')
 
   const [config, SetConfig] = useState<Config>(Config.Get)
-  const [runtime_config, SetRuntimeConfig] = useState<ProxyConfig>(RuntimeConfig.Get)
+  const [proxy_config, SetProxyConfig] = useState<ProxyConfig>(ProxyConfig.Get)
 
   // Initialize Data like all mods and existing profiles
   useEffect(() => {
@@ -110,7 +110,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     SetConfig(config)
   }, [profiles, active_profile, developer_mode, theme])
 
-  const UpdateRuntimeConfig = useCallback((profile: Profile) => {
+  const UpdateProxyConfig = useCallback((profile: Profile) => {
     let profile_mods: string[] = []
     let profile_runtime: string = 'Vanilla'
 
@@ -136,8 +136,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       mods: profile_mods
     }
 
-    RuntimeConfig.Set(runtime_config)
-    SetRuntimeConfig(RuntimeConfig.Get)
+    ProxyConfig.Set(runtime_config)
+    SetProxyConfig(ProxyConfig.Get)
   }, [developer_mode])
 
   useEffect(() => {
@@ -198,9 +198,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         SetError: SetError,
 
         config: config,
-        runtime_config: runtime_config,
+        runtime_config: proxy_config,
 
-        UpdateRuntimeConfig: UpdateRuntimeConfig
+        UpdateProxyConfig: UpdateProxyConfig
       }}
     >
       {children}
