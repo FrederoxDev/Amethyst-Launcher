@@ -23,8 +23,8 @@ namespace UnvalidatedPaths {
     export const Versions: string = path.join(Folder.Launcher, 'versions.json')
     export const CachedVersions: string = path.join(Folder.Launcher, 'cached_versions.json')
     export const Profiles: string = path.join(Folder.Launcher, 'profiles.json')
-    // TODO: Change runtime config file name to 'runtime_config.json'
-    export const RuntimeConfig: string = path.join(Folder.AmethystUWP, 'launcher_config.json')
+    // TODO: Change proxy config file name to 'proxy_config.json'
+    export const ProxyConfig: string = path.join(Folder.AmethystUWP, 'launcher_config.json')
   }
 }
 
@@ -48,7 +48,7 @@ export namespace FilePaths {
   export const Versions: string = ValidatePath(UnvalidatedPaths.File.Versions)
   export const CachedVersions: string = ValidatePath(UnvalidatedPaths.File.CachedVersions)
   export const Profiles: string = ValidatePath(UnvalidatedPaths.File.Profiles)
-  export const RuntimeConfig: string = ValidatePath(UnvalidatedPaths.File.RuntimeConfig)
+  export const ProxyConfig: string = ValidatePath(UnvalidatedPaths.File.ProxyConfig)
 }
 
 export function ValidatePath(in_path: string): string {

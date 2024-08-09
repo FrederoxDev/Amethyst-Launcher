@@ -54,14 +54,14 @@ export namespace Config {
   }
 }
 
-export interface RuntimeConfig {
+export interface ProxyConfig {
   developer_mode: boolean
   runtime: string
   mods: string[]
 }
 
-export namespace RuntimeConfig {
-  export const Schema: JSONSchemaType<RuntimeConfig> = {
+export namespace ProxyConfig {
+  export const Schema: JSONSchemaType<ProxyConfig> = {
     type: 'object',
     properties: {
       developer_mode: { type: 'boolean' },
@@ -71,17 +71,17 @@ export namespace RuntimeConfig {
     required: ['developer_mode', 'runtime', 'mods']
   }
 
-  export const Validator = AJV_Instance.compile<RuntimeConfig>(Schema)
+  export const Validator = AJV_Instance.compile<ProxyConfig>(Schema)
 
-  export function Get(): RuntimeConfig {
+  export function Get(): ProxyConfig {
     if (fs.existsSync(FilePaths.Config)) {
-      const text = fs.readFileSync(FilePaths.RuntimeConfig, 'utf-8')
+      const text = fs.readFileSync(FilePaths.ProxyConfig, 'utf-8')
       const data = JSON.parse(text)
 
-      if (RuntimeConfig.Validator(data)) {
+      if (ProxyConfig.Validator(data)) {
         return data
       } else {
-        console.error(RuntimeConfig.Validator.errors)
+        console.error(ProxyConfig.Validator.errors)
       }
     }
 
@@ -92,14 +92,14 @@ export namespace RuntimeConfig {
     }
   }
 
-  export function Set(config: RuntimeConfig) {
-    if (RuntimeConfig.Validator(config)) {
-      if (!fs.existsSync(FilePaths.RuntimeConfig)) {
-        fs.mkdirSync(path.dirname(FilePaths.RuntimeConfig), { recursive: true })
+  export function Set(config: ProxyConfig) {
+    if (ProxyConfig.Validator(config)) {
+      if (!fs.existsSync(FilePaths.ProxyConfig)) {
+        fs.mkdirSync(path.dirname(FilePaths.ProxyConfig), { recursive: true })
       }
-      fs.writeFileSync(FilePaths.RuntimeConfig, JSON.stringify(config, undefined, 4))
+      fs.writeFileSync(FilePaths.ProxyConfig, JSON.stringify(config, undefined, 4))
     } else {
-      console.error(RuntimeConfig.Validator.errors)
+      console.error(ProxyConfig.Validator.errors)
     }
   }
 }

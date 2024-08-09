@@ -6,7 +6,7 @@ import { GetProfiles, Profile, SetProfiles as SetProfilesFile } from '../scripts
 
 import { ipcRenderer } from 'electron'
 import Shard, { FindExtraShard, FindExtraShards, GetExtraShards } from '../scripts/types/Shard'
-import { Config, RuntimeConfig } from '../scripts/types/Config'
+import { Config, ProxyConfig } from '../scripts/types/Config'
 import path from 'path'
 
 interface TAppStateContext {
@@ -50,7 +50,7 @@ interface TAppStateContext {
   SetError: React.Dispatch<React.SetStateAction<string>>
 
   config: Config
-  runtime_config: RuntimeConfig
+  runtime_config: ProxyConfig
 
   // Expose functions
   SaveState: () => void
@@ -83,7 +83,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [error, SetError] = useState<string>('')
 
   const [config, SetConfig] = useState<Config>(Config.Get)
-  const [runtime_config, SetRuntimeConfig] = useState<RuntimeConfig>(RuntimeConfig.Get)
+  const [runtime_config, SetRuntimeConfig] = useState<ProxyConfig>(RuntimeConfig.Get)
 
   // Initialize Data like all mods and existing profiles
   useEffect(() => {
@@ -130,7 +130,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    const runtime_config: RuntimeConfig = {
+    const runtime_config: ProxyConfig = {
       developer_mode: developer_mode,
       runtime: profile_runtime,
       mods: profile_mods

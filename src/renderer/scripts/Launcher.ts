@@ -16,7 +16,7 @@ export function GetLauncherConfig(): LauncherConfig {
   let data: Partial<LauncherConfig> = {}
 
   try {
-    const text = fs.readFileSync(FilePaths.RuntimeConfig, 'utf-8')
+    const text = fs.readFileSync(FilePaths.ProxyConfig, 'utf-8')
     data = JSON.parse(text)
   } catch {
     console.error(`Failed to read/parse the launcherConfig file`)
@@ -34,6 +34,6 @@ export function GetLauncherConfig(): LauncherConfig {
 }
 
 export function SetLauncherConfig(config: LauncherConfig) {
-  fs.mkdirSync(path.dirname(FilePaths.RuntimeConfig), { recursive: true })
-  fs.writeFileSync(FilePaths.RuntimeConfig, JSON.stringify(config, undefined, 4))
+  fs.mkdirSync(path.dirname(FilePaths.ProxyConfig), { recursive: true })
+  fs.writeFileSync(FilePaths.ProxyConfig, JSON.stringify(config, undefined, 4))
 }
