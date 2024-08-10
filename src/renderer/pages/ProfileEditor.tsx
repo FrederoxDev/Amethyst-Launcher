@@ -32,7 +32,6 @@ export default function ProfileEditor() {
     SaveState
   } = UseAppState()
 
-
   const profile = useMemo(() => {
     if (index !== undefined) return profiles[index]
   }, [profiles, index])
