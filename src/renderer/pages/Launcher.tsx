@@ -14,7 +14,6 @@ import {
 import { RegisterVersion, UnregisterCurrent } from '../scripts/functions/AppRegistry'
 import { GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
 import child from 'child_process'
-import Panel from '../components/Panel'
 import { Console } from '../scripts/types/Console'
 import React from 'react'
 import { AddTrackingPath, GetVersionsFile, SetVersionsFile, Version } from '../scripts/types/Version'
@@ -24,8 +23,6 @@ export default function Launcher() {
     profiles,
     active_profile,
     SetActiveProfile,
-    loading_percent,
-    status,
     SetStatus,
     is_loading,
     SetIsLoading,
@@ -140,8 +137,8 @@ export default function Launcher() {
   const profile_names = profiles?.map(profile => profile.name)
 
   return (
-    <Panel>
-      <div className="flex flex-col justify-between h-full w-full">
+    <div className="flex flex-grow items-end">
+      <div className="flex flex-col flex-grow justify-between h-full w-full">
         {error !== '' && (
           <div className="flex flex-row gap-[8px] bg-[#CA3636] w-full border-[#CF4A4A] border-[3px] justify-between items-center">
             <div className="flex flex-row min-w-0 p-[8px] gap-[8px]">
@@ -169,19 +166,6 @@ export default function Launcher() {
           <div className="bg-[#0c0c0cc5] w-fit ml-auto rounded-t-[3px] p-[4px]">
             <p className="minecraft-seven text-white text-[13px]">
               Not approved by or associated with Mojang or Microsoft
-            </p>
-          </div>
-
-          {/* Loading bar */}
-          <div
-            className={`flex items-center bg-[#313233] ${status || is_loading ? 'h-[25px]' : 'h-0'} transition-all duration-300 ease-in-out`}
-          >
-            <div
-              className={`bg-[#3C8527] absolute ${is_loading ? 'min-h-[25px]' : 'min-h-0'} transition-all duration-300 ease-in-out`}
-              style={{ width: `${loading_percent * 100}%` }}
-            ></div>
-            <p className="minecraft-seven absolute z-30 text-white overflow-hidden text-ellipsis whitespace-nowrap max-w-full px-2">
-              {status}
             </p>
           </div>
 
@@ -243,6 +227,6 @@ export default function Launcher() {
           </div>
         </div>
       </div>
-    </Panel>
+    </div>
   )
 }
