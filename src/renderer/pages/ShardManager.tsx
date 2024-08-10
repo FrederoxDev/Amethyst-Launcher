@@ -1,15 +1,11 @@
 import React, { useCallback, useState } from 'react'
 import MinecraftButton from '../components/MinecraftButton'
-import { FolderPaths } from '../scripts/Paths'
-
 import Shard from '../scripts/types/Shard'
-
+import { FolderPaths } from '../scripts/Paths'
+import { UseAppState } from '../contexts/AppState'
 import { clipboard } from 'electron'
-
-// import PopupPanel from '../components/PopupPanel'
 import * as fs from 'fs'
 import * as child from 'child_process'
-import { UseAppState } from '../contexts/AppState'
 
 export default function ShardManager() {
   const { mods, runtimes } = UseAppState()
