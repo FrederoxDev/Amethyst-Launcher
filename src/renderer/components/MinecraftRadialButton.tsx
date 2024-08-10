@@ -8,13 +8,13 @@ type RadialButtonProperties = {
 }
 
 export default function MinecraftRadialButton({
-                                                text,
-                                                value,
-                                                selected,
-                                                className,
-                                                dark,
-                                                onChange
-                                              }: RadialButtonProperties) {
+  text,
+  value,
+  selected,
+  className,
+  dark,
+  onChange
+}: RadialButtonProperties) {
   return (
     <div className={`radial_button_base ${className}`} onClick={() => onChange(value)}>
       <div className={`radial_button_border ${selected ? 'selected' : ''} ${dark ? 'dark' : ''}`}>

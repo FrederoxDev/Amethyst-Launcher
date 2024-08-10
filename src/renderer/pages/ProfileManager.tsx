@@ -54,8 +54,7 @@ export default function ProfileManager() {
               </div>
               <div className="flex flex-col grow-[1] h-fit mt-auto">
                 <div className="mt-auto bg-[#1E1E1F] h-[3px] " />
-                <div
-                  className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] border-l-[#48494a] h-[7px] grow-[1]" />
+                <div className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] border-l-[#48494a] h-[7px] grow-[1]" />
               </div>
             </div>
 

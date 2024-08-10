@@ -77,8 +77,7 @@ export default function Settings() {
         </div>
       </div>
 
-      <div
-        className="flex flex-col gap-[8px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+      <div className="flex flex-col gap-[8px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
         <p className="minecraft-seven text-white text-[14px]">UI Theme</p>
         <MinecraftRadialButtonPanel
           elements={[
@@ -93,8 +92,7 @@ export default function Settings() {
         />
       </div>
 
-      <div
-        className="flex flex-col gap-[8px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px] minecraft-seven text-[#BCBEC0] text-[14px] shrink-0 overflow-x-hidden">
+      <div className="flex flex-col gap-[8px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px] minecraft-seven text-[#BCBEC0] text-[14px] shrink-0 overflow-x-hidden">
         <p className="text-white">Debug Info</p>
         <div className="flex flex-col gap-[8px]">
           <div className="flex flex-col gap-[2px]">

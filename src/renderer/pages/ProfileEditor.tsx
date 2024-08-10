@@ -113,7 +113,7 @@ export default function ProfileEditor() {
 
       const is_selected = selected_mod
         ? mod.manifest.meta.uuid === selected_mod.manifest.meta.uuid &&
-        mod.manifest.meta.version === selected_mod.manifest.meta.version
+          mod.manifest.meta.version === selected_mod.manifest.meta.version
         : false
 
       return (
@@ -154,14 +154,12 @@ export default function ProfileEditor() {
           <div
             className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${is_selected ? '' : 'hidden'}`}
           >
-            <p
-              className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+            <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
               {typeof mod.manifest.meta.author === 'string'
                 ? 'Author: ' + mod.manifest.meta.author
                 : 'Authors: ' + mod.manifest.meta.author.join(', ')}
             </p>
-            <p
-              className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+            <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
               {mod.manifest.meta.description ? 'Description: ' + mod.manifest.meta.description : ''}
             </p>
           </div>
@@ -280,8 +278,7 @@ export default function ProfileEditor() {
               <div className="flex flex-row flex-grow justify-between">
                 <div className="flex flex-col p-[8px] gap-[2px]">
                   <p className="minecraft-seven text-white text-[18px]">{profile_name}</p>
-                  <p
-                    className="minecraft-seven text-[#B1B2B5] text-[12px] mt-auto">{`${Version.Cached.toString(profile_version)} (${profile_runtime?.manifest.meta.name ?? 'Vanilla'})`}</p>
+                  <p className="minecraft-seven text-[#B1B2B5] text-[12px] mt-auto">{`${Version.Cached.toString(profile_version)} (${profile_runtime?.manifest.meta.name ?? 'Vanilla'})`}</p>
                 </div>
               </div>
             </div>
@@ -321,8 +318,7 @@ export default function ProfileEditor() {
                     </div>
                     <div className="flex flex-col grow-[1] h-fit mt-auto">
                       <div className="mt-auto bg-[#1E1E1F] h-[3px] " />
-                      <div
-                        className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] border-l-[#48494a] h-[7px] grow-[1]" />
+                      <div className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] border-l-[#48494a] h-[7px] grow-[1]" />
                     </div>
                   </div>
 
@@ -348,8 +344,7 @@ export default function ProfileEditor() {
                     </div>
                     <div className="flex flex-col grow-[1] h-fit mt-auto">
                       <div className="mt-auto bg-[#1E1E1F] h-[3px] " />
-                      <div
-                        className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] border-l-[#48494a] h-[7px] grow-[1]" />
+                      <div className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] border-l-[#48494a] h-[7px] grow-[1]" />
                     </div>
                   </div>
 
@@ -375,8 +370,7 @@ export default function ProfileEditor() {
 
         {sub_page === 'Settings' && (
           <>
-            <div
-              className="flex flex-col border-[3px] border-[#1E1E1F] bg-[#48494A] flex-shrink h-fit max-h-full overflow-y-auto overflow-x-hidden scrollbar">
+            <div className="flex flex-col border-[3px] border-[#1E1E1F] bg-[#48494A] flex-shrink h-fit max-h-full overflow-y-auto overflow-x-hidden scrollbar">
               <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
                 <TextInput label="Profile name" text={profile_name} setText={SetProfileName} />
               </div>
@@ -411,10 +405,8 @@ export default function ProfileEditor() {
                 <div className="flex flex-col gap-[4px]">
                   <p className="minecraft-seven text-white text-[14px]">{'Install Directory'}</p>
                   <div className="flex flex-row flex-grow gap-[3px]">
-                    <div
-                      className="min-w-0 flex flex-grow border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233] justify-center p-[4px]">
-                      <p
-                        className="w-full minecraft-seven bg-transparent text-white text-[12px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+                    <div className="min-w-0 flex flex-grow border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233] justify-center p-[4px]">
+                      <p className="w-full minecraft-seven bg-transparent text-white text-[12px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
                         {profile_path}
                       </p>
                     </div>

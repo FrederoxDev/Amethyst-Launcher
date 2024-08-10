@@ -34,8 +34,7 @@ export default function MinecraftDropdown({ options, selected_index, SetIndex }:
       <div className="flex flex-row w-fit shrink-0 gap-[8px] items-center inset_button ">{options[selected_index]}</div>
 
       {open && (
-        <div
-          className="flex flex-col w-fit absolute border-[3px] border-[#1E1E1F] top-auto bottom-full overflow-y-auto scrollbar max-h-[200px] bg-[#48494A]">
+        <div className="flex flex-col w-fit absolute border-[3px] border-[#1E1E1F] top-auto bottom-full overflow-y-auto scrollbar max-h-[200px] bg-[#48494A]">
           {options.map((option, index) => {
             if (index !== selected_index) {
               return (

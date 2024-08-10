@@ -17,7 +17,7 @@ type RadialButtonPanelProperties = {
 export default function MinecraftRadialButtonPanel({
   elements,
   default_selected_value,
-                                                     dark,
+  dark,
   onChange
 }: RadialButtonPanelProperties) {
   const [selected_value, setSelectedValue] = useState(default_selected_value)

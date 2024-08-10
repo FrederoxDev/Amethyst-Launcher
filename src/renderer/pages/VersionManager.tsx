@@ -87,22 +87,18 @@ const VersionButton = (
       <div
         className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${selected_index === index ? '' : 'hidden'}`}
       >
-        <p
-          className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+        <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
           {`UUID: ${version.uuid}`}
         </p>
-        <p
-          className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+        <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
           {'Version: ' + version.sem_version}
         </p>
-        <p
-          className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+        <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
           {'Format: ' + version.format}
         </p>
         {version.path !== undefined && (
           <div className="flex flex-row justify-between">
-            <p
-              className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+            <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
               {'Path: ' + version.path}
             </p>
             <div
@@ -137,14 +133,12 @@ export default function VersionManager() {
         <div className="flex flex-col gap-[24px]">
           <div className="flex flex-col w-full">
             <div className="flex flex-row w-full align-bottom">
-              <div
-                className="border-[3px] bg-[#48494a] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
+              <div className="border-[3px] bg-[#48494a] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
                 <p className="minecraft-seven text-white text-[14px]">Versions</p>
               </div>
               <div className="flex flex-col grow-[1] h-fit mt-auto">
                 <div className="mt-auto bg-[#1E1E1F] h-[3px] " />
-                <div
-                  className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] bg-[#48494a] border-l-[#48494a] h-[7px] grow-[1]" />
+                <div className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] bg-[#48494a] border-l-[#48494a] h-[7px] grow-[1]" />
               </div>
             </div>
             <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
