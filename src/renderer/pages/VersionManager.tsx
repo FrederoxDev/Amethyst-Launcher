@@ -79,7 +79,7 @@ export default function VersionManager() {
     }
 
     async function ReinstallVersion() {
-      if (is_loading) return;
+      if (is_loading) return
 
       SetError('')
       SetIsLoading(true)
@@ -169,8 +169,7 @@ export default function VersionManager() {
         <div
           className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${selected_index === index ? '' : 'hidden'}`}
         >
-          <p
-            className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+          <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
             {`UUID: ${version.uuid}`}
           </p>
           <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">

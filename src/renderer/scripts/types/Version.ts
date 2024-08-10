@@ -257,9 +257,11 @@ export function RefreshVersionsFile(): void {
   })
 
   file.versions = file.versions.filter(v => {
-    return file.versions.find(v2 => {
-      return ((v2.format === v.format) && (v2.path === v.path) && (v2.sem_version === v.sem_version) && (v2.uuid === v.uuid))
-    }) === undefined
+    return (
+      file.versions.find(v2 => {
+        return v2.format === v.format && v2.path === v.path && v2.sem_version === v.sem_version && v2.uuid === v.uuid
+      }) === undefined
+    )
   })
 
   // scan tracking paths for any installed versions not listed
