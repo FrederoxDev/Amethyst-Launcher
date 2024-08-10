@@ -110,35 +110,38 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     SetConfig(config)
   }, [profiles, active_profile, developer_mode, theme])
 
-  const UpdateProxyConfig = useCallback((profile: Profile) => {
-    let profile_mods: string[] = []
-    let profile_runtime: string = 'Vanilla'
+  const UpdateProxyConfig = useCallback(
+    (profile: Profile) => {
+      let profile_mods: string[] = []
+      let profile_runtime: string = 'Vanilla'
 
-    if (profile) {
-      if (profile.mods) {
-        const mod_shards = FindExtraShards(profile.mods)
+      if (profile) {
+        if (profile.mods) {
+          const mod_shards = FindExtraShards(profile.mods)
 
-        profile_mods = mod_shards.map(m => path.basename(m.path))
-      }
+          profile_mods = mod_shards.map(m => path.basename(m.path))
+        }
 
-      if (profile.runtime) {
-        const found = FindExtraShard(profile.runtime)
+        if (profile.runtime) {
+          const found = FindExtraShard(profile.runtime)
 
-        if (found) {
-          profile_runtime = path.basename(found.path)
+          if (found) {
+            profile_runtime = path.basename(found.path)
+          }
         }
       }
-    }
 
-    const runtime_config: ProxyConfig = {
-      developer_mode: developer_mode,
-      runtime: profile_runtime,
-      mods: profile_mods
-    }
+      const runtime_config: ProxyConfig = {
+        developer_mode: developer_mode,
+        runtime: profile_runtime,
+        mods: profile_mods
+      }
 
-    ProxyConfig.Set(runtime_config)
-    SetProxyConfig(ProxyConfig.Get)
-  }, [developer_mode])
+      ProxyConfig.Set(runtime_config)
+      SetProxyConfig(ProxyConfig.Get)
+    },
+    [developer_mode]
+  )
 
   useEffect(() => {
     if (!initialized) {
