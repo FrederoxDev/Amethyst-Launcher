@@ -10,6 +10,7 @@ import VersionManager from './pages/VersionManager'
 import DropWindow from './components/DropWindow'
 import ShardManager from './pages/ShardManager'
 import ProfileManager from './pages/ProfileManager'
+import { StatusBar } from './components/StatusBar'
 
 export default function App() {
   const location = useLocation()
@@ -73,7 +74,8 @@ export default function App() {
               </Link>
             </div>
           </div>
-          <div className="view_container w-[calc(100%-80px)]">
+          <div className="view_container flex flex-col gap-[8px] h-full w-[calc(100%-80px)]">
+            <StatusBar/>
             <Routes>
               <Route path="/" element={<Launcher />} />
               <Route path="/profile-manager" element={<ProfileManager />} />
