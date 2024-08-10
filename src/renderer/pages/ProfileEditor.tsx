@@ -410,10 +410,10 @@ export default function ProfileEditor() {
                     </p>
                   </div>
                   <div
-                    className="flex shrink-0 border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233] justify-center p-[4px] cursor-pointer"
+                    className="flex shrink-0 border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233] justify-center p-[1px] cursor-pointer"
                     onClick={SelectPath}
                   >
-                    <img src={'images/icons/open-icon.png'} alt="" />
+                    <img src={'images/icons/options-vertical-icon.png'} alt="" />
                   </div>
                 </div>
               </div>
