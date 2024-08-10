@@ -113,8 +113,7 @@ export default function ShardManager() {
   }
 
   return (
-    <>
-      <div className="w-full h-full flex flex-col justify-between gap-[8px]">
+      <div className="flex flex-grow flex-col justify-between gap-[8px] overflow-hidden">
         <div className="content_panel h-fit max-h-full overflow-y-auto overflow-x-hidden scrollbar">
           <div className="flex flex-col gap-[24px]">
             <div className="flex flex-col w-full">
@@ -177,6 +176,5 @@ export default function ShardManager() {
           </div>
         </div>
       </div>
-    </>
   )
 }
