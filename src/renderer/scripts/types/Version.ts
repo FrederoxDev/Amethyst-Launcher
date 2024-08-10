@@ -256,6 +256,12 @@ export function RefreshVersionsFile(): void {
     return fs.existsSync(path.join(v.path, Version.toString(v)))
   })
 
+  file.versions = file.versions.filter(v => {
+    return file.versions.find(v2 => {
+      return ((v2.format === v.format) && (v2.path === v.path) && (v2.sem_version === v.sem_version) && (v2.uuid === v.uuid))
+    }) === undefined
+  })
+
   // scan tracking paths for any installed versions not listed
   const scan_paths = [...file.tracking_paths, file.default_path]
 
@@ -286,7 +292,7 @@ export function RefreshVersionsFile(): void {
             const minecraft_version = FindCachedVersion(sem_version)
 
             if (minecraft_version) {
-              file.versions.push({ ...minecraft_version, path: dir_path })
+              file.versions.push({ ...minecraft_version, path: version_dir.parentPath })
             }
           }
         }
