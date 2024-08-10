@@ -75,7 +75,7 @@ export default function App() {
             </div>
           </div>
           <div className="view_container flex flex-col gap-[8px] h-full w-[calc(100%-80px)]">
-            <StatusBar/>
+            <StatusBar />
             <Routes>
               <Route path="/" element={<Launcher />} />
               <Route path="/profile-manager" element={<ProfileManager />} />

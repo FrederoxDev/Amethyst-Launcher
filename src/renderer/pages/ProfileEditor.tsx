@@ -268,166 +268,166 @@ export default function ProfileEditor() {
 
   return (
     <div className="flex flex-grow flex-col gap-[8px] overflow-hidden">
-        <div className="flex flex-row gap-[8px] h-[54px]">
-          <div className="w-[54px] h-full border-[3px] border-[#1E1E1F]">
-            <img src={profile?.icon_path ?? `images/icons/earth-icon.png`} className="w-full h-full pixelated" alt="" />
+      <div className="flex flex-row gap-[8px] h-[54px]">
+        <div className="w-[54px] h-full border-[3px] border-[#1E1E1F]">
+          <img src={profile?.icon_path ?? `images/icons/earth-icon.png`} className="w-full h-full pixelated" alt="" />
+        </div>
+        <div className="flex flex-row flex-grow gap-[4px]">
+          <div className="flex flex-row flex-grow h-full border-[3px] border-[#1E1E1F] bg-[#48494a] overflow-hidden">
+            <div className="flex flex-row flex-grow justify-between">
+              <div className="flex flex-col p-[8px] gap-[2px]">
+                <p className="minecraft-seven text-white text-[18px]">{profile_name}</p>
+                <p className="minecraft-seven text-[#B1B2B5] text-[12px] mt-auto">{`${Version.Cached.toString(profile_version)} (${profile_runtime?.manifest.meta.name ?? 'Vanilla'})`}</p>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-row flex-grow gap-[4px]">
-            <div className="flex flex-row flex-grow h-full border-[3px] border-[#1E1E1F] bg-[#48494a] overflow-hidden">
-              <div className="flex flex-row flex-grow justify-between">
-                <div className="flex flex-col p-[8px] gap-[2px]">
-                  <p className="minecraft-seven text-white text-[18px]">{profile_name}</p>
-                  <p className="minecraft-seven text-[#B1B2B5] text-[12px] mt-auto">{`${Version.Cached.toString(profile_version)} (${profile_runtime?.manifest.meta.name ?? 'Vanilla'})`}</p>
-                </div>
-              </div>
+          {profile_runtime !== undefined && (
+            <div className="flex shrink-0">
+              <MinecraftRadialButtonPanel
+                dark={true}
+                default_selected_value={sub_page}
+                elements={[
+                  { text: 'Mods', value: 'Mods' },
+                  {
+                    text: 'Settings',
+                    value: 'Settings'
+                  }
+                ]}
+                onChange={selected_value => SetSubPage(selected_value)}
+              />
             </div>
-            {profile_runtime !== undefined && (
-              <div className="flex shrink-0">
-                <MinecraftRadialButtonPanel
-                  dark={true}
-                  default_selected_value={sub_page}
-                  elements={[
-                    { text: 'Mods', value: 'Mods' },
-                    {
-                      text: 'Settings',
-                      value: 'Settings'
-                    }
-                  ]}
-                  onChange={selected_value => SetSubPage(selected_value)}
-                />
-              </div>
-            )}
-            <div
-              className="flex border-[3px] border-[#1E1E1F] bg-[#48494a] p-[8px] w-[54px] h-full justify-center items-center cursor-pointer"
-              onClick={() => navigate('/profile-manager')}
-            >
-              <img src="images/icons/close-icon.png" className="w-[24px] h-[24px] pixelated" alt="" />
-            </div>
+          )}
+          <div
+            className="flex border-[3px] border-[#1E1E1F] bg-[#48494a] p-[8px] w-[54px] h-full justify-center items-center cursor-pointer"
+            onClick={() => navigate('/profile-manager')}
+          >
+            <img src="images/icons/close-icon.png" className="w-[24px] h-[24px] pixelated" alt="" />
           </div>
         </div>
+      </div>
 
-        {sub_page === 'Mods' && (
-          <>
-            <div className="content_panel h-fit max-h-full overflow-y-auto overflow-x-hidden scrollbar">
-              <div className="flex flex-col gap-[24px]">
-                <div className="flex flex-col w-full">
-                  <div className="flex flex-row w-full">
-                    <div className="border-[3px] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
-                      <p className="minecraft-seven text-white text-[14px]">Active Mods</p>
-                    </div>
-                    <div className="flex flex-col grow-[1] h-fit mt-auto">
-                      <div className="mt-auto bg-[#1E1E1F] h-[3px] " />
-                      <div className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] border-l-[#48494a] h-[7px] grow-[1]" />
-                    </div>
+      {sub_page === 'Mods' && (
+        <>
+          <div className="content_panel h-fit max-h-full overflow-y-auto overflow-x-hidden scrollbar">
+            <div className="flex flex-col gap-[24px]">
+              <div className="flex flex-col w-full">
+                <div className="flex flex-row w-full">
+                  <div className="border-[3px] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
+                    <p className="minecraft-seven text-white text-[14px]">Active Mods</p>
                   </div>
-
-                  <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
-                    {active_mods.length > 0 ? (
-                      active_mods.map((mod, index) => {
-                        return ModButton(mod, true, index, selected_active_mod, SetSelectedActiveMod)
-                      })
-                    ) : (
-                      <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
-                        <p className="minecraft-seven text-[14px] text-white">No active mods</p>
-                        <p className="minecraft-seven text-[14px] text-[#B1B2B5]">
-                          Activate a mod by clicking on it in the "Inactive Mods" list
-                        </p>
-                      </div>
-                    )}
+                  <div className="flex flex-col grow-[1] h-fit mt-auto">
+                    <div className="mt-auto bg-[#1E1E1F] h-[3px] " />
+                    <div className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] border-l-[#48494a] h-[7px] grow-[1]" />
                   </div>
                 </div>
-                <div className="flex flex-col w-full">
-                  <div className="flex flex-row w-full">
-                    <div className="border-[3px] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
-                      <p className="minecraft-seven text-white text-[14px]">Inactive Mods</p>
-                    </div>
-                    <div className="flex flex-col grow-[1] h-fit mt-auto">
-                      <div className="mt-auto bg-[#1E1E1F] h-[3px] " />
-                      <div className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] border-l-[#48494a] h-[7px] grow-[1]" />
-                    </div>
-                  </div>
 
-                  <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
-                    {inactive_mods.length > 0 ? (
-                      inactive_mods.map((mod, index) => {
-                        return ModButton(mod, false, index, selected_inactive_mod, SetSelectedInactiveMod)
-                      })
-                    ) : (
-                      <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
-                        <p className="minecraft-seven text-[14px] text-white">All available mods active</p>
-                        <p className="minecraft-seven text-[14px] text-[#B1B2B5]">
-                          All available mods have already been activated
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-
-        {sub_page === 'Settings' && (
-          <>
-            <div className="flex flex-col border-[3px] border-[#1E1E1F] bg-[#48494A] flex-shrink h-fit max-h-full overflow-y-auto overflow-x-hidden scrollbar">
-              <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-                <TextInput label="Profile name" text={profile_name} setText={SetProfileName} />
-              </div>
-
-              <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-                <Dropdown
-                  labelText="Version"
-                  default_index={version_uuids.indexOf(profile_version.uuid)}
-                  SetIndex={index => {
-                    SetProfileVersion(version_options[index])
-                  }}
-                  // we don't support non-release versions right now so only show release lmao
-                  options={version_names}
-                  id="minecraft-version"
-                />
-              </div>
-
-              <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-                <Dropdown
-                  labelText="Runtime"
-                  default_index={runtime_index}
-                  SetIndex={index => {
-                    if (runtime_options[index]) {
-                      SetProfileRuntime(runtime_options[index])
-                    } else SetProfileRuntime(undefined)
-                  }}
-                  options={runtime_names}
-                  id="runtime-mod"
-                />
-              </div>
-              <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-                <div className="flex flex-col gap-[4px]">
-                  <p className="minecraft-seven text-white text-[14px]">{'Install Directory'}</p>
-                  <div className="flex flex-row flex-grow gap-[3px]">
-                    <div className="min-w-0 flex flex-grow border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233] justify-center p-[4px]">
-                      <p className="w-full minecraft-seven bg-transparent text-white text-[12px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
-                        {profile_path}
+                <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
+                  {active_mods.length > 0 ? (
+                    active_mods.map((mod, index) => {
+                      return ModButton(mod, true, index, selected_active_mod, SetSelectedActiveMod)
+                    })
+                  ) : (
+                    <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
+                      <p className="minecraft-seven text-[14px] text-white">No active mods</p>
+                      <p className="minecraft-seven text-[14px] text-[#B1B2B5]">
+                        Activate a mod by clicking on it in the "Inactive Mods" list
                       </p>
                     </div>
-                    <div
-                      className="flex shrink-0 border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233] justify-center p-[4px] cursor-pointer"
-                      onClick={SelectPath}
-                    >
-                      <img src={'images/icons/open-icon.png'} alt="" />
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col w-full">
+                <div className="flex flex-row w-full">
+                  <div className="border-[3px] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
+                    <p className="minecraft-seven text-white text-[14px]">Inactive Mods</p>
+                  </div>
+                  <div className="flex flex-col grow-[1] h-fit mt-auto">
+                    <div className="mt-auto bg-[#1E1E1F] h-[3px] " />
+                    <div className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] border-l-[#48494a] h-[7px] grow-[1]" />
+                  </div>
+                </div>
+
+                <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
+                  {inactive_mods.length > 0 ? (
+                    inactive_mods.map((mod, index) => {
+                      return ModButton(mod, false, index, selected_inactive_mod, SetSelectedInactiveMod)
+                    })
+                  ) : (
+                    <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
+                      <p className="minecraft-seven text-[14px] text-white">All available mods active</p>
+                      <p className="minecraft-seven text-[14px] text-[#B1B2B5]">
+                        All available mods have already been activated
+                      </p>
                     </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {sub_page === 'Settings' && (
+        <>
+          <div className="flex flex-col border-[3px] border-[#1E1E1F] bg-[#48494A] flex-shrink h-fit max-h-full overflow-y-auto overflow-x-hidden scrollbar">
+            <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+              <TextInput label="Profile name" text={profile_name} setText={SetProfileName} />
+            </div>
+
+            <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+              <Dropdown
+                labelText="Version"
+                default_index={version_uuids.indexOf(profile_version.uuid)}
+                SetIndex={index => {
+                  SetProfileVersion(version_options[index])
+                }}
+                // we don't support non-release versions right now so only show release lmao
+                options={version_names}
+                id="minecraft-version"
+              />
+            </div>
+
+            <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+              <Dropdown
+                labelText="Runtime"
+                default_index={runtime_index}
+                SetIndex={index => {
+                  if (runtime_options[index]) {
+                    SetProfileRuntime(runtime_options[index])
+                  } else SetProfileRuntime(undefined)
+                }}
+                options={runtime_names}
+                id="runtime-mod"
+              />
+            </div>
+            <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+              <div className="flex flex-col gap-[4px]">
+                <p className="minecraft-seven text-white text-[14px]">{'Install Directory'}</p>
+                <div className="flex flex-row flex-grow gap-[3px]">
+                  <div className="min-w-0 flex flex-grow border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233] justify-center p-[4px]">
+                    <p className="w-full minecraft-seven bg-transparent text-white text-[12px] min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+                      {profile_path}
+                    </p>
+                  </div>
+                  <div
+                    className="flex shrink-0 border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233] justify-center p-[4px] cursor-pointer"
+                    onClick={SelectPath}
+                  >
+                    <img src={'images/icons/open-icon.png'} alt="" />
                   </div>
                 </div>
               </div>
-              <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-                <MinecraftButton
-                  text="Delete Profile"
-                  style={MinecraftButtonStyle.Warn}
-                  onClick={() => DeleteProfile()}
-                />
-              </div>
             </div>
-          </>
-        )}
-      </div>
+            <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+              <MinecraftButton
+                text="Delete Profile"
+                style={MinecraftButtonStyle.Warn}
+                onClick={() => DeleteProfile()}
+              />
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   )
 }
