@@ -1,60 +1,36 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import MinecraftButton from '../components/MinecraftButton'
 import { FolderPaths } from '../scripts/Paths'
 
-import { GetExtraShards, Shard } from '../scripts/types/Shard'
+import Shard from '../scripts/types/Shard'
 
 import { clipboard } from 'electron'
 
 // import PopupPanel from '../components/PopupPanel'
 import * as fs from 'fs'
 import * as child from 'child_process'
-
-const OpenShardsFolder = () => {
-  // Don't reveal in explorer unless there is an existing minecraft folder
-  if (!fs.existsSync(FolderPaths.MinecraftUWP)) {
-    alert('Minecraft is not currently installed')
-    return
-  }
-
-  if (!fs.existsSync(FolderPaths.Mods)) {
-    fs.mkdirSync(FolderPaths.Mods, { recursive: true })
-  }
-
-  const explorer_cmd = `explorer "${FolderPaths.Mods}"`
-  child.spawn(explorer_cmd, { shell: true })
-}
+import { UseAppState } from '../contexts/AppState'
 
 export default function ShardManager() {
-  const [shards] = useState<Shard.Extra[]>(GetExtraShards)
+  const { mods, runtimes } = UseAppState()
 
-  const [mods, SetMods] = useState<Shard.Extra[]>([])
   const [mod_index, SetModIndex] = useState<number | undefined>(undefined)
-
-  const [runtimes, SetRuntimes] = useState<Shard.Extra[]>([])
   const [runtimes_index, SetRuntimeIndex] = useState<number | undefined>(undefined)
 
-  useMemo(() => {
-    const temp_mods: Shard.Extra[] = []
-    const temp_runtimes: Shard.Extra[] = []
+  const OpenFolder = useCallback(() => {
+    // Don't reveal in explorer unless there is an existing minecraft folder
+    if (!fs.existsSync(FolderPaths.MinecraftUWP)) {
+      alert('Minecraft is not currently installed')
+      return
+    }
 
-    shards.map(shard => {
-      switch (shard.manifest.meta.format) {
-        default:
-          temp_mods.push(shard)
-          break
-        case 0:
-          temp_mods.push(shard)
-          break
-        case 1:
-          temp_runtimes.push(shard)
-          break
-      }
-    })
+    if (!fs.existsSync(FolderPaths.Mods)) {
+      fs.mkdirSync(FolderPaths.Mods, { recursive: true })
+    }
 
-    SetMods(temp_mods)
-    SetRuntimes(temp_runtimes)
-  }, [shards])
+    const explorer_cmd = `explorer "${FolderPaths.Mods}"`
+    child.spawn(explorer_cmd, { shell: true })
+  }, [])
 
   const ShardButton = (
     shard: Shard.Extra,
@@ -201,7 +177,7 @@ export default function ShardManager() {
         </div>
         <div className="content_panel h-fit">
           <div className="w-full h-fit">
-            <MinecraftButton text="Open folder" onClick={OpenShardsFolder} />
+            <MinecraftButton text="Open folder" onClick={OpenFolder} />
           </div>
         </div>
       </div>
