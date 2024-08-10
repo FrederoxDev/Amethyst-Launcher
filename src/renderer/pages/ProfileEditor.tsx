@@ -20,6 +20,8 @@ export default function ProfileEditor() {
 
   const [sub_page, SetSubPage] = useState<string>('Mods')
 
+  const navigate = useNavigate()
+
   const {
     mods,
     runtimes,
@@ -29,7 +31,7 @@ export default function ProfileEditor() {
     SetIndex$ProfileEditor: SetIndex,
     SaveState
   } = UseAppState()
-  const navigate = useNavigate()
+
 
   const profile = useMemo(() => {
     if (index !== undefined) return profiles[index]
@@ -169,7 +171,7 @@ export default function ProfileEditor() {
     [profile_mods]
   )
 
-  useMemo(() => {
+  useEffect(() => {
     if (profile) {
       profile.name = profile_name
       profile.version = { ...profile_version, path: profile_path }
