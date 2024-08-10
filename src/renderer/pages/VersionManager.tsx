@@ -128,34 +128,32 @@ export default function VersionManager() {
   const [selected_version, SetSelectedVersion] = useState<number | undefined>(undefined)
 
   return (
-    <>
-      <div className="content_panel h-fit max-h-full overflow-y-auto overflow-x-hidden scrollbar">
-        <div className="flex flex-col gap-[24px]">
-          <div className="flex flex-col w-full">
-            <div className="flex flex-row w-full align-bottom">
-              <div className="border-[3px] bg-[#48494a] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
-                <p className="minecraft-seven text-white text-[14px]">Versions</p>
-              </div>
-              <div className="flex flex-col grow-[1] h-fit mt-auto">
-                <div className="mt-auto bg-[#1E1E1F] h-[3px] " />
-                <div className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] bg-[#48494a] border-l-[#48494a] h-[7px] grow-[1]" />
-              </div>
+    <div className="content_panel h-fit max-h-full overflow-y-auto overflow-x-hidden scrollbar">
+      <div className="flex flex-col gap-[24px]">
+        <div className="flex flex-col w-full">
+          <div className="flex flex-row w-full align-bottom">
+            <div className="border-[3px] bg-[#48494a] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
+              <p className="minecraft-seven text-white text-[14px]">Versions</p>
             </div>
-            <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
-              {versions.length > 0 ? (
-                versions.map((version, index) => {
-                  return VersionButton(version, index, selected_version, SetSelectedVersion, RefreshVersions)
-                })
-              ) : (
-                <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
-                  <p className="minecraft-seven text-[14px] text-white">No installed versions</p>
-                  <p className="minecraft-seven text-[14px] text-[#B1B2B5]">Launch a profile to install its version.</p>
-                </div>
-              )}
+            <div className="flex flex-col grow-[1] h-fit mt-auto">
+              <div className="mt-auto bg-[#1E1E1F] h-[3px] " />
+              <div className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] bg-[#48494a] border-l-[#48494a] h-[7px] grow-[1]" />
             </div>
+          </div>
+          <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
+            {versions.length > 0 ? (
+              versions.map((version, index) => {
+                return VersionButton(version, index, selected_version, SetSelectedVersion, RefreshVersions)
+              })
+            ) : (
+              <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
+                <p className="minecraft-seven text-[14px] text-white">No installed versions</p>
+                <p className="minecraft-seven text-[14px] text-[#B1B2B5]">Launch a profile to install its version.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }
