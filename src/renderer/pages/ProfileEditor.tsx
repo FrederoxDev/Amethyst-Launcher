@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import Panel from '../components/Panel'
 import TextInput from '../components/TextInput'
 import Dropdown from '../components/Dropdown'
 import MinecraftButton from '../components/MinecraftButton'
@@ -268,8 +267,7 @@ export default function ProfileEditor() {
   }, [profile_path])
 
   return (
-    <Panel>
-      <div className=" w-full h-full flex flex-col gap-[8px] overflow-hidden">
+    <div className="flex flex-grow flex-col gap-[8px] overflow-hidden">
         <div className="flex flex-row gap-[8px] h-[54px]">
           <div className="w-[54px] h-full border-[3px] border-[#1E1E1F]">
             <img src={profile?.icon_path ?? `images/icons/earth-icon.png`} className="w-full h-full pixelated" alt="" />
@@ -431,6 +429,5 @@ export default function ProfileEditor() {
           </>
         )}
       </div>
-    </Panel>
   )
 }
