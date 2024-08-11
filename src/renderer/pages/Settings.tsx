@@ -11,11 +11,11 @@ import MinecraftRadialButtonPanel from '../components/MinecraftRadialButtonPanel
 import { Version } from '../scripts/types/Version'
 
 export default function Settings() {
-  const { developer_mode, SetDeveloperMode, theme, SetTheme, profiles, active_profile, config, runtime_config } =
+  const { developer_mode, SetDeveloperMode, theme, SetTheme, profiles, active_profile, config, proxy_config } =
     UseAppState()
 
   const [config_text, SetConfigText] = useState<string>('')
-  const [runtime_config_text, SetRuntimeConfigText] = useState<string>('')
+  const [proxy_config_text, SetProxyConfigText] = useState<string>('')
 
   const isWindowsDevModeOn = IsDevModeEnabled()
 
@@ -44,9 +44,9 @@ export default function Settings() {
   }, [config])
 
   useMemo(() => {
-    const text = JSON.stringify(runtime_config, undefined, 4)
-    SetRuntimeConfigText(text)
-  }, [runtime_config])
+    const text = JSON.stringify(proxy_config, undefined, 4)
+    SetProxyConfigText(text)
+  }, [proxy_config])
 
   return (
     <div
@@ -128,7 +128,7 @@ export default function Settings() {
       </div>
 
       <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-        <ReadOnlyTextBox text={runtime_config_text ?? ' '} label="Runtime Config" />
+        <ReadOnlyTextBox text={proxy_config_text ?? ' '} label="Proxy Config" />
       </div>
     </div>
   )
