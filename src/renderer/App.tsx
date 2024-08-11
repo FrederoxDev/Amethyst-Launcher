@@ -25,11 +25,11 @@ export default function App() {
       <div className="container relative">
         <Title />
 
-        <div className="launcher_background absolute w-full h-full">
-          <img src="images/art/lush_cave.png" className="object-cover w-full h-full" alt="" />
+        <div className="launcher_background absolute">
+          <img src="images/art/lush_cave.png" className="object-cover object-center min-h-screen" alt="" />
         </div>
 
-        <div className="contents_container absolute flex flex-row w-full gap-[12px] h-[calc(100%-64px)] p-[12px]">
+        <div className={`contents_container absolute flex flex-row w-full gap-[12px] h-[calc(100%-64px)] p-[12px] ${ location.pathname !== '/' ? 'backdrop-blur-[4px]' : ''} transition-[backdrop-filter] duration-[300ms]`}>
           <div className="navbar_container h-full w-[68px]">
             <div className="h-full bg-[#313233] w-[68px] flex flex-col justify-between items-center p-[8px] border-[3px] border-[#1E1E1F]">
               <div className="flex flex-col gap-[16px] grow-[1]">
