@@ -25,8 +25,8 @@ export default function App() {
       <div className="container relative">
         <Title />
 
-        <div className="launcher_background absolute flex-group">
-          <img src="images/art/lush_cave.png" className="object-cover w-full h-full min-h-screen" alt="" />
+        <div className="launcher_background absolute w-full h-full">
+          <img src="images/art/lush_cave.png" className="object-cover w-full h-full" alt="" />
         </div>
 
         <div className="contents_container absolute flex flex-row w-full gap-[12px] h-[calc(100%-64px)] p-[12px]">
