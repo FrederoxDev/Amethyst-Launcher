@@ -163,7 +163,7 @@ export default function Launcher() {
 
         <div className="flex flex-col justify-end grow w-full">
           {/* Not affiliated disclaimer */}
-          <div className="bg-[#0c0c0cc5] w-fit ml-auto rounded-t-[3px] p-[4px]">
+          <div className="bg-[#0c0c0cc5] w-fit ml-auto rounded-t-[3px] p-[4px] backdrop-blur-[4px]">
             <p className="minecraft-seven text-white text-[13px]">
               Not approved by or associated with Mojang or Microsoft
             </p>
