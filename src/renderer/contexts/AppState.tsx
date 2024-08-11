@@ -50,7 +50,7 @@ interface TAppStateContext {
   SetError: React.Dispatch<React.SetStateAction<string>>
 
   config: Config
-  runtime_config: ProxyConfig
+  proxy_config: ProxyConfig
 
   // Expose functions
   SaveState: () => void
@@ -201,7 +201,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         SetError: SetError,
 
         config: config,
-        runtime_config: proxy_config,
+        proxy_config: proxy_config,
 
         UpdateProxyConfig: UpdateProxyConfig
       }}
