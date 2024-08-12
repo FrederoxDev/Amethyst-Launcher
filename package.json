@@ -81,6 +81,9 @@
         "role": "Editor",
         "icon": "public/icons/icon.ico"
       }
-    ]
+    ],
+    "asar": {
+      "unpack": "*.node"
+    }
   }
 }
