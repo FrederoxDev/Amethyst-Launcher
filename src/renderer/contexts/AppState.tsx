@@ -1,6 +1,6 @@
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react'
 
-import { GetCachedVersions, Version } from '../scripts/types/Version'
+import { FetchAvailableVersions, GetCachedVersions, Version } from '../scripts/types/Version'
 
 import { GetProfiles, Profile, SetProfiles as SetProfilesFile } from '../scripts/types/Profile'
 
@@ -94,6 +94,12 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     SetActiveProfile(config.active_profile)
     SetTheme(config.theme)
   }, [config.active_profile, config.developer_mode, config.theme, shards])
+
+  useEffect(() => {
+    FetchAvailableVersions().then(() => {
+      SetVersions(GetCachedVersions)
+    })
+  }, [])
 
   const [initialized, SetInitialized] = useState(false)
 
