@@ -154,10 +154,13 @@ export default function VersionManager() {
             </div>
           </div>
           <div
-            className="w-[58px] h-[58px] p-[8px] flex justify-center items-center inset_button cursor-pointer"
+            className="relative w-[58px] h-[58px] p-[8px] flex justify-center items-center inset_button cursor-pointer"
             onClick={() => ReinstallVersion()}
           >
             <img src="images/icons/reload.png" className="pixelated" alt="" />
+            {/*<Tooltip text="Reinstall">*/}
+            {/*  <div></div>*/}
+            {/*</Tooltip>*/}
           </div>
           <div
             className="w-[58px] h-[58px] p-[8px] flex justify-center items-center inset_button cursor-pointer"
