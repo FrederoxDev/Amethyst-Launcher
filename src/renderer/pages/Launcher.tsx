@@ -21,8 +21,9 @@ import { AddTrackingPath, GetVersionsFile, SetVersionsFile, Version } from '../s
 export default function Launcher() {
   const {
     profiles,
-    active_profile,
-    SetActiveProfile,
+    selected_profile,
+    SetSelectedProfile,
+    SetRegisteredProfile,
     SetStatus,
     is_loading,
     SetIsLoading,
@@ -35,11 +36,11 @@ export default function Launcher() {
   const LaunchGame = async () => {
     if (is_loading) return
 
-    if (profiles.length === 0 || active_profile === undefined) {
+    if (profiles.length === 0 || selected_profile === undefined) {
       throw new Error('Cannot launch without a profile')
     }
 
-    const profile = profiles[active_profile]
+    const profile = profiles[selected_profile]
     const version = profile.version
 
     if (version === undefined) {
@@ -109,6 +110,7 @@ export default function Launcher() {
 
     // Update Runtime Config
     UpdateProxyConfig(profile)
+    SetRegisteredProfile(selected_profile)
 
     SetIsLoading(false)
     SetStatus('')
@@ -181,9 +183,9 @@ export default function Launcher() {
                     name={'profile-select'}
                     id={'profile-select'}
                     onChange={event => {
-                      SetActiveProfile(event.target.selectedIndex)
+                      SetSelectedProfile(event.target.selectedIndex)
                     }}
-                    value={active_profile && profile_names[profile_names.indexOf(profiles[active_profile]?.name)]}
+                    value={selected_profile && profile_names[profile_names.indexOf(profiles[selected_profile]?.name)]}
                     className="border-[3px] border-[#1E1E1F] bg-[#313233] w-full h-[25px] text-white minecraft-seven text-[12px]"
                   >
                     {profile_names.map((option, index) => (
