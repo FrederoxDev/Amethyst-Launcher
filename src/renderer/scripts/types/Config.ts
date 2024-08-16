@@ -6,7 +6,8 @@ import path from 'path'
 
 export interface Config {
   theme: 'Light' | 'Dark' | 'System'
-  active_profile: number | undefined
+  selected_profile: number | undefined
+  registered_profile: number | undefined
   developer_mode: boolean
 }
 
@@ -15,7 +16,8 @@ export namespace Config {
     type: 'object',
     properties: {
       theme: { type: 'string', oneOf: [{ const: 'Light' }, { const: 'Dark' }, { const: 'System' }] },
-      active_profile: { type: 'number', nullable: true },
+      selected_profile: { type: 'number', nullable: true },
+      registered_profile: { type: 'number', nullable: true },
       developer_mode: { type: 'boolean' }
     },
     required: ['theme', 'developer_mode']
@@ -36,7 +38,8 @@ export namespace Config {
     }
 
     return {
-      active_profile: undefined,
+      selected_profile: undefined,
+      registered_profile: undefined,
       developer_mode: false,
       theme: 'System'
     }
