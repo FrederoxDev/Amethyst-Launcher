@@ -1,32 +1,14 @@
-import {
-  AddTrackingPath,
-  GetVersions,
-  GetVersionsFile,
-  RefreshVersionsFile,
-  SetVersionsFile,
-  Version
-} from '../scripts/types/Version'
+import { GetVersions, RefreshVersionsFile, Version } from '../scripts/types/Version'
 import React, { useState } from 'react'
 import { clipboard, ipcRenderer } from 'electron'
 import { Console } from '../scripts/types/Console'
 
 import * as fs from 'fs'
 import path from 'path'
-import { UseAppState } from '../contexts/AppState'
-import {
-  CleanupInstall,
-  CreateLock,
-  DownloadVersion,
-  ExtractVersion,
-  InstallProxy,
-  IsLocked
-} from '../scripts/functions/VersionManager'
 
 export default function VersionManager() {
   RefreshVersionsFile()
   const [versions, SetVersions] = useState<Version[]>(GetVersions())
-
-  const { is_loading, SetIsLoading, SetLoadingPercent, SetStatus, SetError } = UseAppState()
 
   function RefreshVersions() {
     RefreshVersionsFile()
@@ -78,53 +60,6 @@ export default function VersionManager() {
       })
     }
 
-    async function ReinstallVersion() {
-      if (is_loading) return
-
-      SetError('')
-      SetIsLoading(true)
-
-      const didPreviousDownloadFail = IsLocked(version)
-
-      if (didPreviousDownloadFail) {
-        CleanupInstall(version, false)
-      }
-
-      CreateLock(version)
-
-      Console.StartGroup(Console.ActionStr('Reinstall Version'))
-      {
-        Console.StartGroup(Console.ActionStr('Download Version'))
-        {
-          await DownloadVersion(version, SetStatus, SetLoadingPercent)
-        }
-        Console.EndGroup()
-        Console.StartGroup(Console.ActionStr('Extract Version'))
-        {
-          await ExtractVersion(version, SetStatus, SetLoadingPercent)
-        }
-        Console.EndGroup()
-      }
-      Console.EndGroup()
-
-      CleanupInstall(version, true)
-
-      if (version.format === Version.Format.Release) {
-        InstallProxy(version)
-      }
-
-      const versions_file = GetVersionsFile()
-      versions_file.versions.push(version)
-      SetVersionsFile(versions_file)
-
-      if (version.path !== versions_file.default_path) {
-        AddTrackingPath(version.path)
-      }
-
-      SetIsLoading(false)
-      SetStatus('')
-    }
-
     let version_format = 'Release'
 
     if (version.format === Version.Format.Beta) version_format = 'Beta'
@@ -152,15 +87,6 @@ export default function VersionManager() {
                 />
               </div>
             </div>
-          </div>
-          <div
-            className="relative w-[58px] h-[58px] p-[8px] flex justify-center items-center inset_button cursor-pointer"
-            onClick={() => ReinstallVersion()}
-          >
-            <img src="images/icons/reload.png" className="pixelated" alt="" />
-            {/*<Tooltip text="Reinstall">*/}
-            {/*  <div></div>*/}
-            {/*</Tooltip>*/}
           </div>
           <div
             className="w-[58px] h-[58px] p-[8px] flex justify-center items-center inset_button cursor-pointer"
