@@ -26,9 +26,14 @@ export default function ProfileEditor() {
     runtimes,
     versions,
     profiles,
+    selected_profile,
+    SetSelectedProfile,
+    registered_profile,
+    SetRegisteredProfile,
     index$profile_editor: index,
     SetIndex$ProfileEditor: SetIndex,
-    SaveState
+    SaveState,
+    UpdateProxyConfig
   } = UseAppState()
 
   const profile = useMemo(() => {
@@ -187,13 +192,29 @@ export default function ProfileEditor() {
       }
 
       SaveState()
+      
+      if (index == registered_profile) {
+        UpdateProxyConfig(profile)
+      }
     }
-  }, [SaveState, profile, profile_mods, profile_name, profile_runtime, profile_version, profile_path])
+  }, [SaveState, profile, profile_mods, profile_name, profile_runtime, profile_version, profile_path, index, registered_profile, UpdateProxyConfig])
 
   const DeleteProfile = () => {
     if (index !== undefined) {
       profiles.splice(index, 1)
       SetIndex(undefined)
+
+      if (index === selected_profile) {
+        if (profiles.length > 0) {
+          SetSelectedProfile(profiles.length - 1)
+        } else {
+          SetSelectedProfile(undefined)
+        }
+      }
+
+      if (index === registered_profile) {
+        SetRegisteredProfile(undefined)
+      }
     }
 
     navigate('/profile-manager')
