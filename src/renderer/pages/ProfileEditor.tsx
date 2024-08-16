@@ -71,108 +71,93 @@ export default function ProfileEditor() {
     }
   })
 
-  const ModButton = useCallback(
-    (
-      mod: Shard.Extra,
-      active: boolean,
-      index: number,
-      selected_mod: Shard.Extra | undefined,
-      SetSelectedMod: (index: Shard.Extra | undefined) => void
-    ) => {
-      let icon_path = mod.icon_path
+  const ModButton = ({ mod, active }: { mod: Shard.Extra, active: boolean }) => {
+    const [open, SetOpen] = useState<boolean>(false)
 
-      if (icon_path === undefined) {
-        switch (mod.manifest.meta.format) {
-          default:
-            icon_path = `images/icons/page-icon.png`
-            break
-          case 0:
-            icon_path = `images/icons/page-icon.png`
-            break
-          case 1:
-            icon_path = `images/icons/book-icon.png`
-            break
+    let icon_path = mod.icon_path
+
+    if (icon_path === undefined) {
+      switch (mod.manifest.meta.format) {
+        default:
+          icon_path = `images/icons/page-icon.png`
+          break
+        case Shard.Format.Mod:
+          icon_path = `images/icons/page-icon.png`
+          break
+        case Shard.Format.Runtime:
+          icon_path = `images/icons/book-icon.png`
+          break
+      }
+    }
+
+    const ToggleMod = (mod: Shard.Extra) => {
+      SetOpen(false)
+      if (profile_mods) {
+        const active_mod_uuids = profile_mods.map(m => m.manifest.meta.uuid)
+
+        if (active_mod_uuids.includes(mod.manifest.meta.uuid)) {
+          const active = profile_mods.filter(m => m.manifest.meta.uuid !== mod.manifest.meta.uuid)
+          SetProfileMods(active)
+        } else {
+          SetProfileMods([...profile_mods, mod])
         }
       }
-
-      const ToggleMod = (mod: Shard.Extra) => {
-        if (is_selected) {
-          SetSelectedMod(undefined)
-        }
-
-        if (profile_mods) {
-          const active_mod_uuids = profile_mods.map(m => m.manifest.meta.uuid)
-
-          if (active_mod_uuids.includes(mod.manifest.meta.uuid)) {
-            const active = profile_mods.filter(m => m.manifest.meta.uuid !== mod.manifest.meta.uuid)
-            SetProfileMods(active)
-          } else {
-            SetProfileMods([...profile_mods, mod])
-          }
-        }
-        // no active mods, so this mod must be toggling to active. just add it to the active mods
-        else {
-          SetProfileMods([mod])
-        }
+      // no active mods, so this mod must be toggling to active. just add it to the active mods
+      else {
+        SetProfileMods([mod])
       }
+    }
 
-      const is_selected = selected_mod
-        ? mod.manifest.meta.uuid === selected_mod.manifest.meta.uuid &&
-          mod.manifest.meta.version === selected_mod.manifest.meta.version
-        : false
-
-      return (
-        <div key={index}>
-          <div className="list_item flex flex-row">
-            <div
-              className="flex flex-grow inset_button cursor-pointer"
-              onClick={() => SetSelectedMod(is_selected ? undefined : mod)}
-            >
-              <div className="flex flex-row w-full justify-between items-center p-[8px]">
-                <div className="flex flex-row gap-[8px]">
-                  <div className="w-[30px] h-[30px] border-[3px] border-[#1E1E1F] box-content">
-                    <img src={icon_path} className="w-full h-full pixelated" alt="" />
-                  </div>
-                  <p className="minecraft-seven text-white text-[14px]">{mod.manifest.meta.name}</p>
-                  <p className="minecraft-seven text-[#B1B2B5] text-[14px]">{mod.manifest.meta.version}</p>
+    return (
+      <>
+        <div className="list_item flex flex-row">
+          <div
+            className="flex flex-grow inset_button cursor-pointer"
+            onClick={() => SetOpen(!open)}
+          >
+            <div className="flex flex-row w-full justify-between items-center p-[8px]">
+              <div className="flex flex-row gap-[8px]">
+                <div className="w-[30px] h-[30px] border-[3px] border-[#1E1E1F] box-content">
+                  <img src={icon_path} className="w-full h-full pixelated" alt="" />
                 </div>
-                <div className="w-[30px] h-[30px] p-[10px]">
-                  <img
-                    src={is_selected ? `images/icons/chevron-up.png` : `images/icons/chevron-down.png`}
-                    className="w-full h-full pixelated"
-                    alt=""
-                  />
-                </div>
+                <p className="minecraft-seven text-white text-[14px]">{mod.manifest.meta.name}</p>
+                <p className="minecraft-seven text-[#B1B2B5] text-[14px]">{mod.manifest.meta.version}</p>
               </div>
-            </div>
-            <div
-              className="w-[58px] h-[58px] p-[8px] flex justify-center items-center inset_button cursor-pointer"
-              onClick={() => ToggleMod(mod)}
-            >
-              {active ? (
-                <img src="images/icons/remove.png" className="pixelated" alt="" />
-              ) : (
-                <img src="images/icons/add.png" className="pixelated" alt="" />
-              )}
+              <div className="w-[30px] h-[30px] p-[10px]">
+                <img
+                  src={open ? `images/icons/chevron-up.png` : `images/icons/chevron-down.png`}
+                  className="w-full h-full pixelated"
+                  alt=""
+                />
+              </div>
             </div>
           </div>
           <div
-            className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${is_selected ? '' : 'hidden'}`}
+            className="w-[58px] h-[58px] p-[8px] flex justify-center items-center inset_button cursor-pointer"
+            onClick={() => ToggleMod(mod)}
           >
-            <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
-              {typeof mod.manifest.meta.author === 'string'
-                ? 'Author: ' + mod.manifest.meta.author
-                : 'Authors: ' + mod.manifest.meta.author.join(', ')}
-            </p>
-            <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
-              {mod.manifest.meta.description ? 'Description: ' + mod.manifest.meta.description : ''}
-            </p>
+            {active ? (
+              <img src="images/icons/remove.png" className="pixelated" alt="" />
+            ) : (
+              <img src="images/icons/add.png" className="pixelated" alt="" />
+            )}
           </div>
         </div>
-      )
-    },
-    [profile_mods]
-  )
+        <div
+          className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${open ? '' : 'hidden'}`}
+        >
+          <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+            {typeof mod.manifest.meta.author === 'string'
+              ? 'Author: ' + mod.manifest.meta.author
+              : 'Authors: ' + mod.manifest.meta.author.join(', ')}
+          </p>
+          <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+            {mod.manifest.meta.description ? 'Description: ' + mod.manifest.meta.description : ''}
+          </p>
+        </div>
+      </>
+    )
+  }
 
   useEffect(() => {
     if (profile) {
@@ -268,9 +253,6 @@ export default function ProfileEditor() {
     }
   }, [mods, profile_mods])
 
-  const [selected_active_mod, SetSelectedActiveMod] = useState<Shard.Extra | undefined>(undefined)
-  const [selected_inactive_mod, SetSelectedInactiveMod] = useState<Shard.Extra | undefined>(undefined)
-
   const SelectPath = useCallback(() => {
     const args: Electron.OpenDialogOptions = {
       defaultPath: profile_path,
@@ -345,7 +327,7 @@ export default function ProfileEditor() {
                 <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
                   {active_mods.length > 0 ? (
                     active_mods.map((mod, index) => {
-                      return ModButton(mod, true, index, selected_active_mod, SetSelectedActiveMod)
+                      return <ModButton mod={mod} active={true} key={index}/>
                     })
                   ) : (
                     <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
@@ -371,7 +353,7 @@ export default function ProfileEditor() {
                 <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
                   {inactive_mods.length > 0 ? (
                     inactive_mods.map((mod, index) => {
-                      return ModButton(mod, false, index, selected_inactive_mod, SetSelectedInactiveMod)
+                      return <ModButton mod={mod} active={false} key={index}/>
                     })
                   ) : (
                     <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
