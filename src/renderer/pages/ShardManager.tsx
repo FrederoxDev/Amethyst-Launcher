@@ -10,9 +10,6 @@ import * as child from 'child_process'
 export default function ShardManager() {
   const { mods, runtimes } = UseAppState()
 
-  const [mod_index, SetModIndex] = useState<number | undefined>(undefined)
-  const [runtimes_index, SetRuntimeIndex] = useState<number | undefined>(undefined)
-
   const OpenFolder = useCallback(() => {
     // Don't reveal in explorer unless there is an existing minecraft folder
     if (!fs.existsSync(FolderPaths.MinecraftUWP)) {
@@ -30,10 +27,11 @@ export default function ShardManager() {
 
   const ShardButton = (
     shard: Shard.Extra,
-    index: number,
-    selected_index: number | undefined,
-    SetSelectedIndex: (index: number | undefined) => void
+    index: number
   ) => {
+
+    const [open, SetOpen] = useState<boolean>(false)
+
     let icon_path = shard.icon_path
 
     if (icon_path === undefined) {
@@ -55,7 +53,7 @@ export default function ShardManager() {
         <div
           className="m-[-3px] border-[3px] border-[#1E1E1F] cursor-pointer"
           onClick={() => {
-            SetSelectedIndex(selected_index === index ? undefined : index)
+            SetOpen(!open)
           }}
         >
           <div className="inset_button">
@@ -69,7 +67,7 @@ export default function ShardManager() {
               </div>
               <div className="w-[30px] h-[30px] p-[10px]">
                 <img
-                  src={selected_index === index ? `images/icons/chevron-up.png` : `images/icons/chevron-down.png`}
+                  src={open ? `images/icons/chevron-up.png` : `images/icons/chevron-down.png`}
                   className="w-full h-full pixelated"
                   alt=""
                 />
@@ -78,7 +76,7 @@ export default function ShardManager() {
           </div>
         </div>
         <div
-          className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${selected_index === index ? '' : 'hidden'}`}
+          className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${open ? '' : 'hidden'}`}
         >
           <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
             {typeof shard.manifest.meta.author === 'string'
@@ -142,7 +140,7 @@ export default function ShardManager() {
             <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
               {runtimes.length > 0 ? (
                 runtimes.map((shard, index) => {
-                  return ShardButton(shard, index, runtimes_index, SetRuntimeIndex)
+                  return ShardButton(shard, index)
                 })
               ) : (
                 <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
@@ -169,7 +167,7 @@ export default function ShardManager() {
             <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
               {mods.length > 0 ? (
                 mods.map((shard, index) => {
-                  return ShardButton(shard, index, mod_index, SetModIndex)
+                  return ShardButton(shard, index)
                 })
               ) : (
                 <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
