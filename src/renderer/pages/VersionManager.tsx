@@ -16,15 +16,14 @@ export default function VersionManager() {
     SetVersions(GetVersions())
   }
 
-  const [selected_version, SetSelectedVersion] = useState<number | undefined>(undefined)
-
   const VersionButton = (
     version: Version,
     index: number,
-    selected_index: number | undefined,
-    SetSelectedIndex: (index: number | undefined) => void,
     OnDelete: () => void
   ) => {
+
+    const [open , SetOpen] = useState<boolean>(false)
+
     function DeleteVersion() {
       const message_args = {
         message: 'Are you sure you want to delete this version?\n\nThis is an irreversible action!',
@@ -72,7 +71,7 @@ export default function VersionManager() {
           <div
             className="flex flex-grow inset_button cursor-pointer"
             onClick={() => {
-              SetSelectedIndex(selected_index === index ? undefined : index)
+              SetOpen(!open)
             }}
           >
             <div className="flex flex-row w-full justify-between items-center p-[8px]">
@@ -82,7 +81,7 @@ export default function VersionManager() {
               </div>
               <div className="w-[30px] h-[30px] p-[10px]">
                 <img
-                  src={selected_index === index ? `images/icons/chevron-up.png` : `images/icons/chevron-down.png`}
+                  src={open ? `images/icons/chevron-up.png` : `images/icons/chevron-down.png`}
                   className="w-full h-full pixelated"
                   alt=""
                 />
@@ -97,7 +96,7 @@ export default function VersionManager() {
           </div>
         </div>
         <div
-          className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${selected_index === index ? '' : 'hidden'}`}
+          className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${open ? '' : 'hidden'}`}
         >
           <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
             {`UUID: ${version.uuid}`}
@@ -156,7 +155,7 @@ export default function VersionManager() {
           <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
             {versions.length > 0 ? (
               versions.map((version, index) => {
-                return VersionButton(version, index, selected_version, SetSelectedVersion, RefreshVersions)
+                return VersionButton(version, index, RefreshVersions)
               })
             ) : (
               <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
