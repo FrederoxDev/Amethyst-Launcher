@@ -16,12 +16,7 @@ export default function VersionManager() {
     SetVersions(GetVersions())
   }
 
-  const VersionButton = (
-    version: Version,
-    index: number,
-    OnDelete: () => void
-  ) => {
-
+  const VersionButton = ({version, OnDelete}: { version: Version, OnDelete:() => void }) => {
     const [open , SetOpen] = useState<boolean>(false)
 
     function DeleteVersion() {
@@ -66,7 +61,7 @@ export default function VersionManager() {
     if (version.format === Version.Format.Preview) version_format = 'Preview'
 
     return (
-      <div key={index}>
+      <>
         <div className="list_item flex flex-row">
           <div
             className="flex flex-grow inset_button cursor-pointer"
@@ -134,7 +129,7 @@ export default function VersionManager() {
             </div>
           )}
         </div>
-      </div>
+      </>
     )
   }
 
@@ -155,7 +150,7 @@ export default function VersionManager() {
           <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
             {versions.length > 0 ? (
               versions.map((version, index) => {
-                return VersionButton(version, index, RefreshVersions)
+                return <VersionButton version={version} OnDelete={RefreshVersions} key={index}/>
               })
             ) : (
               <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
