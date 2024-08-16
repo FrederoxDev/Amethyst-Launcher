@@ -94,17 +94,28 @@ export default function ShardManager() {
           <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
             {'Version: ' + shard.manifest.meta.version}
           </p>
-          <div className="flex flex-row justify-between">
-            <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+          <div className="flex flex-row gap-[4px] justify-between">
+            <p
+              className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
               {'Path: ' + shard.path}
             </p>
-            <div
-              className="w-[24px] h-[24px] shrink-0 bg-[#313233] box-content border-[3px] border-[#1E1E1F] rounded-[3px] cursor-pointer hover:border-[#48494A] hover:bg-[#5a5b5c] active:border-[#4f913c] active:bg-[#3c8527]"
-              onClick={() => {
-                clipboard.writeText(shard.path)
-              }}
-            >
-              <img src="images/icons/copy-icon.png" className="w-full h-full pixelated" alt="" />
+            <div className="flex flex-row gap-[4px]">
+              <div
+                className="w-[24px] h-[24px] shrink-0 bg-[#313233] box-content border-[3px] border-[#1E1E1F] rounded-[3px] cursor-pointer hover:border-[#48494A] hover:bg-[#5a5b5c] active:border-[#4f913c] active:bg-[#3c8527]"
+                onClick={() => {
+                  clipboard.writeText(shard.path)
+                }}
+              >
+                <img src="images/icons/copy-icon.png" className="w-full h-full pixelated" alt="" />
+              </div>
+              <div
+                className="w-[24px] h-[24px] shrink-0 bg-[#313233] box-content border-[3px] border-[#1E1E1F] rounded-[3px] cursor-pointer hover:border-[#48494A] hover:bg-[#5a5b5c] active:border-[#4f913c] active:bg-[#3c8527]"
+                onClick={() => {
+                  child.spawn(`explorer "${shard.path}"`, { shell: true })
+                }}
+              >
+                <img src="images/icons/open-folder-icon.png" className="w-full h-full pixelated" alt="" />
+              </div>
             </div>
           </div>
         </div>
@@ -118,12 +129,14 @@ export default function ShardManager() {
         <div className="flex flex-col gap-[24px]">
           <div className="flex flex-col w-full">
             <div className="flex flex-row w-full align-bottom">
-              <div className="border-[3px] bg-[#48494a] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
+              <div
+                className="border-[3px] bg-[#48494a] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
                 <p className="minecraft-seven text-white text-[14px]">Runtimes</p>
               </div>
               <div className="flex flex-col grow-[1] h-fit mt-auto">
                 <div className="mt-auto bg-[#1E1E1F] h-[3px] " />
-                <div className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] bg-[#48494a] border-l-[#48494a] h-[7px] grow-[1]" />
+                <div
+                  className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] bg-[#48494a] border-l-[#48494a] h-[7px] grow-[1]" />
               </div>
             </div>
             <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
