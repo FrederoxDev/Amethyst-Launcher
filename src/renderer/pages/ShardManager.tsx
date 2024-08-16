@@ -25,11 +25,7 @@ export default function ShardManager() {
     child.spawn(explorer_cmd, { shell: true })
   }, [])
 
-  const ShardButton = (
-    shard: Shard.Extra,
-    index: number
-  ) => {
-
+  const ShardButton = ({shard}: { shard: Shard.Extra }) => {
     const [open, SetOpen] = useState<boolean>(false)
 
     let icon_path = shard.icon_path
@@ -39,17 +35,17 @@ export default function ShardManager() {
         default:
           icon_path = `images/icons/page-icon.png`
           break
-        case 0:
+        case Shard.Format.Mod:
           icon_path = `images/icons/page-icon.png`
           break
-        case 1:
+        case Shard.Format.Runtime:
           icon_path = `images/icons/book-icon.png`
           break
       }
     }
 
     return (
-      <div key={index}>
+      <>
         <div
           className="m-[-3px] border-[3px] border-[#1E1E1F] cursor-pointer"
           onClick={() => {
@@ -117,7 +113,7 @@ export default function ShardManager() {
             </div>
           </div>
         </div>
-      </div>
+      </>
     )
   }
 
@@ -140,7 +136,7 @@ export default function ShardManager() {
             <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
               {runtimes.length > 0 ? (
                 runtimes.map((shard, index) => {
-                  return ShardButton(shard, index)
+                  return <ShardButton shard={shard} key={index}/>
                 })
               ) : (
                 <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
@@ -167,7 +163,7 @@ export default function ShardManager() {
             <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
               {mods.length > 0 ? (
                 mods.map((shard, index) => {
-                  return ShardButton(shard, index)
+                  return <ShardButton shard={shard} key={index}/>
                 })
               ) : (
                 <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
