@@ -235,7 +235,7 @@ export default function ProfileEditor() {
 
     const runtime_names = runtime_options.map(r => {
       if (r) {
-        return r.manifest.meta.name
+        return `${ r.manifest.meta.name } ${ r.manifest.meta.version }`
       } else return 'Vanilla'
     })
 
