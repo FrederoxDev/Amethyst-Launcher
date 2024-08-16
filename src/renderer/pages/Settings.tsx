@@ -4,26 +4,24 @@ import { GetPackagePath } from '../scripts/functions/AppRegistry'
 import { FolderPaths } from '../scripts/Paths'
 import { IsDevModeEnabled } from '../scripts/functions/DeveloperMode'
 import ReadOnlyTextBox from '../components/ReadOnlyTextBox'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import MinecraftToggle from '../components/MinecraftToggle'
 import MinecraftRadialButtonPanel from '../components/MinecraftRadialButtonPanel'
 
 import { Version } from '../scripts/types/Version'
+import { Config, ProxyConfig } from '../scripts/types/Config'
 
 export default function Settings() {
-  const { developer_mode, SetDeveloperMode, theme, SetTheme, profiles, active_profile, config, proxy_config } =
+  const { developer_mode, SetDeveloperMode, theme, SetTheme, profiles, selected_profile } =
     UseAppState()
-
-  const [config_text, SetConfigText] = useState<string>('')
-  const [proxy_config_text, SetProxyConfigText] = useState<string>('')
 
   const isWindowsDevModeOn = IsDevModeEnabled()
 
   const profile = useMemo(() => {
-    if (active_profile !== undefined) {
-      return profiles[active_profile]
+    if (selected_profile !== undefined) {
+      return profiles[selected_profile]
     }
-  }, [active_profile, profiles])
+  }, [selected_profile, profiles])
 
   const [isVerDownloaded, isRegisteredVerOurs] = useMemo(() => {
     if (profile) {
@@ -37,15 +35,16 @@ export default function Settings() {
   }, [profile])
 
   const installDir = GetPackagePath() ?? 'Could not find installed.'
-
-  useMemo(() => {
-    const text = JSON.stringify(config, undefined, 4)
-    SetConfigText(text)
+  
+  const config = Config.Get()
+  const proxy_config = ProxyConfig.Get()
+  
+  const config_text = useMemo(() => {
+    return JSON.stringify(config, undefined, 4)
   }, [config])
 
-  useMemo(() => {
-    const text = JSON.stringify(proxy_config, undefined, 4)
-    SetProxyConfigText(text)
+  const proxy_config_text = useMemo(() => {
+    return JSON.stringify(proxy_config, undefined, 4)
   }, [proxy_config])
 
   return (
