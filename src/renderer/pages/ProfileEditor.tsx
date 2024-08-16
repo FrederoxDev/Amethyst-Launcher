@@ -71,14 +71,15 @@ export default function ProfileEditor() {
     }
   })
 
-  const ModButton = useCallback(
+  const ModButton =
     (
       mod: Shard.Extra,
       active: boolean,
-      index: number,
-      selected_mod: Shard.Extra | undefined,
-      SetSelectedMod: (index: Shard.Extra | undefined) => void
+      index: number
     ) => {
+
+      const [open, SetOpen] = useState<boolean>(false)
+
       let icon_path = mod.icon_path
 
       if (icon_path === undefined) {
@@ -96,10 +97,6 @@ export default function ProfileEditor() {
       }
 
       const ToggleMod = (mod: Shard.Extra) => {
-        if (is_selected) {
-          SetSelectedMod(undefined)
-        }
-
         if (profile_mods) {
           const active_mod_uuids = profile_mods.map(m => m.manifest.meta.uuid)
 
@@ -116,17 +113,12 @@ export default function ProfileEditor() {
         }
       }
 
-      const is_selected = selected_mod
-        ? mod.manifest.meta.uuid === selected_mod.manifest.meta.uuid &&
-          mod.manifest.meta.version === selected_mod.manifest.meta.version
-        : false
-
       return (
         <div key={index}>
           <div className="list_item flex flex-row">
             <div
               className="flex flex-grow inset_button cursor-pointer"
-              onClick={() => SetSelectedMod(is_selected ? undefined : mod)}
+              onClick={() => SetOpen(!open)}
             >
               <div className="flex flex-row w-full justify-between items-center p-[8px]">
                 <div className="flex flex-row gap-[8px]">
@@ -138,7 +130,7 @@ export default function ProfileEditor() {
                 </div>
                 <div className="w-[30px] h-[30px] p-[10px]">
                   <img
-                    src={is_selected ? `images/icons/chevron-up.png` : `images/icons/chevron-down.png`}
+                    src={open ? `images/icons/chevron-up.png` : `images/icons/chevron-down.png`}
                     className="w-full h-full pixelated"
                     alt=""
                   />
@@ -157,7 +149,7 @@ export default function ProfileEditor() {
             </div>
           </div>
           <div
-            className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${is_selected ? '' : 'hidden'}`}
+            className={`flex flex-col p-[8px] bg-[#313233] border-[3px] m-[-3px] border-[#1e1e1f] overflow-hidden ${open ? '' : 'hidden'}`}
           >
             <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
               {typeof mod.manifest.meta.author === 'string'
@@ -170,9 +162,7 @@ export default function ProfileEditor() {
           </div>
         </div>
       )
-    },
-    [profile_mods]
-  )
+    }
 
   useEffect(() => {
     if (profile) {
@@ -268,9 +258,6 @@ export default function ProfileEditor() {
     }
   }, [mods, profile_mods])
 
-  const [selected_active_mod, SetSelectedActiveMod] = useState<Shard.Extra | undefined>(undefined)
-  const [selected_inactive_mod, SetSelectedInactiveMod] = useState<Shard.Extra | undefined>(undefined)
-
   const SelectPath = useCallback(() => {
     const args: Electron.OpenDialogOptions = {
       defaultPath: profile_path,
@@ -345,7 +332,7 @@ export default function ProfileEditor() {
                 <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
                   {active_mods.length > 0 ? (
                     active_mods.map((mod, index) => {
-                      return ModButton(mod, true, index, selected_active_mod, SetSelectedActiveMod)
+                      return ModButton(mod, true, index)
                     })
                   ) : (
                     <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
@@ -371,7 +358,7 @@ export default function ProfileEditor() {
                 <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
                   {inactive_mods.length > 0 ? (
                     inactive_mods.map((mod, index) => {
-                      return ModButton(mod, false, index, selected_inactive_mod, SetSelectedInactiveMod)
+                      return ModButton(mod, false, index)
                     })
                   ) : (
                     <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
