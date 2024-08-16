@@ -91,8 +91,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 
   // Initialize Data like all mods and existing profiles
   useEffect(() => {
-    SetRuntimes(shards.filter(s => s.manifest.meta.format === 1))
-    SetMods(shards.filter(s => s.manifest.meta.format === 0 || s.manifest.meta.format === undefined))
+    SetRuntimes(shards.filter(s => s.manifest.meta.format === Shard.Format.Runtime))
+    SetMods(shards.filter(s => s.manifest.meta.format === Shard.Format.Mod || s.manifest.meta.format === undefined))
 
     SetDeveloperMode(config.developer_mode)
     SetSelectedProfile(config.selected_profile)
