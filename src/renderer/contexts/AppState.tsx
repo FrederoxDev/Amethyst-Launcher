@@ -34,8 +34,11 @@ interface TAppStateContext {
   developer_mode: boolean
   SetDeveloperMode: React.Dispatch<React.SetStateAction<boolean>>
 
-  active_profile: number | undefined
-  SetActiveProfile: React.Dispatch<React.SetStateAction<number | undefined>>
+  selected_profile: number | undefined
+  SetSelectedProfile: React.Dispatch<React.SetStateAction<number | undefined>>
+
+  registered_profile: number | undefined
+  SetRegisteredProfile: React.Dispatch<React.SetStateAction<number | undefined>>
 
   loading_percent: number
   SetLoadingPercent: React.Dispatch<React.SetStateAction<number>>
@@ -74,7 +77,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   // CONFIG
   const [theme, SetTheme] = useState<'Light' | 'Dark' | 'System'>('System')
   const [developer_mode, SetDeveloperMode] = useState<boolean>(false)
-  const [active_profile, SetActiveProfile] = useState<number | undefined>(undefined)
+  const [selected_profile, SetSelectedProfile] = useState<number | undefined>(undefined)
+  const [registered_profile, SetRegisteredProfile] = useState<number | undefined>(undefined)
 
   // STATUS
   const [loading_percent, SetLoadingPercent] = useState<number>(0)
@@ -91,9 +95,10 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     SetMods(shards.filter(s => s.manifest.meta.format === 0 || s.manifest.meta.format === undefined))
 
     SetDeveloperMode(config.developer_mode)
-    SetActiveProfile(config.active_profile)
+    SetSelectedProfile(config.selected_profile)
+    SetRegisteredProfile(config.registered_profile)
     SetTheme(config.theme)
-  }, [config.active_profile, config.developer_mode, config.theme, shards])
+  }, [config.selected_profile, config.developer_mode, config.theme, shards, config.registered_profile])
 
   useEffect(() => {
     FetchAvailableVersions().then(() => {
@@ -108,13 +113,14 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 
     const config: Config = {
       theme: theme,
-      active_profile: active_profile,
+      selected_profile: selected_profile,
+      registered_profile: registered_profile,
       developer_mode: developer_mode
     }
 
     Config.Set(config)
     SetConfig(config)
-  }, [profiles, active_profile, developer_mode, theme])
+  }, [profiles, theme, selected_profile, registered_profile, developer_mode])
 
   const UpdateProxyConfig = useCallback(
     (profile: Profile) => {
@@ -148,6 +154,12 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     },
     [developer_mode]
   )
+  
+  useEffect(() => {
+    proxy_config.developer_mode = developer_mode;
+
+    ProxyConfig.Set(proxy_config)
+  }, [developer_mode, proxy_config])
 
   useEffect(() => {
     if (!initialized) {
@@ -156,17 +168,17 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     }
 
     SaveState()
-  }, [profiles, active_profile, developer_mode, initialized, SaveState])
+  }, [profiles, selected_profile, registered_profile, developer_mode, initialized, SaveState])
 
   useEffect(() => {
-    if (active_profile && profiles[active_profile] === undefined) {
+    if (selected_profile !== undefined && profiles[selected_profile] === undefined) {
       if (profiles.length > 0) {
-        SetActiveProfile(profiles.length - 1)
+        SetSelectedProfile(profiles.length - 1)
       } else {
-        SetActiveProfile(undefined)
+        SetSelectedProfile(undefined)
       }
     }
-  }, [active_profile, profiles])
+  }, [selected_profile, profiles])
 
   useEffect(() => {
     ipcRenderer.send('WINDOW_UI_THEME', theme)
@@ -193,8 +205,10 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         SetTheme: SetTheme,
         developer_mode: developer_mode,
         SetDeveloperMode: SetDeveloperMode,
-        active_profile: active_profile,
-        SetActiveProfile: SetActiveProfile,
+        selected_profile: selected_profile,
+        SetSelectedProfile: SetSelectedProfile,
+        registered_profile: registered_profile,
+        SetRegisteredProfile: SetRegisteredProfile,
 
         loading_percent: loading_percent,
         SetLoadingPercent: SetLoadingPercent,
