@@ -154,9 +154,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     },
     [developer_mode]
   )
-  
+
   useEffect(() => {
-    proxy_config.developer_mode = developer_mode;
+    proxy_config.developer_mode = developer_mode
 
     ProxyConfig.Set(proxy_config)
   }, [developer_mode, proxy_config])

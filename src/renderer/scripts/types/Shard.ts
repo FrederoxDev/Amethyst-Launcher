@@ -9,14 +9,14 @@ import AJV_Instance from '../schemas/AJV_Instance'
 export namespace Shard {
   // region Shard.Format
   export enum Format {
-    Mod = "MOD",
-    Runtime = "RUNTIME"
+    Mod = 'MOD',
+    Runtime = 'RUNTIME'
   }
 
   export namespace Format {
     export const Schema: JSONSchemaType<Format> = {
       type: 'string',
-      enum: ["MOD", "RUNTIME"]
+      enum: ['MOD', 'RUNTIME']
     }
     export const Validator = AJV_Instance.compile<Format>(Schema)
   }

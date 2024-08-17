@@ -12,8 +12,7 @@ import { Version } from '../scripts/types/Version'
 import { Config, ProxyConfig } from '../scripts/types/Config'
 
 export default function Settings() {
-  const { developer_mode, SetDeveloperMode, theme, SetTheme, profiles, selected_profile } =
-    UseAppState()
+  const { developer_mode, SetDeveloperMode, theme, SetTheme, profiles, selected_profile } = UseAppState()
 
   const isWindowsDevModeOn = IsDevModeEnabled()
 
@@ -35,10 +34,10 @@ export default function Settings() {
   }, [profile])
 
   const installDir = GetPackagePath() ?? 'Could not find installed.'
-  
+
   const config = Config.Get()
   const proxy_config = ProxyConfig.Get()
-  
+
   const config_text = useMemo(() => {
     return JSON.stringify(config, undefined, 4)
   }, [config])

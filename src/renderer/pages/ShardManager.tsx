@@ -25,7 +25,7 @@ export default function ShardManager() {
     child.spawn(explorer_cmd, { shell: true })
   }, [])
 
-  const ShardButton = ({shard}: { shard: Shard.Extra }) => {
+  const ShardButton = ({ shard }: { shard: Shard.Extra }) => {
     const [open, SetOpen] = useState<boolean>(false)
 
     let icon_path = shard.icon_path
@@ -89,8 +89,7 @@ export default function ShardManager() {
             {'Version: ' + shard.manifest.meta.version}
           </p>
           <div className="flex flex-row gap-[4px] justify-between">
-            <p
-              className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+            <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
               {'Path: ' + shard.path}
             </p>
             <div className="flex flex-row gap-[4px]">
@@ -123,20 +122,18 @@ export default function ShardManager() {
         <div className="flex flex-col gap-[24px]">
           <div className="flex flex-col w-full">
             <div className="flex flex-row w-full align-bottom">
-              <div
-                className="border-[3px] bg-[#48494a] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
+              <div className="border-[3px] bg-[#48494a] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
                 <p className="minecraft-seven text-white text-[14px]">Runtimes</p>
               </div>
               <div className="flex flex-col grow-[1] h-fit mt-auto">
                 <div className="mt-auto bg-[#1E1E1F] h-[3px] " />
-                <div
-                  className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] bg-[#48494a] border-l-[#48494a] h-[7px] grow-[1]" />
+                <div className="mt-auto border-x-[3px] box-content border-r-[#1E1E1F] bg-[#48494a] border-l-[#48494a] h-[7px] grow-[1]" />
               </div>
             </div>
             <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
               {runtimes.length > 0 ? (
                 runtimes.map((shard, index) => {
-                  return <ShardButton shard={shard} key={index}/>
+                  return <ShardButton shard={shard} key={index} />
                 })
               ) : (
                 <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
@@ -163,7 +160,7 @@ export default function ShardManager() {
             <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
               {mods.length > 0 ? (
                 mods.map((shard, index) => {
-                  return <ShardButton shard={shard} key={index}/>
+                  return <ShardButton shard={shard} key={index} />
                 })
               ) : (
                 <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">

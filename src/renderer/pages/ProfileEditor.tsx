@@ -71,7 +71,7 @@ export default function ProfileEditor() {
     }
   })
 
-  const ModButton = ({ mod, active }: { mod: Shard.Extra, active: boolean }) => {
+  const ModButton = ({ mod, active }: { mod: Shard.Extra; active: boolean }) => {
     const [open, SetOpen] = useState<boolean>(false)
 
     let icon_path = mod.icon_path
@@ -111,10 +111,7 @@ export default function ProfileEditor() {
     return (
       <>
         <div className="list_item flex flex-row">
-          <div
-            className="flex flex-grow inset_button cursor-pointer"
-            onClick={() => SetOpen(!open)}
-          >
+          <div className="flex flex-grow inset_button cursor-pointer" onClick={() => SetOpen(!open)}>
             <div className="flex flex-row w-full justify-between items-center p-[8px]">
               <div className="flex flex-row gap-[8px]">
                 <div className="w-[30px] h-[30px] border-[3px] border-[#1E1E1F] box-content">
@@ -177,12 +174,23 @@ export default function ProfileEditor() {
       }
 
       SaveState()
-      
+
       if (index == registered_profile) {
         UpdateProxyConfig(profile)
       }
     }
-  }, [SaveState, profile, profile_mods, profile_name, profile_runtime, profile_version, profile_path, index, registered_profile, UpdateProxyConfig])
+  }, [
+    SaveState,
+    profile,
+    profile_mods,
+    profile_name,
+    profile_runtime,
+    profile_version,
+    profile_path,
+    index,
+    registered_profile,
+    UpdateProxyConfig
+  ])
 
   const DeleteProfile = () => {
     if (index !== undefined) {
@@ -220,7 +228,7 @@ export default function ProfileEditor() {
 
     const runtime_names = runtime_options.map(r => {
       if (r) {
-        return `${ r.manifest.meta.name } ${ r.manifest.meta.version }`
+        return `${r.manifest.meta.name} ${r.manifest.meta.version}`
       } else return 'Vanilla'
     })
 
@@ -327,7 +335,7 @@ export default function ProfileEditor() {
                 <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
                   {active_mods.length > 0 ? (
                     active_mods.map((mod, index) => {
-                      return <ModButton mod={mod} active={true} key={index}/>
+                      return <ModButton mod={mod} active={true} key={index} />
                     })
                   ) : (
                     <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
@@ -353,7 +361,7 @@ export default function ProfileEditor() {
                 <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
                   {inactive_mods.length > 0 ? (
                     inactive_mods.map((mod, index) => {
-                      return <ModButton mod={mod} active={false} key={index}/>
+                      return <ModButton mod={mod} active={false} key={index} />
                     })
                   ) : (
                     <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">

@@ -16,8 +16,8 @@ export default function VersionManager() {
     SetVersions(GetVersions())
   }
 
-  const VersionButton = ({version, OnDelete}: { version: Version, OnDelete:() => void }) => {
-    const [open , SetOpen] = useState<boolean>(false)
+  const VersionButton = ({ version, OnDelete }: { version: Version; OnDelete: () => void }) => {
+    const [open, SetOpen] = useState<boolean>(false)
 
     function DeleteVersion() {
       const message_args = {
@@ -104,8 +104,7 @@ export default function VersionManager() {
           </p>
           {version.path !== undefined && (
             <div className="flex flex-row gap-[4px] justify-between">
-              <p
-                className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
+              <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
                 {'Path: ' + version.path}
               </p>
               <div className="flex flex-row gap-[4px]">
@@ -138,8 +137,7 @@ export default function VersionManager() {
       <div className="flex flex-col gap-[24px]">
         <div className="flex flex-col w-full">
           <div className="flex flex-row w-full align-bottom">
-            <div
-              className="border-[3px] bg-[#48494a] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
+            <div className="border-[3px] bg-[#48494a] border-[#1E1E1F] border-b-[0px] px-[8px] py-[4px] w-fit mr-[-3px]">
               <p className="minecraft-seven text-white text-[14px]">Versions</p>
             </div>
             <div className="flex flex-col grow-[1] h-fit mt-auto">
@@ -150,7 +148,7 @@ export default function VersionManager() {
           <div className="flex flex-col w-full gap-[3px] border-[3px] border-[#1E1E1F] bg-[#313233]">
             {versions.length > 0 ? (
               versions.map((version, index) => {
-                return <VersionButton version={version} OnDelete={RefreshVersions} key={index}/>
+                return <VersionButton version={version} OnDelete={RefreshVersions} key={index} />
               })
             ) : (
               <div className="flex flex-col gap-[4px] flex-grow h-[58px] justify-center items-center">
