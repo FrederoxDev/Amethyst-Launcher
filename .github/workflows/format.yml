@@ -27,4 +27,4 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           npx prettier --write src/**/*
           git commit -am "Format"
-          git push https://github.com/${{ github.repository }} HEAD:main
+          git push https://github.com/${{ github.repository }} HEAD:${{ github.ref_name }}
