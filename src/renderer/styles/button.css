@@ -1,6 +1,6 @@
 .button_base {
   width: 100%;
-  height: 51px;
+  height: 54px;
 }
 
 .button_border {
@@ -9,6 +9,18 @@
   border-color: #1e1e1f;
   cursor: pointer;
 }
+
+/*@media (prefers-color-scheme: dark) {*/
+/*  .button_border {*/
+/*    border-color: #1e1e1f;*/
+/*  }*/
+/*}*/
+
+/*@media (prefers-color-scheme: light) {*/
+/*  .button_border {*/
+/*    border-color: #b1b2b5;*/
+/*  }*/
+/*}*/
 
 .button_border:active {
   transform: translateY(5px);
@@ -31,6 +43,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 4px;
 }
 
 .button_top.warn {

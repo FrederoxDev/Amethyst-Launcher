@@ -1,6 +1,6 @@
 {
   "name": "amethyst-launcher",
-  "version": "2.5.3",
+  "version": "3.0.0",
   "author": "FrederoxDev, Adrian8115, OmniacDev",
   "description": "Amethyst Launcher",
   "main": "build/electron/main/main.js",
@@ -16,6 +16,8 @@
     "bump-version": "npm version patch --no-git-tag-version"
   },
   "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
     "electron-updater": "^6.3.0-alpha.6",
     "jszip": "^3.10.1",
     "react": "^18.3.1",
@@ -43,43 +45,5 @@
     "typescript": "^5.2.2",
     "vite": "^5.3.1",
     "vite-plugin-electron": "^0.28.7"
-  },
-  "build": {
-    "productName": "Amethyst-Launcher",
-    "appId": "com.frederoxdev.amethystlauncher",
-    "directories": {
-      "output": "release",
-      "buildResources": "build/public"
-    },
-    "files": [
-      "build/**/*"
-    ],
-    "win": {
-      "target": "nsis",
-      "icon": "public/icons/icon.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "artifactName": "${productName}-${version}.exe"
-    },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "FrederoxDev",
-        "repo": "Amethyst-Launcher"
-      }
-    ],
-    "fileAssociations": [
-      {
-        "ext": [
-          ".amethyst",
-          ".amth"
-        ],
-        "name": "Amethyst Mod",
-        "role": "Editor",
-        "icon": "public/icons/icon.ico"
-      }
-    ]
   }
 }

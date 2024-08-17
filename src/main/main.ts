@@ -1,4 +1,4 @@
-import { app, Menu, BrowserWindow, ipcMain, nativeTheme, MenuItem, dialog } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, nativeTheme } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import * as path from 'node:path'
 import * as fs from 'fs'
@@ -52,7 +52,36 @@ windowMenu.append(new MenuItem({ role: 'toggleDevTools' }))
 windowMenu.append(new MenuItem({ role: 'reload' }))
 Menu.setApplicationMenu(windowMenu)
 
-ipcMain.on('TITLE_BAR_ACTION', (event, args) => {
+const hasSingleInstanceLock = app.requestSingleInstanceLock()
+// Other window is open, so don't create a new one
+if (hasSingleInstanceLock === false) {
+  app.quit()
+}
+// No window is open so create new
+else {
+  app.on('ready', () => {
+    mainWindow = createWindow()
+
+    mainWindow.webContents.once('did-finish-load', () => {
+      mainWindow.webContents.setZoomLevel(0)
+      mainWindow.show()
+    })
+  })
+
+  app.on('second-instance', (_event, argv) => {
+    // When second instance is started, restore and focus on existing one.
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+
+      if (argv[2]) {
+        mainWindow.webContents.send('import-shard', argv[2])
+      }
+    }
+  })
+}
+
+ipcMain.on('TITLE_BAR_ACTION', (_event, args) => {
   switch (args) {
     case 'TOGGLE_MAXIMIZED':
       mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize()
@@ -68,7 +97,7 @@ ipcMain.on('TITLE_BAR_ACTION', (event, args) => {
   }
 })
 
-ipcMain.on('WINDOW_UI_THEME', (event, args) => {
+ipcMain.on('WINDOW_UI_THEME', (_event, args) => {
   switch (args) {
     case 'Light':
       nativeTheme.themeSource = 'light'
@@ -85,6 +114,10 @@ ipcMain.on('WINDOW_UI_THEME', (event, args) => {
   }
 })
 
+ipcMain.handle('get-process-argv', () => {
+  return process.argv
+})
+
 ipcMain.handle('get-app-path', () => {
   return app.getAppPath()
 })
@@ -97,37 +130,13 @@ ipcMain.handle('get-localappdata-path', () => {
   return process.env.LOCALAPPDATA
 })
 
-ipcMain.handle('show-dialog', async (event, args) => {
+ipcMain.handle('show-dialog', async (_event, args) => {
   return await dialog.showOpenDialog(args)
 })
 
-ipcMain.handle('show-message', async (event, args) => {
+ipcMain.handle('show-message', async (_event, args) => {
   return await dialog.showMessageBox(args)
 })
-
-const hasSingleInstanceLock = app.requestSingleInstanceLock()
-// Other window is open, so don't create a new one
-if (hasSingleInstanceLock === false) {
-  app.quit()
-}
-// No window is open so create new
-else {
-  app.on('ready', () => {
-    mainWindow = createWindow()
-
-    mainWindow.webContents.once('did-finish-load', () => {
-      mainWindow.show()
-    })
-  })
-
-  app.on('second-instance', () => {
-    // When second instance is started, restore and focus on existing one.
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore()
-      mainWindow.focus()
-    }
-  })
-}
 
 ipcMain.handle('get-app-version', () => {
   return app.getVersion()
@@ -137,11 +146,11 @@ ipcMain.handle('check-for-updates', () => {
   autoUpdater.checkForUpdates().then()
 })
 
-ipcMain.handle('set-auto-download', (event, bool) => {
+ipcMain.handle('set-auto-download', (_event, bool) => {
   autoUpdater.autoDownload = bool
 })
 
-ipcMain.handle('set-auto-install-on-app-quit', (event, bool) => {
+ipcMain.handle('set-auto-install-on-app-quit', (_event, bool) => {
   autoUpdater.autoInstallOnAppQuit = bool
 })
 

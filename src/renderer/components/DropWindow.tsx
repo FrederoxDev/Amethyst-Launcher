@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { ModsFolder } from '../scripts/Paths'
+import { FolderPaths } from '../scripts/Paths'
 import { UseAppState } from '../contexts/AppState'
 import { Extractor } from '../scripts/backend/Extractor'
-import { CopyRecursive } from '../scripts/Files'
+import { CopyRecursive } from '../scripts/functions/Files'
 
 import * as fs from 'fs'
 import * as path from 'path'
@@ -10,7 +10,7 @@ import * as path from 'path'
 export default function DropWindow() {
   const [hovered, setHovered] = useState(false)
 
-  const { setError } = UseAppState()
+  const { SetError } = UseAppState()
 
   useEffect(() => {
     let dragCount = 0
@@ -64,7 +64,7 @@ export default function DropWindow() {
     function ImportZIP(zip_path: string) {
       try {
         const zip_name = path.basename(zip_path)
-        const extracted_folder_path = path.join(ModsFolder, zip_name.slice(0, -'.zip'.length))
+        const extracted_folder_path = path.join(FolderPaths.Mods, zip_name.slice(-'.zip'.length))
         console.log(extracted_folder_path)
         Extractor.extractFile(zip_path, extracted_folder_path, [], undefined, success => {
           if (!success) {
@@ -74,16 +74,16 @@ export default function DropWindow() {
           console.log('Successfully extracted Mod ZIP!')
         }).then()
       } catch (error) {
-        setError((error as Error).message)
+        SetError((error as Error).message)
       }
     }
 
     // IMPORT FOLDER
     function ImportFolder(folder_path: string) {
       try {
-        CopyRecursive(folder_path, ModsFolder)
+        CopyRecursive(folder_path, FolderPaths.Mods)
       } catch (error) {
-        setError((error as Error).message)
+        SetError((error as Error).message)
       }
     }
 
@@ -99,11 +99,11 @@ export default function DropWindow() {
       window.removeEventListener('dragleave', dragEnd)
       window.removeEventListener('drop', drop)
     }
-  }, [setError])
+  }, [SetError])
 
   return (
     <div
-      className={`absolute w-full h-full top-0 left-0 pointer-events-none ${hovered ? 'opacity-100' : 'opacity-0'} transition-opacity ease-out duration-150`}
+      className={`absolute w-full h-full top-0 left-0 pointer-events-none ${hovered ? 'opacity-100' : 'opacity-0'} transition-opacity ease-out duration-[150ms]`}
     >
       <div className="absolute pointer-events-none w-full h-full bg-black top-0 left-0 opacity-80" />
 

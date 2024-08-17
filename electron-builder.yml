@@ -1,0 +1,27 @@
+directories:
+  output: release
+  buildResources: build/public
+productName: Amethyst-Launcher
+appId: com.frederoxdev.amethystlauncher
+files:
+  - filter:
+      - build/**/*
+win:
+  target: nsis
+  icon: public/icons/icon.ico
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  artifactName: ${productName}-${version}.exe
+publish:
+  - provider: github
+    owner: FrederoxDev
+    repo: Amethyst-Launcher
+fileAssociations:
+  - ext:
+      - .shard
+    name: Amethyst Mod
+    role: Editor
+    icon: public/icons/icon.ico
+asarUnpack: '*.node'
+electronVersion: 31.1.0

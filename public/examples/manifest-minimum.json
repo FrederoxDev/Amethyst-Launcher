@@ -1,0 +1,9 @@
+{
+  "meta": {
+    "name": "SHARD_NAME",
+    "author": "SHARD_AUTHOR",
+    "uuid": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+    "version": "1.0.0"
+  },
+  "format_version": "3.0.0"
+}

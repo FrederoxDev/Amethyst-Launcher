@@ -3,45 +3,54 @@ import { ipcRenderer } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
 
-// PATHS
 const AppPath: string = await ipcRenderer.invoke('get-app-path')
 const AppDataPath: string = await ipcRenderer.invoke('get-appdata-path')
 const LocalAppDataPath: string = await ipcRenderer.invoke('get-localappdata-path')
 
-const AmethystPath: string = path.join(...[AppDataPath, 'Amethyst'])
-const LauncherPath: string = path.join(...[AmethystPath, 'Launcher'])
-const VersionsPath: string = path.join(...[AmethystPath, 'Versions'])
+namespace UnvalidatedPaths {
+  export namespace Folder {
+    export const Amethyst: string = path.join(AppDataPath, 'Amethyst')
+    export const Launcher: string = path.join(Amethyst, 'Launcher')
+    export const Versions: string = path.join(Amethyst, 'Versions')
+    export const MinecraftUWP: string = path.join(LocalAppDataPath, 'Packages', 'Microsoft.MinecraftUWP_8wekyb3d8bbwe')
+    export const ComMojang: string = path.join(MinecraftUWP, 'LocalState', 'games', 'com.mojang')
+    export const AmethystUWP: string = path.join(ComMojang, 'amethyst')
+    export const Mods: string = path.join(AmethystUWP, 'Mods')
+  }
 
-const VersionsFilePath: string = path.join(...[LauncherPath, 'versions.json'])
-const CachedVersionsFilePath: string = path.join(...[LauncherPath, 'cached_versions.json'])
-const ProfilesFilePath: string = path.join(...[LauncherPath, 'profiles.json'])
+  export namespace File {
+    export const Config: string = path.join(Folder.Launcher, 'config.json')
+    export const Versions: string = path.join(Folder.Launcher, 'versions.json')
+    export const CachedVersions: string = path.join(Folder.Launcher, 'cached_versions.json')
+    export const Profiles: string = path.join(Folder.Launcher, 'profiles.json')
+    // TODO: Change proxy config file name to 'proxy_config.json'
+    export const ProxyConfig: string = path.join(Folder.AmethystUWP, 'launcher_config.json')
+  }
+}
 
-const MinecraftUWPPath: string = path.join(...[LocalAppDataPath, 'Packages', 'Microsoft.MinecraftUWP_8wekyb3d8bbwe'])
-const ComMojangPath: string = path.join(...[MinecraftUWPPath, 'LocalState', 'games', 'com.mojang'])
-const AmethystUWPPath: string = path.join(...[ComMojangPath, 'amethyst'])
+export namespace FolderPaths {
+  export const App: string = AppPath
+  export const AppData: string = AppDataPath
+  export const LocalAppData: string = LocalAppDataPath
 
-const ModsPath: string = path.join(...[AmethystUWPPath, 'Mods'])
-const LauncherConfigPath: string = path.join(...[AmethystUWPPath, 'launcher_config.json'])
+  export const Amethyst: string = ValidatePath(UnvalidatedPaths.Folder.Amethyst)
+  export const Launcher: string = ValidatePath(UnvalidatedPaths.Folder.Launcher)
+  export const Versions: string = ValidatePath(UnvalidatedPaths.Folder.Versions)
+  export const Mods: string = ValidatePath(UnvalidatedPaths.Folder.Mods)
 
-// VALIDATED PATHS
-export const ElectronAppPath: string = AppPath
+  export const ComMojang: string = ValidatePath(UnvalidatedPaths.Folder.ComMojang)
+  export const MinecraftUWP: string = ValidatePath(UnvalidatedPaths.Folder.MinecraftUWP)
+  export const AmethystUWP: string = ValidatePath(UnvalidatedPaths.Folder.AmethystUWP)
+}
 
-export const AmethystFolder: string = ValidatePath(AmethystPath)
-export const LauncherFolder: string = ValidatePath(LauncherPath)
-export const VersionsFolder: string = ValidatePath(VersionsPath)
+export namespace FilePaths {
+  export const Config: string = ValidatePath(UnvalidatedPaths.File.Config)
+  export const Versions: string = ValidatePath(UnvalidatedPaths.File.Versions)
+  export const CachedVersions: string = ValidatePath(UnvalidatedPaths.File.CachedVersions)
+  export const Profiles: string = ValidatePath(UnvalidatedPaths.File.Profiles)
+  export const ProxyConfig: string = ValidatePath(UnvalidatedPaths.File.ProxyConfig)
+}
 
-export const VersionsFile: string = ValidatePath(VersionsFilePath)
-export const CachedVersionsFile: string = ValidatePath(CachedVersionsFilePath)
-export const ProfilesFile: string = ValidatePath(ProfilesFilePath)
-
-export const MinecraftUWPFolder: string = ValidatePath(MinecraftUWPPath)
-export const ComMojangFolder: string = ValidatePath(ComMojangPath)
-export const AmethystUWPFolder: string = ValidatePath(AmethystUWPPath)
-
-export const ModsFolder: string = ValidatePath(ModsPath)
-export const LauncherConfigFile: string = ValidatePath(LauncherConfigPath)
-
-// PATH FUNCTIONS
 export function ValidatePath(in_path: string): string {
   if (!fs.existsSync(in_path)) {
     const in_path_dir: string = path.dirname(in_path)

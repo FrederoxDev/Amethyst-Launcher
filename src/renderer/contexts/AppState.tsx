@@ -1,146 +1,229 @@
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react'
 
-import { FetchMinecraftVersions, MinecraftVersion } from '../scripts/Versions'
-import { LauncherConfig, GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
-import { GetProfiles, Profile, SetProfiles } from '../scripts/Profiles'
+import { FetchAvailableVersions, GetCachedVersions, Version } from '../scripts/types/Version'
+
+import { GetProfiles, Profile, SetProfiles as SetProfilesFile } from '../scripts/types/Profile'
 
 import { ipcRenderer } from 'electron'
-import { GetMods } from '../scripts/Mods'
+import Shard, { FindExtraShard, FindExtraShards, GetExtraShards } from '../scripts/types/Shard'
+import { Config, ProxyConfig } from '../scripts/types/Config'
+import path from 'path'
 
 interface TAppStateContext {
-  allMods: string[]
-  setAllMods: React.Dispatch<React.SetStateAction<string[]>>
+  mods: Shard.Extra[]
+  SetMods: React.Dispatch<React.SetStateAction<Shard.Extra[]>>
 
-  allRuntimes: string[]
-  setAllRuntimes: React.Dispatch<React.SetStateAction<string[]>>
+  runtimes: Shard.Extra[]
+  SetRuntimes: React.Dispatch<React.SetStateAction<Shard.Extra[]>>
 
-  allMinecraftVersions: MinecraftVersion[]
-  setAllMinecraftVersions: React.Dispatch<React.SetStateAction<MinecraftVersion[]>>
+  shards: Shard.Extra[]
+  SetShards: React.Dispatch<React.SetStateAction<Shard.Extra[]>>
 
-  allProfiles: Profile[]
-  setAllProfiles: React.Dispatch<React.SetStateAction<Profile[]>>
+  versions: Version.Cached[]
+  SetVersions: React.Dispatch<React.SetStateAction<Version.Cached[]>>
 
-  selectedProfile: number
-  setSelectedProfile: React.Dispatch<React.SetStateAction<number>>
+  profiles: Profile[]
+  SetProfiles: React.Dispatch<React.SetStateAction<Profile[]>>
 
-  UITheme: string
-  setUITheme: React.Dispatch<React.SetStateAction<string>>
+  index$profile_editor: number | undefined
+  SetIndex$ProfileEditor: React.Dispatch<React.SetStateAction<number | undefined>>
 
-  keepLauncherOpen: boolean
-  setKeepLauncherOpen: React.Dispatch<React.SetStateAction<boolean>>
+  theme: string
+  SetTheme: React.Dispatch<React.SetStateAction<'Light' | 'Dark' | 'System'>>
 
-  developerMode: boolean
-  setDeveloperMode: React.Dispatch<React.SetStateAction<boolean>>
+  developer_mode: boolean
+  SetDeveloperMode: React.Dispatch<React.SetStateAction<boolean>>
 
-  loadingPercent: number
-  setLoadingPercent: React.Dispatch<React.SetStateAction<number>>
+  selected_profile: number | undefined
+  SetSelectedProfile: React.Dispatch<React.SetStateAction<number | undefined>>
 
-  isLoading: boolean
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+  registered_profile: number | undefined
+  SetRegisteredProfile: React.Dispatch<React.SetStateAction<number | undefined>>
+
+  loading_percent: number
+  SetLoadingPercent: React.Dispatch<React.SetStateAction<number>>
+
+  is_loading: boolean
+  SetIsLoading: React.Dispatch<React.SetStateAction<boolean>>
 
   status: string
-  setStatus: React.Dispatch<React.SetStateAction<string>>
+  SetStatus: React.Dispatch<React.SetStateAction<string>>
 
   error: string
-  setError: React.Dispatch<React.SetStateAction<string>>
+  SetError: React.Dispatch<React.SetStateAction<string>>
+
+  config: Config
+  proxy_config: ProxyConfig
 
   // Expose functions
-  saveData: () => void
+  SaveState: () => void
+
+  UpdateProxyConfig: (profile: Profile) => void
 }
 
 const AppStateContext = createContext<TAppStateContext | undefined>(undefined)
 
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
-  const [allMods, setAllMods] = useState<string[]>([])
-  const [allRuntimes, setAllRuntimes] = useState<string[]>([])
-  const [allMinecraftVersions, setAllMinecraftVersions] = useState<MinecraftVersion[]>([])
-  const [allProfiles, setAllProfiles] = useState<Profile[]>([])
-  const [selectedProfile, setSelectedProfile] = useState(0)
-  const [UITheme, setUITheme] = useState('System')
-  const [keepLauncherOpen, setKeepLauncherOpen] = useState(true)
-  const [developerMode, setDeveloperMode] = useState(false)
-  const [loadingPercent, setLoadingPercent] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
-  const [status, setStatus] = useState('')
-  const [error, setError] = useState('')
+  // CACHE
+  const [mods, SetMods] = useState<Shard.Extra[]>([])
+  const [runtimes, SetRuntimes] = useState<Shard.Extra[]>([])
+  const [shards, SetShards] = useState<Shard.Extra[]>(GetExtraShards)
+  const [versions, SetVersions] = useState<Version.Cached[]>(GetCachedVersions)
+  const [profiles, SetProfiles] = useState<Profile[]>(GetProfiles)
 
-  // Initialize Data like all mods and existing profiles..
+  // PROFILE EDITOR
+  const [index$profile_editor, SetIndex$ProfileEditor] = useState<number | undefined>(undefined)
+
+  // CONFIG
+  const [theme, SetTheme] = useState<'Light' | 'Dark' | 'System'>('System')
+  const [developer_mode, SetDeveloperMode] = useState<boolean>(false)
+  const [selected_profile, SetSelectedProfile] = useState<number | undefined>(undefined)
+  const [registered_profile, SetRegisteredProfile] = useState<number | undefined>(undefined)
+
+  // STATUS
+  const [loading_percent, SetLoadingPercent] = useState<number>(0)
+  const [is_loading, SetIsLoading] = useState<boolean>(false)
+  const [status, SetStatus] = useState<string>('')
+  const [error, SetError] = useState<string>('')
+
+  const [config, SetConfig] = useState<Config>(Config.Get)
+  const [proxy_config, SetProxyConfig] = useState<ProxyConfig>(ProxyConfig.Get)
+
+  // Initialize Data like all mods and existing profiles
   useEffect(() => {
-    setAllProfiles(GetProfiles())
+    SetRuntimes(shards.filter(s => s.manifest.meta.format === Shard.Format.Runtime))
+    SetMods(shards.filter(s => s.manifest.meta.format === Shard.Format.Mod || s.manifest.meta.format === undefined))
 
-    const modList = GetMods()
-    setAllRuntimes(['Vanilla', ...modList.runtimeMods])
-    setAllMods(modList.mods)
+    SetDeveloperMode(config.developer_mode)
+    SetSelectedProfile(config.selected_profile)
+    SetRegisteredProfile(config.registered_profile)
+    SetTheme(config.theme)
+  }, [config.selected_profile, config.developer_mode, config.theme, shards, config.registered_profile])
 
-    const readConfig = GetLauncherConfig()
-    setKeepLauncherOpen(readConfig.keep_open ?? true)
-    setDeveloperMode(readConfig.developer_mode ?? false)
-    setSelectedProfile(readConfig.selected_profile ?? 0)
-    setUITheme(readConfig.ui_theme ?? 'Light')
-
-    FetchMinecraftVersions().then(versions => {
-      setAllMinecraftVersions(versions)
+  useEffect(() => {
+    FetchAvailableVersions().then(() => {
+      SetVersions(GetCachedVersions)
     })
   }, [])
 
-  const [hasInitialized, setHasInitialized] = useState(false)
+  const [initialized, SetInitialized] = useState(false)
 
-  const saveData = useCallback(() => {
-    SetProfiles(allProfiles)
+  const SaveState = useCallback(() => {
+    SetProfilesFile(profiles)
 
-    const launcherConfig: LauncherConfig = {
-      developer_mode: developerMode,
-      keep_open: keepLauncherOpen,
-      mods: allProfiles[selectedProfile]?.mods ?? [],
-      runtime: allProfiles[selectedProfile]?.runtime ?? '',
-      selected_profile: selectedProfile,
-      ui_theme: UITheme
+    const config: Config = {
+      theme: theme,
+      selected_profile: selected_profile,
+      registered_profile: registered_profile,
+      developer_mode: developer_mode
     }
 
-    SetLauncherConfig(launcherConfig)
-  }, [allProfiles, developerMode, keepLauncherOpen, selectedProfile, UITheme])
+    Config.Set(config)
+    SetConfig(config)
+  }, [profiles, theme, selected_profile, registered_profile, developer_mode])
+
+  const UpdateProxyConfig = useCallback(
+    (profile: Profile) => {
+      let profile_mods: string[] = []
+      let profile_runtime: string = 'Vanilla'
+
+      if (profile) {
+        if (profile.mods) {
+          const mod_shards = FindExtraShards(profile.mods)
+
+          profile_mods = mod_shards.map(m => path.basename(m.path))
+        }
+
+        if (profile.runtime) {
+          const found = FindExtraShard(profile.runtime)
+
+          if (found) {
+            profile_runtime = path.basename(found.path)
+          }
+        }
+      }
+
+      const runtime_config: ProxyConfig = {
+        developer_mode: developer_mode,
+        runtime: profile_runtime,
+        mods: profile_mods
+      }
+
+      ProxyConfig.Set(runtime_config)
+      SetProxyConfig(ProxyConfig.Get)
+    },
+    [developer_mode]
+  )
+  
+  useEffect(() => {
+    proxy_config.developer_mode = developer_mode;
+
+    ProxyConfig.Set(proxy_config)
+  }, [developer_mode, proxy_config])
 
   useEffect(() => {
-    if (!hasInitialized) {
-      setHasInitialized(true)
+    if (!initialized) {
+      SetInitialized(true)
       return
     }
 
-    saveData()
-  }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode, hasInitialized, saveData])
+    SaveState()
+  }, [profiles, selected_profile, registered_profile, developer_mode, initialized, SaveState])
 
   useEffect(() => {
-    ipcRenderer.send('WINDOW_UI_THEME', UITheme)
-  }, [UITheme])
+    if (selected_profile !== undefined && profiles[selected_profile] === undefined) {
+      if (profiles.length > 0) {
+        SetSelectedProfile(profiles.length - 1)
+      } else {
+        SetSelectedProfile(undefined)
+      }
+    }
+  }, [selected_profile, profiles])
+
+  useEffect(() => {
+    ipcRenderer.send('WINDOW_UI_THEME', theme)
+  }, [theme])
 
   return (
     <AppStateContext.Provider
       value={{
-        allMods,
-        setAllMods,
-        allRuntimes,
-        setAllRuntimes,
-        allMinecraftVersions,
-        setAllMinecraftVersions,
-        allProfiles,
-        setAllProfiles,
-        selectedProfile,
-        setSelectedProfile,
-        UITheme,
-        setUITheme,
-        keepLauncherOpen,
-        setKeepLauncherOpen,
-        developerMode,
-        setDeveloperMode,
-        loadingPercent,
-        setLoadingPercent,
-        isLoading,
-        setIsLoading,
+        mods: mods,
+        SetMods: SetMods,
+        runtimes: runtimes,
+        SetRuntimes: SetRuntimes,
+        shards: shards,
+        SetShards: SetShards,
+        versions: versions,
+        SetVersions: SetVersions,
+        profiles: profiles,
+        SetProfiles: SetProfiles,
+
+        index$profile_editor: index$profile_editor,
+        SetIndex$ProfileEditor: SetIndex$ProfileEditor,
+
+        theme: theme,
+        SetTheme: SetTheme,
+        developer_mode: developer_mode,
+        SetDeveloperMode: SetDeveloperMode,
+        selected_profile: selected_profile,
+        SetSelectedProfile: SetSelectedProfile,
+        registered_profile: registered_profile,
+        SetRegisteredProfile: SetRegisteredProfile,
+
+        loading_percent: loading_percent,
+        SetLoadingPercent: SetLoadingPercent,
+        is_loading: is_loading,
+        SetIsLoading: SetIsLoading,
         status,
-        setStatus,
-        saveData,
-        error,
-        setError
+        SetStatus: SetStatus,
+        SaveState: SaveState,
+        error: error,
+        SetError: SetError,
+
+        config: config,
+        proxy_config: proxy_config,
+
+        UpdateProxyConfig: UpdateProxyConfig
       }}
     >
       {children}

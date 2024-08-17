@@ -1,0 +1,28 @@
+.inset_button {
+  border-width: 3px;
+
+  background-color: #48494a;
+
+  border-bottom-color: #333334;
+  border-right-color: #333334;
+  border-top-color: #5a5b5c;
+  border-left-color: #5a5b5c;
+}
+
+.inset_button:hover {
+  background-color: #58585a;
+
+  border-bottom-color: #3e3e3f;
+  border-right-color: #3e3e3f;
+  border-top-color: #68686a;
+  border-left-color: #68686a;
+}
+
+.inset_button:active {
+  background-color: #313233;
+
+  border-bottom-color: #222324;
+  border-right-color: #222324;
+  border-top-color: #454647;
+  border-left-color: #454647;
+}

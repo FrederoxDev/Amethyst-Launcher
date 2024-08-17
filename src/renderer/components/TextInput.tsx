@@ -1,3 +1,5 @@
+import React from 'react'
+
 export type TextInputProps = {
   label: string
   text: string
@@ -6,12 +8,12 @@ export type TextInputProps = {
 
 export default function TextInput({ label, text, setText }: TextInputProps) {
   return (
-    <div>
+    <div className="flex flex-col gap-[4px]">
       <p className="minecraft-seven text-white text-[14px]">{label}</p>
-      <div className="border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233]">
+      <div className="flex border-[3px] h-[25px] border-[#1E1E1F] bg-[#313233] justify-center p-[4px]">
         <input
           type="text"
-          className="w-full minecraft-seven outline-none bg-transparent translate-y-[1px] pl-[4px] text-white text-[12px]"
+          className="w-full minecraft-seven bg-transparent text-white text-[12px]"
           spellCheck={false}
           value={text}
           onInput={event => {

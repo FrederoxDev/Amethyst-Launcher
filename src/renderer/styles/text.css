@@ -1,0 +1,53 @@
+/*noinspection CssUnknownTarget*/
+@font-face {
+  font-family: 'Minecraft-Ten';
+  src: url('/fonts/Minecraft-Ten.ttf') format('truetype');
+}
+
+/*noinspection CssUnknownTarget*/
+@font-face {
+  font-family: 'Minecraft-Seven';
+  src: url('/fonts/Minecraft-Seven.ttf') format('truetype');
+}
+
+/*noinspection CssUnknownTarget*/
+@font-face {
+  font-family: 'Minecraft-Five';
+  src: url('/fonts/extra/Minecraft-Five.otf') format('opentype');
+}
+
+.minecraft-seven {
+  font-family: 'Minecraft-Seven', sans-serif;
+  image-rendering: auto;
+  letter-spacing: 0.5px;
+  align-content: center;
+  line-height: 1;
+}
+
+.minecraft-five {
+  font-family: 'Minecraft-Five', sans-serif;
+  image-rendering: auto;
+  letter-spacing: 0.5px;
+  align-content: center;
+  line-height: 1;
+}
+
+.minecraft-ten {
+  font-family: 'Minecraft-Ten', sans-serif;
+  image-rendering: auto;
+  letter-spacing: 0.1px;
+  align-content: center;
+  line-height: 1;
+}
+
+/*@media (prefers-color-scheme: dark) {*/
+/*    .themed_text {*/
+/*        color: #FFFFFF;*/
+/*    }*/
+/*}*/
+
+/*@media (prefers-color-scheme: light) {*/
+/*    .themed_text {*/
+/*        color: #000000;*/
+/*    }*/
+/*}*/

@@ -6,7 +6,7 @@ import LoadingWheel from '../components/LoadingWheel'
 import PopupPanel from '../components/PopupPanel'
 import { ipcRenderer } from 'electron'
 
-export default function UpdatePage() {
+export default function Update() {
   const [updateAvailable, setUpdateAvailable] = useState<boolean>(false)
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
   const [popupClosed, setPopupClosed] = useState<boolean>(false)

@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "name": "SHARD_NAME",
+    "author": "SHARD_AUTHOR",
+    "description": "SHARD_DESCRIPTION",
+    "uuid": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+    "version": "1.0.0",
+    "format": 0
+  },
+  "format_version": "3.0.0",
+  "dependencies": [
+    {
+      "name": "DEPENDENCY_NAME",
+      "uuid": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+      "version": "1.0.0"
+    }
+  ],
+  "options": [
+    {
+      "type": "text",
+      "properties": {
+        "label": "TEXT_LABEL",
+        "default_value": "TEXT_DEFAULT"
+      }
+    },
+    {
+      "type": "toggle",
+      "properties": {
+        "label": "TOGGLE_LABEL",
+        "default_value": false
+      }
+    },
+    {
+      "type": "radial",
+      "properties": {
+        "label": "RADIAL_LABEL",
+        "options": [
+          "OPTION_1",
+          "OPTION_2",
+          "OPTION_3"
+        ],
+        "default_value": 0
+      }
+    },
+    {
+      "type": "slider",
+      "properties": {
+        "label": "SLIDER_LABEL",
+        "min": 0,
+        "max": 100,
+        "default_value": 0
+      }
+    }
+  ]
+}
