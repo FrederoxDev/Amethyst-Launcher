@@ -7,6 +7,14 @@ import { SemVersion } from './SemVersion'
 import AJV_Instance from '../schemas/AJV_Instance'
 
 export namespace Shard {
+  export interface Invalid {
+    errors: string[]
+    path: string,
+    manifest_path: string,
+    icon_path?: string
+    data: Record<string, unknown>
+  }
+
   // region Shard.Format
   export enum Format {
     Mod = 'MOD',
@@ -394,6 +402,60 @@ export function GetExtraShards(): Shard.Extra[] {
   }
 
   return shards
+}
+
+export function GetInvalidShards(): Shard.Invalid[] {
+  const invalid_shards: Shard.Invalid[] = []
+
+  if (fs.existsSync(FolderPaths.Mods)) {
+    const mod_directories = fs
+      .readdirSync(FolderPaths.Mods, { withFileTypes: true })
+      .filter(entry => entry.isDirectory())
+    for (const mod_directory of mod_directories) {
+      const dir_path = path.join(mod_directory.parentPath, mod_directory.name)
+
+      const config_path = path.join(dir_path, 'manifest.json')
+      if (fs.existsSync(config_path)) {
+        const text = fs.readFileSync(config_path, 'utf-8')
+        const json = JSON.parse(text)
+
+        const icon_path = path.join(dir_path, 'icon.png')
+        const icon_exists = fs.existsSync(icon_path)
+
+        if (!Shard.Manifest.Validator(json)) {
+          invalid_shards.push({
+            errors: AJV_Instance.errorsText(Shard.Manifest.Validator.errors, { separator: '\n' }).split('\n'),
+            path: dir_path,
+            manifest_path: config_path,
+            icon_path: icon_exists ? icon_path : undefined,
+            data: json
+          })
+        }
+      }
+      else {
+        const old_config_path = path.join(dir_path, 'mod.json')
+        if (fs.existsSync(old_config_path)) {
+          const text = fs.readFileSync(old_config_path, 'utf-8')
+          const json = JSON.parse(text)
+
+          const icon_path = path.join(dir_path, 'icon.png')
+          const icon_exists = fs.existsSync(icon_path)
+
+          if (!Shard.Manifest.Validator(json)) {
+            invalid_shards.push({
+              errors: ['mod.json is unsupported. use manifest.json instead',...AJV_Instance.errorsText(Shard.Manifest.Validator.errors, { separator: '\n' }).split('\n')],
+              path: dir_path,
+              manifest_path: old_config_path,
+              icon_path: icon_exists ? icon_path : undefined,
+              data: json
+            })
+          }
+        }
+      }
+    }
+  }
+
+  return invalid_shards
 }
 
 export function FindShard(fragment: Shard.Reference): Shard.Manifest | undefined {

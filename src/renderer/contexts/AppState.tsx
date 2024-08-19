@@ -5,7 +5,7 @@ import { FetchAvailableVersions, GetCachedVersions, Version } from '../scripts/t
 import { GetProfiles, Profile, SetProfiles as SetProfilesFile } from '../scripts/types/Profile'
 
 import { ipcRenderer } from 'electron'
-import Shard, { FindExtraShard, FindExtraShards, GetExtraShards } from '../scripts/types/Shard'
+import Shard, { FindExtraShard, FindExtraShards, GetExtraShards, GetInvalidShards } from '../scripts/types/Shard'
 import { Config, ProxyConfig } from '../scripts/types/Config'
 import path from 'path'
 
@@ -24,6 +24,9 @@ interface TAppStateContext {
 
   profiles: Profile[]
   SetProfiles: React.Dispatch<React.SetStateAction<Profile[]>>
+
+  invalid_shards: Shard.Invalid[]
+  SetInvalidShards: React.Dispatch<React.SetStateAction<Shard.Invalid[]>>
 
   index$profile_editor: number | undefined
   SetIndex$ProfileEditor: React.Dispatch<React.SetStateAction<number | undefined>>
@@ -70,6 +73,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [shards, SetShards] = useState<Shard.Extra[]>(GetExtraShards)
   const [versions, SetVersions] = useState<Version.Cached[]>(GetCachedVersions)
   const [profiles, SetProfiles] = useState<Profile[]>(GetProfiles)
+
+  const [invalid_shards, SetInvalidShards] = useState<Shard.Invalid[]>(GetInvalidShards)
 
   // PROFILE EDITOR
   const [index$profile_editor, SetIndex$ProfileEditor] = useState<number | undefined>(undefined)
@@ -197,6 +202,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         SetVersions: SetVersions,
         profiles: profiles,
         SetProfiles: SetProfiles,
+
+        invalid_shards: invalid_shards,
+        SetInvalidShards: SetInvalidShards,
 
         index$profile_editor: index$profile_editor,
         SetIndex$ProfileEditor: SetIndex$ProfileEditor,
