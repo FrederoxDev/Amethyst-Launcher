@@ -22,6 +22,7 @@ const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => 
       title: 'Delete Version',
       noLink: true
     }
+
     ipcRenderer.invoke('show-message', message_args).then((value: Electron.MessageBoxReturnValue) => {
       if (value.response === 0) return
       else if (value.response === 1) {
@@ -87,6 +88,7 @@ const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => 
 export default function VersionPage() {
   ValidateVersionsFile()
   const [versions, SetVersions] = useState<InstalledVersion[]>(GetInstalledVersionsFromFile())
+  console.log(versions)
 
   function RefreshVersions() {
     ValidateVersionsFile()

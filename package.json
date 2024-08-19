@@ -16,6 +16,7 @@
     "bump-version": "npm version patch --no-git-tag-version"
   },
   "dependencies": {
+    "ajv": "^6.12.6",
     "electron-updater": "^6.3.0-alpha.6",
     "jszip": "^3.10.1",
     "react": "^18.3.1",
