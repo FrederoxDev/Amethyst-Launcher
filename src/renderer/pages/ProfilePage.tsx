@@ -13,6 +13,8 @@ const ProfileButton = ({ profile, index }: { profile: Profile; index: number }) 
     navigate('/profile-editor')
   }
 
+  console.log(profile)
+
   return (
     <div className="m-[-3px] border-[3px] border-[#1E1E1F]" onClick={() => openProfile(profile, index)}>
       <div className="cursor-pointer border-[3px] border-t-[#5a5b5c] border-l-[#5a5b5c] border-b-[#333334] border-r-[#333334] bg-[#48494a] p-[8px]">

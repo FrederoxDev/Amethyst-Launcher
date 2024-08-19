@@ -6,8 +6,8 @@ import MinecraftButton from '../components/MinecraftButton'
 import { MinecraftButtonStyle } from '../components/MinecraftButtonStyle'
 import { UseAppState } from '../contexts/AppState'
 import { useNavigate } from 'react-router-dom'
-import { GetMods } from '../scripts/Mods'
 import { MinecraftVersionType } from '../scripts/Versions'
+import { GetAllMods } from '../scripts/Mods'
 // import { GetDefaultInstallPath } from '../scripts/VersionManager'
 
 export default function ProfileEditor() {
@@ -95,10 +95,10 @@ export default function ProfileEditor() {
     navigate('/profiles')
   }
 
-  useEffect(() => {
-    const { mods } = GetMods()
-    setAllMods(mods)
-  }, [setAllMods])
+  // useEffect(() => {
+  //   const mods = GetAllMods().filter(m => m.ok).map(m => m.id)
+  //   setAllMods(mods)
+  // }, [setAllMods])
 
   useEffect(() => {
     loadProfile()

@@ -17,7 +17,7 @@ process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
   }
 }
 
-let mainWindow: Electron.BrowserWindow = null
+let mainWindow: Electron.BrowserWindow | null = null
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -55,13 +55,13 @@ Menu.setApplicationMenu(windowMenu)
 ipcMain.on('TITLE_BAR_ACTION', (event, args) => {
   switch (args) {
     case 'TOGGLE_MAXIMIZED':
-      mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize()
+      mainWindow!.isMaximized() ? mainWindow!.unmaximize() : mainWindow!.maximize()
       break
     case 'MINIMIZE':
-      mainWindow.minimize()
+      mainWindow!.minimize()
       break
     case 'CLOSE':
-      mainWindow.close()
+      mainWindow!.close()
       break
     default:
       break
@@ -116,7 +116,7 @@ else {
     mainWindow = createWindow()
 
     mainWindow.webContents.once('did-finish-load', () => {
-      mainWindow.show()
+      mainWindow!.show()
     })
   })
 
@@ -150,19 +150,19 @@ ipcMain.handle('update-download', async () => {
 })
 
 autoUpdater.on('update-available', info => {
-  mainWindow.webContents.send('update-available', info)
+  mainWindow!.webContents.send('update-available', info)
 })
 
 autoUpdater.on('update-not-available', info => {
-  mainWindow.webContents.send('update-not-available', info)
+  mainWindow!.webContents.send('update-not-available', info)
 })
 
 autoUpdater.on('update-cancelled', info => {
-  mainWindow.webContents.send('update-cancelled', info)
+  mainWindow!.webContents.send('update-cancelled', info)
 })
 
 autoUpdater.on('download-progress', info => {
-  mainWindow.webContents.send('download-progress', info)
+  mainWindow!.webContents.send('download-progress', info)
 })
 
 autoUpdater.on('update-downloaded', () => {
@@ -171,5 +171,5 @@ autoUpdater.on('update-downloaded', () => {
 })
 
 autoUpdater.on('error', error => {
-  mainWindow.webContents.send('update-error', error)
+  mainWindow!.webContents.send('update-error', error)
 })
