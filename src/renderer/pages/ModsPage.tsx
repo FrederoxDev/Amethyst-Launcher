@@ -3,7 +3,7 @@ import MainPanel from '../components/MainPanel'
 import MinecraftButton from '../components/MinecraftButton'
 import { MinecraftUWPFolder, ModsFolder } from '../scripts/Paths'
 
-import { ModConfig, ValidateModConfig } from '../scripts/Mods'
+import { ValidateMod } from '../scripts/Mods'
 import PopupPanel from '../components/PopupPanel'
 
 import * as fs from 'fs'
@@ -23,7 +23,8 @@ function getAllMods() {
         try {
             const configData = fs.readFileSync(modConfigPath, 'utf-8');
             const configParsed = JSON.parse(configData);
-            ValidateModConfig(configParsed);
+            const validated = ValidateMod(configParsed);
+            console.log(validated)
         }
         catch {
             console.error("Failed to parse config!")

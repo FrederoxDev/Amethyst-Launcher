@@ -3,15 +3,15 @@ import { ModsFolder } from './Paths'
 
 //////////////////// MOD CONFIG ////////////////////
 
-export interface ModConfig {
-  meta: {
-    name: string
-    version: string
-    author: string
-    description?: string
-    is_runtime?: boolean
-  }
-}
+// export interface ModConfig {
+//   meta: {
+//     name: string
+//     version: string
+//     author: string
+//     description?: string
+//     is_runtime?: boolean
+//   }
+// }
 
 // export function ValidateMod(config: Record<string, never>, outErrors?: string[]): ModConfig {
 //   const validated_config: ModConfig = {
@@ -65,7 +65,7 @@ export interface ModConfig {
 
 import * as fs from 'fs'
 import * as path from 'path'
-import { ajv, ValidateModSchemaV1 } from './schema/ModConfigSchema'
+import { ajv, FromValidatedV1ToConfig, ModConfig, ModConfigV1, ValidateModSchemaV1 } from './schema/ModConfigSchema'
 
 export type ModList = {
   runtimeMods: string[]
@@ -120,18 +120,38 @@ export function GetMods(): ModList {
   // }
 }
 
-export function ValidateModConfig(unparsedJSON: Record<any, any>) {
+export type ValidatedMod = 
+  | { ok: true; config: ModConfig; errors: [] }
+  | { ok: false, config: undefined, errors: string[] };
+
+export function ValidateMod(unparsedJSON: Record<any, any>): ValidatedMod {
   // if format_version field is not present, inject the 1.0.0 format_version
   // this is needed for old mods to still be able to correctly validate :)
   if (unparsedJSON["format_version"] === undefined) {
     unparsedJSON["format_version"] = "1.0.0"
   }
 
-  const wasSuccessfull = ValidateModSchemaV1(unparsedJSON);
-  if (!wasSuccessfull) {
-    const errors = ajv.errorsText(ValidateModSchemaV1.errors, { dataVar: "mod.config/", separator: "\n" }).split("\n");
-    console.log(errors);
-  }
+  if (unparsedJSON["format_version"] === "1.0.0") {
+    const success = ValidateModSchemaV1(unparsedJSON);
 
-  console.log("success:", wasSuccessfull);
+    if (!success) return {
+      ok: false,
+      config: undefined,
+      errors: ajv.errorsText(ValidateModSchemaV1.errors, { dataVar: "mod.config/", separator: "\n" }).split("\n")
+    }
+
+    return {
+      ok: true,
+      errors: [],
+      config: FromValidatedV1ToConfig(unparsedJSON as ModConfigV1)
+    }
+  }
+  
+  return {
+    ok: false,
+    config: undefined,
+    errors: [
+      `Unknown format_version "${unparsedJSON["format_version"]}"`
+    ]
+  }
 }
