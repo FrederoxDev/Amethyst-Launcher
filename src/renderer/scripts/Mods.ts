@@ -1,149 +1,67 @@
-import { ModsFolder } from './Paths'
-
-
-//////////////////// MOD CONFIG ////////////////////
-
-// export interface ModConfig {
-//   meta: {
-//     name: string
-//     version: string
-//     author: string
-//     description?: string
-//     is_runtime?: boolean
-//   }
-// }
-
-// export function ValidateMod(config: Record<string, never>, outErrors?: string[]): ModConfig {
-//   const validated_config: ModConfig = {
-//     meta: {
-//       name: '',
-//       version: '',
-//       author: '',
-//       description: undefined,
-//       is_runtime: undefined
-//     }
-//   }
-
-//   if ('meta' in config && typeof config['meta'] === 'object' && config['meta'] != null) {
-//     const meta = config['meta']
-
-//     if ('name' in meta) {
-//       if (typeof meta['name'] !== 'string') {
-//         outErrors?.push(`field 'name' in 'meta' must be of type 'string'`)
-//       } else validated_config.meta.name = meta['name']
-//     } else outErrors?.push(`object 'meta' must contain field 'name' of type 'string'`)
-
-//     if ('version' in meta) {
-//       if (typeof meta['version'] !== 'string') {
-//         outErrors?.push(`field 'version' in 'meta' must be of type 'string'`)
-//       } else validated_config.meta.version = meta['version']
-//     } else outErrors?.push(`object 'meta' must contain field 'version' of type 'string'`)
-
-//     if ('author' in meta) {
-//       if (typeof meta['author'] !== 'string') {
-//         outErrors?.push(`field 'author' in 'meta' must be of type 'string'`)
-//       } else validated_config.meta.author = meta['author']
-//     } else outErrors?.push(`object 'meta' must contain field 'author' of type 'string'`)
-
-//     if ('description' in meta) {
-//       if (typeof meta['description'] !== 'string') {
-//         outErrors?.push(`field 'description' in 'meta' must be of type 'string'`)
-//       } else validated_config.meta.description = meta['description']
-//     }
-
-//     if ('is_runtime' in meta) {
-//       if (typeof meta['is_runtime'] !== 'boolean') {
-//         outErrors?.push(`field 'is_runtime' in 'meta' must be of type 'boolean'`)
-//       } else validated_config.meta.is_runtime = meta['is_runtime']
-//     }
-//   } else outErrors?.push(`mod.json should have field 'meta' of type 'object'`)
-
-//   return validated_config
-// }
-
-//////////////////// MOD LIST ////////////////////
-
 import * as fs from 'fs'
 import * as path from 'path'
 import { ajv, FromValidatedV1ToConfig, ModConfig, ModConfigV1, ValidateModSchemaV1 } from './schema/ModConfigSchema'
+import { ModsFolder } from './Paths'
 
-export type ModList = {
-  runtimeMods: string[]
-  mods: string[]
-}
+export function GetAllMods(): ValidatedMod[] {
+  if (!fs.existsSync(ModsFolder)) return [];
 
-export function GetMods(): ModList {
-  return {
-    mods: [],
-    runtimeMods: []
-  }
+  const allFolders = fs.readdirSync(ModsFolder, { withFileTypes: true })
+    .filter((f) => f.isDirectory())
+    .map((dir) => dir.name);
 
-  // if (fs.existsSync(ModsFolder)) {
-  //   const mods: ModList = {
-  //     mods: [],
-  //     runtimeMods: []
-  //   }
+  const result: ValidatedMod[] = [];
 
-  //   const mod_directories = fs.readdirSync(ModsFolder, { withFileTypes: true }).filter(entry => entry.isDirectory())
+  allFolders.forEach((modIdentifier) => {
+    const validated = ValidateMod(modIdentifier);
+    result.push(validated);
+  });
 
-  //   for (const mod_directory of mod_directories) {
-  //     const dir_path = path.join(mod_directory.parentPath, mod_directory.name)
-
-  //     const config_path = path.join(dir_path, 'mod.json')
-  //     if (fs.existsSync(config_path)) {
-  //       let mod_config: ModConfig
-
-  //       const config_file = fs.readFileSync(config_path, 'utf-8')
-
-  //       try {
-  //         const parsed_config = JSON.parse(config_file)
-  //         mod_config = ValidateMod(parsed_config)
-  //       } catch {
-  //         console.error(`Failed to read/parse the config for ${mod_directory.name} folder`)
-  //         continue
-  //       }
-
-  //       if (mod_config.meta.is_runtime) {
-  //         mods.runtimeMods.push(mod_directory.name)
-  //       } else {
-  //         mods.mods.push(mod_directory.name)
-  //       }
-  //     }
-  //   }
-
-  //   return mods
-  // } else {
-  //   return {
-  //     mods: [],
-  //     runtimeMods: []
-  //   }
-  // }
+  return result;
 }
 
 export type ValidatedMod = 
-  | { ok: true; config: ModConfig; errors: [] }
-  | { ok: false, config: undefined, errors: string[] };
+  | { ok: true; config: ModConfig; errors: [], id: string }
+  | { ok: false, config: undefined, errors: string[], id: string };
 
-export function ValidateMod(unparsedJSON: Record<any, any>): ValidatedMod {
-  // if format_version field is not present, inject the 1.0.0 format_version
-  // this is needed for old mods to still be able to correctly validate :)
-  if (unparsedJSON["format_version"] === undefined) {
-    unparsedJSON["format_version"] = "1.0.0"
+export function ValidateMod(id: string): ValidatedMod {
+  const modConfigPath = path.join(ModsFolder, id, 'mod.json')
+  let configUnchecked: Record<any, any> = {};
+
+  try {
+    const configDataText = fs.readFileSync(modConfigPath, 'utf-8');
+    configUnchecked = JSON.parse(configDataText);
+  }
+  catch (e) {
+    return {
+      ok: false,
+      errors: ["Failed to read/parse config.json"],
+      config: undefined,
+      id
+    }
   }
 
-  if (unparsedJSON["format_version"] === "1.0.0") {
-    const success = ValidateModSchemaV1(unparsedJSON);
+  // if format_version field is not present, inject the 1.0.0 format_version
+  // this is needed for old mods to still be able to correctly validate :)
+  if (configUnchecked["format_version"] === undefined) {
+    configUnchecked["format_version"] = "1.0.0"
+  }
+
+  if (configUnchecked["format_version"] === "1.0.0") {
+    const success = ValidateModSchemaV1(configUnchecked);
 
     if (!success) return {
       ok: false,
       config: undefined,
-      errors: ajv.errorsText(ValidateModSchemaV1.errors, { dataVar: "mod.config/", separator: "\n" }).split("\n")
+      errors: ajv.errorsText(ValidateModSchemaV1.errors, { dataVar: "mod.config/", separator: "\n" }).split("\n"),
+      id
     }
 
     return {
       ok: true,
       errors: [],
-      config: FromValidatedV1ToConfig(unparsedJSON as ModConfigV1)
+      config: FromValidatedV1ToConfig(configUnchecked as ModConfigV1),
+      id
     }
   }
   
@@ -151,7 +69,8 @@ export function ValidateMod(unparsedJSON: Record<any, any>): ValidatedMod {
     ok: false,
     config: undefined,
     errors: [
-      `Unknown format_version "${unparsedJSON["format_version"]}"`
-    ]
+      `Unknown format_version "${configUnchecked["format_version"]}"`
+    ],
+    id
   }
 }
