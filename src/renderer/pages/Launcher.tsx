@@ -61,9 +61,9 @@ export default function Launcher() {
     // We create a lock file when starting the download
     // if we are doing a launch, and we detect it for the version we are targeting
     // there is a good chance the previous install/download failed and therefore remove it.
-    const didPreviousDownloadFail = IsLocked(version)
+    const previous_download_failed = IsLocked(version)
 
-    if (didPreviousDownloadFail) {
+    if (previous_download_failed) {
       CleanupInstall(version, false)
     }
 
@@ -82,10 +82,6 @@ export default function Launcher() {
       Console.EndGroup()
       CleanupInstall(version, true)
 
-      if (version.format === Version.Format.Release) {
-        InstallProxy(version)
-      }
-
       const versions_file = GetVersionsFile()
       versions_file.versions.push(version)
       SetVersionsFile(versions_file)
@@ -93,6 +89,11 @@ export default function Launcher() {
       if (version.path !== versions_file.default_path) {
         AddTrackingPath(version.path)
       }
+    }
+
+    // only install proxy in release versions
+    if (version.format === Version.Format.Release) {
+      InstallProxy(version)
     }
 
     // Only register the game if needed
@@ -115,7 +116,18 @@ export default function Launcher() {
     SetIsLoading(false)
     SetStatus('')
 
-    child.spawn(`start minecraft:`, { shell: true })
+    // launch correct format version
+    switch (profile.version.format) {
+      case Version.Format.Release:
+        child.spawn(`start minecraft:`, { shell: true })
+        break
+      case Version.Format.Beta:
+        // start beta minecraft
+        break
+      case Version.Format.Preview:
+        // start preview minecraft
+        break
+    }
   }
 
   const launchGame = async () => {

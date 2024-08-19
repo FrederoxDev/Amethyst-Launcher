@@ -80,6 +80,7 @@ export async function DownloadVersion(
     await download(
       version.uuid,
       '1',
+      version.format,
       output_file,
       (transferred, totalSize) => {
         setStatus(`Downloading: ${toMB(transferred)} / ${toMB(totalSize)}`)

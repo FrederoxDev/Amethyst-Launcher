@@ -200,9 +200,8 @@ export function GetCachedVersions() {
   }
 }
 
-export function FindCachedVersion(version: SemVersion.Primitive): Version.Cached | undefined {
-  const cached_versions: Version.Cached[] = GetCachedVersions()
-  return cached_versions.find(v => v.sem_version === version)
+export function FindCachedVersion(version: SemVersion.Primitive, format: Version.Format = Version.Format.Release): Version.Cached | undefined {
+  return GetCachedVersions().find(v => (v.sem_version === version) && (v.format === format))
 }
 
 //////////////////////////////////////////////////
@@ -291,10 +290,12 @@ export function RefreshVersionsFile(): void {
         ) {
           const sem_version = SemVersion.Primitive.Match(version_dir.name)
           if (SemVersion.Primitive.Validator(sem_version)) {
-            const minecraft_version = FindCachedVersion(sem_version)
+            const format: Version.Format = version_dir.name.endsWith('-beta') ? Version.Format.Beta : version_dir.name.endsWith('-preview') ? Version.Format.Preview : Version.Format.Release
 
-            if (minecraft_version) {
-              file.versions.push({ ...minecraft_version, path: version_dir.parentPath })
+            const version = FindCachedVersion(sem_version, format)
+
+            if (version) {
+              file.versions.push({ ...version, path: version_dir.parentPath })
             }
           }
         }
