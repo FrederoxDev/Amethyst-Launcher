@@ -1,5 +1,5 @@
 import { GetVersions, RefreshVersionsFile, Version } from '../scripts/types/Version'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { clipboard, ipcRenderer } from 'electron'
 import { Console } from '../scripts/types/Console'
 
@@ -18,6 +18,12 @@ export default function VersionManager() {
 
   const VersionButton = ({ version, OnDelete }: { version: Version; OnDelete: () => void }) => {
     const [open, SetOpen] = useState<boolean>(false)
+    
+    const full_path = useMemo(() => {
+      if (version.path) {
+        return path.join(version.path, Version.toString(version))
+      }
+    }, [version])
 
     function DeleteVersion() {
       const message_args = {
@@ -105,13 +111,13 @@ export default function VersionManager() {
           {version.path !== undefined && (
             <div className="flex flex-row gap-[4px] justify-between">
               <p className="minecraft-seven text-[#B1B2B5] text-[14px] leading-tight min-w-0 overflow-ellipsis overflow-hidden whitespace-nowrap">
-                {'Path: ' + version.path}
+                {'Path: ' + full_path}
               </p>
               <div className="flex flex-row gap-[4px]">
                 <div
                   className="w-[24px] h-[24px] shrink-0 bg-[#313233] box-content border-[3px] border-[#1E1E1F] rounded-[3px] cursor-pointer hover:border-[#48494A] hover:bg-[#5a5b5c] active:border-[#4f913c] active:bg-[#3c8527]"
                   onClick={() => {
-                    if (version.path) clipboard.writeText(version.path)
+                    if (full_path) clipboard.writeText(full_path)
                   }}
                 >
                   <img src="images/icons/copy-icon.png" className="w-full h-full pixelated" alt="" />
@@ -119,7 +125,7 @@ export default function VersionManager() {
                 <div
                   className="w-[24px] h-[24px] shrink-0 bg-[#313233] box-content border-[3px] border-[#1E1E1F] rounded-[3px] cursor-pointer hover:border-[#48494A] hover:bg-[#5a5b5c] active:border-[#4f913c] active:bg-[#3c8527]"
                   onClick={() => {
-                    child.spawn(`explorer "${version.path}"`, { shell: true })
+                    if (full_path) child.spawn(`explorer "${full_path}"`, { shell: true })
                   }}
                 >
                   <img src="images/icons/open-folder-icon.png" className="w-full h-full pixelated" alt="" />
