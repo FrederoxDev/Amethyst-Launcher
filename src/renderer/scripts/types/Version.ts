@@ -23,6 +23,9 @@ export interface Version {
 }
 
 export namespace Version {
+  export const LatestPreviewUUID = '00000000-0000-4000-a000-000000000002'
+  export const LatestReleaseUUID = '00000000-0000-4000-a000-000000000001'
+
   // region Version.Format
   export enum Format {
     Release = 0,
@@ -190,7 +193,7 @@ export function GetCachedVersions() {
         uuid: version[1],
         format: version[2]
       } as Version.Cached
-    })
+    }).reverse()
   } else {
     Console.Group(Console.ErrorStr('Failed to parse `cached_versions.json`'), () => {
       console.log(Version.Cached.File.Validator.errors)
@@ -334,7 +337,7 @@ export function FindVersionPath(version: Version): string | undefined {
 export function GetLatestVersion(format: Version.Format = Version.Format.Release): Version.Cached {
   const versions = GetCachedVersions().filter(v => v.format === format)
 
-  return versions[versions.length - 1]
+  return versions[0]
 }
 
 export function AddTrackingPath(path: string) {

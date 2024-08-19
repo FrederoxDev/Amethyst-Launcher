@@ -216,9 +216,23 @@ export default function ProfileEditor() {
   }
 
   const [version_uuids, version_names, version_options] = useMemo(() => {
-    const version_options = versions.filter(ver => ver.format === Version.Format.Release).reverse()
+    const version_options = versions.filter(ver => ver.format === Version.Format.Release)
     const version_uuids = version_options.map(v => v.uuid)
     const version_names = version_options.map(v => Version.Cached.toString(v))
+
+    // const latest_preview = versions.find(v => v.format === Version.Format.Preview)
+    // if (latest_preview) {
+    //   version_options.unshift({ sem_version: latest_preview.sem_version, uuid: Version.LatestPreviewUUID, format: Version.Format.Preview })
+    //   version_names.unshift('Latest Preview')
+    //   version_uuids.unshift(Version.LatestPreviewUUID)
+    // }
+    //
+    // const latest_release = versions.find(v => v.format === Version.Format.Release)
+    // if (latest_release) {
+    //   version_options.unshift({ sem_version: latest_release.sem_version, uuid: Version.LatestReleaseUUID, format: Version.Format.Release })
+    //   version_names.unshift('Latest Release')
+    //   version_uuids.unshift(Version.LatestReleaseUUID)
+    // }
 
     return [version_uuids, version_names, version_options]
   }, [versions])
@@ -392,7 +406,6 @@ export default function ProfileEditor() {
                 SetIndex={index => {
                   SetProfileVersion(version_options[index])
                 }}
-                // we don't support non-release versions right now so only show release lmao
                 options={version_names}
                 id="minecraft-version"
               />
