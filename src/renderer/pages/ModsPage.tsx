@@ -3,60 +3,78 @@ import MainPanel from '../components/MainPanel'
 import MinecraftButton from '../components/MinecraftButton'
 import { MinecraftUWPFolder, ModsFolder } from '../scripts/Paths'
 
-import { ValidateMod, ModConfig } from '../scripts/Mods'
+import { ModConfig, ValidateModConfig } from '../scripts/Mods'
 import PopupPanel from '../components/PopupPanel'
 
 import * as fs from 'fs'
 import * as path from 'path'
 import * as child from 'child_process'
 
-type ModErrorInfo = { modIdentifier: string; description?: string; modErrors: string[] }
+function getAllMods() {
+    if (!fs.existsSync(ModsFolder)) return;
 
-function getAllMods(): ModErrorInfo[] {
-  const results: ModErrorInfo[] = []
+    const allFolders = fs.readdirSync(ModsFolder, { withFileTypes: true })
+        .filter(f => f.isDirectory())
+        .map(dir => dir.name);
 
-  if (!fs.existsSync(ModsFolder)) return results
+    allFolders.forEach(modIdentifier => {
+        const modConfigPath = path.join(ModsFolder, modIdentifier, 'mod.json')
 
-  const allModNames = fs
-    .readdirSync(ModsFolder, { withFileTypes: true })
-    .filter(f => f.isDirectory())
-    .map(dir => dir.name)
+        try {
+            const configData = fs.readFileSync(modConfigPath, 'utf-8');
+            const configParsed = JSON.parse(configData);
+            ValidateModConfig(configParsed);
+        }
+        catch {
+            console.error("Failed to parse config!")
+        }
+    });
 
-  for (const modIdentifier of allModNames) {
-    const modErrors: string[] = []
 
-    // Config data
-    let modConfig: ModConfig = {
-      meta: {
-        author: '',
-        name: '',
-        version: ''
-      }
-    }
+  // const results: ModErrorInfo[] = []
 
-    // Validate that it has a config file
-    const modConfigPath = path.join(ModsFolder, modIdentifier, 'mod.json')
+  // if (!fs.existsSync(ModsFolder)) return results
 
-    if (!fs.existsSync(modConfigPath)) {
-      modErrors.push(`Missing mod.json configuration file inside mod folder.`)
-    } else {
-      try {
-        const configData = fs.readFileSync(modConfigPath, 'utf-8')
-        const configParsed = JSON.parse(configData)
-        modConfig = ValidateMod(configParsed, modErrors)
-      } catch {
-        modErrors.push(`Failed to parse the mod.json configuration file, invalid json?`)
-      }
-    }
+  // const allModNames = fs
+  //   .readdirSync(ModsFolder, { withFileTypes: true })
+  //   .filter(f => f.isDirectory())
+  //   .map(dir => dir.name)
 
-    results.push({
-      modIdentifier: modConfig.meta.name,
-      description: modConfig.meta.description ?? '',
-      modErrors
-    })
-  }
+  // for (const modIdentifier of allModNames) {
+  //   const modErrors: string[] = []
 
-  return results
+  //   // Config data
+  //   let modConfig: ModConfig = {
+  //     meta: {
+  //       author: '',
+  //       name: '',
+  //       version: ''
+  //     }
+  //   }
+
+  //   // Validate that it has a config file
+  //   const modConfigPath = path.join(ModsFolder, modIdentifier, 'mod.json')
+
+  //   if (!fs.existsSync(modConfigPath)) {
+  //     modErrors.push(`Missing mod.json configuration file inside mod folder.`)
+  //   } else {
+  //     try {
+  //       const configData = fs.readFileSync(modConfigPath, 'utf-8')
+  //       const configParsed = JSON.parse(configData)
+  //       modConfig = ValidateMod(configParsed, modErrors)
+  //     } catch {
+  //       modErrors.push(`Failed to parse the mod.json configuration file, invalid json?`)
+  //     }
+  //   }
+
+  //   results.push({
+  //     modIdentifier: modConfig.meta.name,
+  //     description: modConfig.meta.description ?? '',
+  //     modErrors 
+  //   })
+  // }
+
+  // return results
 }
 
 const openModsFolder = () => {
@@ -77,12 +95,16 @@ export default function ModsPage() {
   /** Will report any errors and why they are not valid to select etc */
   /** Todo make this popup a panel after a more info button is pressed or something */
 
-  const [allReports, setAllReports] = useState<ModErrorInfo[]>([])
-  const [selectedReport, setSelectedReport] = useState<ModErrorInfo | undefined>(undefined)
+  // const [allReports, setAllReports] = useState<ModErrorInfo[]>([])
+  // const [selectedReport, setSelectedReport] = useState<ModErrorInfo | undefined>(undefined)
+
+  // useEffect(() => {
+  //   setAllReports(getAllMods())
+  // }, [])
 
   useEffect(() => {
-    setAllReports(getAllMods())
-  }, [])
+    getAllMods();
+  })
 
   return (
     <>
@@ -90,7 +112,7 @@ export default function ModsPage() {
         <div className="flex flex-col gap-[8px] h-full p-[8px] bg-[#48494A] border-[3px] border-[#1E1E1F]">
           <p className="minecraft-seven text-white text-[14px]">Mod Manager</p>
           <div className="flex flex-col gap-[3px] border-[3px] border-[#1E1E1F] h-full bg-[#313233] overflow-y-auto overflow-x-hidden scrollbar">
-            {allReports.map(report => (
+            {/* {allReports.map(report => (
               <div
                 className="m-[-3px] border-[3px] border-[#1E1E1F]"
                 onClick={() => {
@@ -111,7 +133,7 @@ export default function ModsPage() {
                   )}
                 </div>
               </div>
-            ))}
+            ))} */}
           </div>
           <div className="w-full h-fit">
             <MinecraftButton text="Open Mods Folder" onClick={openModsFolder} />
@@ -119,7 +141,7 @@ export default function ModsPage() {
         </div>
       </MainPanel>
 
-      {selectedReport && (
+      {/* {selectedReport && (
         <PopupPanel onExit={() => setSelectedReport(undefined)}>
           <div className="w-[500px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
             <div className="flex">
@@ -159,7 +181,7 @@ export default function ModsPage() {
             </div>
           )}
         </PopupPanel>
-      )}
+      )} */}
     </>
   )
 }
