@@ -5,7 +5,7 @@ import { LauncherConfig, GetLauncherConfig, SetLauncherConfig } from '../scripts
 import { GetProfiles, Profile, SetProfiles } from '../scripts/Profiles'
 
 import { ipcRenderer } from 'electron'
-import { GetMods } from '../scripts/Mods'
+import { GetAllMods } from '../scripts/Mods'
 
 interface TAppStateContext {
   allMods: string[]
@@ -68,9 +68,12 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     setAllProfiles(GetProfiles())
 
-    const modList = GetMods()
-    setAllRuntimes(['Vanilla', ...modList.runtimeMods])
-    setAllMods(modList.mods)
+    const validMods = GetAllMods().filter(mod => mod.ok);
+    const runtimes = validMods.filter(mod => mod.config.meta.type === "runtime");
+    const mods = validMods.filter(mod => mod.config.meta.type !== "runtime");
+
+    setAllRuntimes(['Vanilla', ...runtimes.map(r => r.id)])
+    setAllMods(mods.map(r => r.id));
 
     const readConfig = GetLauncherConfig()
     setKeepLauncherOpen(readConfig.keep_open ?? true)
