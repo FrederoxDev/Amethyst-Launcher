@@ -1,6 +1,7 @@
 import { Downloader } from './Downloader'
 import { ActionComplete, DownloadProgress } from './Progress'
 import { Console } from '../types/Console'
+import { Version } from '../types/Version'
 
 class Protocol {
   static DEFAULT_URL = 'https://fe3.delivery.mp.microsoft.com/ClientWebService/client.asmx'
@@ -19,33 +20,7 @@ class Protocol {
     this._msaUserToken = token
   }
 
-  buildWUTickets(): Element {
-    const tickets = document.createElementNS(Protocol.wuws, 'WindowsUpdateTicketsToken')
-    tickets.setAttribute('wsu:id', 'ClientMSA')
-    tickets.setAttribute('xmlns:wsu', Protocol.secutil)
-    tickets.setAttribute('xmlns:wuws', Protocol.wuws)
-
-    if (this._msaUserToken !== null) {
-      const msaTicket = document.createElement('TicketType')
-      msaTicket.setAttribute('Name', 'MSA')
-      msaTicket.setAttribute('Version', '1.0')
-      msaTicket.setAttribute('Policy', 'MBI_SSL')
-      const userElement = document.createElement('User')
-      userElement.textContent = this._msaUserToken
-      msaTicket.appendChild(userElement)
-      tickets.appendChild(msaTicket)
-    }
-
-    const aadTicket = document.createElement('TicketType')
-    aadTicket.setAttribute('Name', 'AAD')
-    aadTicket.setAttribute('Version', '1.0')
-    aadTicket.setAttribute('Policy', 'MBI_SSL')
-    tickets.appendChild(aadTicket)
-
-    return tickets
-  }
-
-  buildHeader(url: string | null, methodName: string) {
+  buildHeader(url: string | null, methodName: string, version_format: Version.Format) {
     const now = new Date().toISOString()
 
     const header = document.createElementNS(Protocol.soap, 'Header')
@@ -78,19 +53,43 @@ class Protocol {
     timestamp.appendChild(expires)
 
     security.appendChild(timestamp)
-    security.appendChild(this.buildWUTickets()) // Assuming buildWUTickets is defined elsewhere
 
+    const tickets = document.createElementNS(Protocol.wuws, 'WindowsUpdateTicketsToken')
+    tickets.setAttribute('wsu:id', 'ClientMSA')
+    tickets.setAttribute('xmlns:wsu', Protocol.secutil)
+    tickets.setAttribute('xmlns:wuws', Protocol.wuws)
+
+    if (this._msaUserToken !== null && this._msaUserToken.length > 0) {
+      if (version_format === Version.Format.Beta) {
+        const msaTicket = document.createElement('TicketType')
+        msaTicket.setAttribute('Name', 'MSA')
+        msaTicket.setAttribute('Version', '1.0')
+        msaTicket.setAttribute('Policy', 'MBI_SSL')
+        const userElement = document.createElement('User')
+        userElement.textContent = this._msaUserToken
+        msaTicket.appendChild(userElement)
+        tickets.appendChild(msaTicket)
+      }
+    }
+
+    const aadTicket = document.createElement('TicketType')
+    aadTicket.setAttribute('Name', 'AAD')
+    aadTicket.setAttribute('Version', '1.0')
+    aadTicket.setAttribute('Policy', 'MBI_SSL')
+    tickets.appendChild(aadTicket)
+
+    security.appendChild(tickets)
     header.appendChild(security)
 
     return header
   }
 
-  buildDownloadRequest(updateIdentity: string, revisionNumber: string) {
+  buildDownloadRequest(updateIdentity: string, revisionNumber: string, version_format: Version.Format) {
     const envelope = document.createElementNS(Protocol.soap, 'Envelope')
     envelope.setAttribute('xmlns:a', Protocol.addressing)
     envelope.setAttribute('xmlns:s', Protocol.soap)
 
-    const header = this.buildHeader(this.getDownloadUrl(), 'GetExtendedUpdateInfo2')
+    const header = this.buildHeader(this.getDownloadUrl(), 'GetExtendedUpdateInfo2', version_format)
     envelope.appendChild(header)
 
     const body = document.createElementNS(Protocol.soap, 'Body')
@@ -195,11 +194,11 @@ async function postXmlAsync(url: RequestInfo | URL, data: Node) {
   return new DOMParser().parseFromString(await response.text(), 'application/xml')
 }
 
-async function getDownloadUrl(updateIdentity: string, revisionNumber: string) {
+async function getDownloadUrl(updateIdentity: string, revisionNumber: string, version_format: Version.Format) {
   try {
     const result = await postXmlAsync(
       protocol.getDownloadUrl(),
-      protocol.buildDownloadRequest(updateIdentity, revisionNumber)
+      protocol.buildDownloadRequest(updateIdentity, revisionNumber, version_format)
     )
 
     // console.log(`GetDownloadUrl() response for updateIdentity ${updateIdentity}, revision ${revisionNumber}:\n`, result)
@@ -222,11 +221,12 @@ async function getDownloadUrl(updateIdentity: string, revisionNumber: string) {
 export async function download(
   updateIdentity: string,
   revisionNumber: string,
+  version_format: Version.Format,
   destination: string,
   onProgress: DownloadProgress = () => {},
   onComplete: ActionComplete = () => {}
 ) {
-  const link: string | null = await getDownloadUrl(updateIdentity, revisionNumber)
+  const link: string | null = await getDownloadUrl(updateIdentity, revisionNumber, version_format)
   if (link === null) {
     onComplete(false)
     throw new Error('BadUpdateIdentity!')

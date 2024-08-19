@@ -23,6 +23,9 @@ export interface Version {
 }
 
 export namespace Version {
+  export const LatestPreviewUUID = '00000000-0000-4000-a000-000000000002'
+  export const LatestReleaseUUID = '00000000-0000-4000-a000-000000000001'
+
   // region Version.Format
   export enum Format {
     Release = 0,
@@ -190,7 +193,7 @@ export function GetCachedVersions() {
         uuid: version[1],
         format: version[2]
       } as Version.Cached
-    })
+    }).reverse()
   } else {
     Console.Group(Console.ErrorStr('Failed to parse `cached_versions.json`'), () => {
       console.log(Version.Cached.File.Validator.errors)
@@ -200,9 +203,8 @@ export function GetCachedVersions() {
   }
 }
 
-export function FindCachedVersion(version: SemVersion.Primitive): Version.Cached | undefined {
-  const cached_versions: Version.Cached[] = GetCachedVersions()
-  return cached_versions.find(v => v.sem_version === version)
+export function FindCachedVersion(version: SemVersion.Primitive, format: Version.Format = Version.Format.Release): Version.Cached | undefined {
+  return GetCachedVersions().find(v => (v.sem_version === version) && (v.format === format))
 }
 
 //////////////////////////////////////////////////
@@ -291,10 +293,12 @@ export function RefreshVersionsFile(): void {
         ) {
           const sem_version = SemVersion.Primitive.Match(version_dir.name)
           if (SemVersion.Primitive.Validator(sem_version)) {
-            const minecraft_version = FindCachedVersion(sem_version)
+            const format: Version.Format = version_dir.name.endsWith('-beta') ? Version.Format.Beta : version_dir.name.endsWith('-preview') ? Version.Format.Preview : Version.Format.Release
 
-            if (minecraft_version) {
-              file.versions.push({ ...minecraft_version, path: version_dir.parentPath })
+            const version = FindCachedVersion(sem_version, format)
+
+            if (version) {
+              file.versions.push({ ...version, path: version_dir.parentPath })
             }
           }
         }
@@ -333,7 +337,7 @@ export function FindVersionPath(version: Version): string | undefined {
 export function GetLatestVersion(format: Version.Format = Version.Format.Release): Version.Cached {
   const versions = GetCachedVersions().filter(v => v.format === format)
 
-  return versions[versions.length - 1]
+  return versions[0]
 }
 
 export function AddTrackingPath(path: string) {
