@@ -2,7 +2,7 @@ import Ajv from "ajv";
 import { IntermediateModConfig } from "./IntermediateModConfig";
 export const ajv = new Ajv();
 
-export interface ModConfigV1 {
+export interface ModConfigV1_0_0 {
     format_version: "1.0.0",
     meta: {
         is_runtime?: boolean,
@@ -12,7 +12,7 @@ export interface ModConfigV1 {
     }
 }
 
-const ModConfigSchemaV1 = {
+const ModConfigSchemaV1_0_0 = {
     type: "object",
     properties: {
         format_version: { type: "string", const: "1.0.0" },
@@ -38,9 +38,9 @@ const ModConfigSchemaV1 = {
     required: ["format_version", "meta"]
 };
 
-export const ValidateModSchemaV1 = ajv.compile(ModConfigSchemaV1);
+export const ValidateModSchemaV1_0_0 = ajv.compile(ModConfigSchemaV1_0_0);
 
-export const FromValidatedV1ToConfig = (validated: ModConfigV1): IntermediateModConfig => {
+export const FromValidatedV1_0_0ToConfig = (validated: ModConfigV1_0_0): IntermediateModConfig => {
     let authors: string[] = [];
     if (validated.meta.author) 
         authors = [validated.meta.author]
@@ -50,7 +50,7 @@ export const FromValidatedV1ToConfig = (validated: ModConfigV1): IntermediateMod
         meta: {
             name: validated.meta.name,
             version: validated.meta.version,
-            type: validated.meta.is_runtime ? "runtime" : "mod",
+            type: validated.meta.is_runtime ? "runtime" : "mod", // 1.0.0 uses a "is_runtime" boolean flag, convert to new
             authors: authors,
             dependencies: [] // 1.0.0 has no dependencies.
         }
