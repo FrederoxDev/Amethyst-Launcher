@@ -1,18 +1,6 @@
 import Ajv from "ajv";
+import { IntermediateModConfig } from "./IntermediateModConfig";
 export const ajv = new Ajv();
-
-/**
- * The intermediate format of ModConfig that is independant of the schema format version.
- */
-export interface ModConfig {
-    format_version: string,
-    meta: {
-        name: string,
-        version: string,
-        type: "runtime" | "mod",
-        authors: string[]
-    }
-}
 
 export interface ModConfigV1 {
     format_version: "1.0.0",
@@ -52,7 +40,7 @@ const ModConfigSchemaV1 = {
 
 export const ValidateModSchemaV1 = ajv.compile(ModConfigSchemaV1);
 
-export const FromValidatedV1ToConfig = (validated: ModConfigV1): ModConfig => {
+export const FromValidatedV1ToConfig = (validated: ModConfigV1): IntermediateModConfig => {
     let authors: string[] = [];
     if (validated.meta.author) 
         authors = [validated.meta.author]
@@ -63,7 +51,8 @@ export const FromValidatedV1ToConfig = (validated: ModConfigV1): ModConfig => {
             name: validated.meta.name,
             version: validated.meta.version,
             type: validated.meta.is_runtime ? "runtime" : "mod",
-            authors: authors
+            authors: authors,
+            dependencies: [] // 1.0.0 has no dependencies.
         }
     }
 }

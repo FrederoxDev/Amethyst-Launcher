@@ -1,7 +1,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { ajv, FromValidatedV1ToConfig, ModConfig, ModConfigV1, ValidateModSchemaV1 } from './schema/ModConfigSchema'
+import { ajv, FromValidatedV1ToConfig, ModConfigV1, ValidateModSchemaV1 } from './modConfig/ModConfigV1_0_0'
 import { ModsFolder } from './Paths'
+import { IntermediateModConfig } from './modConfig/IntermediateModConfig';
 
 export function GetAllMods(): ValidatedMod[] {
   if (!fs.existsSync(ModsFolder)) return [];
@@ -21,7 +22,7 @@ export function GetAllMods(): ValidatedMod[] {
 }
 
 export type ValidatedMod = 
-  | { ok: true; config: ModConfig; errors: [], id: string }
+  | { ok: true; config: IntermediateModConfig; errors: [], id: string }
   | { ok: false, config: undefined, errors: string[], id: string };
 
 export function ValidateMod(id: string): ValidatedMod {
