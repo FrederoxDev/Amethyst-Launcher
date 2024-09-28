@@ -68,12 +68,12 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     setAllProfiles(GetProfiles())
 
-    const validMods = GetAllMods().filter(mod => mod.ok);
-    const runtimes = validMods.filter(mod => mod.config.meta.type === "runtime");
-    const mods = validMods.filter(mod => mod.config.meta.type !== "runtime");
+    const validMods = GetAllMods().filter(mod => mod.ok)
+    const runtimes = validMods.filter(mod => mod.config.meta.type === 'runtime')
+    const mods = validMods.filter(mod => mod.config.meta.type !== 'runtime')
 
     setAllRuntimes(['Vanilla', ...runtimes.map(r => r.id)])
-    setAllMods(mods.map(r => r.id));
+    setAllMods(mods.map(r => r.id))
 
     const readConfig = GetLauncherConfig()
     setKeepLauncherOpen(readConfig.keep_open ?? true)
