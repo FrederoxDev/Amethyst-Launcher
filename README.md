@@ -10,7 +10,7 @@ Launcher for Minecraft Bedrock mods created with AmethystAPI
 **Other**: Minecraft Bedrock Edition
 
 > [!IMPORTANT]
-> Amethyst Launcher won't work if you do not own Minecraft Bedrock Edition,or if your install path is not default path.
+> Amethyst Launcher won't work if you do not own Minecraft Bedrock Edition, or if your install path is not default path.
 
 ### Installation
 
