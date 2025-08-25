@@ -46,6 +46,7 @@ export async function UnregisterCurrent() {
   console.log('Unregistered')
 }
 
+
 export async function RegisterVersion(version: MinecraftVersion) {
   // Make sure no version is currently registered
   if (GetPackageID() !== undefined) {
@@ -56,14 +57,27 @@ export async function RegisterVersion(version: MinecraftVersion) {
   }
 
   // Register New Version
-  const appxManifest = path.join(VersionsFolder, `Minecraft-${version.version.toString()}`, 'AppxManifest.xml')
-  const registerCmd = `powershell -ExecutionPolicy Bypass -Command "& { Add-AppxPackage -Path "${appxManifest}" -Register }"`
-  await new Promise(resolved => {
-    const exec_proc = child.exec(registerCmd)
+  const appxManifest = path.join(
+    VersionsFolder,
+    `Minecraft-${version.version.toString()}`,
+    'AppxManifest.xml'
+  )
+  const registerCmd = `powershell -ExecutionPolicy Bypass -Command "& { Add-AppxPackage -Path '${appxManifest}' -Register }"`
 
-    exec_proc.on('exit', exit_code => {
-      resolved(exit_code)
+  await new Promise<void>((resolve, reject) => {
+    child.exec(registerCmd, (error, stdout, stderr) => {
+      if (error) {
+        reject(new Error(`Registration failed: ${stderr || error.message}`))
+        return
+      }
+      if (stderr) {
+        reject(new Error(`Registration error: ${stderr}`))
+        return
+      }
+      console.log(stdout) // optional: log PowerShell output
+      resolve()
     })
   })
+
   console.log('Registered')
 }
