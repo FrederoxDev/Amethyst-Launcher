@@ -15,7 +15,6 @@ export default function ProfileEditor() {
   const [profileActiveMods, setProfileActiveMods] = useState<string[]>([])
   const [profileRuntime, setProfileRuntime] = useState<string>('')
   const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<string>('')
-  // const [profileInstallDir, setProfileInstallDir] = useState<string>(GetDefaultInstallPath())
 
   const {
     allMods,
@@ -101,7 +100,8 @@ export default function ProfileEditor() {
   // }, [setAllMods])
 
   useEffect(() => {
-    loadProfile()
+    loadProfile();
+    saveData();
   }, [loadProfile])
 
   return (
