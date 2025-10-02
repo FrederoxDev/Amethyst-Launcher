@@ -66,5 +66,6 @@
     "xutility": "cpp",
 
     "*.css": "tailwindcss"
-  }
+  },
+  "cmake.sourceDirectory": "C:/Users/blake/Documents/Modding/Tools/Amethyst-Launcher/proxy"
 }
