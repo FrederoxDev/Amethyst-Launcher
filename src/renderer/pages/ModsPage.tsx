@@ -55,6 +55,12 @@ export default function ModsPage() {
                   {report.errors.length === 0 && (
                     <p className="minecraft-seven text-[#BCBEC0] text-[14px] px-[4px]">No Errors</p>
                   )}
+                  {report.warnings.length > 0 && (
+                    <p className="minecraft-seven text-yellow-400 text-[14px] px-[4px]">{report.warnings.length} Warnings!</p>
+                  )}
+                  {report.warnings.length === 0 && (
+                    <p className="minecraft-seven text-[#BCBEC0] text-[14px] px-[4px]">No Warnings</p>
+                  )}
                 </div>
               </div>
             ))}
@@ -96,7 +102,23 @@ export default function ModsPage() {
             </div>
           ) : (
             <div className="w-[500px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
-              <p className="minecraft-seven text-white text-[12px]">No issues detected!</p>
+              <p className="minecraft-seven text-white text-[12px]">No errors detected!</p>
+            </div>
+          )}
+          {selectedReport.warnings.length > 0 ? (
+            <div className="w-[500px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+              <p className="minecraft-seven text-white text-[12px]">Warnings:</p>
+              <ul>
+                {selectedReport.warnings.map(err => (
+                  <li className="minecraft-seven text-yellow-400 text-[12px]" key={err}>
+                    - {err}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="w-[500px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
+              <p className="minecraft-seven text-white text-[12px]">No errors detected!</p>
             </div>
           )}
         </PopupPanel>

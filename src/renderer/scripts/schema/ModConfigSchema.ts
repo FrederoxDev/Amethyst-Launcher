@@ -1,4 +1,5 @@
 import Ajv from 'ajv'
+import { ModConfigSchemaV1, ModConfigSchemaV1_1_0 } from './Schemas'
 export const ajv = new Ajv()
 
 /**
@@ -9,50 +10,66 @@ export interface ModConfig {
   meta: {
     name: string
     version: string
+    
     type: 'runtime' | 'mod'
-    authors: string[]
+    authors: string[],
+
+    namespace: string
+    uuid: string
   }
 }
 
-export interface ModConfigV1 {
-  format_version: '1.0.0'
+// export interface ModConfigV1 {
+//   format_version: '1.0.0'
+//   meta: {
+//     is_runtime?: boolean
+//     author?: string
+//     name: string
+//     version: string
+//   }
+// }
+
+interface ModConfigV1_1_0_Dependency {
+  dependency_uuid: string
+  dependency_namespace?: string
+  version_range: string
+}
+
+export interface ModConfigV1_1_0 {
+  format_version: '1.1.0'
   meta: {
+    name: string
+    uuid: string
+    version: string,
+    namespace: string
+
     is_runtime?: boolean
     author?: string
-    name: string
-    version: string
+
+    dependencies?: ModConfigV1_1_0_Dependency[]
   }
 }
 
-const ModConfigSchemaV1 = {
-  type: 'object',
-  properties: {
-    format_version: { type: 'string', const: '1.0.0' },
-    meta: {
-      type: 'object',
-      properties: {
-        is_runtime: {
-          type: 'boolean'
-        },
-        name: {
-          type: 'string'
-        },
-        version: {
-          type: 'string'
-        },
-        author: {
-          type: 'string'
-        }
-      },
-      required: ['name', 'version']
-    }
-  },
-  required: ['format_version', 'meta']
-}
+// export const ValidateModSchemaV1 = ajv.compile(ModConfigSchemaV1)
 
-export const ValidateModSchemaV1 = ajv.compile(ModConfigSchemaV1)
+// export const FromValidatedV1ToConfig = (validated: ModConfigV1): ModConfig => {
+//   let authors: string[] = []
+//   if (validated.meta.author) authors = [validated.meta.author]
 
-export const FromValidatedV1ToConfig = (validated: ModConfigV1): ModConfig => {
+//   return {
+//     format_version: validated.format_version,
+//     meta: {
+//       name: validated.meta.name,
+//       version: validated.meta.version,
+//       type: validated.meta.is_runtime ? 'runtime' : 'mod',
+//       authors: authors
+//     }
+//   }
+// }
+
+export const ValidateModSchemaV1_1_0 = ajv.compile(ModConfigSchemaV1_1_0);
+
+export const FromValidatedV1_1_0ToConfig = (validated: ModConfigV1_1_0): ModConfig => {
   let authors: string[] = []
   if (validated.meta.author) authors = [validated.meta.author]
 
@@ -62,7 +79,9 @@ export const FromValidatedV1ToConfig = (validated: ModConfigV1): ModConfig => {
       name: validated.meta.name,
       version: validated.meta.version,
       type: validated.meta.is_runtime ? 'runtime' : 'mod',
-      authors: authors
+      authors: authors,
+      namespace: validated.meta.namespace,
+      uuid: validated.meta.uuid
     }
   }
 }
