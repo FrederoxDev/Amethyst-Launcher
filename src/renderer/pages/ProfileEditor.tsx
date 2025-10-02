@@ -24,11 +24,16 @@ export default function ProfileEditor() {
     setAllProfiles,
     selectedProfile,
     saveData,
-    setAllMods
+    setAllMods,
+    allInvalidMods
   } = UseAppState()
   const navigate = useNavigate()
 
-  if (allProfiles.length === 0) navigate('/profiles')
+  useEffect(() => {
+    if (allProfiles.length === 0) {
+      navigate('/profiles')
+    }
+  }, [allProfiles, navigate])
 
   const toggleModActive = (name: string) => {
     if (profileActiveMods.includes(name)) {
@@ -129,6 +134,10 @@ export default function ProfileEditor() {
           />
           {/*<TextInput label="Install Directory" text={profileInstallDir} setText={setProfileInstallDir} />*/}
         </div>
+        
+        { allInvalidMods.length > 0 && (
+          <p className='text-red-400 minecraft-seven text-[16px]'>Failed to show {allInvalidMods.length} mods! See Mod Manager for details</p>
+        )}
 
         {/* Mod Selection */}
         {profileRuntime === 'Vanilla' ? (

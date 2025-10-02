@@ -84,7 +84,6 @@ export function ValidateMod(id: string): ValidatedMod {
   }
 
   for (const [version, [validator, fromValidated]] of Object.entries(validators)) {
-    console.log(version, configUnchecked['format_version'])
     if (configUnchecked['format_version'] !== version) continue;
 
     const success = validator(configUnchecked)

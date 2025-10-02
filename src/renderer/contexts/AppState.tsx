@@ -11,6 +11,8 @@ interface TAppStateContext {
   allMods: string[]
   setAllMods: React.Dispatch<React.SetStateAction<string[]>>
 
+  allInvalidMods: string[]
+
   allRuntimes: string[]
   setAllRuntimes: React.Dispatch<React.SetStateAction<string[]>>
 
@@ -51,7 +53,9 @@ interface TAppStateContext {
 const AppStateContext = createContext<TAppStateContext | undefined>(undefined)
 
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
-  const [allMods, setAllMods] = useState<string[]>([])
+  const [allMods, setAllMods] = useState<string[]>([]);
+  const [allInvalidMods, setAllInvalidMods] = useState<string[]>([]);
+
   const [allRuntimes, setAllRuntimes] = useState<string[]>([])
   const [allMinecraftVersions, setAllMinecraftVersions] = useState<MinecraftVersion[]>([])
   const [allProfiles, setAllProfiles] = useState<Profile[]>([])
@@ -68,12 +72,16 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     setAllProfiles(GetProfiles())
 
-    const validMods = GetAllMods().filter(mod => mod.ok)
+    const allMods = GetAllMods();
+
+    const _invalidMods = allMods.filter(mod => !mod.ok).map(mod => mod.id);
+    const validMods = allMods.filter(mod => mod.ok)
     const runtimes = validMods.filter(mod => mod.config.meta.type === 'runtime')
     const mods = validMods.filter(mod => mod.config.meta.type !== 'runtime')
 
     setAllRuntimes(['Vanilla', ...runtimes.map(r => r.id)])
     setAllMods(mods.map(r => r.id))
+    setAllInvalidMods(_invalidMods)
 
     const readConfig = GetLauncherConfig()
     setKeepLauncherOpen(readConfig.keep_open ?? true)
@@ -121,6 +129,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       value={{
         allMods,
         setAllMods,
+        allInvalidMods,
         allRuntimes,
         setAllRuntimes,
         allMinecraftVersions,
