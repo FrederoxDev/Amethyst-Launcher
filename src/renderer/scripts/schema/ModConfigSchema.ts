@@ -1,5 +1,5 @@
 import Ajv from 'ajv'
-import { ModConfigSchemaV1, ModConfigSchemaV1_1_0 } from './Schemas'
+import { ModConfigSchemaV1_1_0 } from './Schemas'
 export const ajv = new Ajv()
 
 /**
