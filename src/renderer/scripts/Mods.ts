@@ -28,7 +28,6 @@ export type ValidatedMod =
   | { ok: false; config: undefined; errors: string[]; warnings: string[], id: string }
 
 const validators: {[version: string]: [ValidateFunction, (data: any) => ModConfig | undefined]} = {
-  // '1.0.0': [ValidateModSchemaV1, FromValidatedV1ToConfig],
   '1.1.0': [ValidateModSchemaV1_1_0, FromValidatedV1_1_0ToConfig]
 }
 
