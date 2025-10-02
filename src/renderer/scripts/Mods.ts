@@ -60,7 +60,15 @@ export function ValidateMod(id: string): ValidatedMod {
   // this is needed for old mods to still be able to correctly validate :)
   if (configUnchecked['format_version'] === undefined) {
     configUnchecked['format_version'] = '1.1.0'
-    warnings.push('No format_version field present, falling back to "1.1.0", please add a format_version field to your mod.json')
+    errors.push('No format_version field present, please add a format_version field to your mod.json! Fallback is no longer supported.');
+
+    return {
+      ok: false,
+      config: undefined,
+      warnings,
+      errors,
+      id
+    }
   }
 
   if (deprecatedVersions.includes(configUnchecked['format_version'])) {
