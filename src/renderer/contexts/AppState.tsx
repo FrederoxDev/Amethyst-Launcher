@@ -10,6 +10,8 @@ import { Analytics, getAnalytics, logEvent, setAnalyticsCollectionEnabled } from
 import { firebaseApp } from '../firebase/Firebase'
 
 interface TAppStateContext {
+  allMods: ValidatedMod[];
+
   allValidMods: string[]
   setAllValidMods: React.Dispatch<React.SetStateAction<string[]>>
 
@@ -171,6 +173,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AppStateContext.Provider
       value={{
+        allMods,
         allValidMods,
         setAllValidMods,
         allInvalidMods,

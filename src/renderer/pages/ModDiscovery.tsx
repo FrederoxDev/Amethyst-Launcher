@@ -16,6 +16,8 @@ import path from "path";
 import * as fs from "fs";
 import { Extractor } from "../scripts/backend/Extractor";
 import { ModsFolder } from "../scripts/Paths";
+import { MinecraftButton } from "../components/MinecraftButton";
+import { MinecraftButtonStyle } from "../components/MinecraftButtonStyle";
 
 interface ModDiscoveryData {
     id: string;
@@ -24,17 +26,13 @@ interface ModDiscoveryData {
     description: string;
     authors: string[];
     downloads: number;
-
     githubUrl: string;
+
+    // Used exclusively for Amethyst org mods, no exceptions will be made to this
+    isAmethystOrgMod?: boolean;
 }
 
 function ModCard({ mod, onOpenDetails }: { mod: ModDiscoveryData, onOpenDetails: () => void }) {
-    const handleDownload = async () => {
-        const modRef = doc(db, "mods", mod.id);
-        await updateDoc(modRef, { downloads: increment(1) });
-        console.log(`Downloading mod: ${mod.name}`);
-    }
-
     return (
         <PanelButton 
             className="flex items-start gap-4 p-4 cursor-pointer"
@@ -195,8 +193,9 @@ function uninstallMod(modName: string): void {
 export function ModDownloads({ mod }: { mod: ModDiscoveryData }) {
     const [releases, setReleases] = useState<ParsedGithubRelease[]>([]);
     const [loading, setLoading] = useState(true);
-    const { analyticsInstance, allValidMods, allInvalidMods, refreshAllMods } = UseAppState();
+    const { analyticsInstance, allValidMods, allInvalidMods, refreshAllMods, allMods } = UseAppState();
     const [allInstalling, setAllInstalling] = useState<string[]>([]);
+    const [confirmingMod, setConfirmingMod] = useState<ParsedGithubRelease | null>(null);
 
     useEffect(() => {
         const repo = parseGitHubRepo(mod.githubUrl);
@@ -235,7 +234,57 @@ export function ModDownloads({ mod }: { mod: ModDiscoveryData }) {
         fetchReleases();
     }, [mod.githubUrl]);
 
+    const handleInstallClick = (release: ParsedGithubRelease, isTrusted: boolean) => {
+        if (isTrusted) {
+            // proceed directly
+            installMod(release);
+        } else {
+            // show confirmation popup
+            setConfirmingMod(release);
+        }
+    };
+
+    const installMod = async (release: ParsedGithubRelease) => {
+        setAllInstalling(prev => [...prev, release.download_name]);
+        const { ok, path, error } = await downloadToTemp(release.download_url, release.download_name + ".zip");
+        if (!ok) {
+            console.error(error);
+            setAllInstalling(prev => prev.filter(n => n !== release.download_name));
+            setConfirmingMod(null);
+            return;
+        }
+
+        await ImportZIP(path!);
+        refreshAllMods();
+        setAllInstalling(prev => prev.filter(n => n !== release.download_name));
+        setConfirmingMod(null);
+
+        if (analyticsInstance) {
+            logEvent(analyticsInstance, "mod_install", { mod_name: release.download_name });
+        }
+    };
+
     return <PanelIndent>
+        {confirmingMod && <PopupPanel onExit={() => setConfirmingMod(null)}>
+            <div className="w-[30%] h-[18%]" onClick={e => e.stopPropagation()}>
+                <MainPanelSection className="flex flex-col flex-1">
+                    <p>{confirmingMod.download_name}</p>
+                    <p className="text-[#BCBEC0]">
+                    This mod is not officially published or reviewed by the Amethyst team. The code has not been checked for security or stability issues, and may behave unexpectedly. Only install if you trust the source.
+                    </p>
+                    
+                    {/* Spacer pushes buttons to bottom */}
+                    <div className="mt-auto flex justify-around gap-[8px]">
+                        <MinecraftButton text='Continue' onClick={() => {
+                            if (confirmingMod) installMod(confirmingMod);
+                            setConfirmingMod(null);
+                        }} />
+                        <MinecraftButton text='Cancel' onClick={() => setConfirmingMod(null)} style={MinecraftButtonStyle.Warn} />
+                    </div>
+                </MainPanelSection>
+            </div>
+        </PopupPanel>}
+
         {loading && <p className="minecraft-seven text-[#BCBEC0] text-[14px]">Loading releases...</p>}
         {!loading && releases.length === 0 && <p className="minecraft-seven text-[#BCBEC0] text-[14px]">No releases found.</p>}
         {!loading && releases.map(release => (
@@ -247,45 +296,19 @@ export function ModDownloads({ mod }: { mod: ModDiscoveryData }) {
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    {!(allValidMods.includes(release.download_name) || allInvalidMods.includes(release.download_name)) && <button
+                    {(allMods.find(mod => mod.id === release.download_name) === undefined) && <button
                         className="minecraft-seven bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-[14px] mr-2"
                         onClick={(e) => {
                             e.stopPropagation();
                             if (allInstalling.includes(release.download_name)) return;
-
-                            const assets = release.download_url;
-
-                            (async () => {
-                                setAllInstalling(prev => [...prev, release.download_name]);
-
-                                const { ok, path, error } = await downloadToTemp(assets, release.download_name + ".zip");
-                                if (!ok) {
-                                    console.error("Download failed:", error);
-                                    setAllInstalling(prev => prev.filter(name => name !== release.download_name));
-                                    return;
-                                }
-
-                                console.log(`Downloaded asset to: ${path}`);
-                                const unzipResult = await ImportZIP(path!);
-                                console.log(`Unzip result: ${unzipResult}`);
-                                setAllInstalling(prev => prev.filter(name => name !== release.download_name));
-
-                                refreshAllMods();
-                                
-                                const modRef = doc(db, "mods", mod.id);
-                                await updateDoc(modRef, { downloads: increment(1) });
-
-                                if (analyticsInstance) {
-                                    logEvent(analyticsInstance, "mod_install", { mod_name: release.download_name });
-                                }
-                            })();
+                            handleInstallClick(release, mod.isAmethystOrgMod ?? false)
                         }}
                     >
                     {allInstalling.includes(release.download_name) ? "Installing..." : "Install" }
                     </button>}
 
                     {/* Uninstall */}
-                    {(allValidMods.includes(release.download_name) || allInvalidMods.includes(release.download_name)) && <button
+                    {(allMods.find(mod => mod.id === release.download_name) !== undefined) && <button
                         className="minecraft-seven bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-[14px] mr-2"
                         onClick={(e) => {
                             e.stopPropagation();
