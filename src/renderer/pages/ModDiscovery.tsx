@@ -275,7 +275,9 @@ export function ModDownloads({ mod }: { mod: ModDiscoveryData }) {
                                 const modRef = doc(db, "mods", mod.id);
                                 await updateDoc(modRef, { downloads: increment(1) });
 
-
+                                if (analyticsInstance) {
+                                    logEvent(analyticsInstance, "mod_install", { mod_name: release.download_name });
+                                }
                             })();
                         }}
                     >
@@ -291,13 +293,9 @@ export function ModDownloads({ mod }: { mod: ModDiscoveryData }) {
                             uninstallMod(release.download_name);
                             refreshAllMods();
 
-                            // const assets = release.download_url;
-                            // console.log(`Downloading asset: ${assets}`);
-                            // console.log(release.download_name)
-                            
-                            // if (analyticsInstance) {
-                            //     logEvent(analyticsInstance, "mod_download", { mod_name: release.download_name });
-                            // }
+                            if (analyticsInstance) {
+                                logEvent(analyticsInstance, "mod_uninstall", { mod_name: release.download_name });
+                            }
                         }}
                     >
                     Uninstall
