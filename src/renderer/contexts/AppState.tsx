@@ -121,6 +121,10 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     setAllInvalidMods(_invalidMods);
   }, []);
 
+  useEffect(() => {
+    refreshAllMods();
+  }, [refreshAllMods]);
+
   // Initialize Data like all mods and existing profiles..
   useEffect(() => {
     setAllProfiles(GetProfiles())
