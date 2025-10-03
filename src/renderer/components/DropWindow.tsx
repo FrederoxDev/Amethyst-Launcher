@@ -45,7 +45,8 @@ export function DropWindow() {
 
       if (!event.dataTransfer) return
 
-      const items = event.dataTransfer.files
+      type ElectronFile = File & { path: string };
+      const items = event.dataTransfer.files as unknown as ElectronFile[];
 
       for (const file of items) {
         const file_path: string = file.path
