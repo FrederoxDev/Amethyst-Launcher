@@ -1,6 +1,6 @@
 {
   "name": "amethyst-launcher",
-  "version": "2.7.1",
+  "version": "2.7.2",
   "author": "FrederoxDev, theaddonn, OmniacDev",
   "description": "Amethyst Launcher",
   "main": "build/electron/main/main.js",
