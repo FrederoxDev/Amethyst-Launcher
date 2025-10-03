@@ -3,7 +3,7 @@ export type ReadOnlyTextBoxProps = {
   text: string
 }
 
-export default function ReadOnlyTextBox({ label, text }: ReadOnlyTextBoxProps) {
+export function ReadOnlyTextBox({ label, text }: ReadOnlyTextBoxProps) {
   return (
     <>
       <p className="minecraft-seven text-white text-[14px]">{label}</p>

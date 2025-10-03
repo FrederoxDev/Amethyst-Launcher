@@ -1,30 +1,28 @@
 import { useCallback, useEffect, useState } from 'react'
-import MainPanel from '../components/MainPanel'
-import TextInput from '../components/TextInput'
-import Dropdown from '../components/Dropdown'
-import MinecraftButton from '../components/MinecraftButton'
+import { MainPanel } from '../components/MainPanel'
+import {TextInput} from '../components/TextInput'
+import {Dropdown} from '../components/Dropdown'
+import {MinecraftButton} from '../components/MinecraftButton'
 import { MinecraftButtonStyle } from '../components/MinecraftButtonStyle'
 import { UseAppState } from '../contexts/AppState'
 import { useNavigate } from 'react-router-dom'
 import { MinecraftVersionType } from '../scripts/Versions'
-import { GetAllMods } from '../scripts/Mods'
-// import { GetDefaultInstallPath } from '../scripts/VersionManager'
 
-export default function ProfileEditor() {
+export function ProfileEditor() {
   const [profileName, setProfileName] = useState('')
   const [profileActiveMods, setProfileActiveMods] = useState<string[]>([])
   const [profileRuntime, setProfileRuntime] = useState<string>('')
   const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<string>('')
 
   const {
-    allMods,
+    allValidMods,
     allRuntimes,
     allMinecraftVersions,
     allProfiles,
     setAllProfiles,
     selectedProfile,
     saveData,
-    setAllMods,
+    setAllValidMods,
     allInvalidMods
   } = UseAppState()
   const navigate = useNavigate()
@@ -80,8 +78,8 @@ export default function ProfileEditor() {
     if (!(profileRuntime in allRuntimes)) setProfileRuntime('Vanilla')
 
     // Ensure all mods still exist
-    const newMods = profileActiveMods.filter(mod => allMods.includes(mod))
-    setAllMods(newMods)
+    const newMods = profileActiveMods.filter(mod => allValidMods.includes(mod))
+    setAllValidMods(newMods)
 
     allProfiles[selectedProfile].runtime = profileRuntime
     allProfiles[selectedProfile].mods = profileActiveMods
@@ -101,8 +99,8 @@ export default function ProfileEditor() {
 
   // useEffect(() => {
   //   const mods = GetAllMods().filter(m => m.ok).map(m => m.id)
-  //   setAllMods(mods)
-  // }, [setAllMods])
+  //   setAllValidMods(mods)
+  // }, [setAllValidMods])
 
   useEffect(() => {
     loadProfile();
@@ -149,8 +147,8 @@ export default function ProfileEditor() {
             <div className="w-[50%] h-full flex flex-col">
               <p className="text-white minecraft-seven text-[14px]">Active Mods</p>
               <div className="border-[3px] border-[#1E1E1F] bg-[#313233] flex-grow">
-                {allMods.length > 0 ? (
-                  allMods
+                {allValidMods.length > 0 ? (
+                  allValidMods
                     .filter(mod => profileActiveMods.includes(mod))
                     .map((mod, index) => <ModButton name={mod} key={index} />)
                 ) : (
@@ -161,8 +159,8 @@ export default function ProfileEditor() {
             <div className=" w-[50%] h-full flex flex-col">
               <p className="text-white minecraft-seven text-[14px]">Inactive Mods</p>
               <div className="border-[3px] border-[#1E1E1F] bg-[#313233] flex-grow">
-                {allMods.length > 0 ? (
-                  allMods
+                {allValidMods.length > 0 ? (
+                  allValidMods
                     .filter(mod => !profileActiveMods.includes(mod))
                     .map((mod, index) => <ModButton name={mod} key={index} />)
                 ) : (

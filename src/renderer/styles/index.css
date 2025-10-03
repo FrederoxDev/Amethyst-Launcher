@@ -49,6 +49,11 @@
   letter-spacing: 0.1px;
 }
 
+p {
+  font-family: 'Minecraft-Seven', sans-serif;
+  color: white;
+}
+
 .pixelated {
   image-rendering: pixelated;
 }

@@ -4,7 +4,7 @@ export type TextInputProps = {
   setText: React.Dispatch<React.SetStateAction<string>>
 }
 
-export default function TextInput({ label, text, setText }: TextInputProps) {
+export function TextInput({ label, text, setText }: TextInputProps) {
   return (
     <div>
       <p className="minecraft-seven text-white text-[14px]">{label}</p>

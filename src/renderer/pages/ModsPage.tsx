@@ -1,8 +1,8 @@
 import * as fs from 'fs'
 import * as child from 'child_process'
-import MainPanel from '../components/MainPanel'
-import MinecraftButton from '../components/MinecraftButton'
-import PopupPanel from '../components/PopupPanel'
+import {MainPanel} from '../components/MainPanel'
+import {MinecraftButton} from '../components/MinecraftButton'
+import {PopupPanel} from '../components/PopupPanel'
 import { useEffect, useState } from 'react'
 import { GetAllMods, ValidatedMod } from '../scripts/Mods'
 import { MinecraftUWPFolder, ModsFolder } from '../scripts/Paths'
@@ -20,7 +20,7 @@ const openModsFolder = () => {
   child.spawn(startGameCmd, { shell: true })
 }
 
-export default function ModsPage() {
+export function ModsPage() {
   /** Page which will display information about each folder in the 'mods' directory. */
   /** Will report any errors and why they are not valid to select etc */
   /** Todo make this popup a panel after a more info button is pressed or something */
@@ -72,6 +72,7 @@ export default function ModsPage() {
       </MainPanel>
       {selectedReport && (
         <PopupPanel onExit={() => setSelectedReport(undefined)}>
+          <div className="flex flex-col items-center justify-center border-[3px] border-[#1E1E1F]">
           <div className="w-[500px] border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
             <div className="flex">
               <p className="minecraft-seven text-white text-[14px] max-w-[400px]">{selectedReport.id}</p>
@@ -121,6 +122,7 @@ export default function ModsPage() {
               <p className="minecraft-seven text-white text-[12px]">No errors detected!</p>
             </div>
           )}
+          </div>
         </PopupPanel>
       )}
     </>

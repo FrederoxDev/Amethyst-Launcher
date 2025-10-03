@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import MinecraftButton from '../components/MinecraftButton'
+import {MinecraftButton} from '../components/MinecraftButton'
 import { MinecraftButtonStyle } from '../components/MinecraftButtonStyle'
 import { UpdateInfo } from 'electron-updater'
-import LoadingWheel from '../components/LoadingWheel'
-import PopupPanel from '../components/PopupPanel'
+import {LoadingWheel} from '../components/LoadingWheel'
+import {PopupPanel} from '../components/PopupPanel'
 import { ipcRenderer } from 'electron'
 
-export default function UpdatePage() {
+export function UpdatePage() {
   const [updateAvailable, setUpdateAvailable] = useState<boolean>(false)
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
   const [popupClosed, setPopupClosed] = useState<boolean>(false)
@@ -75,6 +75,7 @@ export default function UpdatePage() {
     <>
       {!popupClosed && updateAvailable && (
         <PopupPanel>
+          <div className="flex flex-col items-center justify-center border-[3px] border-[#1E1E1F]">
           {!downloadActive && (
             <div className="w-[500px]">
               <div className="w-full border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
@@ -103,6 +104,7 @@ export default function UpdatePage() {
           {downloadActive && (
             <LoadingWheel text={'Downloading update...'} percentage={downloadPercentage}></LoadingWheel>
           )}
+          </div>
         </PopupPanel>
       )}
     </>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import MinecraftRadialButton from './MinecraftRadialButton'
+import { MinecraftRadialButton } from './MinecraftRadialButton'
 
 type RadialButtonPanelProperties = {
   elements: {
@@ -13,7 +13,7 @@ type RadialButtonPanelProperties = {
   onChange: (selected_value: string) => void
 }
 
-export default function MinecraftRadialButtonPanel({
+export function MinecraftRadialButtonPanel({
   elements,
   default_selected_value,
   onChange

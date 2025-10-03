@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
-import MainPanel from '../components/MainPanel'
+import {MainPanel} from '../components/MainPanel'
 import { UseAppState } from '../contexts/AppState'
-import MinecraftButton from '../components/MinecraftButton'
+import {MinecraftButton} from '../components/MinecraftButton'
 import { Profile } from '../scripts/Profiles'
 
 const ProfileButton = ({ profile, index }: { profile: Profile; index: number }) => {
@@ -27,7 +27,7 @@ const ProfileButton = ({ profile, index }: { profile: Profile; index: number }) 
   )
 }
 
-export default function ProfilePage() {
+export function ProfilePage() {
   const navigate = useNavigate()
   const { allProfiles, setAllProfiles, setSelectedProfile } = UseAppState()
 

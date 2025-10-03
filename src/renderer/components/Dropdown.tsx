@@ -8,7 +8,7 @@ type DropdownProps = {
   setValue: React.Dispatch<React.SetStateAction<string>>
 }
 
-export default function Dropdown({ id, labelText, options, value, setValue }: DropdownProps) {
+export function Dropdown({ id, labelText, options, value, setValue }: DropdownProps) {
   const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedValue = event.target.value
     setValue(selectedValue)
