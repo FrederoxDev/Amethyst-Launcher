@@ -5,7 +5,7 @@ type MinecraftToggleProps = {
   setIsChecked: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export default function MinecraftToggle({ isChecked, setIsChecked }: MinecraftToggleProps) {
+export function MinecraftToggle({ isChecked, setIsChecked }: MinecraftToggleProps) {
   const handleCheckboxChange = () => {
     setIsChecked(!isChecked)
   }

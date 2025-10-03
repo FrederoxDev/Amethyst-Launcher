@@ -7,7 +7,7 @@ import { CopyRecursive } from '../scripts/Files'
 import * as fs from 'fs'
 import * as path from 'path'
 
-export default function DropWindow() {
+export function DropWindow() {
   const [hovered, setHovered] = useState(false)
 
   const { setError } = UseAppState()

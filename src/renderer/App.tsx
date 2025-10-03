@@ -1,15 +1,59 @@
 import { CSSProperties } from 'react'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import Title from './components/Title'
-import { AppStateProvider } from './contexts/AppState'
-import LauncherPage from './pages/LauncherPage'
-import ProfileEditor from './pages/ProfileEditor'
-import ProfilePage from './pages/ProfilePage'
-import SettingsPage from './pages/SettingsPage'
-import UpdatePage from './pages/UpdatePage'
-import ModsPage from './pages/ModsPage'
-import VersionPage from './pages/VersionPage'
-import DropWindow from './components/DropWindow'
+import { AnalyticsConsent, AppStateProvider, UseAppState } from './contexts/AppState'
+import { LauncherPage } from './pages/LauncherPage'
+import { ProfileEditor } from './pages/ProfileEditor'
+import { ProfilePage } from './pages/ProfilePage'
+import {SettingsPage } from './pages/SettingsPage'
+import {UpdatePage }from './pages/UpdatePage'
+import {ModsPage }from './pages/ModsPage'
+import {VersionPage} from './pages/VersionPage'
+import {DropWindow} from './components/DropWindow'
+import { ModDiscovery } from './pages/ModDiscovery'
+import { PopupPanel } from './components/PopupPanel'
+import { MainPanel, MainPanelSection, PanelIndent } from './components/MainPanel'
+import { MinecraftButtonStyle } from './components/MinecraftButtonStyle'
+import { MinecraftButton } from './components/MinecraftButton'
+import { shell } from 'electron'
+
+function GetAnalyticsConsent() {
+  const { analyticsConsent, setAnalyticsConsent } = UseAppState();
+
+  if (analyticsConsent !== AnalyticsConsent.Unknown) return <></>
+
+  return <PopupPanel>
+    <div className="w-[50%] h-[50%]" onClick={e => e.stopPropagation()}>
+      <MainPanel>
+        <MainPanelSection>
+          <p>Analytics Consent</p>
+          <PanelIndent className='p-4'>
+            <p>
+              Amethyst Launcher uses Firebase Analytics to collect anonymized usage data to help improve the launcher. The data collected may include:
+            </p>
+            <ul>
+              <p> - App interactions (e.g., mod downloads, button clicks)</p>
+              <p> - Device information (device type, OS version)</p>
+              <p> - Session and engagement data</p>
+            </ul>
+            <p>No personal information (like names or emails) is collected.</p>
+            <p>
+              By clicking “I Agree”, you consent to this data collection. You can later revoke consent in the launcher settings.
+            </p>
+            <p>For more details, see <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener noreferrer" className='text-blue-400 underline' onClick={(e) => {
+                                e.preventDefault();
+                                shell.openExternal('https://firebase.google.com/support/privacy');
+                                }}>Firebase Privacy & Security</a>.</p>
+          </PanelIndent>
+          <div className='flex justify-around gap-[8px]'>
+            <MinecraftButton text='I Agree' onClick={() => setAnalyticsConsent(AnalyticsConsent.Accepted)} />
+            <MinecraftButton text='Decline' onClick={() => setAnalyticsConsent(AnalyticsConsent.Declined)} style={MinecraftButtonStyle.Warn} />
+          </div>
+        </MainPanelSection>
+      </MainPanel>
+    </div>
+  </PopupPanel>
+}
 
 export default function App() {
   const location = useLocation()
@@ -56,6 +100,14 @@ export default function App() {
                     <img src="images/icons/shulker-icon.png" className="w-full h-full pixelated" alt="" />
                   </div>
                 </Link>
+                <Link to="/mod-discovery" draggable={false}>
+                  <div
+                    className="w-[46px] h-[46px]"
+                    style={location.pathname === '/mod-discovery' ? highlightedIcon : unselectedIcon}
+                  >
+                    <img src="images/icons/bookshelf-icon.png" className="w-full h-full pixelated" alt="" />
+                  </div>
+                </Link>
                 <Link to="/versions" draggable={false}>
                   <div
                     className="w-[46px] h-[46px]"
@@ -86,6 +138,7 @@ export default function App() {
               <Route path="/mods" element={<ModsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/versions" element={<VersionPage />} />
+              <Route path="/mod-discovery" element={<ModDiscovery />} />
             </Routes>
 
             <UpdatePage></UpdatePage>
@@ -93,6 +146,9 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      <GetAnalyticsConsent />
+
     </AppStateProvider>
   )
 }

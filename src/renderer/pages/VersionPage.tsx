@@ -1,7 +1,7 @@
 import { GetInstalledVersionsFromFile, InstalledVersion, ValidateVersionsFile } from '../scripts/Versions'
 import { useState } from 'react'
 import { ipcRenderer } from 'electron'
-import PopupPanel from '../components/PopupPanel'
+import {PopupPanel} from '../components/PopupPanel'
 
 import * as fs from 'fs'
 import * as child from 'child_process'
@@ -85,7 +85,7 @@ const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => 
   )
 }
 
-export default function VersionPage() {
+export function VersionPage() {
   ValidateVersionsFile()
   const [versions, SetVersions] = useState<InstalledVersion[]>(GetInstalledVersionsFromFile())
   console.log(versions)
@@ -119,6 +119,7 @@ export default function VersionPage() {
 
       {selected_version && (
         <PopupPanel onExit={() => SetSelectedVersion(undefined)}>
+          <div className="flex flex-col items-center justify-center border-[3px] border-[#1E1E1F]">
           <div className="flex flex-row w-full justify-between items-center border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
             <p className="minecraft-seven text-white text-[14px] max-w-[400px]">
               {selected_version.version.toString()}
@@ -139,6 +140,7 @@ export default function VersionPage() {
           </div>
           <div className="flex border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
             <p className="minecraft-seven text-[#BCBEC0] text-[12px]">{selected_version.path}</p>
+          </div>
           </div>
         </PopupPanel>
       )}

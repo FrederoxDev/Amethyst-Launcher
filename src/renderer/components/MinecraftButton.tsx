@@ -7,7 +7,7 @@ type MinecraftButtonProps = {
   style?: MinecraftButtonStyle
 }
 
-export default function MinecraftButton({ text, onClick, disabled = false, style }: MinecraftButtonProps) {
+export function MinecraftButton({ text, onClick, disabled = false, style }: MinecraftButtonProps) {
   return (
     <div
       className={`button_base`}

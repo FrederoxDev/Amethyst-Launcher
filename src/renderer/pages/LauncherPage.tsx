@@ -1,5 +1,5 @@
-import Dropdown from '../components/Dropdown'
-import MinecraftButton from '../components/MinecraftButton'
+import { Dropdown } from '../components/Dropdown'
+import { MinecraftButton } from '../components/MinecraftButton'
 import { UseAppState } from '../contexts/AppState'
 import { SemVersion } from '../scripts/classes/SemVersion'
 import { IsDevModeEnabled, TryEnableDevMode } from '../scripts/DeveloperMode'
@@ -17,7 +17,7 @@ import { RegisterVersion, UnregisterCurrent } from '../scripts/AppRegistry'
 import { GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
 import child from 'child_process'
 
-export default function LauncherPage() {
+export function LauncherPage() {
   const {
     allProfiles,
     selectedProfile,
