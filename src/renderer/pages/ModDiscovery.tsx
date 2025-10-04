@@ -90,12 +90,22 @@ export function ModReadme({ githubUrl }: { githubUrl: string }) {
             h3: ({node, ...props}) => <h3 className="minecraft-seven text-white text-[18px] my-2" {...props} />,
             p: ({node, ...props}) => <p className="minecraft-seven text-[#BCBEC0] text-[14px] my-1" {...props} />,
             li: ({node, ...props}) => <li className="minecraft-seven text-[#BCBEC0] text-[14px] my-1" {...props} />,
-            th: ({node, ...props}) => <th className="minecraft-seven text-[#BCBEC0] text-[14px] my-1" {...props} />,
             ol: ({node, ...props}) => <ol className="list-decimal ml-6 my-2" {...props} />,
             ul: ({node, ...props}) => <ul className="list-disc ml-6 my-2" {...props} />,
             code: ({node, ...props}) => <code className="minecraft-seven text-[#BCBEC0] px-1 rounded" {...props} />,
             pre: ({node, ...props}) => <pre className="bg-[#3e3e47] text-[#d4d5d6] p-2 rounded overflow-x-auto" {...props} />,
             blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-[#5a5b5c] pl-4 italic text-[#BCBEC0]" {...props} />,
+            table: ({node, ...props}) => (
+                <table className="minecraft-seven border-collapse border border-[#5a5b5c] my-3 w-full text-left" {...props} />
+            ),
+            thead: ({node, ...props}) => <thead className="bg-[#46464d]" {...props} />,
+            tr: ({node, ...props}) => <tr className="border-b border-[#5a5b5c]" {...props} />,
+            th: ({node, ...props}) => (
+            <th className="minecraft-seven text-[#BCBEC0] text-[14px] font-bold px-3 py-2 border border-[#5a5b5c]" {...props} />
+            ),
+            td: ({node, ...props}) => (
+            <td className="minecraft-seven text-[#BCBEC0] text-[14px] px-3 py-2 border border-[#5a5b5c]" {...props} />
+            ),
             img: ({node, ...props}) => {
             if (props.src) return <img className="max-w-full h-auto my-2" {...props} />;
             return null; // ignore all other HTML
