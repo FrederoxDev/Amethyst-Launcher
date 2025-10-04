@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { MainPanel, MainPanelSection, PanelButton, PanelIndent, PanelSection } from "../components/MainPanel";
 import { TextInput } from "../components/TextInput";
 import { db } from "../firebase/Firebase";
-import { getDocs, collection, updateDoc, increment, doc } from "firebase/firestore";
+import { getDocs, collection, updateDoc, increment, doc, getDoc } from "firebase/firestore";
 import { PopupPanel } from "../components/PopupPanel";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -258,6 +258,15 @@ export function ModDownloads({ mod }: { mod: ModDiscoveryData }) {
         refreshAllMods();
         setAllInstalling(prev => prev.filter(n => n !== release.download_name));
         setConfirmingMod(null);
+
+        // update download count in firestore
+        console.log(`Incrementing download count for mod ${mod.id}`);
+        
+        const modDocRef = doc(db, "mods", mod.id);
+
+        await updateDoc(modDocRef, {
+            downloads: increment(1)
+        });
 
         if (analyticsInstance) {
             logEvent(analyticsInstance, "mod_install", { mod_name: release.download_name });
