@@ -44,7 +44,7 @@ export function ValidateMod(id: string): ValidatedMod {
     const configDataText = fs.readFileSync(modConfigPath, 'utf-8')
     configUnchecked = JSON.parse(configDataText)
   } catch (e) {
-    errors.push('Failed to read/parse config.json')
+    errors.push('Failed to read/parse mod.json')
 
     return {
       ok: false,
