@@ -12,6 +12,8 @@ export const ModConfigSchemaV1_1_0 = {
 
         is_runtime: { type: "boolean" },
         author: { type: "string" },
+        friendly_name: { type: "string" },
+        log_name: { type: "string" },
 
         dependencies: {
           type: "array",
