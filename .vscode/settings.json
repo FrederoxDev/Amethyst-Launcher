@@ -1,5 +1,6 @@
 {
   "files.associations": {
+    "*.material": "bc-minecraft-project",
     "algorithm": "cpp",
     "atomic": "cpp",
     "bit": "cpp",
@@ -64,8 +65,20 @@
     "xstring": "cpp",
     "xtr1common": "cpp",
     "xutility": "cpp",
-
-    "*.css": "tailwindcss"
+    "*.css": "tailwindcss",
+    "print": "cpp",
+    "any": "cpp",
+    "array": "cpp",
+    "coroutine": "cpp",
+    "map": "cpp",
+    "numeric": "cpp",
+    "ranges": "cpp",
+    "source_location": "cpp",
+    "span": "cpp",
+    "stop_token": "cpp",
+    "thread": "cpp",
+    "valarray": "cpp",
+    "xtree": "cpp"
   },
   "cmake.sourceDirectory": "C:/Users/blake/Documents/Modding/Tools/Amethyst-Launcher/proxy"
 }
