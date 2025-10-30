@@ -121,6 +121,7 @@ export async function ExtractVersion(
 }
 
 export function InstallProxy(version: MinecraftVersion) {
+  console.log('Installing proxy for version', version.version.toString())
   const target_path = path.join(VersionsFolder, `Minecraft-${version.version.toString()}`, 'dxgi.dll')
   const proxy_path = path.join(ElectronAppPath, 'build/public/proxy/dxgi.dll')
 

@@ -24,14 +24,12 @@
 #include "fstream"
 #include "ios"
 #include "windows.h"
-#include "amethyst/Config.hpp"
-#include "amethyst/Log.hpp"
 #include <shlobj_core.h>
 
 #pragma warning(disable: 4996)
 #include "iostream"
 
-#define PROXY_VERSION "1.1.0"
+#define PROXY_VERSION "1.2.0"
 
 void Shutdown();
 void ShutdownWait();
