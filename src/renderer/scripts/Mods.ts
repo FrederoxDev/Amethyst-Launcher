@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { FromValidatedV1_1_0ToConfig, ModConfig, ValidateModSchemaV1_1_0, ajv } from './schema/ModConfigSchema'
+import { FromValidatedV1_1_0ToConfig, FromValidatedV1_2_0ToConfig, ModConfig, ValidateModSchemaV1_1_0, ValidateModSchemaV1_2_0, ajv } from './schema/ModConfigSchema'
 import { ModsFolder } from './Paths'
 import type { ValidateFunction } from 'ajv'
 
@@ -27,8 +27,15 @@ export type ValidatedMod =
   | { ok: true; config: ModConfig; errors: string[]; warnings: string[], id: string }
   | { ok: false; config: undefined; errors: string[]; warnings: string[], id: string }
 
-const validators: {[version: string]: [ValidateFunction, (data: any) => ModConfig | undefined]} = {
-  '1.1.0': [ValidateModSchemaV1_1_0, FromValidatedV1_1_0ToConfig]
+export enum DeprecatedStatus {
+  None,
+  Deprecated,
+  Removed
+}
+
+const validators: {[version: string]: [ValidateFunction, (data: any) => ModConfig | undefined, DeprecatedStatus]} = {
+  '1.1.0': [ValidateModSchemaV1_1_0, FromValidatedV1_1_0ToConfig, DeprecatedStatus.Deprecated],
+  '1.2.0': [ValidateModSchemaV1_2_0, FromValidatedV1_2_0ToConfig, DeprecatedStatus.None]
 }
 
 const deprecatedVersions = ['1.0.0']
@@ -82,8 +89,12 @@ export function ValidateMod(id: string): ValidatedMod {
     }
   }
 
-  for (const [version, [validator, fromValidated]] of Object.entries(validators)) {
+  for (const [version, [validator, fromValidated, deprecationStatus]] of Object.entries(validators)) {
     if (configUnchecked['format_version'] !== version) continue;
+
+    if (deprecationStatus === DeprecatedStatus.Deprecated) {
+      warnings.push(`Mod uses deprecated format_version "${version}". New mods should update to a newer format_version.`);
+    }
 
     const success = validator(configUnchecked)
     if (!success) {
