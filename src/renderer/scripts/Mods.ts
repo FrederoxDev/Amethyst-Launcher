@@ -34,7 +34,7 @@ export enum DeprecatedStatus {
 }
 
 const validators: {[version: string]: [ValidateFunction, (data: any) => ModConfig | undefined, DeprecatedStatus]} = {
-  '1.1.0': [ValidateModSchemaV1_1_0, FromValidatedV1_1_0ToConfig, DeprecatedStatus.Deprecated],
+  '1.1.0': [ValidateModSchemaV1_1_0, FromValidatedV1_1_0ToConfig, DeprecatedStatus.None],
   '1.2.0': [ValidateModSchemaV1_2_0, FromValidatedV1_2_0ToConfig, DeprecatedStatus.None]
 }
 
