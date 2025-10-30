@@ -92,15 +92,17 @@ export async function FetchMinecraftVersions() {
 
   console.log(lastWriteTime, discardOldDataTime, lastWriteTime < discardOldDataTime)
 
+  const fetchUrl = "https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/refs/heads/main/versions.json.min"
+
   if (lastWriteTime < discardOldDataTime) {
     console.log(
-      'Fetching minecraft versions from https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min'
+      `Fetching minecraft versions from ${fetchUrl}`
     )
-    const data = await fetch('https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min')
+    const data = await fetch(fetchUrl)
 
     if (!data.ok) {
       throw new Error(
-        'Failed to fetch minecraft version data from https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/main/versions.json.min'
+        `Failed to fetch minecraft version data from ${fetchUrl}`
       )
     }
 
