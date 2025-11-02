@@ -124,6 +124,12 @@ void Proxy()
         return;
     }
 
+    // Handle vanilla profiles
+    if (runtimeName == "Vanilla") {
+        HideConsole();
+        return;
+    }
+
     std::size_t pos = runtimeName.find('@');
     std::string dllName;
 
@@ -152,12 +158,6 @@ void Proxy()
     // std::println("[  proxy] [AmethystProxy] Loading runtime DLL from path: {}", runtimeDll.string());
     std::println("[  proxy] [AmethystProxy] Using 'AmethystProxy@{}'", PROXY_VERSION);
     std::println("[  proxy] [AmethystProxy] McThreadID: {}, McThreadHandle: {}", dMcThreadID, hMcThreadHandle);
-
-    // Handle vanilla profiles
-    if (runtimeName == "Vanilla") {
-        HideConsole();
-        return;
-    }
 
     // Load ntdll.dll and use it to suspend minecraft to allow the runtime to take control.
     LoadNtdll();
