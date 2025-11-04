@@ -1,3 +1,4 @@
+import { GDKMinecraftVersion } from '../Versions'
 import { Downloader } from './Downloader'
 import { ActionComplete, DownloadProgress } from './Progress'
 
@@ -230,6 +231,22 @@ export async function download(
     onComplete(false)
     throw new Error('BadUpdateIdentity!')
   }
+  console.log('Resolved download link:', link)
+  await Downloader.downloadFile(link, destination, onProgress, onComplete)
+}
+
+export async function downloadGdk(
+  version: GDKMinecraftVersion,
+  destination: string,
+  onProgress: DownloadProgress = () => {},
+  onComplete: ActionComplete = () => {}
+) {
+  if (version.urls.length === 0) {
+    onComplete(false)
+    throw new Error(`No download URLs were available for GDK version ${version.version.toString()}!`)
+  }
+
+  const link: string = version.urls[0];
   console.log('Resolved download link:', link)
   await Downloader.downloadFile(link, destination, onProgress, onComplete)
 }

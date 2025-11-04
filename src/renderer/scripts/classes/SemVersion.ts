@@ -27,6 +27,15 @@ export class SemVersion {
     return `${this.major}.${this.minor}.${this.patch}.${this.build}`
   }
 
+  matches(other: SemVersion): boolean {
+    return (
+      this.major === other.major &&
+      this.minor === other.minor &&
+      this.patch === other.patch &&
+      this.build === other.build
+    )
+  }
+
   static toString(version: SemVersion) {
     return `${version.major}.${version.minor}.${version.patch}.${version.build}`
   }
