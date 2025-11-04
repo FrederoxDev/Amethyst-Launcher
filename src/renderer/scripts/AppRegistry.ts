@@ -1,5 +1,5 @@
 import { VersionsFolder } from './Paths'
-import { UWPMinecraftVersion } from './Versions'
+import { MinecraftVersion } from './Versions'
 
 import * as child from 'child_process'
 import * as path from 'path'
@@ -68,7 +68,7 @@ export async function UnregisterCurrent() {
 }
 
 
-export async function RegisterVersion(version: UWPMinecraftVersion) {
+export async function RegisterVersion(version: MinecraftVersion) {
   // Make sure no version is currently registered
   if (GetPackageID() !== undefined) {
     await UnregisterCurrent()
