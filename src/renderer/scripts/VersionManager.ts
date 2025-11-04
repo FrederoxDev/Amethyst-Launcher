@@ -2,7 +2,7 @@ import { SemVersion } from './classes/SemVersion'
 import { VersionsFolder, ElectronAppPath, ValidatePath, DeletePath, VersionsFile } from './Paths'
 import { GetPackagePath } from './AppRegistry'
 import { Extractor } from './backend/Extractor'
-import { download } from './backend/MinecraftVersionDownloader'
+import { download, downloadGdk } from './backend/MinecraftVersionDownloader'
 import { MinecraftVersion, VersionsFileObject } from './Versions'
 import React from 'react'
 
@@ -59,29 +59,44 @@ export async function DownloadVersion(
 ) {
   ValidatePath(VersionsFolder)
 
-  const outputFile = path.join(VersionsFolder, `Minecraft-${version.version.toString()}.zip`)
-
   const toMB = (bytes: number) => {
     const mb = bytes / (1024 * 1024)
     return `${mb.toFixed(1)}MB`
   }
 
-  await download(
-    version.uuid,
-    '1',
-    outputFile,
-    (transferred, totalSize) => {
-      setStatus(`Downloading: ${toMB(transferred)} / ${toMB(totalSize)}`)
-      setLoadingPercent(transferred / totalSize)
-    },
-    success => {
-      if (!success) {
-        setStatus('')
-        throw new Error('Failed to download Minecraft!')
-      }
+  const onProgress = (transferred: number, totalSize: number) => {
+    setStatus(`Downloading: ${toMB(transferred)} / ${toMB(totalSize)}`)
+    setLoadingPercent(transferred / totalSize)
+  }
 
-      setStatus('Successfully downloaded Minecraft!')
+  const onComplete = (success: boolean) => {
+    if (!success) {
+      setStatus('')
+      throw new Error('Failed to download Minecraft!')
     }
+    setStatus('Successfully downloaded Minecraft!')
+  }
+
+  if (version.type === 'uwp') {
+    const outputFile = path.join(VersionsFolder, `Minecraft-${version.version.toString()}.zip`)
+
+    await download(
+      version.uuid,
+      '1',
+      outputFile,
+      onProgress,
+      onComplete
+    )
+    return;
+  }
+
+  const outputFile = path.join(VersionsFolder, `Minecraft-${version.version.toString()}.msixvc`)
+
+  await downloadGdk(
+    version,
+    outputFile,
+    onProgress,
+    onComplete
   )
 }
 
@@ -90,6 +105,7 @@ export async function ExtractVersion(
   setStatus: React.Dispatch<React.SetStateAction<string>>,
   setLoadingPercent: React.Dispatch<React.SetStateAction<number>>
 ) {
+  if (version.type === 'gdk') return;
   const appxPath = path.join(VersionsFolder, `Minecraft-${version.version.toString()}.zip`)
   const folderPath = path.join(VersionsFolder, `Minecraft-${version.version.toString()}`)
 
@@ -130,6 +146,5 @@ export function InstallProxy(version: MinecraftVersion) {
 
 export function IsRegistered(version: MinecraftVersion) {
   const fileName = `Minecraft-${version.version.toString()}`
-
   return GetPackagePath() === `${VersionsFolder}\\${fileName}`
 }

@@ -6,7 +6,8 @@ import {MinecraftButton} from '../components/MinecraftButton'
 import { MinecraftButtonStyle } from '../components/MinecraftButtonStyle'
 import { UseAppState } from '../contexts/AppState'
 import { useNavigate } from 'react-router-dom'
-import { MinecraftVersionType } from '../scripts/Versions'
+import { MinecraftVersion, MinecraftVersionType } from '../scripts/Versions'
+import { SemVersion } from '../scripts/classes/SemVersion'
 
 export function ProfileEditor() {
   const [profileName, setProfileName] = useState('')
@@ -107,6 +108,15 @@ export function ProfileEditor() {
     saveData();
   }, [loadProfile])
 
+  const filterVersion = (version: MinecraftVersion): boolean => {
+    // Currently only support stable UWP versions
+    return version.versionType === MinecraftVersionType.UwpStable;
+  }
+
+  const formatVersionName = (version: MinecraftVersion): string => {
+    return SemVersion.toString(version.version);
+  }
+
   return (
     <MainPanel>
       <div className="w-full h-full flex flex-col p-[8px] gap-[8px] border-[3px] border-[#1E1E1F] bg-[#48494A]">
@@ -117,10 +127,7 @@ export function ProfileEditor() {
             labelText="Minecraft Version"
             value={profileMinecraftVersion}
             setValue={setProfileMinecraftVersion}
-            // we don't support non-release versions right now so only show release lmao
-            options={allMinecraftVersions
-              .filter(ver => ver.versionType === MinecraftVersionType.Release)
-              .map(ver => ver.toString())}
+            options={allMinecraftVersions.filter(filterVersion).map(formatVersionName)}
             id="minecraft-version"
           />
           <Dropdown

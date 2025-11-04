@@ -47,7 +47,8 @@ export function LauncherPage() {
 
     const profile = allProfiles[selectedProfile]
     const semVersion = SemVersion.fromString(profile.minecraft_version)
-    const minecraftVersion = allMinecraftVersions.find(version => version.version.toString() === semVersion.toString())!
+    const minecraftVersion = allMinecraftVersions.find(version => version.version.matches(semVersion))!
+    console.log(allMinecraftVersions)
 
     if (minecraftVersion === undefined) {
       throw new Error(`Failed to find minecraft version ${semVersion.toString()} in the profile in allVersions!`)
@@ -75,6 +76,10 @@ export function LauncherPage() {
       log('Detected a .lock file from the previous download attempt, cleaning up.')
       CleanupInstall(semVersion, false)
       log('Removed previous download attempt.')
+    }
+
+    if (minecraftVersion.type === 'gdk') {
+      throw new Error('GDK versions currently cannot be launched...')
     }
 
     // Check for the folder for the version we are targeting, if not present we need to fetch.

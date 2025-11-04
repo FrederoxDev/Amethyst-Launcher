@@ -1,5 +1,5 @@
 import { VersionsFolder } from './Paths'
-import { MinecraftVersion } from './Versions'
+import { UWPMinecraftVersion } from './Versions'
 
 import * as child from 'child_process'
 import * as path from 'path'
@@ -30,24 +30,45 @@ export function GetPackageID() {
   return GetPackage()?.values['PackageID'].value as string
 }
 
-export async function UnregisterCurrent() {
-  const packageId = GetPackageID()
-  console.log('Currently installed packageId', packageId)
-  if (packageId === undefined) return
-
-  const unregisterCmd = `powershell -ExecutionPolicy Bypass -Command "& { Remove-AppxPackage -Package "${packageId}" -PreserveRoamableApplicationData }"`
-  await new Promise(resolved => {
-    const exec_proc = child.exec(unregisterCmd)
-
+export async function RunCommand(command: string) {
+  return new Promise<void>((resolve, reject) => {
+    const exec_proc = child.exec(command)
     exec_proc.on('exit', exit_code => {
-      resolved(exit_code)
+      if (exit_code === 0) {
+        resolve()
+      } else {
+        reject(new Error(`Command failed with exit code ${exit_code}`))
+      }
     })
   })
+}
+
+export async function UnregisterCurrent() {
+  const packageId = GetPackageID()
+  const unregisterGDK = `powershell -ExecutionPolicy Bypass -Command "& { Remove-AppxPackage -Package MICROSOFT.MINECRAFTUWP_1.21.12004.0_x64__8wekyb3d8bbwe -PreserveRoamableApplicationData }"`
+
+  console.log('Currently installed packageId', packageId)
+
+  if (packageId === undefined) {
+    await RunCommand(unregisterGDK);
+    return;
+  }
+
+  const unregisterCmd = `powershell -ExecutionPolicy Bypass -Command "& { Remove-AppxPackage -Package "${packageId}" -PreserveRoamableApplicationData }"`
+
+  try {
+    await RunCommand(unregisterCmd)
+  }
+  catch (e) {
+    console.log('Failed to unregister UWP, attempting GDK uninstall...')
+    
+  }
+
   console.log('Unregistered')
 }
 
 
-export async function RegisterVersion(version: MinecraftVersion) {
+export async function RegisterVersion(version: UWPMinecraftVersion) {
   // Make sure no version is currently registered
   if (GetPackageID() !== undefined) {
     await UnregisterCurrent()
