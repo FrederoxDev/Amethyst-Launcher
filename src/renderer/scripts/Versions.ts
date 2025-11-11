@@ -116,7 +116,17 @@ export async function FetchMinecraftVersions(): Promise<MinecraftVersion[]> {
   const uwpFetchUrl = "https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/refs/heads/main/versions.json.min"
   const gdkFetchUrl = "https://raw.githubusercontent.com/LukasPAH/minecraft-windows-gdk-version-db/refs/heads/main/historical_versions.json"
 
-  if (lastWriteTime < discardOldDataTime) {
+  // read the version field in the file
+  let existingVersion = 0;
+  if (fs.existsSync(CachedVersionsFile)) {
+    const fileData = fs.readFileSync(CachedVersionsFile, 'utf-8');
+    const jsonData = JSON.parse(fileData);
+    existingVersion = jsonData.file_version || 0;
+  }
+
+  const expectedVersion = 1;
+
+  if (lastWriteTime < discardOldDataTime || existingVersion !== expectedVersion) {
     console.log(`Fetching minecraft versions from ${uwpFetchUrl}`)
     const rawUwpData = await fetch(uwpFetchUrl)
 
