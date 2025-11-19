@@ -13,7 +13,7 @@ import {
   IsLocked,
   IsRegistered
 } from '../scripts/VersionManager'
-import { RegisterVersion, UnregisterCurrent } from '../scripts/AppRegistry'
+import { HasGdkStableInstalled, RegisterVersion, UnregisterCurrent, UnregisterGdkStable } from '../scripts/AppRegistry'
 import { GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
 import child from 'child_process'
 
@@ -30,7 +30,8 @@ export function LauncherPage() {
     error,
     setError,
     allMinecraftVersions,
-    setLoadingPercent
+    setLoadingPercent,
+    allValidMods
   } = UseAppState()
 
   const LaunchGame = async () => {
@@ -46,6 +47,12 @@ export function LauncherPage() {
     }
 
     const profile = allProfiles[selectedProfile]
+
+    const profileInvalidMods = profile.mods.filter(mod => !allValidMods.includes(mod));
+    if (profileInvalidMods.length > 0) {
+      throw new Error(`Profile has ${profileInvalidMods.length} missing mod${profileInvalidMods.length > 1 ? 's' : ''}, edit profile to launch! Missing mods: ${profileInvalidMods.map(mod => `'${mod}'`).join(', ')}`);
+    }
+
     const semVersion = SemVersion.fromString(profile.minecraft_version)
     const minecraftVersion = allMinecraftVersions.find(version => version.version.matches(semVersion))!
     console.log(allMinecraftVersions)
@@ -56,6 +63,11 @@ export function LauncherPage() {
 
     setError('')
     setIsLoading(true)
+
+    if (HasGdkStableInstalled()) {
+      setStatus('Unregistering existing GDK Stable version');
+      UnregisterGdkStable();
+    }
 
     // Check that the user has developer mode enabled on windows for the game to be installed through loose files.
     if (!IsDevModeEnabled()) {
