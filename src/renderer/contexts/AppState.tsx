@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react'
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react'
 
 import { FetchMinecraftVersions, MinecraftVersion } from '../scripts/Versions'
 import { LauncherConfig, GetLauncherConfig, SetLauncherConfig } from '../scripts/Launcher'
@@ -125,9 +125,13 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     refreshAllMods();
   }, [refreshAllMods]);
 
+  const hasDoneInitialLoad = useRef(false);
+
   // Initialize Data like all mods and existing profiles..
   useEffect(() => {
+    console.log("Initializing app state with mods:");
     setAllProfiles(GetProfiles())
+    console.log("Loaded profiles:", GetProfiles());
 
     const readConfig = GetLauncherConfig()
     setKeepLauncherOpen(readConfig.keep_open ?? true)
@@ -138,15 +142,21 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     FetchMinecraftVersions().then(versions => {
       setAllMinecraftVersions(versions)
     })
+    hasDoneInitialLoad.current = true;
   }, [allMods])
 
   useEffect(() => {
     setAllMods(GetAllMods());
   }, [])
 
-  const [hasInitialized, setHasInitialized] = useState(false)
-
   const saveData = useCallback(() => {
+    console.log("Save data called", hasDoneInitialLoad);
+    if (!hasDoneInitialLoad.current) {
+      // throw new Error("Attempted to save data before initial load completed.");
+      return;
+    }
+
+    console.log("Save data called!", allProfiles);
     SetProfiles(allProfiles)
 
     const launcherConfig: LauncherConfig = {
@@ -159,16 +169,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     }
 
     SetLauncherConfig(launcherConfig)
-  }, [allProfiles, developerMode, keepLauncherOpen, selectedProfile, UITheme])
-
-  useEffect(() => {
-    if (!hasInitialized) {
-      setHasInitialized(true)
-      return
-    }
-
-    saveData()
-  }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode, hasInitialized, saveData])
+  }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode, UITheme])
 
   useEffect(() => {
     ipcRenderer.send('WINDOW_UI_THEME', UITheme)
