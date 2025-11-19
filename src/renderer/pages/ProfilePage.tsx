@@ -6,14 +6,15 @@ import { Profile } from '../scripts/Profiles'
 
 const ProfileButton = ({ profile, index }: { profile: Profile; index: number }) => {
   const navigate = useNavigate()
-  const { setSelectedProfile } = UseAppState()
+  const { setSelectedProfile, allValidMods } = UseAppState()
 
   const openProfile = (profile: Profile, index: number) => {
     setSelectedProfile(index)
     navigate('/profile-editor')
   }
 
-  console.log(profile)
+  const unknownMods = profile.mods.filter(mod => !allValidMods.includes(mod));
+  console.log(unknownMods);
 
   return (
     <div className="m-[-3px] border-[3px] border-[#1E1E1F]" onClick={() => openProfile(profile, index)}>
@@ -22,6 +23,11 @@ const ProfileButton = ({ profile, index }: { profile: Profile; index: number }) 
         <p className="minecraft-seven text-[#B1B2B5] text-[14px] px-[4px]">
           {profile.minecraft_version} ({profile.runtime})
         </p>
+        {unknownMods.length > 0 && (
+          <p className="minecraft-seven text-red-400 text-[14px] px-[4px]">
+            {unknownMods.length} missing mod{unknownMods.length > 1 ? 's' : ''}!
+          </p>
+        )}
       </div>
     </div>
   )
@@ -53,7 +59,6 @@ export function ProfilePage() {
 
               const newProfiles = [...allProfiles, defaultProfile]
               setAllProfiles(newProfiles)
-
               setSelectedProfile(newProfiles.length - 1)
               navigate('/profile-editor')
             }}

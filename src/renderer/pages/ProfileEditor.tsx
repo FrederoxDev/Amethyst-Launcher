@@ -14,6 +14,7 @@ export function ProfileEditor() {
   const [profileActiveMods, setProfileActiveMods] = useState<string[]>([])
   const [profileRuntime, setProfileRuntime] = useState<string>('')
   const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<string>('')
+  const [unknownActiveMods, setUnknownActiveMods] = useState<string[]>([])
 
   const {
     allValidMods,
@@ -44,7 +45,7 @@ export function ProfileEditor() {
     }
   }
 
-  const ModButton = ({ name }: { name: string }) => {
+  const ModButton = ({ name, exists }: { name: string, exists: boolean }) => {
     return (
       <div
         className="m-[-3px] border-[3px] border-[#1E1E1F]"
@@ -58,7 +59,7 @@ export function ProfileEditor() {
         }}
       >
         <div className="cursor-pointer border-[3px] border-t-[#5a5b5c] border-l-[#5a5b5c] border-b-[#333334] border-r-[#333334] bg-[#48494a] p-[4px]">
-          <p className="minecraft-seven text-white">{name}</p>
+          <p className={`minecraft-seven ${exists ? 'text-white' : 'text-red-400'}`} title={exists ? undefined : `${name} is missing, click to remove from profile`}>{name}</p>
         </div>
       </div>
     )
@@ -70,22 +71,17 @@ export function ProfileEditor() {
     setProfileRuntime(profile?.runtime ?? 'Vanilla')
     setProfileActiveMods(profile?.mods ?? [])
     setProfileMinecraftVersion(profile?.minecraft_version ?? '1.21.0.3')
+    setUnknownActiveMods(profileActiveMods.filter(mod => !allValidMods.includes(mod)))
   }, [allProfiles, selectedProfile])
 
   const saveProfile = () => {
     allProfiles[selectedProfile].name = profileName
 
-    // Verify the vanilla runtime still exists
-    if (!(profileRuntime in allRuntimes)) setProfileRuntime('Vanilla')
-
-    // Ensure all mods still exist
-    const newMods = profileActiveMods.filter(mod => allValidMods.includes(mod))
-    setAllValidMods(newMods)
-
     allProfiles[selectedProfile].runtime = profileRuntime
     allProfiles[selectedProfile].mods = profileActiveMods
     allProfiles[selectedProfile].minecraft_version = profileMinecraftVersion
 
+    console.log("Saving profile:", allProfiles[selectedProfile]);
     saveData()
     navigate('/profiles')
   }
@@ -98,18 +94,12 @@ export function ProfileEditor() {
     navigate('/profiles')
   }
 
-  // useEffect(() => {
-  //   const mods = GetAllMods().filter(m => m.ok).map(m => m.id)
-  //   setAllValidMods(mods)
-  // }, [setAllValidMods])
-
   useEffect(() => {
     loadProfile();
     saveData();
   }, [loadProfile])
 
   const filterVersion = (version: MinecraftVersion): boolean => {
-    // Currently only support stable UWP versions
     return version.versionType === MinecraftVersionType.UwpStable;
   }
 
@@ -137,7 +127,6 @@ export function ProfileEditor() {
             options={allRuntimes}
             id="runtime-mod"
           />
-          {/*<TextInput label="Install Directory" text={profileInstallDir} setText={setProfileInstallDir} />*/}
         </div>
         
         { allInvalidMods.length > 0 && (
@@ -154,10 +143,9 @@ export function ProfileEditor() {
             <div className="w-[50%] h-full flex flex-col">
               <p className="text-white minecraft-seven text-[14px]">Active Mods</p>
               <div className="border-[3px] border-[#1E1E1F] bg-[#313233] flex-grow">
-                {allValidMods.length > 0 ? (
-                  allValidMods
-                    .filter(mod => profileActiveMods.includes(mod))
-                    .map((mod, index) => <ModButton name={mod} key={index} />)
+                {profileActiveMods.length > 0 ? (
+                  profileActiveMods
+                    .map((mod, index) => <ModButton name={mod} exists={allValidMods.includes(mod)} key={index} />)
                 ) : (
                   <></>
                 )}
@@ -169,7 +157,7 @@ export function ProfileEditor() {
                 {allValidMods.length > 0 ? (
                   allValidMods
                     .filter(mod => !profileActiveMods.includes(mod))
-                    .map((mod, index) => <ModButton name={mod} key={index} />)
+                    .map((mod, index) => <ModButton name={mod} exists={allValidMods.includes(mod)} key={index} />)
                 ) : (
                   <></>
                 )}
