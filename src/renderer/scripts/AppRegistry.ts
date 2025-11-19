@@ -7,6 +7,29 @@ import * as path from 'path'
 // .node type so window.require is needed
 const regedit = window.require('regedit-rs') as typeof import('regedit-rs')
 
+export function HasGdkStableInstalled() {
+  const reg_key =
+    'HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages'
+  const listed = regedit.listSync(reg_key)
+  if (!listed[reg_key].exists) return false
+
+  const minecraftKey = listed[reg_key].keys.find(key => key.startsWith('MICROSOFT.MINECRAFTUWP_'))
+  if (minecraftKey === undefined) return false
+
+  const minecraftValues = regedit.listSync(`${reg_key}\\${minecraftKey}`)[`${reg_key}\\${minecraftKey}`]
+  if (!minecraftValues.exists) return false
+
+  console.log(minecraftValues);
+
+  return true;
+}
+
+export function UnregisterGdkStable() {
+  console.log("Unregistering GDK Stable Minecraft UWP version");
+  const command = `powershell -ExecutionPolicy Bypass -Command "& {Get-AppxPackage Microsoft.MinecraftUWP | Remove-AppxPackage -PreserveRoamableApplicationData }"`
+  RunCommand(command)
+}
+
 export function GetPackage() {
   const reg_key =
     'HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages'
@@ -45,25 +68,8 @@ export async function RunCommand(command: string) {
 
 export async function UnregisterCurrent() {
   const packageId = GetPackageID()
-  const unregisterGDK = `powershell -ExecutionPolicy Bypass -Command "& { Remove-AppxPackage -Package MICROSOFT.MINECRAFTUWP_1.21.12004.0_x64__8wekyb3d8bbwe -PreserveRoamableApplicationData }"`
-
-  console.log('Currently installed packageId', packageId)
-
-  if (packageId === undefined) {
-    await RunCommand(unregisterGDK);
-    return;
-  }
-
   const unregisterCmd = `powershell -ExecutionPolicy Bypass -Command "& { Remove-AppxPackage -Package "${packageId}" -PreserveRoamableApplicationData }"`
-
-  try {
-    await RunCommand(unregisterCmd)
-  }
-  catch (e) {
-    console.log('Failed to unregister UWP, attempting GDK uninstall...')
-    
-  }
-
+  await RunCommand(unregisterCmd)
   console.log('Unregistered')
 }
 

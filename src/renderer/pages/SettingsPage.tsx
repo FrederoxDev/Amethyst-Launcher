@@ -1,7 +1,7 @@
 import { AnalyticsConsent, UseAppState } from '../contexts/AppState'
 import { SemVersion } from '../scripts/classes/SemVersion'
 import { IsRegistered, IsDownloaded } from '../scripts/VersionManager'
-import { GetPackagePath } from '../scripts/AppRegistry'
+import { GetPackagePath, HasGdkStableInstalled, UnregisterCurrent, UnregisterGdkStable } from '../scripts/AppRegistry'
 import { AmethystFolder, LauncherConfigFile, MinecraftUWPFolder } from '../scripts/Paths'
 import { IsDevModeEnabled } from '../scripts/DeveloperMode'
 import {ReadOnlyTextBox} from '../components/ReadOnlyTextBox'
@@ -10,6 +10,8 @@ import {MinecraftToggle} from '../components/MinecraftToggle'
 import {MinecraftRadialButtonPanel} from '../components/MinecraftRadialButtonPanel'
 
 import * as fs from 'fs'
+import { MinecraftButton } from '../components/MinecraftButton'
+import { MinecraftButtonStyle } from '../components/MinecraftButtonStyle'
 
 export function SettingsPage() {
   const { keepLauncherOpen, setKeepLauncherOpen, developerMode, setDeveloperMode, UITheme, setUITheme } = UseAppState()
@@ -135,6 +137,20 @@ export function SettingsPage() {
       <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px]">
         <ReadOnlyTextBox text={launcherCfg ?? ' '} label="Launcher Config" />
       </div>
+
+      <div className="p-[8px] flex gap-[8px]">
+        <MinecraftButton text='Unregister Currently Installed Version' style={MinecraftButtonStyle.Warn} onClick={async () => {
+          if (HasGdkStableInstalled()) {
+            UnregisterGdkStable();
+            alert('Unregistered GDK Stable Minecraft UWP version.');
+            return;
+          }
+          
+          await UnregisterCurrent()
+          alert('Unregistered currently registered Minecraft UWP version.');
+        }}/>
+      </div>
+
     </div>
   )
 }
