@@ -20,6 +20,13 @@ export class SemVersion {
       return new SemVersion(major, minor, patch, build)
     }
 
+    const newVersionRegex = /^(\d+)\.(\d+)\.(\d+)/
+    const newMatch = versionString.match(newVersionRegex)
+    if (newMatch) {
+      const [, major, minor, patch] = newMatch.map(Number)
+      return new SemVersion(major, minor, patch, 0)
+    }
+
     throw new Error(`Invalid version string format ${versionString}`)
   }
 
