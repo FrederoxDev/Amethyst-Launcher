@@ -28,6 +28,9 @@ interface ModDiscoveryData {
     downloads: number;
     githubUrl: string;
 
+    // Used to hide mods from the discovery page without deleting them
+    hidden?: boolean;
+
     // Used exclusively for Amethyst org mods, no exceptions will be made to this
     isAmethystOrgMod?: boolean;
 }
@@ -41,7 +44,7 @@ function ModCard({ mod, onOpenDetails }: { mod: ModDiscoveryData, onOpenDetails:
             <img 
                 src={mod.iconUrl} 
                 alt={`${mod.name} icon`} 
-                className="w-16 h-16 flex-shrink-0"
+                className="w-16 h-16 flex-shrink-0 img-pixelated"
             />
 
             {/* Text on the right */}
@@ -430,7 +433,7 @@ export function ModDiscovery() {
     }, []);
 
     const filteredMods = mods.filter(mod => 
-        mod.name.toLowerCase().includes(searchText.toLowerCase())
+        mod.name.toLowerCase().includes(searchText.toLowerCase()) && !mod.hidden
     );
 
     return (
