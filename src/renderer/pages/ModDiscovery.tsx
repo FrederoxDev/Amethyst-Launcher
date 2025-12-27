@@ -432,9 +432,11 @@ export function ModDiscovery() {
         fetchMods();
     }, []);
 
-    const filteredMods = mods.filter(mod => 
-        mod.name.toLowerCase().includes(searchText.toLowerCase()) && !mod.hidden
-    );
+    const filteredMods = mods
+        .filter(mod =>
+          mod.name.toLowerCase().includes(searchText.toLowerCase()) && !mod.hidden
+        )
+        .sort((a, b) => b.downloads - a.downloads);
 
     return (
         <MainPanelSection>
