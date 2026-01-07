@@ -12,6 +12,7 @@ import {MinecraftRadialButtonPanel} from '../components/MinecraftRadialButtonPan
 import * as fs from 'fs'
 import { MinecraftButton } from '../components/MinecraftButton'
 import { MinecraftButtonStyle } from '../components/MinecraftButtonStyle'
+import { MinecraftVersion } from '../scripts/Versions'
 
 export function SettingsPage() {
   const { keepLauncherOpen, setKeepLauncherOpen, developerMode, setDeveloperMode, UITheme, setUITheme } = UseAppState()
@@ -20,7 +21,7 @@ export function SettingsPage() {
   const [launcherCfg, setLauncherCfg] = useState<string>('')
 
   const profile = allProfiles[selectedProfile]
-  let minecraftVersion = undefined
+  let minecraftVersion: MinecraftVersion | undefined = undefined
   let isVerDownloaded = false
   let isRegisteredVerOurs = false
   let installDir = ''
@@ -125,7 +126,7 @@ export function SettingsPage() {
 
       <div className="border-y-[3px] border-t-[#5a5b5c] border-b-[#333334] bg-[#48494a] p-[8px] minecraft-seven text-[#BCBEC0] text-[14px] shrink-0 overflow-x-hidden">
         <p className="text-white">Debug Info</p>
-        <p>Minecraft Version: {minecraftVersion ? minecraftVersion.toString() : 'No version found.'}</p>
+        <p>Minecraft Version: {minecraftVersion ? `${minecraftVersion.version.toString()} ${minecraftVersion.type.toUpperCase()}` : 'No version found.'}</p>
         <p>Is version downloaded: {isVerDownloaded ? 'true' : 'false'}</p>
         <p>Is Registered Version Ours: {isRegisteredVerOurs ? 'true' : 'false'}</p>
         <p>Is windows developer mode: {isWindowsDevModeOn ? 'enabled' : 'disabled'}</p>
