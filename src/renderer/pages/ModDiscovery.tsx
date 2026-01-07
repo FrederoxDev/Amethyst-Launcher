@@ -414,6 +414,7 @@ function ModDetailsPopup({ mod, onClose }: { mod: ModDiscoveryData, onClose: () 
 }
 
 export function ModDiscovery() {
+    const [isLoading, setIsLoading] = useState<boolean>(true);
     const [searchText, setSearchText] = useState('');
     const [mods, setMods] = useState<ModDiscoveryData[]>([]);
     const [selectedMod, setSelectedMod] = useState<ModDiscoveryData | null>(null);
@@ -429,7 +430,8 @@ export function ModDiscovery() {
             setMods(modsData);
         };
 
-        fetchMods();
+        setIsLoading(true);
+        fetchMods().then(() => setIsLoading(false));
     }, []);
 
     const filteredMods = mods
@@ -443,7 +445,12 @@ export function ModDiscovery() {
             <p className="minecraft-seven text-white text-[14px]">Mod Discovery</p>
             <TextInput label="Search" text={searchText} setText={setSearchText} />
             <PanelIndent>
-                {filteredMods.map(mod => <ModCard key={mod.name} mod={mod} onOpenDetails={() => setSelectedMod(mod)} />)}
+                {isLoading && (
+                    <div className="flex justify-center items-center w-full h-full">
+                        <p className="minecraft-seven text-[#BCBEC0] text-[14px] flex items-center justify-center h-full">Loading mods...</p>
+                    </div>
+                )}
+                {!isLoading && filteredMods.map(mod => <ModCard key={mod.name} mod={mod} onOpenDetails={() => setSelectedMod(mod)} />)}
             </PanelIndent>
 
             {selectedMod && (
