@@ -74,6 +74,9 @@ void InitializeConsole()
     consoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
     SetConsoleMode(consoleHandle, consoleMode);
     SetConsoleTitle("AmethystAPI");
+    // Enable utf8 io
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
 }
 
 void DestroyConsole()
