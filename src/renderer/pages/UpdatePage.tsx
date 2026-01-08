@@ -73,7 +73,7 @@ export function UpdatePage() {
 
   return (
     <>
-      {!popupClosed && (
+      {!popupClosed && updateAvailable && (
         <PopupPanel>
           <div className="flex flex-col items-center justify-center border-[3px] border-[#1E1E1F]">
           {!downloadActive && (
