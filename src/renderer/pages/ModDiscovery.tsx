@@ -36,6 +36,11 @@ interface ModDiscoveryData {
 }
 
 function ModCard({ mod, onOpenDetails }: { mod: ModDiscoveryData, onOpenDetails: () => void }) {
+    const formattedDownloads = new Intl.NumberFormat('en-US', { 
+        notation: 'compact',
+        maximumFractionDigits: 2
+    }).format(mod.downloads)
+    
     return (
         <PanelButton 
             className="flex items-start gap-4 p-4 cursor-pointer"
@@ -48,15 +53,14 @@ function ModCard({ mod, onOpenDetails }: { mod: ModDiscoveryData, onOpenDetails:
             />
 
             {/* Text on the right */}
-            <div className="flex flex-col">
+            <div className="flex flex-col flex-1 min-w-0">
                 <h3 className="minecraft-seven text-white text-[18px]">{mod.name}</h3>
-                <p className="minecraft-seven text-[#BCBEC0] text-[14px]">{mod.description}</p>
+                <p className="minecraft-seven text-[#BCBEC0] text-[14px] truncate">{mod.description}</p>
                 <p className="minecraft-seven text-[#BCBEC0] text-[14px]">By: {mod.authors.join(", ")}</p>
             </div>
-
-            {/* Right side: downloads + button */}
-            <div className="flex flex-col items-end justify-between ml-auto pr-2">
-                <p className="minecraft-seven text-[#BCBEC0] text-[14px] mb-2">Installs: {mod.downloads}</p>
+            {/* Right side: details (downloads) */}
+            <div className="flex flex-col items-end justify-between ml-auto pr-2 w-48 h-16 flex-shrink-0">
+                <p className="minecraft-seven text-[#BCBEC0] text-[14px] mb-2">{formattedDownloads} downloads</p>
             </div>
         </PanelButton>
     )
@@ -307,7 +311,9 @@ export function ModDownloads({ mod }: { mod: ModDiscoveryData }) {
             </div>
         </PopupPanel>}
 
-        {loading && <p className="minecraft-seven text-[#BCBEC0] text-[14px]">Loading releases...</p>}
+        {loading && (<div className="flex justify-center items-center w-full h-full">
+                        <p className="minecraft-seven text-[#BCBEC0] text-[14px] flex items-center justify-center h-full">Loading mods...</p>
+                    </div>)}
         {!loading && releases.length === 0 && <p className="minecraft-seven text-[#BCBEC0] text-[14px]">No releases found.</p>}
         {!loading && releases.map(release => (
             <PanelSection key={release.id} className="flex items-center justify-between"> 
@@ -354,6 +360,11 @@ export function ModDownloads({ mod }: { mod: ModDiscoveryData }) {
 function ModDetails({ mod }: { mod: ModDiscoveryData }) {
     const [openTab, setOpenTab] = useState<string>('README');
 
+    const formattedDownloads = new Intl.NumberFormat('en-US', { 
+        notation: 'compact',
+        maximumFractionDigits: 2
+    }).format(mod.downloads)
+
     return (
         <MainPanelSection>
             <div className="flex items-start gap-4 p-4 ">
@@ -372,7 +383,7 @@ function ModDetails({ mod }: { mod: ModDiscoveryData }) {
 
                 {/* Right side: downloads + button */}
                 <div className="flex flex-col items-end justify-between ml-auto pr-2">
-                    <p className="minecraft-seven text-[#BCBEC0] text-[14px] mb-2">Installs: {mod.downloads}</p>
+                    <p className="minecraft-seven text-[#BCBEC0] text-[14px] mb-2">Downloads: {formattedDownloads}</p>
                     <a href={mod.githubUrl} target="_blank" rel="noopener noreferrer" 
                     className="minecraft-seven text-white text-[14px]"
                         onClick={(e) => {
