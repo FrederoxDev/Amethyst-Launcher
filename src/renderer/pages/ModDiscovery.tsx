@@ -292,7 +292,7 @@ export function ModDownloads({ mod }: { mod: ModDiscoveryData }) {
 
     return <PanelIndent>
         {confirmingMod && <PopupPanel onExit={() => setConfirmingMod(null)}>
-            <div className="w-[30%] h-[18%]" onClick={e => e.stopPropagation()}>
+            <div className="w-[45%] h-[25%]" onClick={e => e.stopPropagation()}>
                 <MainPanelSection className="flex flex-col flex-1">
                     <p>{confirmingMod.download_name}</p>
                     <p className="text-[#BCBEC0]">
