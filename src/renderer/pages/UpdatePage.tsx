@@ -85,13 +85,13 @@ export function UpdatePage() {
                 <p className="minecraft-seven text-[#BCBEC0] text-[12px]">
                   Version: {updateInfo ? updateInfo.version : 'undefined'} (current: {appVersion})
                 </p>
-                <p className="minecraft-seven text-[#BCBEC0] text-[12px]">
+                <p className="minecraft-seven text-[#BCBEC0] text-[12px] break-all">
                   Path: {updateInfo ? updateInfo.path : 'undefined'}
                 </p>
                 <p className="minecraft-seven text-[#BCBEC0] text-[12px]">
                   Release Date: {updateInfo ? updateInfo.releaseDate : 'undefined'}
                 </p>
-                <p className="minecraft-seven text-[#BCBEC0] text-[12px]">
+                <p className="minecraft-seven text-[#BCBEC0] text-[12px] break-all">
                   Sha512: {updateInfo ? updateInfo.sha512 : 'undefined'}
                 </p>
               </div>
