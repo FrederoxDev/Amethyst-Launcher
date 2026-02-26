@@ -90,9 +90,9 @@ void HideConsole()
 
 fs::path GetComMojangPath()
 {
-    StorageFolder localFolder = ApplicationData::Current().LocalFolder();
-    fs::path localPath = localFolder.Path().c_str();
-    return localPath / "games" / "com.mojang";
+    char appdata[MAX_PATH];
+    GetEnvironmentVariableA("APPDATA", appdata, MAX_PATH);
+    return fs::path(appdata) / "Minecraft Bedrock" / "games" / "com.mojang";
 }
 
 void Proxy()
