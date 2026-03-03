@@ -2,12 +2,13 @@ import { ipcRenderer } from 'electron'
 
 import * as fs from 'fs'
 import * as path from 'path'
+import { PlatformInstance } from '../main'
+import { VersionType } from './VersionType'
 
 // PATHS
 const AppPath: string = await ipcRenderer.invoke('get-app-path')
-const AppDataPath: string = await ipcRenderer.invoke('get-appdata-path')
 
-const AmethystPath: string = path.join(...[AppDataPath, 'Amethyst'])
+const AmethystPath: string = PlatformInstance!.GetAmethystPath();
 const LauncherPath: string = path.join(...[AmethystPath, 'Launcher'])
 const VersionsPath: string = path.join(...[AmethystPath, 'Versions'])
 
@@ -15,7 +16,8 @@ const VersionsFilePath: string = path.join(...[LauncherPath, 'versions.json'])
 const CachedVersionsFilePath: string = path.join(...[LauncherPath, 'cached_versions.json'])
 const ProfilesFilePath: string = path.join(...[LauncherPath, 'profiles.json'])
 
-const MinecraftUWPPath: string = path.join(...[AppDataPath, 'Minecraft Bedrock'])
+const MinecraftUWPPath: string = PlatformInstance!.GetMinecraftDataPath(VersionType.UWP)
+const MinecraftGDKPath: string = PlatformInstance!.GetMinecraftDataPath(VersionType.GDK)
 const ComMojangPath: string = path.join(...[MinecraftUWPPath, 'games', 'com.mojang'])
 const AmethystUWPPath: string = path.join(...[ComMojangPath, 'amethyst'])
 
@@ -34,6 +36,7 @@ export const CachedVersionsFile: string = ValidatePath(CachedVersionsFilePath)
 export const ProfilesFile: string = ValidatePath(ProfilesFilePath)
 
 export const MinecraftUWPFolder: string = ValidatePath(MinecraftUWPPath)
+export const MinecraftGDKFolder: string = ValidatePath(MinecraftGDKPath)
 export const ComMojangFolder: string = ValidatePath(ComMojangPath)
 export const AmethystUWPFolder: string = ValidatePath(AmethystUWPPath)
 
