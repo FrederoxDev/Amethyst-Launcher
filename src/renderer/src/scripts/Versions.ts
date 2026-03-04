@@ -1,42 +1,40 @@
+import { UseAppState } from "@renderer/contexts/AppState";
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
-import { CachedVersionsFile, VersionsFile, VersionsFolder } from "@renderer/scripts/Paths";
 
 const fs = window.require("fs");
 const path = window.require("path");
 
+function getPaths() {
+    return UseAppState.getState().platform.getPaths();
+}
+
 export enum MinecraftVersionType {
-    UwpStable = 0,
-    UwpBeta = 1,
-    UwpPreview = 2,
-    GdkRelease = 3,
-    GdkPreview = 4,
+    GdkRelease = 0,
+    GdkPreview = 1,
 }
 
-interface UWPMinecraftVersion {
-    type: "uwp";
-    version: SemVersion;
-    uuid: string;
-    versionType: MinecraftVersionType;
-}
-
-export interface GDKMinecraftVersion {
+export interface MinecraftVersion {
     type: "gdk";
     versionType: MinecraftVersionType;
     version: SemVersion;
     urls: string[];
+    uuid: string;
 }
 
-export type MinecraftVersion = UWPMinecraftVersion | GDKMinecraftVersion;
-
-export interface GDKVersionsList {
+export interface VersionsList {
     file_version: number;
-    previewVersions: RawGDKVersion[];
-    releaseVersions: RawGDKVersion[];
+    previewVersions: RawVersion[];
+    releaseVersions: RawVersion[];
 }
 
-interface RawGDKVersion {
+interface RawVersion {
     version: string;
     urls: string[];
+}
+
+export interface InstalledVersion {
+    path: string
+    version: MinecraftVersion
 }
 
 export class VersionsFileObject {
@@ -55,11 +53,12 @@ export class VersionsFileObject {
 
         const installed_versions = obj.installed_versions.map(installed_version => {
             const sem_version = SemVersion.fromString(SemVersion.toString(installed_version.version.version));
-            const minecraft_version: UWPMinecraftVersion = {
-                type: "uwp",
+            const minecraft_version: MinecraftVersion = {
+                type: "gdk",
                 version: sem_version,
                 uuid: installed_version.version.uuid,
                 versionType: installed_version.version.versionType,
+                urls: installed_version.version.urls,
             };
 
             return {
@@ -75,36 +74,47 @@ export class VersionsFileObject {
     }
 }
 
-export interface InstalledVersion {
-    path: string;
-    version: UWPMinecraftVersion;
-}
+// export interface InstalledVersion {
+//     path: string;
+//     version: UWPMinecraftVersion;
+// }
 
-function ParseUwpVersionData(version: [string, string, MinecraftVersionType]): UWPMinecraftVersion {
-    return {
-        type: "uwp",
-        version: SemVersion.fromString(version[0]),
-        uuid: version[1],
-        versionType: version[2],
-    };
-}
+// function ParseUwpVersionData(version: [string, string, MinecraftVersionType]): UWPMinecraftVersion {
+//     return {
+//         type: "uwp",
+//         version: SemVersion.fromString(version[0]),
+//         uuid: version[1],
+//         versionType: version[2],
+//     };
+// }
 
-function ParseGdkVersionData(raw: RawGDKVersion, type: MinecraftVersionType): GDKMinecraftVersion {
+function ParseVersionData(raw: RawVersion, type: MinecraftVersionType): MinecraftVersion | null {
     const versionString = raw.version.replace(type === MinecraftVersionType.GdkRelease ? "Release " : "Preview ", "");
+
+    const uuidRegex = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g;
+    const matches = raw.urls[0].match(uuidRegex);
+    const lastUuid = matches?.at(-1);
+
+    if (!lastUuid) {
+        console.log("Failed to find uuid in version urls, skipping version! Urls:", raw.urls);
+        return null;
+    }
 
     return {
         type: "gdk",
         version: SemVersion.fromString(versionString),
         versionType: type,
         urls: raw.urls,
+        uuid: lastUuid,
     };
 }
 
 export async function FetchMinecraftVersions(): Promise<MinecraftVersion[]> {
+    const paths = getPaths();
     let lastWriteTime: Date = new Date(0);
 
-    if (fs.existsSync(CachedVersionsFile)) {
-        const fileInfo = fs.statSync(CachedVersionsFile);
+    if (fs.existsSync(paths.cachedVersionsFilePath)) {
+        const fileInfo = fs.statSync(paths.cachedVersionsFilePath);
         lastWriteTime = fileInfo.mtime;
     }
 
@@ -112,14 +122,12 @@ export async function FetchMinecraftVersions(): Promise<MinecraftVersion[]> {
     const currentTime = new Date();
     const discardOldDataTime = new Date(currentTime.getTime() - 60 * 60 * 1000);
 
-    const uwpFetchUrl = "https://raw.githubusercontent.com/AmethystAPI/Launcher-Data/refs/heads/main/versions.json.min";
-    const gdkFetchUrl =
-        "https://raw.githubusercontent.com/LukasPAH/minecraft-windows-gdk-version-db/refs/heads/main/historical_versions.json";
+    const gdkFetchUrl = "https://raw.githubusercontent.com/LukasPAH/minecraft-windows-gdk-version-db/refs/heads/main/historical_versions.json";
 
     // read the version field in the file
     let existingVersion = 0;
-    if (fs.existsSync(CachedVersionsFile)) {
-        const fileData = fs.readFileSync(CachedVersionsFile, "utf-8");
+    if (fs.existsSync(paths.cachedVersionsFilePath)) {
+        const fileData = fs.readFileSync(paths.cachedVersionsFilePath, "utf-8");
         const jsonData = JSON.parse(fileData);
         existingVersion = jsonData.file_version || 0;
     }
@@ -127,34 +135,23 @@ export async function FetchMinecraftVersions(): Promise<MinecraftVersion[]> {
     const expectedVersion = 1;
 
     if (lastWriteTime < discardOldDataTime || existingVersion !== expectedVersion) {
-        console.log(`Fetching minecraft versions from ${uwpFetchUrl}`);
-        const rawUwpData = await fetch(uwpFetchUrl);
-
-        if (!rawUwpData.ok) {
-            throw new Error(`Failed to fetch UWP version list from: ${uwpFetchUrl}`);
-        }
-
         const rawGdkData = await fetch(gdkFetchUrl);
         if (!rawGdkData.ok) {
             throw new Error(`Failed to fetch GDK version list from: ${gdkFetchUrl}`);
         }
 
-        const gdkData = JSON.parse(await rawGdkData.text()) as GDKVersionsList;
-        const uwpData = (JSON.parse(await rawUwpData.text()) as [string, string, MinecraftVersionType][]).map(
-            ParseUwpVersionData
-        );
+        const gdkData = JSON.parse(await rawGdkData.text()) as VersionsList;
 
         if (gdkData.file_version !== 0) {
             throw new Error(`GDK version list changed file version! Expected 0, got ${gdkData.file_version}`);
         }
 
         const allVersions: MinecraftVersion[] = [
-            ...uwpData,
-            ...gdkData.releaseVersions.map(v => ParseGdkVersionData(v, MinecraftVersionType.GdkRelease)),
-            ...gdkData.previewVersions.map(v => ParseGdkVersionData(v, MinecraftVersionType.GdkPreview)),
-        ];
+            ...gdkData.releaseVersions.map(v => ParseVersionData(v, MinecraftVersionType.GdkRelease)),
+            ...gdkData.previewVersions.map(v => ParseVersionData(v, MinecraftVersionType.GdkPreview)),
+        ].filter((v): v is MinecraftVersion => !!v);
 
-        fs.writeFileSync(CachedVersionsFile, JSON.stringify(allVersions, undefined, 4));
+        fs.writeFileSync(paths.cachedVersionsFilePath, JSON.stringify(allVersions, undefined, 4));
         return allVersions;
     }
 
@@ -167,7 +164,7 @@ export async function FetchMinecraftVersions(): Promise<MinecraftVersion[]> {
         };
     }
 
-    const versionData = JSON.parse(fs.readFileSync(CachedVersionsFile, "utf-8")) as StringifiedVersion[];
+    const versionData = JSON.parse(fs.readFileSync(paths.cachedVersionsFilePath, "utf-8")) as StringifiedVersion[];
 
     return versionData.map(version => {
         return {
@@ -182,12 +179,13 @@ export async function FetchMinecraftVersions(): Promise<MinecraftVersion[]> {
     });
 }
 
-export function GetInstalledVersions(): UWPMinecraftVersion[] {
-    if (fs.existsSync(VersionsFolder)) {
-        const version_list: UWPMinecraftVersion[] = [];
+export function GetInstalledVersions(): MinecraftVersion[] {
+    const paths = getPaths();
+    if (fs.existsSync(paths.versionsPath)) {
+        const version_list: MinecraftVersion[] = [];
 
         const version_dirs = fs
-            .readdirSync(VersionsFolder, { withFileTypes: true })
+            .readdirSync(paths.versionsPath, { withFileTypes: true })
             .filter(entry => entry.isDirectory());
 
         for (const version_dir of version_dirs) {
@@ -213,15 +211,16 @@ export function GetInstalledVersions(): UWPMinecraftVersion[] {
 }
 
 export function ValidateVersionsFile(): void {
-    if (!fs.existsSync(VersionsFile)) {
+    const paths = getPaths();
+    if (!fs.existsSync(paths.versionsFilePath)) {
         const default_version_file: VersionsFileObject = {
             installed_versions: [],
-            default_installation_path: VersionsFolder,
+            default_installation_path: paths.versionsPath,
         };
 
         const versions_file_string = JSON.stringify(default_version_file, undefined, 4);
 
-        fs.writeFileSync(VersionsFile, versions_file_string);
+        fs.writeFileSync(paths.versionsFilePath, versions_file_string);
     }
 
     const installed_versions = GetInstalledVersionsFromFile().filter(version => {
@@ -233,27 +232,28 @@ export function ValidateVersionsFile(): void {
     for (const old_version of old_versions) {
         if (installed_versions.find(version => version.version.toString() === old_version.toString()) === undefined) {
             installed_versions.push({
-                path: path.join(VersionsFolder, `Minecraft-${old_version.version.toString()}`),
+                path: path.join(paths.versionsPath, `Minecraft-${old_version.version.toString()}`),
                 version: old_version,
             });
         }
     }
 
-    if (fs.existsSync(VersionsFile)) {
-        const version_file_text = fs.readFileSync(VersionsFile, "utf-8");
+    if (fs.existsSync(paths.versionsFilePath)) {
+        const version_file_text = fs.readFileSync(paths.versionsFilePath, "utf-8");
         const version_file_data: VersionsFileObject = JSON.parse(version_file_text) as VersionsFileObject;
 
         version_file_data.installed_versions = installed_versions;
 
-        fs.writeFileSync(VersionsFile, JSON.stringify(version_file_data, undefined, 4));
+        fs.writeFileSync(paths.versionsFilePath, JSON.stringify(version_file_data, undefined, 4));
     }
 }
 
 export function GetInstalledVersionsFromFile(): InstalledVersion[] {
+    const paths = getPaths();
     let installed_versions: InstalledVersion[] = [];
 
-    if (fs.existsSync(VersionsFile)) {
-        const version_file_text = fs.readFileSync(VersionsFile, "utf-8");
+    if (fs.existsSync(paths.versionsFilePath)) {
+        const version_file_text = fs.readFileSync(paths.versionsFilePath, "utf-8");
         const version_file_data: VersionsFileObject = VersionsFileObject.fromString(version_file_text);
 
         installed_versions = version_file_data.installed_versions;
@@ -261,7 +261,7 @@ export function GetInstalledVersionsFromFile(): InstalledVersion[] {
     return installed_versions;
 }
 
-export function GetInstalledVersionPath(version: UWPMinecraftVersion): string | undefined {
+export function GetInstalledVersionPath(version: MinecraftVersion): string | undefined {
     const versions = GetInstalledVersionsFromFile();
 
     const version_path = versions.find(in_version => in_version.version.uuid === version.uuid)?.path;
@@ -273,13 +273,15 @@ export function GetInstalledVersionPath(version: UWPMinecraftVersion): string | 
     return version_path;
 }
 
-export function FindMinecraftVersion(sem_version: SemVersion): UWPMinecraftVersion | undefined {
-    const versionData = fs.readFileSync(CachedVersionsFile, "utf-8");
+export function FindMinecraftVersion(sem_version: SemVersion): MinecraftVersion | undefined {
+    const paths = getPaths();
+    const versionData = fs.readFileSync(paths.cachedVersionsFilePath, "utf-8");
     const rawJson = JSON.parse(versionData);
 
     for (const version of rawJson) {
-        if ((version[0] as string) === sem_version.toString())
-            return ParseUwpVersionData(version as [string, string, MinecraftVersionType]);
+        if ((version[0] as string) === sem_version.toString()) {
+            return version as MinecraftVersion;
+        }
     }
 
     return undefined;

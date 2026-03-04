@@ -1,7 +1,11 @@
-import { LauncherConfigFile } from "@renderer/scripts/Paths";
+import { UseAppState } from "@renderer/contexts/AppState";
 
 const path = window.require("path");
 const fs = window.require("fs");
+
+function getPaths() {
+    return UseAppState.getState().platform.getPaths();
+}
 
 export interface LauncherConfig {
     runtime: string;
@@ -13,10 +17,11 @@ export interface LauncherConfig {
 }
 
 export function GetLauncherConfig(): LauncherConfig {
+    const paths = getPaths();
     let data: Partial<LauncherConfig> = {};
 
     try {
-        const jsonData = fs.readFileSync(LauncherConfigFile, "utf-8");
+        const jsonData = fs.readFileSync(paths.launcherConfigPath, "utf-8");
         data = JSON.parse(jsonData);
     } catch {
         console.error(`Failed to read/parse the launcherConfig file`);
@@ -34,6 +39,7 @@ export function GetLauncherConfig(): LauncherConfig {
 }
 
 export function SetLauncherConfig(config: LauncherConfig) {
-    fs.mkdirSync(path.dirname(LauncherConfigFile), { recursive: true });
-    fs.writeFileSync(LauncherConfigFile, JSON.stringify(config, undefined, 4));
+    const paths = getPaths();
+    fs.mkdirSync(path.dirname(paths.launcherConfigPath), { recursive: true });
+    fs.writeFileSync(paths.launcherConfigPath, JSON.stringify(config, undefined, 4));
 }

@@ -1,7 +1,12 @@
-import { ProfilesFile, ValidatePath } from "@renderer/scripts/Paths";
+import { UseAppState } from "@renderer/contexts/AppState";
 import { InstalledVersion } from "@renderer/scripts/Versions";
+import { PathUtils } from "./PathUtils";
 
 const fs = window.require("fs");
+
+function getPaths() {
+    return UseAppState.getState().platform.getPaths();
+}
 
 export interface Profile {
     name: string;
@@ -12,9 +17,10 @@ export interface Profile {
 }
 
 export function GetProfiles(): Profile[] {
-    if (!fs.existsSync(ProfilesFile)) return [];
+    const paths = getPaths();
+    if (!fs.existsSync(paths.profilesFilePath)) return [];
 
-    const json_data = fs.readFileSync(ProfilesFile, "utf-8");
+    const json_data = fs.readFileSync(paths.profilesFilePath, "utf-8");
     try {
         return JSON.parse(json_data);
     } catch {
@@ -23,6 +29,7 @@ export function GetProfiles(): Profile[] {
 }
 
 export function SetProfiles(profiles: Profile[]) {
-    ValidatePath(ProfilesFile);
-    fs.writeFileSync(ProfilesFile, JSON.stringify(profiles, undefined, 4));
+    const paths = getPaths();
+    PathUtils.ValidatePath(paths.profilesFilePath);
+    fs.writeFileSync(paths.profilesFilePath, JSON.stringify(profiles, undefined, 4));
 }

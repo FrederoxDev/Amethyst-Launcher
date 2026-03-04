@@ -8,9 +8,7 @@ import { MinecraftButton } from "@renderer/components/MinecraftButton";
 
 import { UseAppState } from "@renderer/contexts/AppState";
 
-import { HasGdkStableInstalled, RegisterVersion, UnregisterCurrent, UnregisterGdkStable } from "@renderer/scripts/AppRegistry";
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
-import { IsDevModeEnabled, TryEnableDevMode } from "@renderer/scripts/DeveloperMode";
 import { GetLauncherConfig, SetLauncherConfig } from "@renderer/scripts/Launcher";
 
 import {
@@ -81,20 +79,20 @@ export function LauncherPage() {
         setError("");
         setIsLoading(true);
 
-        if (HasGdkStableInstalled()) {
-            setStatus("Unregistering existing GDK Stable version");
-            UnregisterGdkStable();
-        }
+        // if (HasGdkStableInstalled()) {
+        //     setStatus("Unregistering existing GDK Stable version");
+        //     UnregisterGdkStable();
+        // }
 
-        // Check that the user has developer mode enabled on windows for the game to be installed through loose files.
-        if (!IsDevModeEnabled()) {
-            const enabled_dev = await TryEnableDevMode();
-            if (!enabled_dev) {
-                throw new Error(
-                    "Failed to enable 'Developer Mode' in windows settings to allow installing the game from loose files, please enable manually or make sure to press 'Yes' to enable automatically."
-                );
-            }
-        }
+        // // Check that the user has developer mode enabled on windows for the game to be installed through loose files.
+        // if (!IsDevModeEnabled()) {
+        //     const enabled_dev = await TryEnableDevMode();
+        //     if (!enabled_dev) {
+        //         throw new Error(
+        //             "Failed to enable 'Developer Mode' in windows settings to allow installing the game from loose files, please enable manually or make sure to press 'Yes' to enable automatically."
+        //         );
+        //     }
+        // }
 
         // We create a lock file when starting the download
         // if we are doing a launch, and we detect it for the version we are targeting
@@ -105,10 +103,6 @@ export function LauncherPage() {
             log("Detected a .lock file from the previous download attempt, cleaning up.");
             CleanupInstall(semVersion, false);
             log("Removed previous download attempt.");
-        }
-
-        if (minecraftVersion.type === "gdk") {
-            throw new Error("GDK versions currently cannot be launched...");
         }
 
         // Check for the folder for the version we are targeting, if not present we need to fetch.
@@ -122,15 +116,15 @@ export function LauncherPage() {
         }
 
         // Only register the game if needed
-        if (!IsRegistered(minecraftVersion)) {
-            setStatus("Unregistering existing version");
-            await UnregisterCurrent();
+        // if (!IsRegistered(minecraftVersion)) {
+        //     setStatus("Unregistering existing version");
+        //     await UnregisterCurrent();
 
-            setStatus("Registering downloaded version");
-            await RegisterVersion(minecraftVersion);
+        //     setStatus("Registering downloaded version");
+        //     await RegisterVersion(minecraftVersion);
 
-            SetLauncherConfig(GetLauncherConfig());
-        }
+        //     SetLauncherConfig(GetLauncherConfig());
+        // }
 
         setIsLoading(false);
         setStatus("");

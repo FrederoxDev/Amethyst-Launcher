@@ -7,18 +7,17 @@ import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { PopupPanel } from "@renderer/components/PopupPanel";
 
 import { GetAllMods, ValidatedMod } from "@renderer/scripts/Mods";
-import { MinecraftUWPFolder, ModsFolder } from "@renderer/scripts/Paths";
+import { UseAppState } from "@renderer/contexts/AppState";
+
+function getPaths() {
+    return UseAppState.getState().platform.getPaths();
+}
 
 const openModsFolder = () => {
-    // Don't reveal in explorer unless there is an existing minecraft folder
-    if (!fs.existsSync(MinecraftUWPFolder)) {
-        alert("Minecraft is not currently installed");
-        return;
-    }
+    const paths = getPaths();
+    if (!fs.existsSync(paths.modsPath)) fs.mkdirSync(paths.modsPath, { recursive: true });
 
-    if (!fs.existsSync(ModsFolder)) fs.mkdirSync(ModsFolder, { recursive: true });
-
-    const startGameCmd = `explorer "${ModsFolder}"`;
+    const startGameCmd = `explorer "${paths.modsPath}"`;
     child.spawn(startGameCmd, { shell: true });
 };
 
