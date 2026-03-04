@@ -1,0 +1,20 @@
+.readonly-label {
+    color: white;
+    font-size: 14px;
+}
+
+.readonly-box {
+    box-sizing: border-box;
+    border: 3px solid #1E1E1F;
+    background-color: #313233;
+}
+
+.readonly-text {
+    width: 100%;
+    outline: none;
+    color: white;
+    font-size: 14px;
+    padding: 0 4px;
+    white-space: pre-wrap;
+    user-select: text;
+}

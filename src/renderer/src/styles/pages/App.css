@@ -1,0 +1,104 @@
+.app-consent-panel {
+    width: 50%;
+    height: 50%;
+}
+
+.app-consent-indent {
+    padding: 1rem;
+}
+
+.app-consent-link {
+    color: #60a5fa;
+    text-decoration: underline;
+}
+
+.app-root {
+    position: relative;
+}
+
+.app-consent-actions {
+    display: flex;
+    justify-content: space-around;
+    gap: 8px;
+}
+
+.app-background-layer {
+    position: absolute;
+    display: flex;
+}
+
+.app-background-image {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+    min-height: 100vh;
+}
+
+.app-contents {
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    gap: 12px;
+    height: calc(100% - 64px);
+    padding: 12px;
+}
+
+.app-navbar-container {
+    height: 100%;
+    width: 68px;
+}
+
+.app-navbar {
+    height: 100%;
+    background-color: #313233;
+    width: 68px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border: 3px solid #1E1E1F;
+}
+
+.app-nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex-grow: 1;
+}
+
+.nav-icon {
+    width: 46px;
+    height: 46px;
+    border-width: 3px;
+    border-color: #1E1E1F;
+}
+
+.nav-icon--active {
+    border-color: #FFFFFF;
+}
+
+.app-nav-icon-image {
+    width: 100%;
+    height: 100%;
+}
+
+.app-settings-button {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 46px;
+    height: 46px;
+}
+
+.app-settings-icon {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+}
+
+.app-view-container {
+    width: calc(100% - 80px);
+}

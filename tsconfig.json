@@ -1,11 +1,7 @@
 {
-  "files": [],
-  "references": [
-    {
-      "path": "./tsconfig.web.json"
-    },
-    {
-      "path": "./tsconfig.node.json"
+    "files": [],
+    "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.web.json" }],
+    "compilerOptions": {
+        "sourceMap": true
     }
-  ]
 }

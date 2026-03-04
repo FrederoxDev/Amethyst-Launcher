@@ -1,0 +1,256 @@
+.mod-discovery-title {
+    color: white;
+    font-size: 14px;
+}
+
+.mod-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+    cursor: pointer;
+}
+
+.mod-card-icon {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+}
+
+.mod-card-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.mod-card-title {
+    color: white;
+    font-size: 18px;
+}
+
+.mod-card-description {
+    color: #BCBEC0;
+    font-size: 14px;
+}
+
+.mod-card-authors {
+    color: #BCBEC0;
+    font-size: 14px;
+}
+
+.mod-card-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-left: auto;
+    padding-right: 8px;
+}
+
+.mod-card-installs {
+    color: #BCBEC0;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.mod-readme-container {
+    margin: 8px;
+}
+
+.mod-md-h1 {
+    color: white;
+    font-size: 24px;
+    margin: 8px 0;
+}
+
+.mod-md-h2 {
+    color: white;
+    font-size: 20px;
+    margin: 8px 0;
+}
+
+.mod-md-h3 {
+    color: white;
+    font-size: 18px;
+    margin: 8px 0;
+}
+
+.mod-md-p {
+    color: #BCBEC0;
+    font-size: 14px;
+    margin: 4px 0;
+}
+
+.mod-md-li {
+    color: #BCBEC0;
+    font-size: 14px;
+    margin: 4px 0;
+}
+
+.mod-md-ol {
+    list-style: decimal;
+    margin: 8px 0 8px 24px;
+}
+
+.mod-md-ul {
+    list-style: disc;
+    margin: 8px 0 8px 24px;
+}
+
+.mod-md-code {
+    color: #BCBEC0;
+    padding: 0 4px;
+    border-radius: 4px;
+}
+
+.mod-md-pre {
+    background-color: #3e3e47;
+    color: #d4d5d6;
+    padding: 8px;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.mod-md-blockquote {
+    border-left: 4px solid #5a5b5c;
+    padding-left: 16px;
+    font-style: italic;
+    color: #BCBEC0;
+}
+
+.mod-md-table {
+    border-collapse: collapse;
+    border: 1px solid #5a5b5c;
+    margin: 12px 0;
+    width: 100%;
+    text-align: left;
+}
+
+.mod-md-thead {
+    background-color: #46464d;
+}
+
+.mod-md-tr {
+    border-bottom: 1px solid #5a5b5c;
+}
+
+.mod-md-th {
+    color: #BCBEC0;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 8px 12px;
+    border: 1px solid #5a5b5c;
+}
+
+.mod-md-td {
+    color: #BCBEC0;
+    font-size: 14px;
+    padding: 8px 12px;
+    border: 1px solid #5a5b5c;
+}
+
+.mod-md-img {
+    max-width: 100%;
+    height: auto;
+    margin: 8px 0;
+}
+
+.mod-md-link {
+    color: #60a5fa;
+    text-decoration: underline;
+}
+
+.mod-confirm-popup {
+    width: 30%;
+    height: 18%;
+}
+
+.mod-confirm-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.mod-confirm-warning {
+    color: #BCBEC0;
+}
+
+.mod-confirm-actions {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-around;
+    gap: 8px;
+}
+
+.mod-release-empty {
+    color: #BCBEC0;
+    font-size: 14px;
+}
+
+.mod-release-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mod-release-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.mod-release-name {
+    color: white;
+    font-size: 14px;
+}
+
+.mod-release-date {
+    color: #BCBEC0;
+    font-size: 12px;
+}
+
+.mod-release-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.mod-install-button {
+    background-color: #2563eb;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-right: 8px;
+}
+
+.mod-install-button:hover {
+    background-color: #1d4ed8;
+}
+
+.mod-uninstall-button {
+    background-color: #dc2626;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-right: 8px;
+}
+
+.mod-uninstall-button:hover {
+    background-color: #b91c1c;
+}
+
+.mod-details-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+}
+
+.mod-details-link {
+    color: white;
+    font-size: 14px;
+}
+
+.mod-details-popup {
+    width: 80%;
+    height: 80%;
+}

@@ -1,0 +1,145 @@
+.version-page-root {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.version-page-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+    padding: 8px;
+    background-color: #48494A;
+    border: 3px solid #1E1E1F;
+    overflow: hidden;
+}
+
+.version-page-title {
+    color: white;
+    font-size: 14px;
+}
+
+.version-page-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    border: 3px solid #1E1E1F;
+    height: 100%;
+    background-color: #313233;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.version-card {
+    margin: -3px;
+    border: 3px solid #1E1E1F;
+}
+
+.version-card-inner {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    border: 3px solid;
+    border-top-color: #5a5b5c;
+    border-left-color: #5a5b5c;
+    border-bottom-color: #333334;
+    border-right-color: #333334;
+    background-color: #48494a;
+}
+
+.version-card-info {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-width: 0;
+    padding: 8px;
+}
+
+.version-card-name {
+    color: white;
+    font-size: 16px;
+}
+
+.version-card-actions {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: row;
+    padding: 8px;
+    gap: 8px;
+    justify-content: right;
+    align-items: center;
+}
+
+.version-icon-action {
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    background-color: #333334;
+    border-radius: 4px;
+    padding: 4px;
+}
+
+.version-icon-action img {
+    width: 24px;
+    height: 24px;
+}
+
+.version-icon-action-delete:hover {
+    background-color: #FF000080;
+}
+
+.version-icon-action-neutral:hover {
+    background-color: #5a5b5c;
+}
+
+.version-popup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #1E1E1F;
+}
+
+.version-popup-header {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 3px solid #5a5b5c;
+    border-bottom: 3px solid #333334;
+    background-color: #48494a;
+    padding: 8px;
+}
+
+.version-popup-title {
+    color: white;
+    font-size: 14px;
+    max-width: 400px;
+}
+
+.version-popup-close {
+    padding: 4px;
+    justify-content: center;
+    align-items: center;
+    margin-left: auto;
+    cursor: pointer;
+}
+
+.version-popup-body {
+    display: flex;
+    border-top: 3px solid #5a5b5c;
+    border-bottom: 3px solid #333334;
+    background-color: #48494a;
+    padding: 8px;
+}
+
+.version-popup-path {
+    color: #BCBEC0;
+    font-size: 12px;
+}

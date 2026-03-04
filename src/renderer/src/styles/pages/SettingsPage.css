@@ -1,0 +1,65 @@
+.settings-scroll-hidden {
+    scrollbar-width: none;
+}
+
+.settings-scroll-hidden::-webkit-scrollbar {
+    display: none;
+}
+
+.settings-page {
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
+    max-height: 100%;
+    border: 3px solid #1E1E1F;
+    background-color: #48494a;
+    overflow-y: auto;
+}
+
+.settings-section {
+    border-top: 3px solid #5a5b5c;
+    border-bottom: 3px solid #333334;
+    background-color: #48494a;
+    padding: 8px;
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-toggle-wrap {
+    margin-left: auto;
+}
+
+.settings-title {
+    color: white;
+    font-size: 14px;
+}
+
+.settings-subtitle {
+    color: #BCBEC0;
+    font-size: 12px;
+}
+
+.settings-debug {
+    border-top: 3px solid #5a5b5c;
+    border-bottom: 3px solid #333334;
+    background-color: #48494a;
+    padding: 8px;
+    color: #BCBEC0;
+    font-size: 14px;
+    flex-shrink: 0;
+    overflow-x: hidden;
+}
+
+.settings-debug-title {
+    color: white;
+}
+
+.settings-actions {
+    padding: 8px;
+    display: flex;
+    gap: 8px;
+}
