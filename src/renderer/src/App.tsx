@@ -1,3 +1,4 @@
+import { AnalyticsConsent, UseAppState } from "@renderer/contexts/AppState";
 import { Link, Route, Routes, useLocation } from "react-router-dom";
 
 import lushCaveImage from "@renderer/assets/images/art/lush_cave.png";
@@ -14,8 +15,6 @@ import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
 import { PopupPanel } from "@renderer/components/PopupPanel";
 import Title from "@renderer/components/Title";
-
-import { AnalyticsConsent, UseAppState } from "@renderer/contexts/AppState";
 
 import { LauncherPage } from "@renderer/pages/LauncherPage";
 import { ModDiscovery } from "@renderer/pages/ModDiscovery";
@@ -92,7 +91,7 @@ function GetAnalyticsConsent() {
 
 export default function App() {
     const location = useLocation();
-
+    
     return (
         <>
             <link rel="preload" href={lushCaveImage} as="image" />

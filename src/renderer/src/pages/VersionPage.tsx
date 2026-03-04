@@ -3,7 +3,6 @@ import * as fs from "fs";
 import { useState } from "react";
 
 import { PopupPanel } from "@renderer/components/PopupPanel";
-
 import { GetInstalledVersionsFromFile, InstalledVersion, ValidateVersionsFile } from "@renderer/scripts/Versions";
 
 const { ipcRenderer } = window.require("electron");

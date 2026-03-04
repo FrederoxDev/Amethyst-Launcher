@@ -102,10 +102,6 @@ export function ProfileEditor() {
         saveData();
     }, [loadProfile]);
 
-    const filterVersion = (version: MinecraftVersion): boolean => {
-        return version.versionType === MinecraftVersionType.UwpStable;
-    };
-
     const formatVersionName = (version: MinecraftVersion): string => {
         return SemVersion.toString(version.version);
     };
@@ -120,7 +116,7 @@ export function ProfileEditor() {
                         labelText="Minecraft Version"
                         value={profileMinecraftVersion}
                         setValue={setProfileMinecraftVersion}
-                        options={allMinecraftVersions.filter(filterVersion).map(formatVersionName)}
+                        options={allMinecraftVersions.map(formatVersionName)}
                         id="minecraft-version"
                     />
                     <Dropdown

@@ -5,7 +5,6 @@ import { UseAppState } from "@renderer/contexts/AppState";
 
 import { Extractor } from "@renderer/scripts/backend/Extractor";
 import { CopyRecursive } from "@renderer/scripts/Files";
-import { ModsFolder } from "@renderer/scripts/Paths";
 
 const path = window.require("path");
 
@@ -13,6 +12,8 @@ export function DropWindow() {
     const [hovered, setHovered] = useState(false);
 
     const setError = UseAppState(state => state.setError);
+    const platform = UseAppState(state => state.platform);
+    const paths = platform.getPaths();
 
     useEffect(() => {
         let dragCount = 0;
@@ -67,7 +68,7 @@ export function DropWindow() {
         function ImportZIP(zip_path: string) {
             try {
                 const zip_name = path.basename(zip_path);
-                const extracted_folder_path = path.join(ModsFolder, zip_name.slice(0, -".zip".length));
+                const extracted_folder_path = path.join(paths.modsPath, zip_name.slice(0, -".zip".length));
                 console.log(extracted_folder_path);
                 Extractor.extractFile(zip_path, extracted_folder_path, [], undefined, success => {
                     if (!success) {
@@ -84,7 +85,7 @@ export function DropWindow() {
         // IMPORT FOLDER
         function ImportFolder(folder_path: string) {
             try {
-                CopyRecursive(folder_path, ModsFolder);
+                CopyRecursive(folder_path, paths.modsPath);
             } catch (error) {
                 setError((error as Error).message);
             }

@@ -19,10 +19,13 @@ import { UseAppState } from "@renderer/contexts/AppState";
 import { db } from "@renderer/firebase/Firebase";
 
 import { Extractor } from "@renderer/scripts/backend/Extractor";
-import { ModsFolder } from "@renderer/scripts/Paths";
 
 const { shell } = window.require("electron");
 const path = window.require("path");
+
+function getPaths() {
+    return UseAppState.getState().platform.getPaths();
+}
 
 interface ModDiscoveryData {
     id: string;
@@ -198,8 +201,9 @@ async function downloadToTemp(url: string, filename: string): Promise<{ ok: bool
 
 async function ImportZIP(zip_path: string): Promise<void> {
     try {
+        const paths = getPaths();
         const zip_name = path.basename(zip_path);
-        const extracted_folder_path = path.join(ModsFolder, zip_name.slice(0, -".zip".length));
+        const extracted_folder_path = path.join(paths.modsPath, zip_name.slice(0, -".zip".length));
         console.log(extracted_folder_path);
         await Extractor.extractFile(zip_path, extracted_folder_path, [], undefined, success => {
             if (!success) {
@@ -214,7 +218,8 @@ async function ImportZIP(zip_path: string): Promise<void> {
 }
 
 function uninstallMod(modName: string): void {
-    const modPath = path.join(ModsFolder, modName);
+    const paths = getPaths();
+    const modPath = path.join(paths.modsPath, modName);
     if (fs.existsSync(modPath)) {
         fs.rmSync(modPath, { recursive: true, force: true });
         console.log(`Uninstalled mod: ${modName}`);

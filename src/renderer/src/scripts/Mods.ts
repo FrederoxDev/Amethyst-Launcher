@@ -1,6 +1,7 @@
 const fs = window.require("fs");
 const path = window.require("path");
 
+import { UseAppState } from "@renderer/contexts/AppState";
 import {
     ajv,
     FromValidatedV1_1_0ToConfig,
@@ -9,14 +10,18 @@ import {
     ValidateModSchemaV1_1_0,
     ValidateModSchemaV1_2_0,
 } from "./schema/ModConfigSchema";
-import { ModsFolder } from "@renderer/scripts/Paths";
 import type { ValidateFunction } from "ajv";
 
+function getPaths() {
+    return UseAppState.getState().platform.getPaths();
+}
+
 export function GetAllMods(): ValidatedMod[] {
-    if (!fs.existsSync(ModsFolder)) return [];
+    const paths = getPaths();
+    if (!fs.existsSync(paths.modsPath)) return [];
 
     const allFolders = fs
-        .readdirSync(ModsFolder, { withFileTypes: true })
+        .readdirSync(paths.modsPath, { withFileTypes: true })
         .filter(f => f.isDirectory())
         .map(dir => dir.name);
 
@@ -48,7 +53,8 @@ const validators: { [version: string]: [ValidateFunction, (data: any) => ModConf
 const deprecatedVersions = ["1.0.0"];
 
 export function ValidateMod(id: string): ValidatedMod {
-    const modConfigPath = path.join(ModsFolder, id, "mod.json");
+    const paths = getPaths();
+    const modConfigPath = path.join(paths.modsPath, id, "mod.json");
     let configUnchecked: Record<any, any> = {};
 
     const errors: string[] = [];

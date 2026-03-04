@@ -1,4 +1,4 @@
-import * as fs from "fs";
+const fs = window.require("fs");
 
 import { ActionComplete, DownloadProgress } from "@renderer/scripts/backend/Progress";
 

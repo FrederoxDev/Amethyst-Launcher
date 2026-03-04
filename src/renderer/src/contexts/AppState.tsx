@@ -7,6 +7,9 @@ import { GetLauncherConfig, LauncherConfig, SetLauncherConfig } from "@renderer/
 import { GetAllMods, ValidatedMod } from "@renderer/scripts/Mods";
 import { GetProfiles, Profile, SetProfiles } from "@renderer/scripts/Profiles";
 import { FetchMinecraftVersions, MinecraftVersion } from "@renderer/scripts/Versions";
+import { ILauncherPlatform } from "@renderer/scripts/platform/LauncherPlatform";
+import { WindowsLauncherPlatform } from "@renderer/scripts/platform/WindowsLauncherPlatform";
+import { LinuxLauncherPlatform } from "@renderer/scripts/platform/LinuxLauncherPlatform";
 
 const { ipcRenderer } = window.require("electron");
 
@@ -72,6 +75,8 @@ interface TAppStateContext {
 
     saveData: () => void;
     refreshAllMods: () => void;
+
+    platform: ILauncherPlatform;
 }
 
 function getInitialAnalyticsConsent(): AnalyticsConsent {
@@ -88,6 +93,15 @@ function getAnalyticsInstanceForConsent(consent: AnalyticsConsent): Analytics | 
 
 export const UseAppState = create<TAppStateContext>((set, get) => {
     const initialConsent = getInitialAnalyticsConsent();
+
+    let platformInstance: ILauncherPlatform;
+    if (process.platform === "win32") {
+        platformInstance = new WindowsLauncherPlatform();
+    } else if (process.platform === "linux") {
+        platformInstance = new LinuxLauncherPlatform();
+    } else {
+        throw new Error(`Unsupported platform: ${process.platform}`);
+    }
 
     return {
         allMods: [],
@@ -176,6 +190,8 @@ export const UseAppState = create<TAppStateContext>((set, get) => {
 
             SetLauncherConfig(launcherConfig);
         },
+
+        platform: platformInstance, // This will be properly initialized in the InitializeAppState function after we determine the platform
     };
 });
 
@@ -194,7 +210,7 @@ function hydrateStoreOnce(): void {
         keepLauncherOpen: config.keep_open ?? true,
         developerMode: config.developer_mode ?? false,
         selectedProfile: config.selected_profile ?? 0,
-        UITheme: config.ui_theme ?? "Light",
+        UITheme: config.ui_theme ?? "Light"
     });
 
     ipcRenderer.send("WINDOW_UI_THEME", UseAppState.getState().UITheme);

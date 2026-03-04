@@ -1,6 +1,6 @@
 import { Downloader } from "@renderer/scripts/backend/Downloader";
 import { ActionComplete, DownloadProgress } from "@renderer/scripts/backend/Progress";
-import { GDKMinecraftVersion } from "@renderer/scripts/Versions";
+import { MinecraftVersion } from "@renderer/scripts/Versions";
 
 class Protocol {
     static DEFAULT_URL = "https://fe3.delivery.mp.microsoft.com/ClientWebService/client.asmx";
@@ -239,7 +239,7 @@ export async function download(
 }
 
 export async function downloadGdk(
-    version: GDKMinecraftVersion,
+    version: MinecraftVersion,
     destination: string,
     onProgress: DownloadProgress = () => {},
     onComplete: ActionComplete = () => {}
