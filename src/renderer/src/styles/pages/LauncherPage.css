@@ -1,0 +1,124 @@
+.launcher-page {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.launcher-error-banner {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    background-color: #CA3636;
+    width: 100%;
+    border: 3px solid #CF4A4A;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.launcher-error-body {
+    display: flex;
+    flex-direction: row;
+    padding: 8px;
+    gap: 8px;
+}
+
+.launcher-error-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.launcher-error-text {
+    color: #FFFFFF;
+    font-size: 16px;
+}
+
+.launcher-error-actions {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: row;
+    padding: 8px;
+    gap: 8px;
+    justify-content: right;
+    align-items: center;
+}
+
+.launcher-error-close {
+    cursor: pointer;
+    padding: 4px;
+}
+
+.launcher-footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+
+.launcher-disclaimer {
+    background-color: #0c0c0cc5;
+    width: fit-content;
+    margin-left: auto;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+}
+
+.launcher-disclaimer-text {
+    color: white;
+    padding: 0 4px;
+    font-size: 13px;
+}
+
+.launcher-progress {
+    background-color: #313233;
+    transition: all 300ms ease-in-out;
+}
+
+.launcher-progress-visible {
+    height: 25px;
+}
+
+.launcher-progress-hidden {
+    height: 0;
+}
+
+.launcher-progress-bar {
+    background-color: #3C8527;
+    position: absolute;
+    transition: all 300ms ease-in-out;
+}
+
+.launcher-progress-bar-visible {
+    min-height: 25px;
+}
+
+.launcher-progress-bar-hidden {
+    min-height: 0;
+}
+
+.launcher-progress-text {
+    position: absolute;
+    z-index: 30;
+    color: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    padding: 0 8px;
+}
+
+.launcher-actions {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    border: 3px solid #1E1E1F;
+    padding: 8px;
+    background-color: #48494A;
+}
+
+.launcher-profile-select {
+    width: 30%;
+    margin-top: auto;
+}
+
+.launcher-play {
+    width: 70%;
+}

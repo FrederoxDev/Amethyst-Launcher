@@ -1,0 +1,27 @@
+.loading-wheel-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-wheel-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.loading-wheel-text {
+    color: white;
+    font-size: 14px;
+}
+
+.loading-wheel-percentage {
+    color: white;
+    font-size: 64px;
+}

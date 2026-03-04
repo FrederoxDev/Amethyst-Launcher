@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@import url('./base/Fonts.css');
+@import url('./base/Globals.css');
+
+@import url('./components/Title.css');
+@import url('./components/MinecraftToggle.css');
+@import url('./components/MinecraftButton.css');
+@import url('./components/MinecraftRadialButton.css');
+@import url('./components/MinecraftRadialButtonPanel.css');
+@import url('./components/MainPanel.css');
+@import url('./components/Dropdown.css');
+@import url('./components/TextInput.css');
+@import url('./components/ReadOnlyTextBox.css');
+@import url('./components/PopupPanel.css');
+@import url('./components/LoadingWheel.css');
+@import url('./components/DropWindow.css');
+
+@import url('./utilities/BackgroundImage.css');
+@import url('./utilities/Scrollbar.css');
+
+@import url('./pages/App.css');
+@import url('./pages/LauncherPage.css');
+@import url('./pages/SettingsPage.css');
+@import url('./pages/ProfilePage.css');
+@import url('./pages/ProfileEditor.css');
+@import url('./pages/ModDiscovery.css');
+@import url('./pages/ModsPage.css');
+@import url('./pages/VersionPage.css');
+@import url('./pages/UpdatePage.css');

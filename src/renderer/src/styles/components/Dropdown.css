@@ -1,0 +1,30 @@
+.dropdown-root {
+    display: flex;
+    flex-direction: column;
+}
+
+.dropdown-label {
+    color: white;
+    font-size: 14px;
+}
+
+.dropdown-select {
+    border: 3px solid #1E1E1F;
+    background-color: #313233;
+    width: 100%;
+    height: 25px;
+    color: white;
+    font-size: 12px;
+}
+
+.dropdown-empty {
+    border: 3px solid #1E1E1F;
+    background-color: #313233;
+    width: 100%;
+    height: 25px;
+}
+
+.dropdown-option {
+    color: white;
+    font-family: sans-serif;
+}
