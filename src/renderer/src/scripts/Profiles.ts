@@ -1,5 +1,5 @@
 import { UseAppState } from "@renderer/contexts/AppState";
-import { InstalledVersion } from "@renderer/scripts/Versions";
+import { InstalledVersion } from "@renderer/scripts/VersionDatabase";
 import { PathUtils } from "./PathUtils";
 
 const fs = window.require("fs");
@@ -14,6 +14,7 @@ export interface Profile {
     mods: string[];
     minecraft_version: string;
     installed_version?: InstalledVersion;
+    use_split_data_folder?: boolean;
 }
 
 export function GetProfiles(): Profile[] {

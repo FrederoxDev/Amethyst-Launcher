@@ -83,7 +83,7 @@
 .launcher-progress-bar {
     background-color: #3C8527;
     position: absolute;
-    transition: all 300ms ease-in-out;
+    
 }
 
 .launcher-progress-bar-visible {

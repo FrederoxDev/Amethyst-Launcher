@@ -30,6 +30,15 @@ export class SemVersion {
         throw new Error(`Invalid version string format ${versionString}`);
     }
 
+    static fromObject(obj: Object): SemVersion {
+        if (!("major" in obj) || !("minor" in obj) || !("patch" in obj) || !("build" in obj)) {
+            throw new Error("Object is missing required version properties.");
+        }
+
+        const { major, minor, patch, build } = obj as { major: number, minor: number, patch: number, build: number };
+        return new SemVersion(major, minor, patch, build);
+    }
+
     static toString(version: SemVersion) {
         return `${version.major}.${version.minor}.${version.patch}.${version.build}`;
     }

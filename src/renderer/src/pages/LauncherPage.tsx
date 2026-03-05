@@ -13,16 +13,12 @@ import { GetLauncherConfig, SetLauncherConfig } from "@renderer/scripts/Launcher
 
 import {
     CleanupInstall,
-    CreateLock,
     DownloadVersion,
     ExtractVersion,
-    InstallProxy,
-    IsDownloaded,
-    IsLocked,
-    IsRegistered,
+    InstallProxy
 } from "@renderer/scripts/VersionManager";
 import { DEFAULT_STATUS } from "@renderer/scripts/LauncherStatus";
-import { FindMinecraftVersion, GetInstalledVersion, GetInstalledVersionPath } from "@renderer/scripts/Versions";
+import { MinecraftVersionData } from "@renderer/scripts/VersionDatabase";
 
 export function LauncherPage() {
     const loadingProgressBarRef = useRef<HTMLDivElement | null>(null);
@@ -35,9 +31,9 @@ export function LauncherPage() {
     const setStatus = UseAppState(state => state.setStatus);
     const error = UseAppState(state => state.error);
     const setError = UseAppState(state => state.setError);
-    const allMinecraftVersions = UseAppState(state => state.allMinecraftVersions);
     const allValidMods = UseAppState(state => state.allValidMods);
     const canDoAction = UseAppState(state => state.canDoAction);
+    const versionManager = UseAppState(state => state.versionManager);
 
     useEffect(() => {
         const progressBar = loadingProgressBarRef.current;
@@ -70,16 +66,15 @@ export function LauncherPage() {
         }
 
         const semVersion = SemVersion.fromString(profile.minecraft_version);
-        const minecraftVersion = allMinecraftVersions.find(version => version.version.matches(semVersion))!;
-        console.log(allMinecraftVersions);
-
-        if (minecraftVersion === undefined) {
-            throw new Error(`Failed to find minecraft version ${semVersion.toString()} in the profile in allVersions!`);
+        await versionManager.database.update();
+        const minecraftVersion = versionManager.database.getVersionBySemVersion(semVersion);
+        if (!minecraftVersion) {
+            throw new Error(`Minecraft version ${semVersion.toString()} not found in version database!`);
         }
 
         setStatus(prev => ({ ...prev, 
             type: "idle",
-            taskName: `Preparing to launch Minecraft ${minecraftVersion.version.toString()}...`,
+            taskName: `Preparing to launch Minecraft ${semVersion.toString()}...`,
             progress: null,
             showLoading: true
         }));
@@ -87,7 +82,7 @@ export function LauncherPage() {
         // We create a lock file when starting the download
         // if we are doing a launch, and we detect it for the version we are targeting
         // there is a good chance the previous install/download failed and therefore remove it.
-        const didPreviousDownloadFail = IsLocked(semVersion);
+        const didPreviousDownloadFail = versionManager.isLocked(semVersion);
 
         if (didPreviousDownloadFail) {
             log("Detected a .lock file from the previous download attempt, cleaning up.");
@@ -96,11 +91,11 @@ export function LauncherPage() {
         }
 
         // Check for the folder for the version we are targeting, if not present we need to fetch.
-        if (!IsDownloaded(semVersion)) {
+        if (true) {
             log("Target version is not downloaded.");
-            CreateLock(semVersion);
-            await DownloadVersion(minecraftVersion);
-            await ExtractVersion(minecraftVersion);
+            versionManager.lockVersion(semVersion);
+            await versionManager.downloadVersion(minecraftVersion.uuid);
+            await versionManager.extractVersion(minecraftVersion.uuid);
             
             log("Cleaning up after successful download");
             CleanupInstall(semVersion, true);
@@ -115,13 +110,13 @@ export function LauncherPage() {
 
         // InstallProxy(minecraftVersion);
 
-        const installedVersion = GetInstalledVersion(minecraftVersion);
-        if (!installedVersion) {
-            throw new Error("Failed to find the installed version after downloading and extracting it.");
-        }
+        // const installedVersion = GetInstalledVersion(minecraftVersion);
+        // if (!installedVersion) {
+        //     throw new Error("Failed to find the installed version after downloading and extracting it.");
+        // }
 
-        await platform.runProfile(profile, installedVersion);
-        setStatus(DEFAULT_STATUS);
+        // await platform.runProfile(profile, installedVersion);
+        // setStatus(DEFAULT_STATUS);
     };
 
     const launchGame = async () => {

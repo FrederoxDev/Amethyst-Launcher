@@ -1,5 +1,5 @@
 import { Profile } from "../Profiles";
-import { InstalledVersion } from "../Versions";
+import { InstalledVersion } from "../VersionDatabase";
 
 export interface ShortcutOptions {
     target: string;

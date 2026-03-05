@@ -1,7 +1,7 @@
 import { ILauncherPlatform, LauncherPaths, ShortcutOptions } from "@renderer/scripts/platform/LauncherPlatform";
 import { PathUtils } from "../PathUtils";
 import { Profile } from "../Profiles";
-import { InstalledVersion } from "../Versions";
+import { InstalledVersion } from "../VersionDatabase";
 
 const os = window.require("os") as typeof import("os");
 const child = window.require("child_process") as typeof import("child_process");

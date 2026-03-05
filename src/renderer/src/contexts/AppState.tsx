@@ -6,11 +6,12 @@ import { firebaseApp } from "@renderer/firebase/Firebase";
 import { GetLauncherConfig, LauncherConfig, SetLauncherConfig } from "@renderer/scripts/Launcher";
 import { GetAllMods, ValidatedMod } from "@renderer/scripts/Mods";
 import { GetProfiles, Profile, SetProfiles } from "@renderer/scripts/Profiles";
-import { FetchMinecraftVersions, MinecraftVersion } from "@renderer/scripts/Versions";
+import { FetchMinecraftVersions, MinecraftVersion, VersionDatabase } from "@renderer/scripts/VersionDatabase";
 import { ILauncherPlatform } from "@renderer/scripts/platform/LauncherPlatform";
 import { WindowsLauncherPlatform } from "@renderer/scripts/platform/WindowsLauncherPlatform";
 import { LinuxLauncherPlatform } from "@renderer/scripts/platform/LinuxLauncherPlatform";
 import { BLOCKED_ACTIONS, DEFAULT_STATUS } from "@renderer/scripts/LauncherStatus";
+import { VersionManager } from "@renderer/scripts/VersionManager";
 
 const { ipcRenderer } = window.require("electron");
 
@@ -56,9 +57,6 @@ interface TAppStateContext {
     allRuntimes: string[];
     setAllRuntimes: StateSetter<string[]>;
 
-    allMinecraftVersions: MinecraftVersion[];
-    setAllMinecraftVersions: StateSetter<MinecraftVersion[]>;
-
     allProfiles: Profile[];
     setAllProfiles: StateSetter<Profile[]>;
 
@@ -70,9 +68,6 @@ interface TAppStateContext {
 
     keepLauncherOpen: boolean;
     setKeepLauncherOpen: StateSetter<boolean>;
-
-    developerMode: boolean;
-    setDeveloperMode: StateSetter<boolean>;
 
     status: LauncherStatus;
     setStatus: StateSetter<LauncherStatus>;
@@ -92,6 +87,8 @@ interface TAppStateContext {
 
     isBusy: () => boolean;
     canDoAction: (action: ActionType) => boolean;
+
+    versionManager: VersionManager;
 }
 
 function getInitialAnalyticsConsent(): AnalyticsConsent {
@@ -137,8 +134,6 @@ export const UseAppState = create<TAppStateContext>((set, get) => {
         setAllValidMods: value =>
             set(state => ({ allValidMods: resolveSetStateAction(value, state.allValidMods) })),
         setAllRuntimes: value => set(state => ({ allRuntimes: resolveSetStateAction(value, state.allRuntimes) })),
-        setAllMinecraftVersions: value =>
-            set(state => ({ allMinecraftVersions: resolveSetStateAction(value, state.allMinecraftVersions) })),
         setAllProfiles: value => set(state => ({ allProfiles: resolveSetStateAction(value, state.allProfiles) })),
         setSelectedProfile: value =>
             set(state => ({ selectedProfile: resolveSetStateAction(value, state.selectedProfile) })),
@@ -150,8 +145,6 @@ export const UseAppState = create<TAppStateContext>((set, get) => {
             }),
         setKeepLauncherOpen: value =>
             set(state => ({ keepLauncherOpen: resolveSetStateAction(value, state.keepLauncherOpen) })),
-        setDeveloperMode: value =>
-            set(state => ({ developerMode: resolveSetStateAction(value, state.developerMode) })),
         setStatus: value => set(state => ({ status: resolveSetStateAction(value, state.status) })),
         setError: value => set(state => ({ error: resolveSetStateAction(value, state.error) })),
 
@@ -190,7 +183,6 @@ export const UseAppState = create<TAppStateContext>((set, get) => {
             SetProfiles(state.allProfiles);
 
             const launcherConfig: LauncherConfig = {
-                developer_mode: state.developerMode,
                 keep_open: state.keepLauncherOpen,
                 mods: state.allProfiles[state.selectedProfile]?.mods ?? [],
                 runtime: state.allProfiles[state.selectedProfile]?.runtime ?? "",
@@ -212,14 +204,16 @@ export const UseAppState = create<TAppStateContext>((set, get) => {
             const status = get().status.type;
             const blockedActions = BLOCKED_ACTIONS[status];
             return !blockedActions.includes(action);
-        }
+        },
+
+        versionManager: new VersionManager()
     };
 });
 
 let hasBoundInitializationIpc = false;
 let hasInitializedState = false;
 
-function hydrateStoreOnce(): void {
+async function hydrateStoreOnce(): Promise<void> {
     if (hasInitializedState) return;
     hasInitializedState = true;
 
@@ -229,25 +223,20 @@ function hydrateStoreOnce(): void {
     UseAppState.setState({
         allProfiles: profiles,
         keepLauncherOpen: config.keep_open ?? true,
-        developerMode: config.developer_mode ?? false,
         selectedProfile: config.selected_profile ?? 0,
         UITheme: config.ui_theme ?? "Light"
     });
 
     ipcRenderer.send("WINDOW_UI_THEME", UseAppState.getState().UITheme);
     UseAppState.getState().refreshAllMods();
-
-    FetchMinecraftVersions().then(versions => {
-        UseAppState.setState({ allMinecraftVersions: versions });
-    });
 }
 
 export function InitializeAppState(): void {
     if (hasBoundInitializationIpc) return;
     hasBoundInitializationIpc = true;
 
-    ipcRenderer.once("APP_STATE_INIT", () => {
-        hydrateStoreOnce();
+    ipcRenderer.once("APP_STATE_INIT", async () => {
+        await hydrateStoreOnce();
     });
 
     ipcRenderer.send("APP_STATE_INIT_REQUEST");
