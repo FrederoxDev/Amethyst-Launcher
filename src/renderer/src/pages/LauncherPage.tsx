@@ -21,39 +21,40 @@ import {
     IsLocked,
     IsRegistered,
 } from "@renderer/scripts/VersionManager";
+import { DEFAULT_STATUS } from "@renderer/scripts/LauncherStatus";
+import { FindMinecraftVersion, GetInstalledVersion, GetInstalledVersionPath } from "@renderer/scripts/Versions";
 
 export function LauncherPage() {
     const loadingProgressBarRef = useRef<HTMLDivElement | null>(null);
 
+    const platform = UseAppState(state => state.platform);
     const allProfiles = UseAppState(state => state.allProfiles);
     const selectedProfile = UseAppState(state => state.selectedProfile);
     const setSelectedProfile = UseAppState(state => state.setSelectedProfile);
-    const loadingPercent = UseAppState(state => state.loadingPercent);
     const status = UseAppState(state => state.status);
     const setStatus = UseAppState(state => state.setStatus);
-    const isLoading = UseAppState(state => state.isLoading);
-    const setIsLoading = UseAppState(state => state.setIsLoading);
     const error = UseAppState(state => state.error);
     const setError = UseAppState(state => state.setError);
     const allMinecraftVersions = UseAppState(state => state.allMinecraftVersions);
-    const setLoadingPercent = UseAppState(state => state.setLoadingPercent);
     const allValidMods = UseAppState(state => state.allValidMods);
+    const canDoAction = UseAppState(state => state.canDoAction);
 
     useEffect(() => {
         const progressBar = loadingProgressBarRef.current;
         if (!progressBar) return;
 
-        const widthPercent = Math.max(0, Math.min(100, loadingPercent * 100));
+        const widthPercent = Math.max(0, Math.min(100, (status.progress ?? 0) * 100));
         progressBar.style.width = `${widthPercent}%`;
-    }, [loadingPercent]);
+    }, [status.progress]);
 
     const LaunchGame = async () => {
         const log = (msg: string) => {
             console.log(msg);
-            setStatus(msg);
+            setStatus(prev => ({ ...prev, taskName: msg }));
         };
 
-        if (isLoading) return;
+        if (!canDoAction("launch")) 
+            return;
 
         if (allProfiles.length === 0) {
             throw new Error("Cannot launch without a profile!");
@@ -76,23 +77,12 @@ export function LauncherPage() {
             throw new Error(`Failed to find minecraft version ${semVersion.toString()} in the profile in allVersions!`);
         }
 
-        setError("");
-        setIsLoading(true);
-
-        // if (HasGdkStableInstalled()) {
-        //     setStatus("Unregistering existing GDK Stable version");
-        //     UnregisterGdkStable();
-        // }
-
-        // // Check that the user has developer mode enabled on windows for the game to be installed through loose files.
-        // if (!IsDevModeEnabled()) {
-        //     const enabled_dev = await TryEnableDevMode();
-        //     if (!enabled_dev) {
-        //         throw new Error(
-        //             "Failed to enable 'Developer Mode' in windows settings to allow installing the game from loose files, please enable manually or make sure to press 'Yes' to enable automatically."
-        //         );
-        //     }
-        // }
+        setStatus(prev => ({ ...prev, 
+            type: "idle",
+            taskName: `Preparing to launch Minecraft ${minecraftVersion.version.toString()}...`,
+            progress: null,
+            showLoading: true
+        }));
 
         // We create a lock file when starting the download
         // if we are doing a launch, and we detect it for the version we are targeting
@@ -109,30 +99,29 @@ export function LauncherPage() {
         if (!IsDownloaded(semVersion)) {
             log("Target version is not downloaded.");
             CreateLock(semVersion);
-            await DownloadVersion(minecraftVersion, setStatus, setLoadingPercent);
-            await ExtractVersion(minecraftVersion, setStatus, setLoadingPercent);
+            await DownloadVersion(minecraftVersion);
+            await ExtractVersion(minecraftVersion);
+            
             log("Cleaning up after successful download");
             CleanupInstall(semVersion, true);
         }
 
-        // Only register the game if needed
-        // if (!IsRegistered(minecraftVersion)) {
-        //     setStatus("Unregistering existing version");
-        //     await UnregisterCurrent();
+        setStatus(prev => ({ ...prev,
+            type: "launching",
+            taskName: `Launching Minecraft ${minecraftVersion.version.toString()}...`,
+            progress: null,
+            showLoading: true
+        }));
 
-        //     setStatus("Registering downloaded version");
-        //     await RegisterVersion(minecraftVersion);
+        // InstallProxy(minecraftVersion);
 
-        //     SetLauncherConfig(GetLauncherConfig());
-        // }
+        const installedVersion = GetInstalledVersion(minecraftVersion);
+        if (!installedVersion) {
+            throw new Error("Failed to find the installed version after downloading and extracting it.");
+        }
 
-        setIsLoading(false);
-        setStatus("");
-
-        InstallProxy(minecraftVersion);
-
-        const startGameCmd = `start minecraft:`;
-        child.exec(startGameCmd);
+        await platform.runProfile(profile, installedVersion);
+        setStatus(DEFAULT_STATUS);
     };
 
     const launchGame = async () => {
@@ -141,8 +130,12 @@ export function LauncherPage() {
         } catch (e) {
             console.error(e);
             setError((e as Error).message);
-            setStatus("");
-            setIsLoading(false);
+            setStatus(prev => ({ ...prev,
+                type: "idle",
+                taskName: null,
+                progress: null,
+                showLoading: false
+            }));
         }
     };
 
@@ -182,14 +175,14 @@ export function LauncherPage() {
 
                 {/* Loading bar */}
                 <div
-                    className={`launcher-progress ${status || isLoading ? "launcher-progress-visible" : "launcher-progress-hidden"}`}
+                    className={`launcher-progress ${status.showLoading ? "launcher-progress-visible" : "launcher-progress-hidden"}`}
                 >
                     <div
                         ref={loadingProgressBarRef}
-                        className={`launcher-progress-bar ${isLoading ? "launcher-progress-bar-visible" : "launcher-progress-bar-hidden"}`}
+                        className={`launcher-progress-bar ${status.showLoading ? "launcher-progress-bar-visible" : "launcher-progress-bar-hidden"}`}
                     ></div>
                     <p className="minecraft-seven launcher-progress-text">
-                        {status}
+                        {status.taskName}
                     </p>
                 </div>
 

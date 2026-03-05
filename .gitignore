@@ -24,3 +24,6 @@ build
 *.njsproj
 *.sln
 *.sw?
+/out
+/out/renderer
+/out/renderer/assets

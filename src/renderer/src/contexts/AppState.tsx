@@ -10,15 +10,33 @@ import { FetchMinecraftVersions, MinecraftVersion } from "@renderer/scripts/Vers
 import { ILauncherPlatform } from "@renderer/scripts/platform/LauncherPlatform";
 import { WindowsLauncherPlatform } from "@renderer/scripts/platform/WindowsLauncherPlatform";
 import { LinuxLauncherPlatform } from "@renderer/scripts/platform/LinuxLauncherPlatform";
+import { BLOCKED_ACTIONS, DEFAULT_STATUS } from "@renderer/scripts/LauncherStatus";
 
 const { ipcRenderer } = window.require("electron");
 
 type SetStateAction<T> = T | ((previous: T) => T);
-
 type StateSetter<T> = (value: SetStateAction<T>) => void;
 
 function resolveSetStateAction<T>(value: SetStateAction<T>, previous: T): T {
     return typeof value === "function" ? (value as (previous: T) => T)(previous) : value;
+}
+
+export type AppStatusType = 
+    | "idle"
+    | "downloading"
+    | "extracting"
+    | "decrypting"
+    | "launching";
+
+export type ActionType = "launch" | "download" | "extract" | "decrypt";
+
+export interface LauncherStatus {
+    type: AppStatusType;
+    taskName: string | null;
+    progress: number | null;
+    errorMsg: string | null;
+    showLoading: boolean;
+    canCancel: boolean;
 }
 
 export enum AnalyticsConsent {
@@ -56,14 +74,8 @@ interface TAppStateContext {
     developerMode: boolean;
     setDeveloperMode: StateSetter<boolean>;
 
-    loadingPercent: number;
-    setLoadingPercent: StateSetter<number>;
-
-    isLoading: boolean;
-    setIsLoading: StateSetter<boolean>;
-
-    status: string;
-    setStatus: StateSetter<string>;
+    status: LauncherStatus;
+    setStatus: StateSetter<LauncherStatus>;
 
     error: string;
     setError: StateSetter<string>;
@@ -77,6 +89,9 @@ interface TAppStateContext {
     refreshAllMods: () => void;
 
     platform: ILauncherPlatform;
+
+    isBusy: () => boolean;
+    canDoAction: (action: ActionType) => boolean;
 }
 
 function getInitialAnalyticsConsent(): AnalyticsConsent {
@@ -114,9 +129,7 @@ export const UseAppState = create<TAppStateContext>((set, get) => {
         UITheme: "System",
         keepLauncherOpen: true,
         developerMode: false,
-        loadingPercent: 0,
-        isLoading: false,
-        status: "",
+        status: DEFAULT_STATUS,
         error: "",
         analyticsConsent: initialConsent,
         analyticsInstance: getAnalyticsInstanceForConsent(initialConsent),
@@ -139,9 +152,6 @@ export const UseAppState = create<TAppStateContext>((set, get) => {
             set(state => ({ keepLauncherOpen: resolveSetStateAction(value, state.keepLauncherOpen) })),
         setDeveloperMode: value =>
             set(state => ({ developerMode: resolveSetStateAction(value, state.developerMode) })),
-        setLoadingPercent: value =>
-            set(state => ({ loadingPercent: resolveSetStateAction(value, state.loadingPercent) })),
-        setIsLoading: value => set(state => ({ isLoading: resolveSetStateAction(value, state.isLoading) })),
         setStatus: value => set(state => ({ status: resolveSetStateAction(value, state.status) })),
         setError: value => set(state => ({ error: resolveSetStateAction(value, state.error) })),
 
@@ -191,7 +201,18 @@ export const UseAppState = create<TAppStateContext>((set, get) => {
             SetLauncherConfig(launcherConfig);
         },
 
-        platform: platformInstance, // This will be properly initialized in the InitializeAppState function after we determine the platform
+        platform: platformInstance,
+
+        isBusy: () => {
+            const status = get().status.type;
+            return status !== "idle";
+        },
+
+        canDoAction: (action: ActionType) => {
+            const status = get().status.type;
+            const blockedActions = BLOCKED_ACTIONS[status];
+            return !blockedActions.includes(action);
+        }
     };
 });
 

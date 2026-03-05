@@ -24,6 +24,7 @@ import { ProfilePage } from "@renderer/pages/ProfilePage";
 import { SettingsPage } from "@renderer/pages/SettingsPage";
 import { UpdatePage } from "@renderer/pages/UpdatePage";
 import { VersionPage } from "@renderer/pages/VersionPage";
+import { XVDTool } from "./scripts/backend/tools/XVDTool";
 
 const { shell } = window.require("electron");
 
@@ -91,7 +92,6 @@ function GetAnalyticsConsent() {
 
 export default function App() {
     const location = useLocation();
-    
     return (
         <>
             <link rel="preload" href={lushCaveImage} as="image" />

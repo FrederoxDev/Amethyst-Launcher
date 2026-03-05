@@ -1,5 +1,5 @@
-import * as fs from "fs";
-import JSZip from "jszip";
+const fs = window.require("fs") as typeof import("fs");
+const JSZip = window.require("jszip") as typeof import("jszip");
 
 import { ActionComplete, ExtractProgress } from "@renderer/scripts/backend/Progress";
 

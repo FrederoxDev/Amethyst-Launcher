@@ -1,5 +1,7 @@
 import { ILauncherPlatform, LauncherPaths, ShortcutOptions } from "@renderer/scripts/platform/LauncherPlatform";
 import { PathUtils } from "../PathUtils";
+import { Profile } from "../Profiles";
+import { InstalledVersion } from "../Versions";
 
 const os = window.require("os") as typeof import("os");
 const child = window.require("child_process") as typeof import("child_process");
@@ -18,15 +20,25 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         WindowsLauncherPlatform.getWindowsShortcutsModule();
     }
 
-    async runCommand(command: string): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            const exec_proc = child.exec(command);
-            exec_proc.on("exit", exit_code => {
-                if (exit_code === 0) {
-                    resolve();
-                } else {
-                    reject(new Error(`Command failed with exit code ${exit_code}`));
+    async runCommand(command: string, stdout?: (data: string) => void): Promise<number> {
+        return new Promise<number>((resolve, reject) => {
+            const [cmd, ...args] = command.split(" ");
+            const exec_proc = child.spawn(cmd, args, { shell: true });
+
+            if (stdout) {
+                exec_proc.stdout?.on("data", (data) => stdout(data.toString()));
+            }
+
+            exec_proc.stderr?.on("data", (data) => {
+                console.error(`[Command Error] ${data}`);
+            });
+
+            exec_proc.on("close", (exit_code) => {
+                if (exit_code !== 0) {
+                    reject(new Error(`Command failed with exit code ${exit_code}.`));
+                    return;
                 }
+                resolve(exit_code ?? 0);
             });
         });
     }
@@ -79,6 +91,10 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.modsPath);
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.launcherConfigPath);
         return WindowsLauncherPlatform.CachedLauncherPaths;
+    }
+
+    async runProfile(profile: Profile, version: InstalledVersion): Promise<void> {
+        throw new Error("Running profiles is not implemented on Windows platforms yet.");
     }
 
     static getRegeditModule(): RegeditModule {

@@ -19,32 +19,12 @@ export function SettingsPage() {
     const setUITheme = UseAppState(state => state.setUITheme);
     const allProfiles = UseAppState(state => state.allProfiles);
     const selectedProfile = UseAppState(state => state.selectedProfile);
-    const allMinecraftVersions = UseAppState(state => state.allMinecraftVersions);
     const analyticsConsent = UseAppState(state => state.analyticsConsent);
     const setAnalyticsConsent = UseAppState(state => state.setAnalyticsConsent);
     const platform = UseAppState(state => state.platform);
     const [launcherCfg, setLauncherCfg] = useState<string>("");
 
     const paths = platform.getPaths();
-
-    const profile = allProfiles[selectedProfile];
-    let minecraftVersion: (typeof allMinecraftVersions)[number] | undefined = undefined;
-    let isVerDownloaded = false;
-    let isRegisteredVerOurs = false;
-    let installDir = "";
-
-    // const isWindowsDevModeOn = IsDevModeEnabled();
-
-    // if (profile) {
-    //     const semVersion = SemVersion.fromString(profile.minecraft_version);
-    //     minecraftVersion = allMinecraftVersions.find(version => version.version.toString() === semVersion.toString());
-
-    //     if (minecraftVersion) {
-    //         isVerDownloaded = IsDownloaded(minecraftVersion.version);
-    //         isRegisteredVerOurs = IsRegistered(minecraftVersion);
-    //         installDir = GetPackagePath() ?? "Could not find installed.";
-    //     }
-    // }
 
     const updateCfgText = () => {
         if (!fs.existsSync(paths.launcherConfigPath)) {
@@ -139,23 +119,6 @@ export function SettingsPage() {
 
             <div className="settings-section">
                 <ReadOnlyTextBox text={launcherCfg} label="Launcher Config" />
-            </div>
-
-            <div className="settings-actions">
-                <MinecraftButton
-                    text="Unregister Currently Installed Version"
-                    style={MinecraftButtonStyle.Warn}
-                    onClick={async () => {
-                        // if (HasGdkStableInstalled()) {
-                        //     UnregisterGdkStable();
-                        //     alert("Unregistered GDK Stable Minecraft UWP version.");
-                        //     return;
-                        // }
-
-                        // await UnregisterCurrent();
-                        // alert("Unregistered currently registered Minecraft UWP version.");
-                    }}
-                />
             </div>
         </div>
     );

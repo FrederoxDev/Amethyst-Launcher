@@ -1,8 +1,8 @@
 import { UseAppState } from "@renderer/contexts/AppState";
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 
-const fs = window.require("fs");
-const path = window.require("path");
+const fs = window.require("fs") as typeof import("fs");
+const path = window.require("path") as typeof import("path");
 
 function getPaths() {
     return UseAppState.getState().platform.getPaths();
@@ -179,10 +179,10 @@ export async function FetchMinecraftVersions(): Promise<MinecraftVersion[]> {
     });
 }
 
-export function GetInstalledVersions(): MinecraftVersion[] {
+export function GetInstalledVersions(): InstalledVersion[] {
     const paths = getPaths();
     if (fs.existsSync(paths.versionsPath)) {
-        const version_list: MinecraftVersion[] = [];
+        const version_list: InstalledVersion[] = [];
 
         const version_dirs = fs
             .readdirSync(paths.versionsPath, { withFileTypes: true })
@@ -198,7 +198,10 @@ export function GetInstalledVersions(): MinecraftVersion[] {
                     const minecraft_version = FindMinecraftVersion(sem_version);
 
                     if (minecraft_version) {
-                        version_list.push(minecraft_version);
+                        version_list.push({
+                            path: dir_path,
+                            version: minecraft_version,
+                        });
                     }
                 }
             }
@@ -233,7 +236,7 @@ export function ValidateVersionsFile(): void {
         if (installed_versions.find(version => version.version.toString() === old_version.toString()) === undefined) {
             installed_versions.push({
                 path: path.join(paths.versionsPath, `Minecraft-${old_version.version.toString()}`),
-                version: old_version,
+                version: old_version.version,
             });
         }
     }
@@ -273,13 +276,25 @@ export function GetInstalledVersionPath(version: MinecraftVersion): string | und
     return version_path;
 }
 
-export function FindMinecraftVersion(sem_version: SemVersion): MinecraftVersion | undefined {
+export function GetInstalledVersion(version: MinecraftVersion): InstalledVersion | undefined {
+    const versions = GetInstalledVersions();
+    const installed_version = versions.find(in_version => in_version.version.uuid === version.uuid);
+    return installed_version;
+}
+
+export function FindMinecraftVersion(semVersion: SemVersion): MinecraftVersion | undefined {
     const paths = getPaths();
     const versionData = fs.readFileSync(paths.cachedVersionsFilePath, "utf-8");
     const rawJson = JSON.parse(versionData);
 
     for (const version of rawJson) {
-        if ((version[0] as string) === sem_version.toString()) {
+        const parsedVer = version.version as {
+            major: number;
+            minor: number;
+            patch: number;
+            build: number;
+        };
+        if (new SemVersion(parsedVer.major, parsedVer.minor, parsedVer.patch, parsedVer.build).matches(semVersion)) {
             return version as MinecraftVersion;
         }
     }
