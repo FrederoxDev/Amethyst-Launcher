@@ -119,7 +119,8 @@ export class UMULauncher {
         const exec_proc = child.spawn(executable, [`${gamePath}`], {
             env: env,
             cwd: path.dirname(gamePath),
-            stdio: ["ignore", "pipe", "pipe"]
+            stdio: ["ignore", "pipe", "pipe"],
+            detached: true
         });
 
         exec_proc.stdout?.on("data", (data) => {

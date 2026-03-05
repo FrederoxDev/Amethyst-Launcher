@@ -6,26 +6,25 @@ import { MainPanel } from "@renderer/components/MainPanel";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
 import { TextInput } from "@renderer/components/TextInput";
-
 import { UseAppState } from "@renderer/contexts/AppState";
-
-import { SemVersion } from "@renderer/scripts/classes/SemVersion";
-import { MinecraftVersion, MinecraftVersionType } from "@renderer/scripts/Versions";
+import { MinecraftToggle } from "@renderer/components/MinecraftToggle";
+import { MinecraftVersionData } from "@renderer/scripts/VersionDatabase";
 
 export function ProfileEditor() {
     const [profileName, setProfileName] = useState("");
     const [profileActiveMods, setProfileActiveMods] = useState<string[]>([]);
     const [profileRuntime, setProfileRuntime] = useState<string>("");
     const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<string>("");
+    const [remoteVersions, setRemoteVersions] = useState<MinecraftVersionData[]>([]);
 
     const allValidMods = UseAppState(state => state.allValidMods);
     const allRuntimes = UseAppState(state => state.allRuntimes);
-    const allMinecraftVersions = UseAppState(state => state.allMinecraftVersions);
     const allProfiles = UseAppState(state => state.allProfiles);
     const setAllProfiles = UseAppState(state => state.setAllProfiles);
     const selectedProfile = UseAppState(state => state.selectedProfile);
     const saveData = UseAppState(state => state.saveData);
     const allInvalidMods = UseAppState(state => state.allInvalidMods);
+    const versionManager = UseAppState(state => state.versionManager);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -33,6 +32,22 @@ export function ProfileEditor() {
             navigate("/profiles");
         }
     }, [allProfiles, navigate]);
+
+    useEffect(() => {
+        const fetchVersions = async () => {
+            try {
+                const versions = await versionManager.database.update();
+                if (versions instanceof Error) 
+                    throw versions;
+                setRemoteVersions([...versions]);
+            }
+            catch (e) {
+                console.error("Failed to fetch versions from database:", e);
+            }
+        };
+        
+        fetchVersions();
+    }, []);
 
     const toggleModActive = (name: string) => {
         if (profileActiveMods.includes(name)) {
@@ -102,8 +117,8 @@ export function ProfileEditor() {
         saveData();
     }, [loadProfile]);
 
-    const formatVersionName = (version: MinecraftVersion): string => {
-        return SemVersion.toString(version.version);
+    const formatVersionName = (version: MinecraftVersionData): string => {
+        return version.version.toString();
     };
 
     return (
@@ -116,7 +131,7 @@ export function ProfileEditor() {
                         labelText="Minecraft Version"
                         value={profileMinecraftVersion}
                         setValue={setProfileMinecraftVersion}
-                        options={allMinecraftVersions.map(formatVersionName)}
+                        options={remoteVersions.map(formatVersionName)}
                         id="minecraft-version"
                     />
                     <Dropdown
@@ -126,6 +141,35 @@ export function ProfileEditor() {
                         options={allRuntimes}
                         id="runtime-mod"
                     />
+                </div>
+                <div className="profile-editor-mod-list" style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    height: "fit-content",
+                    flex: "shrink",
+                    flexGrow: 0
+                }}>
+                    <div className="settings-section">
+                        <div className="settings-row">
+                            <div>
+                                <p className="minecraft-seven settings-title">{"Use split data folder for profile"}</p>
+                                <p className="minecraft-seven settings-subtitle">
+                                    {"Makes a different folder for the data of this profile."}
+                                </p>
+                                <p className="minecraft-seven settings-subtitle">
+                                    {"Current folder: "}
+                                </p>
+                            </div>
+                            <div className="settings-toggle-wrap">
+                                <MinecraftToggle
+                                    isChecked={false}
+                                    setIsChecked={isChecked => {
+                                        
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {allInvalidMods.length > 0 && (

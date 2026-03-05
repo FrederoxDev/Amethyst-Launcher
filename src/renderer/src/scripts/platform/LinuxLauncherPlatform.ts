@@ -2,7 +2,7 @@ import { ILauncherPlatform, LauncherPaths, ShortcutOptions } from "@renderer/scr
 import { PathUtils } from "../PathUtils";
 import { Profile } from "../Profiles";
 import { GDKProton } from "../backend/tools/GDKProton";
-import { InstalledVersion } from "../Versions";
+import { InstalledVersion } from "../VersionDatabase";
 import { UMULauncher } from "../backend/tools/UMULauncher";
 
 const fs = window.require("fs") as typeof import("fs");

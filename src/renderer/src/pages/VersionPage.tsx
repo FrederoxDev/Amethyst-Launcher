@@ -3,7 +3,6 @@ import * as fs from "fs";
 import { useState } from "react";
 
 import { PopupPanel } from "@renderer/components/PopupPanel";
-import { GetInstalledVersionsFromFile, InstalledVersion, ValidateVersionsFile } from "@renderer/scripts/Versions";
 
 const { ipcRenderer } = window.require("electron");
 
@@ -87,16 +86,18 @@ const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => 
 };
 
 export function VersionPage() {
-    ValidateVersionsFile();
-    const [versions, SetVersions] = useState<InstalledVersion[]>(GetInstalledVersionsFromFile());
-    console.log(versions);
+    //ValidateVersionsFile();
+    //const [versions, SetVersions] = useState<InstalledVersion[]>(GetInstalledVersionsFromFile());
+    //console.log(versions);
+
+    const versions = [];
 
     function RefreshVersions() {
-        ValidateVersionsFile();
-        SetVersions(GetInstalledVersionsFromFile());
+        //ValidateVersionsFile();
+        //SetVersions(GetInstalledVersionsFromFile());
     }
 
-    const [selected_version, SetSelectedVersion] = useState<InstalledVersion | undefined>(undefined);
+    const [selected_version, SetSelectedVersion] = useState<never | undefined>(undefined);
 
     return (
         <>
