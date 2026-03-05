@@ -1,22 +1,37 @@
 import { ILauncherPlatform, LauncherPaths, ShortcutOptions } from "@renderer/scripts/platform/LauncherPlatform";
 import { PathUtils } from "../PathUtils";
+import { Profile } from "../Profiles";
+import { GDKProton } from "../backend/tools/GDKProton";
+import { InstalledVersion } from "../Versions";
+import { UMULauncher } from "../backend/tools/UMULauncher";
 
 const fs = window.require("fs") as typeof import("fs");
 const os = window.require("os") as typeof import("os");
 const child = window.require("child_process") as typeof import("child_process");
+const path = window.require("path") as typeof import("path");
 
 export class LinuxLauncherPlatform implements ILauncherPlatform {
     private static CachedLauncherPaths: LauncherPaths | null = null;
 
-    async runCommand(command: string): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            const exec_proc = child.exec(command);
-            exec_proc.on("exit", exit_code => {
-                if (exit_code === 0) {
-                    resolve();
-                } else {
-                    reject(new Error(`Command failed with exit code ${exit_code}`));
+    async runCommand(command: string, stdout?: (data: string) => void): Promise<number> {
+        return new Promise<number>((resolve, reject) => {
+            const [cmd, ...args] = command.split(" ");
+            const exec_proc = child.spawn(cmd, args, { shell: true });
+
+            if (stdout) {
+                exec_proc.stdout?.on("data", (data) => stdout(data.toString()));
+            }
+
+            exec_proc.stderr?.on("data", (data) => {
+                console.error(`[Command Error] ${data}`);
+            });
+
+            exec_proc.on("close", (exit_code) => {
+                if (exit_code !== 0) {
+                    reject(new Error(`Command failed with exit code ${exit_code}.`));
+                    return;
                 }
+                resolve(exit_code ?? 0);
             });
         });
     }
@@ -64,5 +79,16 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
         PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.modsPath);
         PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.launcherConfigPath);
         return LinuxLauncherPlatform.CachedLauncherPaths;
+    }
+
+    async runProfile(profile: Profile, version: InstalledVersion): Promise<void> {
+        const versionPath = path.join(version.path, "Minecraft.Windows.exe");
+        const gdkProtonInfo = await GDKProton.check();
+        const prefixPath = path.join(this.getPaths().launcherPath, "gamedata", "default");
+        fs.mkdirSync(path.join(prefixPath, "dosdevices"), { recursive: true });
+        await UMULauncher.runGame(versionPath, {
+            "WINEPREFIX": prefixPath,
+            "PROTONPATH": gdkProtonInfo.path
+        });
     }
 }

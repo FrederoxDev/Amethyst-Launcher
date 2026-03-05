@@ -238,7 +238,7 @@ export async function download(
     await Downloader.downloadFile(link, destination, onProgress, onComplete);
 }
 
-export async function downloadGdk(
+export async function downloadVersion(
     version: MinecraftVersion,
     destination: string,
     onProgress: DownloadProgress = () => {},

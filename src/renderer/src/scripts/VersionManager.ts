@@ -1,11 +1,13 @@
 import React from "react";
 
 import { Extractor } from "@renderer/scripts/backend/Extractor";
-import { download, downloadGdk } from "@renderer/scripts/backend/MinecraftVersionDownloader";
+import { downloadVersion } from "@renderer/scripts/backend/MinecraftVersionDownloader";
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
-import { MinecraftVersion } from "@renderer/scripts/Versions";
+import { MinecraftVersion, MinecraftVersionType } from "@renderer/scripts/Versions";
 import { UseAppState } from "@renderer/contexts/AppState";
 import { PathUtils } from "./PathUtils";
+import { XVDTool } from "./backend/tools/XVDTool";
+import { CIK_DATA_PREVIEW_GDK, CIK_DATA_RELEASE_GDK, CIK_UUID_PREVIEW_GDK, CIK_UUID_RELEASE_GDK } from "./backend/Decryption";
 
 const fs = window.require("fs");
 const path = window.require("path");
@@ -63,10 +65,9 @@ export function CleanupInstall(version: SemVersion, successful: boolean) {
 }
 
 export async function DownloadVersion(
-    version: MinecraftVersion,
-    setStatus: React.Dispatch<React.SetStateAction<string>>,
-    setLoadingPercent: React.Dispatch<React.SetStateAction<number>>
+    version: MinecraftVersion
 ) {
+    const setStatus = UseAppState.getState().setStatus;
     const paths = getPaths();
     PathUtils.ValidatePath(paths.versionsPath);
 
@@ -76,65 +77,104 @@ export async function DownloadVersion(
     };
 
     const onProgress = (transferred: number, totalSize: number) => {
-        setStatus(`Downloading: ${toMB(transferred)} / ${toMB(totalSize)}`);
-        setLoadingPercent(transferred / totalSize);
+        setStatus(prev => ({ ...prev,
+            type: "downloading",
+            taskName: `Downloading Minecraft ${version.version.toString()}... (${toMB(transferred)} / ${toMB(totalSize)})`,
+            showLoading: true,
+            canCancel: false,
+            progress: totalSize > 0 ? transferred / totalSize : null
+        }));
     };
 
     const onComplete = (success: boolean) => {
         if (!success) {
-            setStatus("");
+            setStatus(prev => ({ ...prev,
+                type: "idle",
+                taskName: null,
+                showLoading: false,
+                canCancel: false,
+                progress: null,
+                errorMsg: "Failed to download Minecraft!"
+            }));
             throw new Error("Failed to download Minecraft!");
         }
-        setStatus("Successfully downloaded Minecraft!");
+        setStatus(prev => ({ ...prev,
+            type: "idle",
+            taskName: "Downloaded minecraft successfully.",
+            showLoading: false,
+            canCancel: false,
+            progress: null,
+            errorMsg: null
+        }));
     };
 
-    // if (version.type === "uwp") {
-    //     const outputFile = path.join(paths.versionsPath, `Minecraft-${version.version.toString()}.zip`);
-
-    //     await download(version.uuid, "1", outputFile, onProgress, onComplete);
-    //     return;
-    // }
-
     const outputFile = path.join(paths.versionsPath, `Minecraft-${version.version.toString()}.msixvc`);
-
-    await downloadGdk(version, outputFile, onProgress, onComplete);
+    await downloadVersion(version, outputFile, onProgress, onComplete);
 }
 
 export async function ExtractVersion(
-    version: MinecraftVersion,
-    setStatus: React.Dispatch<React.SetStateAction<string>>,
-    setLoadingPercent: React.Dispatch<React.SetStateAction<number>>
-) {
+    version: MinecraftVersion
+): Promise<boolean> {
+    const setStatus = UseAppState.getState().setStatus;
     const paths = getPaths();
-    if (version.type === "gdk") return;
-    const appxPath = path.join(paths.versionsPath, `Minecraft-${version.version.toString()}.zip`);
+    const msixvcPath = path.join(paths.versionsPath, `Minecraft-${version.version.toString()}.msixvc`);
     const folderPath = path.join(paths.versionsPath, `Minecraft-${version.version.toString()}`);
+    const cikUuid = version.versionType === MinecraftVersionType.GdkPreview ? CIK_UUID_PREVIEW_GDK : CIK_UUID_RELEASE_GDK;
+    const cikData = version.versionType === MinecraftVersionType.GdkPreview ? CIK_DATA_PREVIEW_GDK : CIK_DATA_RELEASE_GDK;
+    
+    setStatus(prev => ({ ...prev,
+        type: "decrypting",
+        taskName: `Decrypting MSIXVC of Minecraft ${version.version.toString()}...`,
+        showLoading: true,
+        canCancel: false,
+        progress: 0.5,
+        errorMsg: null
+    }));
+    
+    const decryptErr = await XVDTool.decrypt(msixvcPath, cikUuid, cikData);
+    if (decryptErr) {
+        setStatus(prev => ({ ...prev,
+            type: "idle",
+            taskName: null,
+            showLoading: false,
+            canCancel: false,
+            progress: null,
+            errorMsg: `Failed to decrypt MSIXVC! (${decryptErr})`
+        }));
+        return false;
+    }
 
-    const excludes = [
-        "AppxMetadata/CodeIntegrity.cat",
-        "AppxMetadata",
-        "AppxBlockMap.xml",
-        "AppxSignature.p7x",
-        "[Content_Types].xml",
-    ];
+    setStatus(prev => ({ ...prev,
+        type: "extracting",
+        taskName: `Extracting Minecraft ${version.version.toString()}...`,
+        showLoading: true,
+        canCancel: false,
+        progress: null,
+        errorMsg: null
+    }));
 
-    await Extractor.extractFile(
-        appxPath,
-        folderPath,
-        excludes,
-        (fileIndex, totalFiles, fileName) => {
-            setLoadingPercent(fileIndex / totalFiles);
-            setStatus(`Extracting: ${fileName}`);
-        },
-        success => {
-            if (!success) {
-                throw new Error("There was an error while extracting the game!");
-            }
+    const extractErr = await XVDTool.extract(msixvcPath, folderPath);
+    if (extractErr) {
+        setStatus(prev => ({ ...prev,
+            type: "idle",
+            taskName: null,
+            showLoading: false,
+            canCancel: false,
+            progress: null,
+            errorMsg: `Failed to extract Minecraft! (${extractErr})`
+        }));
+        return false;
+    }
 
-            console.log("Finished extracting!");
-            setStatus("Successfully extracted the downloaded version!");
-        }
-    );
+    setStatus(prev => ({ ...prev,
+        type: "idle",
+        taskName: `Minecraft ${version.version.toString()} is ready!`,
+        showLoading: false,
+        canCancel: false,
+        progress: null,
+        errorMsg: null
+    }));
+    return true;
 }
 
 export function InstallProxy(version: MinecraftVersion) {

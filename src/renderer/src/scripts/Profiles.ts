@@ -22,7 +22,8 @@ export function GetProfiles(): Profile[] {
 
     const json_data = fs.readFileSync(paths.profilesFilePath, "utf-8");
     try {
-        return JSON.parse(json_data);
+        const profiles = JSON.parse(json_data) as Profile[];
+        return profiles;
     } catch {
         return [];
     }

@@ -15,4 +15,17 @@ export class PathUtils {
             fs.rmSync(in_path, { recursive: true });
         }
     }
+
+    static async chmodRecursive(dirPath: string, mode: number) {
+        const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
+        
+        await Promise.all(entries.map(async (entry) => {
+            const fullPath = path.join(dirPath, entry.name);
+            await fs.promises.chmod(fullPath, mode);
+            
+            if (entry.isDirectory()) {
+                await PathUtils.chmodRecursive(fullPath, mode);
+            }
+        }));
+    }
 }
