@@ -12,8 +12,13 @@ import { LinuxLauncherPlatform } from "@renderer/scripts/platform/LinuxLauncherP
 import { BLOCKED_ACTIONS } from "@renderer/scripts/LauncherStatus";
 import { VersionManager } from "@renderer/scripts/VersionManager";
 import { FileLocker } from "@renderer/scripts/FileLocker";
+import { XVDTool } from "@renderer/scripts/backend/tools/XVDTool";
+import { GithubTools } from "../scripts/backend/github/GithubTools";
 
 const { ipcRenderer } = window.require("electron");
+const path = window.require("path") as typeof import("path");
+const fs = window.require("fs") as typeof import("fs");
+
 
 type SetStateAction<T> = T | ((previous: T) => T);
 type StateSetter<T> = (value: SetStateAction<T>) => void;
@@ -88,6 +93,20 @@ interface ProgressBarState {
     setProgress(progress: SetStateAction<number>): void;
     setShow(show: SetStateAction<boolean>): void;
     reset(): void;
+}
+
+interface XVDToolInfo {
+    updateAccepted: boolean;
+    showUpdatePopup: boolean;
+    
+    setUpdateAccepted: StateSetter<boolean>;
+    setShowUpdatePopup: StateSetter<boolean>;
+    getInstalledVersion(): string;
+    getUpstreamVersion(): Promise<string | null>;
+}
+
+interface ToolState {
+    xvdTool: XVDToolInfo;
 }
 
 type ProgressResetOptions = {
@@ -191,6 +210,48 @@ export const useProgressBar = create<ProgressBarStore>((set, get) => {
                 return false;
             }
             return true;
+        }
+    };
+});
+
+export const useToolStore = create<ToolState>((set) => {
+    return {
+        xvdTool: {
+            updateAccepted: false,
+            showUpdatePopup: false,
+
+            setUpdateAccepted: value => set(state => ({ 
+                xvdTool: { 
+                    ...state.xvdTool, 
+                    updateAccepted: resolveSetStateAction(value, state.xvdTool.updateAccepted) 
+                } 
+            })),
+            setShowUpdatePopup: value => set(state => ({ 
+                xvdTool: { 
+                    ...state.xvdTool, 
+                    showUpdatePopup: resolveSetStateAction(value, state.xvdTool.showUpdatePopup) 
+                } 
+            })),
+            getInstalledVersion: () => {
+                const launcherPath = useAppStore.getState().platform.getPaths().launcherPath;
+                const toolsPath = path.join(launcherPath, "tools");
+                const xvdToolTagFile = path.join(toolsPath, "xvdtool.txt");
+
+                if (!fs.existsSync(xvdToolTagFile)) {
+                    return "0.0.0";
+                }
+
+                return fs.readFileSync(xvdToolTagFile, "utf-8").trim();
+            },
+            getUpstreamVersion: async () => {
+                try {
+                    const release = await GithubTools.getLatestRelease(XVDTool.Repository);
+                    return release.tagName;
+                } catch (error) {
+                    console.error("Failed to fetch XVD Tool upstream version:", error);
+                    return null;
+                }
+            }
         }
     };
 });

@@ -1,8 +1,14 @@
-import { FULL_PROGRESS_RESET_OPTIONS, useAppStore, useProgressBar } from "@renderer/contexts/AppState";
+import { FULL_PROGRESS_RESET_OPTIONS, useAppStore, useProgressBar, useToolStore } from "@renderer/contexts/AppState";
 import { GithubTools } from "../github/GithubTools";
 import { Downloader } from "../Downloader";
 import { Extractor } from "../Extractor";
 import { PathUtils } from "../../PathUtils";
+import { PopupPanel } from "@renderer/components/PopupPanel";
+import { MainPanel, MainPanelSection, PanelIndent } from "@renderer/components/MainPanel";
+import { MinecraftButton } from "@renderer/components/MinecraftButton";
+import { MinecraftToggle } from "@renderer/components/MinecraftToggle";
+import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
+import { useEffect, useState } from "react";
 
 const path = window.require("path") as typeof import("path");
 const fs = window.require("fs") as typeof import("fs");
@@ -17,9 +23,75 @@ interface OutputModel {
 };
 
 export class XVDTool {
-    
+    static readonly Repository: string = "raonygamer/xvdtool";
 
-    private static Repository: string = "raonygamer/xvdtool";
+    static getShouldUpdatePopup() {
+        const [upstreamVersion, setUpstreamVersion] = useState<string>("Fetching...");
+
+        const xvdToolState = useToolStore.getState().xvdTool;
+        if (!xvdToolState.showUpdatePopup) 
+            return null;
+
+        useEffect(() => {
+            const checkVersion = async () => {
+                try {
+                    const version = await xvdToolState.getUpstreamVersion();
+                    setUpstreamVersion(version ?? "Unknown");
+                }
+                catch (err) {
+                    console.error("Failed to fetch XVDTool latest version:", err);
+                    setUpstreamVersion("Unknown");
+                }
+            }
+            checkVersion();
+        }, [xvdToolState.showUpdatePopup]);
+
+        return (
+            <PopupPanel>
+                <div className="app-consent-panel" onClick={e => e.stopPropagation()}>
+                    <MainPanel>
+                        <MainPanelSection>
+                            <p>New XVDTool update available</p>
+                            <PanelIndent className="app-consent-indent">
+                                <p>XVDTool is outdated, do you want to update it?</p>
+                                <p>Current version: {xvdToolState.getInstalledVersion()}</p>
+                                <p>Latest version: {upstreamVersion}</p>
+                            </PanelIndent>
+                            <div className="app-consent-actions">
+                                <MinecraftButton
+                                    text="Update!"
+                                    onClick={() => xvdToolState.setUpdateAccepted(true)}
+                                />
+                                <MinecraftButton
+                                    text="Don't update!"
+                                    style={MinecraftButtonStyle.Warn}
+                                    onClick={() => xvdToolState.setUpdateAccepted(false)}
+                                />
+                            </div>
+                        </MainPanelSection>
+                    </MainPanel>
+                </div>
+            </PopupPanel>
+        );
+    }
+
+    private static async requestUpdate(): Promise<boolean> {
+        return new Promise((resolve) => {
+            useToolStore.getState().xvdTool.setShowUpdatePopup(true);
+            const unsubscribe = useToolStore.subscribe(state => {
+                if (state.xvdTool.updateAccepted) {
+                    unsubscribe();
+                    state.xvdTool.setShowUpdatePopup(false);
+                    resolve(true);
+                }
+                else if (state.xvdTool.updateAccepted === false) {
+                    unsubscribe();
+                    state.xvdTool.setShowUpdatePopup(false);
+                    resolve(false);
+                }
+            });
+        });
+    }
 
     static async check(): Promise<{ version: string, path: string, executable: string }> {
         if (!XVDTool.isSupported()) {
@@ -33,14 +105,26 @@ export class XVDTool {
         PathUtils.ValidatePath(xvdtoolVersionFile);
 
         let currentVersion = "0.0.0";
+        let toolIsInstalled = false;
         if (fs.existsSync(xvdtoolVersionFile)) {
             currentVersion = fs.readFileSync(xvdtoolVersionFile, "utf-8").trim();
+            toolIsInstalled = true;
         }
 
         const release = await GithubTools.getLatestRelease(XVDTool.Repository);
         const latestVersion = release.tagName.replace(/^v/, "");
         if (semver.gte(currentVersion, latestVersion)) {
             console.log(`XVDTool is up to date (version ${currentVersion}).`);
+            return {
+                version: currentVersion,
+                path: path.join(toolsPath, "xvdtool"),
+                executable: process.platform === "win32" ? path.join(toolsPath, "xvdtool", "XVDTool.exe") : path.join(toolsPath, "xvdtool", "XVDTool")
+            };
+        }
+
+        console.log(`Latest XVDTool version: ${latestVersion}, Installed version: ${currentVersion}`);
+        if (toolIsInstalled && await XVDTool.requestUpdate() === false) {
+            console.log(`XVDTool update declined by user. Current version: ${currentVersion}, Latest version: ${latestVersion}`);
             return {
                 version: currentVersion,
                 path: path.join(toolsPath, "xvdtool"),
