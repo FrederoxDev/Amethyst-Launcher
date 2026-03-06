@@ -1,63 +1,223 @@
-import { downloadVersion } from "@renderer/scripts/backend/MinecraftVersionDownloader";
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
-import { MinecraftVersionData, VersionDatabase } from "@renderer/scripts/VersionDatabase";
-import { UseAppState } from "@renderer/contexts/AppState";
+import { MinecraftVersionType, VersionDatabase } from "@renderer/scripts/VersionDatabase";
+import { FULL_PROGRESS_RESET_OPTIONS, useAppStore, useProgressBar } from "@renderer/contexts/AppState";
 import { PathUtils } from "./PathUtils";
 import { XVDTool } from "./backend/tools/XVDTool";
 import { CIK_DATA_PREVIEW_GDK, CIK_DATA_RELEASE_GDK, CIK_UUID_PREVIEW_GDK, CIK_UUID_RELEASE_GDK } from "./backend/Decryption";
 import { Downloader } from "./backend/Downloader";
-import { is } from "@electron-toolkit/utils";
+import { IJSONModel } from "./contracts/IJSONModel";
+import { FileLocker } from "./FileLocker";
 
-const fs = window.require("fs");
-const path = window.require("path");
+const fs = window.require("fs") as typeof import("fs");
+const path = window.require("path") as typeof import("path");
+
+function getPaths() {
+    return useAppStore.getState().platform.getPaths();
+}
+
+export interface VersionInstallationData {
+    uuid: string;
+    name: string;
+    version: SemVersion;
+    type: MinecraftVersionType;
+    imported: boolean;
+    versionFile: string;
+    versionOutputPath?: string;
+};
+
+export class InstalledVersionModel implements IJSONModel {
+    uuid: string;
+    name: string;
+    path: string;
+    type: MinecraftVersionType;
+    imported: boolean;
+    installedFrom: string;
+
+    constructor(uuid: string, name: string, path: string, type: MinecraftVersionType, imported: boolean, installedFrom: string) {
+        this.uuid = uuid;
+        this.name = name;
+        this.path = path;
+        this.type = type;
+        this.imported = imported;
+        this.installedFrom = installedFrom;
+    }
+
+    toString(): string {
+        return `InstalledVersion with UUID: ${this.uuid}, name: ${this.name}, path: ${this.path}, type: ${this.type}, imported: ${this.imported}, installedFrom: ${this.installedFrom}`;
+    }
+
+    static fromObject(obj: any): InstalledVersionModel {
+        if (!("uuid" in obj) || !("name" in obj) || !("path" in obj) || !("type" in obj) || !("imported" in obj) || !("installed_from" in obj)) {
+            throw new Error("Invalid installed version object");
+        }
+
+        return new InstalledVersionModel(
+            obj.uuid,
+            obj.name,
+            obj.path,
+            obj.type,
+            obj.imported,
+            obj.installed_from
+        );
+    }
+
+    static toObject(obj: InstalledVersionModel): any {
+        return {
+            uuid: obj.uuid,
+            name: obj.name,
+            path: obj.path,
+            type: obj.type,
+            imported: obj.imported,
+            installed_from: obj.installedFrom
+        };
+    }
+
+    toObject(): any {
+        return InstalledVersionModel.toObject(this);
+    }
+
+    static fromJSON(json: string): InstalledVersionModel {
+        const obj = JSON.parse(json);
+        return InstalledVersionModel.fromObject(obj);
+    }
+
+    toJSON(): string {
+        return JSON.stringify(this.toObject(), undefined, 4);
+    }
+}
+
+export class InstalledVersionListModel implements IJSONModel {
+    versions: InstalledVersionModel[];
+
+    constructor(versions: InstalledVersionModel[]) {
+        this.versions = versions;
+    }
+
+    toString(): string {
+        return `InstalledVersionListModel with ${this.versions.length} versions: [\n${this.versions.map(v => `  ${v.toString()}`).join(",\n")}\n]`;
+    }
+
+    static fromObject(obj: any): InstalledVersionListModel {
+        if (!("versions" in obj)) {
+            throw new Error("Invalid version cache object");
+        }
+
+        return new InstalledVersionListModel(
+            obj.versions.map((v: any) =>
+                InstalledVersionModel.fromObject(v)
+            )
+        );
+    }
+
+    static toObject(obj: InstalledVersionListModel): any {
+        return {
+            versions: obj.versions.map(v => v.toObject())
+        };
+    }
+
+    toObject(): any {
+        return InstalledVersionListModel.toObject(this);
+    }
+
+    static fromJSON(json: string): InstalledVersionListModel {
+        const obj = JSON.parse(json);
+        return InstalledVersionListModel.fromObject(obj);
+    }
+
+    toJSON(): string {
+        return JSON.stringify(this.toObject(), undefined, 4);
+    }
+
+    saveToFile(filePath: string) {
+        PathUtils.ValidatePath(filePath);
+        fs.writeFileSync(filePath, this.toJSON(), "utf-8");
+    }
+
+    reloadFromFile(filePath: string) {
+        PathUtils.ValidatePath(filePath);
+        const newData = InstalledVersionListModel.loadFromFile(filePath);
+        this.versions = newData.versions;
+    }
+
+    static loadFromFile(filePath: string): InstalledVersionListModel {
+        PathUtils.ValidatePath(filePath);
+        if (!fs.existsSync(filePath)) {
+            return new InstalledVersionListModel([]);
+        }
+        const json = fs.readFileSync(filePath, "utf-8");
+        return InstalledVersionListModel.fromJSON(json);
+    }
+
+    static getDefaultFilePath(): string {
+        const paths = getPaths();
+        return path.join(paths.versionsPath, "installed_versions.json");
+    }
+}
 
 export class VersionManager {
     public readonly database: VersionDatabase = new VersionDatabase();
+    private installedVersions: InstalledVersionListModel = new InstalledVersionListModel([]);
 
     constructor() {}
 
-    isLocked(version: SemVersion): boolean {
+    isLocked(versionFileName: string): boolean {
         const paths = getPaths();
-        const lockPath = path.join(paths.versionsPath, `Minecraft-${version.toString()}.lock`);
-        return fs.existsSync(lockPath);
+        const lockPath = path.join(paths.versionsPath, versionFileName);
+
+        // Check if the version is currently locked, .lock files have the session UUID, 
+        // so if the file exists but the session UUID is different, 
+        // we can consider the lock as invalid and ignore it (probably from a previous launcher instance that didn't clean up properly), 
+        // but if the session UUID matches, then we consider it as locked
+        return FileLocker.get().isLocked(lockPath);
     }
 
-    lockVersion(version: SemVersion) {
+    lockVersion(versionFileName: string) {
         const paths = getPaths();
-        const lockPath = path.join(paths.versionsPath, `Minecraft-${version.toString()}.lock`);
-        
-        PathUtils.ValidatePath(lockPath);
-        const handle = fs.openSync(lockPath, "w");
-        fs.close(handle);
+        const lockPath = path.join(paths.versionsPath, versionFileName);
+        if (this.isLocked(versionFileName))
+            throw new Error(`Version ${versionFileName} is already locked!`);
+
+        // Lock the version to prevent multiple work at the same time
+        FileLocker.get().lockFile(lockPath);
     }
 
-    unlockVersion(version: SemVersion) {
+    unlockVersion(versionFileName: string) {
         const paths = getPaths();
-        const lockPath = path.join(paths.versionsPath, `Minecraft-${version.toString()}.lock`);
-        fs.rmSync(lockPath, { force: true });
+        const lockPath = path.join(paths.versionsPath, versionFileName);
+
+        // Unlock the version
+        FileLocker.get().unlockFile(lockPath);
     }
 
     async downloadVersion(uuid: string): Promise<boolean> {
-        const setStatus = UseAppState.getState().setStatus;
-        const versionsPath = UseAppState.getState().platform.getPaths().versionsPath;
+        const { withProgressAsync } = useProgressBar.getState();
+        const versionsPath = useAppStore.getState().platform.getPaths().versionsPath;
         PathUtils.ValidatePath(versionsPath);
         
+        // Update the version database before downloading to ensure we have the latest information
         const result = await this.database.update();
         if (result instanceof Error) {
             throw result;
         }
         
+        // Get the version information from the database, we need the URLs to download the version
         const version = this.database.getVersionByUUID(uuid);
         if (!version) {
             throw new Error(`Version with UUID: '${uuid}' not found in database!`);
         }
 
-        const targetFilePath = path.join(versionsPath, `Minecraft-${version.version.toString()}.msixvc`);
+        // The version file name is in the format of "Minecraft-{version}.msixvc", for example "Minecraft-1.20.1.msixvc"
+        const versionFileNameWithExt = `Minecraft-${version.version.toString()}.msixvc`;
+        const versionFilePath = path.join(versionsPath, versionFileNameWithExt);
+
+        // Before downloading, we want to check the mirrors for the version and select the fastest one to download from
         const getFastestMirror = async (mirrors: string[]): Promise<string> => {
             const start = performance.now();
             const timings: { mirror: string; time: number }[] = [];
             console.log("Testing mirrors for version download:", mirrors);
             console.log(`Starting at ${start} ms`);
+
+            // We will send a HEAD request to each mirror to check if it's up and measure the response time, we won't download the actual file here, just check the headers
             for (const mirror of mirrors) {
                 try {
                     const response = await fetch(mirror, { method: "HEAD" });
@@ -65,6 +225,7 @@ export class VersionManager {
                         console.warn(`Mirror ${mirror} responded with status ${response.status}, skipping.`);
                         continue;
                     }
+                    // If we got a valid response, we consider this mirror as a candidate and record the time it took to respond
                     const ms = performance.now() - start;
                     console.log(`Mirror ${mirror} responded in ${ms.toFixed(2)} ms`);
                     timings.push({ mirror, time: ms });
@@ -74,197 +235,322 @@ export class VersionManager {
                 }
             }
 
+            // If no mirrors responded successfully, we will default to the first mirror in the list, even though it might be down, just to give it a try and let the user see the error if it fails, rather than saying "no mirrors available" which might be confusing if the first mirror is actually up but just had a slow response time
             if (timings.length === 0) {
                 console.warn("No mirrors responded, defaulting to first mirror.");
                 console.log(`Defaulting to mirror ${mirrors[0]}`);
                 return mirrors[0];
             }
 
+            // Sort the mirrors by their response time and select the fastest one
             timings.sort((a, b) => a.time - b.time);
             console.log(`Fastest mirror is ${timings[0]?.mirror ?? mirrors[0]}`);
             console.log(`Mirror timings:`, timings);
             return timings[0]?.mirror ?? mirrors[0];
         }
 
+        // Get the fastest mirror
         const mirror = await getFastestMirror(version.urls);
         const response = await fetch(mirror, { method: "HEAD" });
         if (!response.ok) {
             throw new Error(`Failed to fetch version from mirror ${mirror}, status: ${response.status}`);
         }
+
+        // Check if the file already exists and has the correct size before downloading
+        // Sadly the headers don't provide checksums for the files, otherwise we could verify the file integrity after download and avoid issues with corrupted downloads
         const expectedSize = parseInt(response.headers.get("content-length") ?? "0");
         if (isNaN(expectedSize) || expectedSize <= 0) {
             console.warn(`Invalid content-length from mirror ${mirror}: ${response.headers.get("content-length")}`);
         }
 
-        if (fs.existsSync(targetFilePath) && expectedSize > 0 && fs.statSync(targetFilePath).size === expectedSize) {
-            console.log(`File already exists and is up to date: ${targetFilePath}`);
+        // If the file already exists and has the correct size, we can skip the download
+        if (fs.existsSync(versionFilePath) && expectedSize > 0 && fs.statSync(versionFilePath).size === expectedSize) {
+            console.log(`File already exists and is up to date: ${versionFilePath}`);
             return true;
         }
 
+        // Before we start downloading, we want to check if the version is currently being downloaded by another process
+        if (this.isLocked(versionFileNameWithExt)) {
+            throw new Error(`Version ${version.version.toString()} is currently being installed by another process. Please wait until it's finished.`);
+        }
+
+        // Lock the version to prevent multiple downloads at the same time, we will unlock it after the download is complete or if it fails
+        this.lockVersion(versionFileNameWithExt);
+
+        // Now we can start the download
         console.log(`Selected mirror for downloading version ${version.version.toString()}: ${mirror}`);
         console.log(`Starting download at ${performance.now()} ms`);
         const nowTime = new Date();
-        await Downloader.downloadFile(mirror, targetFilePath, (transferred, total) => {
-            setStatus(prev => ({ ...prev,
-                type: "downloading",
-                taskName: `Downloading Minecraft ${version.version.toString()}... (${(transferred / (1024 * 1024)).toFixed(1)}MB / ${(total / (1024 * 1024)).toFixed(1)}MB)`,
-                showLoading: true,
-                canCancel: false,
-                progress: total > 0 ? transferred / total : null
-            }));
-        }, success => {
-            if (!success) {
-                setStatus(prev => ({ ...prev,
-                    type: "idle",
-                    taskName: null,
-                    showLoading: false,
-                    canCancel: false,
-                    progress: null,
-                    errorMsg: "Failed to download Minecraft!"
-                }));
-                throw new Error("Failed to download Minecraft!");
-            }
-            setStatus(prev => ({ ...prev,
-                type: "idle",
-                taskName: "Downloaded Minecraft successfully.",
-                showLoading: false,
-                canCancel: false,
-                progress: null,
-                errorMsg: null
-            }));
-        });
+        await withProgressAsync(async ({ setStatus, setMessage, setProgress }) => {
+            // Set the status to downloading and show the progress bar, we will update the progress in the Downloader.downloadFile callback
+            setStatus("downloading");
+            await Downloader.downloadFile(mirror, versionFilePath, (transferred, total) => {
+                setMessage(`Downloading Minecraft ${version.version.toString()}... (${(transferred / (1024 * 1024)).toFixed(1)}MB / ${(total / (1024 * 1024)).toFixed(1)}MB)`);
+                setProgress(total > 0 ? transferred / total : 0);
+            }, success => {
+                // Should probably return a error on this callback but meh
+                if (!success) {
+                    throw new Error("Failed to download Minecraft!");
+                }
+            });
+        }, true, FULL_PROGRESS_RESET_OPTIONS);
+
+        // Unlock the version after the download is complete
         console.log(`Finished download at ${performance.now()} ms, total time: ${((new Date().getTime() - nowTime.getTime()) / 1000).toFixed(2)} seconds`);
+        this.unlockVersion(versionFileNameWithExt);
         return true;
     }
 
-    async extractVersion(uuid: string): Promise<boolean> {
-        const setStatus = UseAppState.getState().setStatus;
-        const versionsPath = UseAppState.getState().platform.getPaths().versionsPath;
+    async extractVersionByUUID(uuid: string): Promise<boolean> {
+        const versionsPath = useAppStore.getState().platform.getPaths().versionsPath;
         PathUtils.ValidatePath(versionsPath);
 
+        // Get the version information from the database, we need the version number and type to determine the file paths and decryption parameters
         const version = this.database.getVersionByUUID(uuid);
         if (!version) {
             throw new Error(`Version with UUID: '${uuid}' not found in database!`);
         }
 
-        const msixvcPath = path.join(versionsPath, `Minecraft-${version.version.toString()}.msixvc`);
-        const folderPath = path.join(versionsPath, `Minecraft-${version.version.toString()}`);
-        const cikUuid = version.type === "release" ? CIK_UUID_PREVIEW_GDK : CIK_UUID_RELEASE_GDK;
-        const cikData = version.type === "preview" ? CIK_DATA_PREVIEW_GDK : CIK_DATA_RELEASE_GDK;
-        
-        setStatus(prev => ({ ...prev,
-            type: "decrypting",
-            taskName: `Decrypting MSIXVC of Minecraft ${version.version.toString()}...`,
-            showLoading: true,
-            canCancel: false,
-            progress: 0.5,
-            errorMsg: null
-        }));
-        
-        const decryptErr = await XVDTool.decrypt(msixvcPath, cikUuid, cikData);
-        if (decryptErr) {
-            setStatus(prev => ({ ...prev,
-                type: "idle",
-                taskName: null,
-                showLoading: false,
-                canCancel: false,
-                progress: null,
-                errorMsg: `Failed to decrypt MSIXVC! (${decryptErr})`
-            }));
-            return false;
+        const versionFileName = `Minecraft-${version.version.toString()}`;
+        const versionFileNameWithExt = `Minecraft-${version.version.toString()}.msixvc`;
+        const versionFilePath = path.join(versionsPath, versionFileNameWithExt);
+        const extractedVersionPath = path.join(versionsPath, versionFileName);
+
+        // Start the extraction process, this involves decrypting the MSIXVC file and then extracting it to the target folder
+        return await this.extractVersionByPath(versionFilePath, extractedVersionPath, version.version, version.type);
+    }
+
+    async extractVersionByPath(
+        versionFilePath: string, 
+        targetOutputPath: string, 
+        version: SemVersion, 
+        type: MinecraftVersionType
+    ): Promise<boolean> {
+        const { withProgressAsync } = useProgressBar.getState();
+        const versionFileName = path.basename(versionFilePath);
+
+        // Check if the version is already locked, if so something's wrong
+        if (this.isLocked(versionFileName)) {
+            throw new Error(`Version ${version.toString()} is currently being installed by another process. Please wait until it's finished.`);
         }
 
-        setStatus(prev => ({ ...prev,
-            type: "extracting",
-            taskName: `Extracting Minecraft ${version.version.toString()}...`,
-            showLoading: true,
-            canCancel: false,
-            progress: null,
-            errorMsg: null
-        }));
+        // Lock the version to prevent multiple work at the same time
+        this.lockVersion(versionFileName);
+        
+        // Perform decryption and extraction with progress updates
+        const cikUuid = type === "release" ? CIK_UUID_PREVIEW_GDK : CIK_UUID_RELEASE_GDK;
+        const cikData = type === "preview" ? CIK_DATA_PREVIEW_GDK : CIK_DATA_RELEASE_GDK;
+        await withProgressAsync(async ({ setStatus, setMessage, setProgress }) => {
+            // Show status for decryption
+            setStatus("decrypting");
+            setMessage(`Decrypting MSIXVC of Minecraft ${version.toString()}...`);
+            setProgress(0.5);
 
-        const extractErr = await XVDTool.extract(msixvcPath, folderPath);
-        if (extractErr) {
-            setStatus(prev => ({ ...prev,
-                type: "idle",
-                taskName: null,
-                showLoading: false,
-                canCancel: false,
-                progress: null,
-                errorMsg: `Failed to extract Minecraft! (${extractErr})`
-            }));
-            return false;
-        }
+            // XVDTool.decrypt will call the tool to perform decryption, it will return an error message if decryption fails, otherwise null
+            // It will also update the progress bar internally by reading the tool's output, so we don't need to worry about that here
+            const decryptErr = await XVDTool.decrypt(versionFilePath, cikUuid, cikData);
+            if (decryptErr) {
+                throw new Error(`Failed to decrypt MSIXVC! (${decryptErr})`);
+            }
 
-        setStatus(prev => ({ ...prev,
-            type: "idle",
-            taskName: `Minecraft ${version.version.toString()} is ready!`,
-            showLoading: false,
-            canCancel: false,
-            progress: null,
-            errorMsg: null
-        }));
+            // Show status for extraction
+            setStatus("extracting");
+            setMessage(`Extracting Minecraft ${version.toString()}...`);
+            setProgress(0);
+
+            // XVDTool.extract will call the tool to perform extraction, it will return an error message if extraction fails, otherwise null
+            // It will also update the progress bar internally by reading the tool's output, so we don't need to worry about that here
+            const extractErr = await XVDTool.extract(versionFilePath, targetOutputPath);
+            if (extractErr) {
+                throw new Error(`Failed to extract Minecraft! (${extractErr})`);
+            }
+
+            // If we reached this point, decryption and extraction were successful
+        }, true, FULL_PROGRESS_RESET_OPTIONS);
+
+        // Unlock the version after decryption and extraction are complete
+        this.unlockVersion(versionFileName);
         return true;
     }
-}
 
-function getPaths() {
-    return UseAppState.getState().platform.getPaths();
-}
-
-// export function GetDefaultInstallPath(): string {
-//     const paths = getPaths();
-//     PathUtils.ValidatePath(paths.versionsPath);
-
-//     if (fs.existsSync(paths.versionsFilePath)) {
-//         const version_file_text = fs.readFileSync(paths.versionsFilePath, "utf-8");
-//         const version_file_data: VersionsFileObject = VersionsFileObject.fromString(version_file_text);
-
-//         return version_file_data.default_installation_path;
-//     }
-//     return paths.versionsPath;
-// }
-
-// export function IsDownloaded(version: SemVersion) {
-//     const paths = getPaths();
-//     const version_path = path.join(paths.versionsPath, `Minecraft-${version.toString()}`);
-//     return fs.existsSync(version_path);
-// }
-
-// export function IsLocked(version: SemVersion) {
-//     const paths = getPaths();
-//     const lock_path = path.join(paths.versionsPath, `Minecraft-${version.toString()}.lock`);
-//     return fs.existsSync(lock_path);
-// }
-
-// export function CreateLock(version: SemVersion) {
-//     const paths = getPaths();
-//     const lock_path = path.join(paths.versionsPath, `Minecraft-${version.toString()}.lock`);
-
-//     PathUtils.ValidatePath(lock_path);
-
-//     const handle = fs.openSync(lock_path, "w");
-//     fs.close(handle);
-// }
-
-export function CleanupInstall(version: SemVersion, successful: boolean) {
-    const paths = getPaths();
-    const appxPath = path.join(paths.versionsPath, `Minecraft-${version.toString()}.zip`);
-    const lockPath = path.join(paths.versionsPath, `Minecraft-${version.toString()}.lock`);
-    PathUtils.DeletePath(appxPath);
-    PathUtils.DeletePath(lockPath);
-
-    if (!successful) {
-        const folderPath = path.join(paths.versionsPath, `Minecraft-${version.toString()}`);
-        PathUtils.DeletePath(folderPath);
+    getInstalledVersions(): InstalledVersionModel[] {
+        // Reload the installed versions from file to ensure we have the latest information
+        this.installedVersions.reloadFromFile(path.join(getPaths().versionsPath, "installed_versions.json"));
+        return this.installedVersions.versions;
     }
-}
 
-export function InstallProxy(version: MinecraftVersionData) {
-    const paths = getPaths();
-    console.log("Installing proxy for version", version.version.toString());
-    const target_path = path.join(paths.versionsPath, `Minecraft-${version.version.toString()}`, "dxgi.dll");
-    //const proxy_path = path.join(paths.electronAppPath, "build/public/proxy/dxgi.dll");
+    getInstalledVersionByUUID(uuid: string): InstalledVersionModel | null {
+        // Get the list of installed versions
+        const versions = this.getInstalledVersions();
 
-    //fs.copyFileSync(proxy_path, target_path);
+        // Find the installed version with the matching UUID
+        const installedVersion = versions.find(v => v.uuid === uuid);
+        if (!installedVersion)
+            return null;
+
+        // Check if the installed version's path is valid, 
+        // if not we will remove it from the installed versions list and return null, 
+        // this can happen if the user manually deletes the version folder
+        if (!fs.existsSync(installedVersion.path) || !fs.statSync(installedVersion.path).isDirectory()) {
+            console.warn(`Installed version with UUID ${uuid} has an invalid path: ${installedVersion.path}. Removing from installed versions list.`);
+            const updatedVersions = versions.filter(v => v.uuid !== uuid);
+            this.installedVersions.versions = updatedVersions;
+            this.installedVersions.saveToFile(InstalledVersionListModel.getDefaultFilePath());
+            return null;
+        }
+
+        return installedVersion;
+    }
+
+    async installVersion(version: VersionInstallationData): Promise<boolean> {
+        // Before we start installing, we want to check if the version is already installed
+        if (this.getInstalledVersionByUUID(version.uuid)) {
+            throw new Error(`Version with UUID: '${version.uuid}' is already installed!`);
+        }
+        
+        // For non-imported versions, we expect the versionOutputPath to be present and valid, 
+        // for imported versions, we expect the versionFile to be present and valid
+        if (!version.imported && version.versionOutputPath && fs.existsSync(version.versionOutputPath)) {
+            // Get the version information from the database, 
+            // we need the version number and type to determine the name and other properties for the installed version record
+            const dbVersion = this.database.getVersionByUUID(version.uuid);
+            if (!dbVersion) {
+                throw new Error(`Trying to install non-imported version with UUID: '${version.uuid}' but it was not found in the database!`);
+            }
+
+            // If we reached this point, we can consider the version as successfully installed
+            const newInstalledVersion = new InstalledVersionModel(
+                dbVersion.uuid,
+                dbVersion.type === "release" ? `Minecraft ${dbVersion.version.toString()}` : `Minecraft ${dbVersion.version.toString()} (Preview)`,
+                version.versionOutputPath,
+                dbVersion.type,
+                false,
+                version.versionFile
+            );
+
+            // Add the new installed version to the list and save it to file
+            this.installedVersions.versions.push(newInstalledVersion);
+            this.installedVersions.saveToFile(InstalledVersionListModel.getDefaultFilePath());
+            return true;
+        }
+        // For imported versions, we will copy the version file to the versions folder and then decrypt and/or extract it from there, 
+        // this is to ensure that all version files are stored in a consistent location and we can manage them properly, 
+        // we will also mark the installed version as imported and store the original file path for reference
+        else if (
+            version.imported && 
+            version.versionFile && 
+            fs.existsSync(version.versionFile) && 
+            fs.statSync(version.versionFile).isFile()
+        ) {
+            // Check if the version file has the correct extension, we only support .msixvc files for import,
+            // I don't know .msixvc files MAGIC, so I have no way to verify if the file is actually a valid .msixvc file other than checking the extension,
+            if (!version.versionFile.toLowerCase().endsWith(".msixvc")) {
+                throw new Error("Only .msixvc files are supported for import!");
+            }
+
+            // Copy the version file to the versions folder
+            const versionFileName = path.basename(version.versionFile, ".msixvc");
+            const copyTargetPath = path.join(getPaths().versionsPath, `${versionFileName}.msixvc`);
+            const extractedVersionPath = path.join(getPaths().versionsPath, versionFileName);
+            fs.copyFileSync(version.versionFile, copyTargetPath);
+
+            // After copying the file, we will attempt to decrypt and/or extract it using the same process as for downloaded versions
+            try {
+                await this.extractVersionByPath(copyTargetPath, extractedVersionPath, version.version, version.type);
+            } finally {
+                fs.unlinkSync(copyTargetPath);
+            }
+
+            // If we reached this point, we can consider the version as successfully installed
+            const newInstalledVersion = new InstalledVersionModel(
+                version.uuid,
+                version.name,
+                extractedVersionPath,
+                version.type,
+                true,
+                version.versionFile
+            );
+
+            // Add the new installed version to the list and save it to file
+            this.installedVersions.versions.push(newInstalledVersion);
+            this.installedVersions.saveToFile(InstalledVersionListModel.getDefaultFilePath());
+            return true;
+        }
+
+        // If we reached this point, it means the provided version installation data is invalid, 
+        // we will throw an error, this should never happen if the function is used correctly, 
+        // but it's good to have this check just in case
+        throw new Error("Invalid version installation data! For imported versions, 'versionFile' must be a valid path to an .msixvc file. For non-imported versions, 'versionOutputPath' must be a valid path to the extracted version folder.");
+    }
+
+    async downloadExtractAndInstallVersion(uuid: string): Promise<boolean> {
+        // Get the version information from the database
+        const version = this.database.getVersionByUUID(uuid);
+        if (!version) {
+            throw new Error(`Version with UUID: '${uuid}' not found in database!`);
+        }
+
+        // Helper function to clean up any leftover files from the download and extraction process
+        const cleanupVersionShenanigans = async (cleanMsixvc: boolean) => {
+            const paths = getPaths();
+            const msixvcPath = path.join(paths.versionsPath, `Minecraft-${version.version.toString()}.msixvc`);
+            const lockPath = path.join(paths.versionsPath, `Minecraft-${version.version.toString()}.lock`);
+            console.log("Cleaning up version shenanigans, removing files: ", msixvcPath, lockPath);
+            if (cleanMsixvc)
+                fs.rmSync(msixvcPath, { force: true });
+            fs.rmSync(lockPath, { force: true });
+        };
+
+        // Before we start the download, we want to clean up any leftover files from previous download and extraction attempts for this version, 
+        // this doesn't include the .msixvc file, since maybe it was downloaded successfully but the process failed during extraction, 
+        // in that case we want to keep the .msixvc file to avoid having to download it again
+        cleanupVersionShenanigans(false);
+        
+        // Now we can start the download, extraction and installation process for the version, 
+        // we will perform these steps sequentially and if any of them fails, we will throw an error and stop the process, 
+        // if all steps succeed, we will return true to indicate that the version was successfully downloaded, extracted and installed
+        // (Btw, download can return true "instantly" if the file already exists and is valid)
+        const downloadSuccess = await this.downloadVersion(uuid);
+        if (!downloadSuccess) {
+            throw new Error("Failed to download version!");
+        }
+
+        // After the version is downloaded, procees to decrypt and extract it, 
+        // if this fails we will throw an error
+        const extractSuccess = await this.extractVersionByUUID(uuid);
+        if (!extractSuccess) {
+            throw new Error("Failed to extract version!");
+        }
+
+        const versionFileName = `Minecraft-${version.version.toString()}`;
+        const extractedVersionPath = path.join(getPaths().versionsPath, versionFileName);
+        
+        // After the version is extracted, we will proceed to install it,
+        // we create the installation data for the version, 
+        // this will be used to create the installed version record and save it to the installed versions list
+        const installationData: VersionInstallationData = {
+            uuid: version.uuid,
+            name: version.type === "release" ? `Minecraft ${version.version.toString()}` : `Minecraft ${version.version.toString()} (Preview)`,
+            version: version.version,
+            type: version.type,
+            imported: false,
+            versionFile: path.join(getPaths().versionsPath, `${versionFileName}.msixvc`),
+            versionOutputPath: extractedVersionPath
+        };
+
+        // Now we can proceed to install the version using the installation data we created,
+        // if the installation fails, we will throw an error, if it succeeds
+        const installSuccess = await this.installVersion(installationData);
+        if (!installSuccess) {
+            throw new Error("Failed to install version after download and extraction!");
+        }
+        
+        // If we reached this point, it means the version was successfully downloaded, extracted and installed, 
+        // we can return true to indicate success, but before that we want to clean up any leftover files from the process, 
+        // this includes the .msixvc file and the .lock file, 
+        // we will also log a message to indicate that the process was completed successfully
+        console.log(`Version ${version.version.toString()} downloaded, extracted and installed successfully!`);
+        await cleanupVersionShenanigans(true);
+        return true;
+    }
 }

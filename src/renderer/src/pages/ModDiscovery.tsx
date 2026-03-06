@@ -14,7 +14,7 @@ import { MinecraftRadialButtonPanel } from "@renderer/components/MinecraftRadial
 import { PopupPanel } from "@renderer/components/PopupPanel";
 import { TextInput } from "@renderer/components/TextInput";
 
-import { UseAppState } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/contexts/AppState";
 
 import { db } from "@renderer/firebase/Firebase";
 
@@ -24,7 +24,7 @@ const { shell } = window.require("electron");
 const path = window.require("path");
 
 function getPaths() {
-    return UseAppState.getState().platform.getPaths();
+    return useAppStore.getState().platform.getPaths();
 }
 
 interface ModDiscoveryData {
@@ -231,9 +231,9 @@ function uninstallMod(modName: string): void {
 export function ModDownloads({ mod }: { mod: ModDiscoveryData }) {
     const [releases, setReleases] = useState<ParsedGithubRelease[]>([]);
     const [loading, setLoading] = useState(true);
-    const analyticsInstance = UseAppState(state => state.analyticsInstance);
-    const allMods = UseAppState(state => state.allMods);
-    const refreshAllMods = UseAppState(state => state.refreshAllMods);
+    const analyticsInstance = useAppStore(state => state.analyticsInstance);
+    const allMods = useAppStore(state => state.allMods);
+    const refreshAllMods = useAppStore(state => state.refreshAllMods);
     const [allInstalling, setAllInstalling] = useState<string[]>([]);
     const [confirmingMod, setConfirmingMod] = useState<ParsedGithubRelease | null>(null);
 

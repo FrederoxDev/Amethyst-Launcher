@@ -1,7 +1,7 @@
 const fs = window.require("fs");
 const path = window.require("path");
 
-import { UseAppState } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/contexts/AppState";
 import {
     ajv,
     FromValidatedV1_1_0ToConfig,
@@ -13,7 +13,7 @@ import {
 import type { ValidateFunction } from "ajv";
 
 function getPaths() {
-    return UseAppState.getState().platform.getPaths();
+    return useAppStore.getState().platform.getPaths();
 }
 
 export function GetAllMods(): ValidatedMod[] {
