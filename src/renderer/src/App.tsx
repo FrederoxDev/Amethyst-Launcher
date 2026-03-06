@@ -1,4 +1,4 @@
-import { AnalyticsConsent, useAppStore } from "@renderer/contexts/AppState";
+import { AnalyticsConsent, useAppStore, useToolStore } from "@renderer/contexts/AppState";
 import { Link, Route, Routes, useLocation } from "react-router-dom";
 
 import lushCaveImage from "@renderer/assets/images/art/lush_cave.png";
@@ -92,6 +92,8 @@ function GetAnalyticsConsent() {
 
 export default function App() {
     const location = useLocation();
+    const xvdToolState = useToolStore(state => state.xvdTool);
+
     return (
         <>
             <link rel="preload" href={lushCaveImage} as="image" />
@@ -202,6 +204,7 @@ export default function App() {
             </div>
 
             <GetAnalyticsConsent />
+            {xvdToolState.showUpdatePopup && <XVDTool.getShouldUpdatePopup />}
         </>
     );
 }
