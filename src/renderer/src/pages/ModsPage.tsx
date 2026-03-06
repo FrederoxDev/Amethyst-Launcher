@@ -7,10 +7,10 @@ import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { PopupPanel } from "@renderer/components/PopupPanel";
 
 import { GetAllMods, ValidatedMod } from "@renderer/scripts/Mods";
-import { UseAppState } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/contexts/AppState";
 
 function getPaths() {
-    return UseAppState.getState().platform.getPaths();
+    return useAppStore.getState().platform.getPaths();
 }
 
 const openModsFolder = () => {

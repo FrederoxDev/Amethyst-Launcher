@@ -1,10 +1,10 @@
-import { UseAppState } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/contexts/AppState";
 
 const path = window.require("path");
 const fs = window.require("fs");
 
 function getPaths() {
-    return UseAppState.getState().platform.getPaths();
+    return useAppStore.getState().platform.getPaths();
 }
 
 export interface LauncherConfig {

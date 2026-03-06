@@ -1,13 +1,11 @@
 const path = window.require("path") as typeof import("path");
 const fs = window.require("fs") as typeof import("fs");
-const child = window.require("child_process") as typeof import("child_process");
 
-import { UseAppState } from "@renderer/contexts/AppState";
+import { FULL_PROGRESS_RESET_OPTIONS, useAppStore, useProgressBar } from "@renderer/contexts/AppState";
 import { PathUtils } from "../../PathUtils";
 import { GithubTools } from "../github/GithubTools";
 import { Downloader } from "../Downloader";
 import { Extractor } from "../Extractor";
-import { DEFAULT_STATUS } from "@renderer/scripts/LauncherStatus";
 
 export class GDKProton {
     private static Repository: string = "raonygamer/gdk-proton";
@@ -17,7 +15,7 @@ export class GDKProton {
             throw new Error("GDK Proton is only supported on Linux.");
         }
 
-        const launcherPath = UseAppState.getState().platform.getPaths().launcherPath;
+        const launcherPath = useAppStore.getState().platform.getPaths().launcherPath;
         const toolsPath = path.join(launcherPath, "tools");
         const gdkProtonTagFile = path.join(toolsPath, "gdk-proton.txt");
     
@@ -50,55 +48,29 @@ export class GDKProton {
             throw new Error("No compatible GDK Proton release found.");
         }
 
-        const appState = UseAppState.getState();
-        const setStatus = appState.setStatus;
+        const { withProgressAsync } = useProgressBar.getState();
         
-        setStatus(prev => ({ ...prev, 
-            type: "downloading",
-            taskName: `Downloading GDK Proton ${tag}`,
-            showLoading: true,
-            canCancel: false,
-            progress: 0
-        }));
+        await withProgressAsync(async ({ setStatus, setMessage, setProgress }) => {
+            setStatus("downloading");
+            const downloadPath = path.join(toolsPath, "gdk-proton.zip");
+            await Downloader.downloadFile(asset.downloadUrl, downloadPath, (downloaded, total) => {
+                const percent = total > 0 ? downloaded / total : 0;
+                setMessage(`Downloading GDK Proton ${tag}... (${(percent * 100).toFixed(2)}%)`);
+                setProgress(percent);
+            });
 
-        const downloadPath = path.join(toolsPath, "gdk-proton.zip");
-        await Downloader.downloadFile(asset.downloadUrl, downloadPath, (downloaded, total) => {
-            const percent = total > 0 ? downloaded / total : 0;
-            setStatus(prev => ({ ...prev, 
-                taskName: `Downloading GDK Proton ${tag}... (${(percent * 100).toFixed(2)}%)`,
-                progress: percent
-            }));
-        });
-        
-        setStatus(prev => ({ ...prev,
-            type: "extracting",
-            taskName: `Downloaded GDK Proton ${tag}. Extracting...`,
-            progress: 0
-        }));
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await Extractor.extractFile(downloadPath, path.join(toolsPath, "gdk-proton"), [], (fileIndex, totalFiles, name) => {
-            const percent = totalFiles > 0 ? fileIndex / totalFiles : 0;
-            setStatus(prev => ({ ...prev, 
-                taskName: `Extracting ${name}... (${fileIndex}/${totalFiles})`,
-                progress: percent
-            }));
-        });
-        fs.rmSync(downloadPath);
-        await PathUtils.chmodRecursive(path.join(toolsPath, "gdk-proton"), 0o755);
-        fs.writeFileSync(gdkProtonTagFile, tag);
-        
-        setStatus(prev => ({ ...prev,
-            type: "idle",
-            taskName: `GDK Proton updated to version ${tag}.`,
-            progress: 0,
-            showLoading: true,
-            canCancel: false
-        }));
-    
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setStatus("extracting");
+            await Extractor.extractFile(downloadPath, path.join(toolsPath, "gdk-proton"), [], (fileIndex, totalFiles, name) => {
+                const percent = totalFiles > 0 ? fileIndex / totalFiles : 0;
+                setMessage(`Extracting ${name}... (${fileIndex}/${totalFiles})`);
+                setProgress(percent);
+            });
+            fs.rmSync(downloadPath);
+            await PathUtils.chmodRecursive(path.join(toolsPath, "gdk-proton"), 0o755);
+            fs.writeFileSync(gdkProtonTagFile, tag);
+        }, true, FULL_PROGRESS_RESET_OPTIONS);
         console.log(`GDK Proton updated to version ${tag}.`);
-        setStatus(DEFAULT_STATUS);
-    
         return {
             version: tag,
             path: path.join(toolsPath, "gdk-proton"),

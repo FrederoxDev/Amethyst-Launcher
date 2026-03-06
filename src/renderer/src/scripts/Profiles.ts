@@ -1,11 +1,11 @@
-import { UseAppState } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/contexts/AppState";
 import { InstalledVersion } from "@renderer/scripts/VersionDatabase";
 import { PathUtils } from "./PathUtils";
 
 const fs = window.require("fs");
 
 function getPaths() {
-    return UseAppState.getState().platform.getPaths();
+    return useAppStore.getState().platform.getPaths();
 }
 
 export interface Profile {

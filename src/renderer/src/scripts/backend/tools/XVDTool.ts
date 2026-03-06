@@ -1,9 +1,8 @@
-import { UseAppState } from "@renderer/contexts/AppState";
+import { FULL_PROGRESS_RESET_OPTIONS, useAppStore, useProgressBar } from "@renderer/contexts/AppState";
 import { GithubTools } from "../github/GithubTools";
 import { Downloader } from "../Downloader";
 import { Extractor } from "../Extractor";
 import { PathUtils } from "../../PathUtils";
-import { DEFAULT_STATUS } from "../../LauncherStatus";
 
 const path = window.require("path") as typeof import("path");
 const fs = window.require("fs") as typeof import("fs");
@@ -27,7 +26,7 @@ export class XVDTool {
             throw new Error("XVDTool is not supported on this platform.");
         }
 
-        const launcherPath = UseAppState.getState().platform.getPaths().launcherPath;
+        const launcherPath = useAppStore.getState().platform.getPaths().launcherPath;
         const toolsPath = path.join(launcherPath, "tools");
         const xvdtoolVersionFile = path.join(toolsPath, "xvdtool.txt");
 
@@ -60,55 +59,30 @@ export class XVDTool {
             throw new Error("No compatible XVDTool release found.");
         }
 
-        const appState = UseAppState.getState();
-        const setStatus = appState.setStatus;
-        
-        setStatus(prev => ({ ...prev, 
-            type: "downloading",
-            taskName: `Downloading XVDTool ${latestVersion}`,
-            showLoading: true,
-            canCancel: false,
-            progress: 0
-        }));
+        const { withProgressAsync } = useProgressBar.getState();
+        await withProgressAsync(async ({ setStatus, setMessage, setProgress }) => {
+            setStatus("downloading");
+            await Downloader.downloadFile(asset.downloadUrl, path.join(toolsPath, `xvdtool-${process.platform}-${process.arch}.zip`), (downloaded, total) => {
+                const percent = total > 0 ? downloaded / total : 0;
+                setMessage(`Downloading XVDTool ${latestVersion}... (${(percent * 100).toFixed(2)}%)`);
+                setProgress(percent);
+            });
 
-        await Downloader.downloadFile(asset.downloadUrl, path.join(toolsPath, `xvdtool-${process.platform}-${process.arch}.zip`), (downloaded, total) => {
-            const percent = total > 0 ? downloaded / total : 0;
-            setStatus(prev => ({ ...prev, 
-                taskName: `Downloading XVDTool ${latestVersion}... (${(percent * 100).toFixed(2)}%)`,
-                progress: percent
-            }));
-        });
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setStatus("extracting");
+            await Extractor.extractFile(path.join(toolsPath, `xvdtool-${process.platform}-${process.arch}.zip`), path.join(toolsPath, "xvdtool"), [], (fileIndex, totalFiles) => {
+                const percent = totalFiles > 0 ? fileIndex / totalFiles : 0;
+                setMessage(`Extracting XVDTool ${latestVersion}... (${(percent * 100).toFixed(2)}%)`);
+                setProgress(percent);
+            });
+        }, true, FULL_PROGRESS_RESET_OPTIONS);
         
-        setStatus(prev => ({ ...prev,
-            type: "extracting",
-            taskName: `Downloaded XVDTool ${latestVersion}. Extracting...`,
-            progress: 0
-        }));
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await Extractor.extractFile(path.join(toolsPath, `xvdtool-${process.platform}-${process.arch}.zip`), path.join(toolsPath, "xvdtool"), [], (fileIndex, totalFiles, name) => {
-            const percent = totalFiles > 0 ? fileIndex / totalFiles : 0;
-            setStatus(prev => ({ ...prev, 
-                taskName: `Extracting ${name}... (${fileIndex}/${totalFiles})`,
-                progress: percent
-            }));
-        });
         fs.rmSync(path.join(toolsPath, `xvdtool-${process.platform}-${process.arch}.zip`));
         if (process.platform === "linux") {
             await PathUtils.chmodRecursive(path.join(toolsPath, "xvdtool"), 0o755);
         }
         fs.writeFileSync(xvdtoolVersionFile, latestVersion);
-        
-        setStatus(prev => ({ ...prev,
-            type: "idle",
-            taskName: `XVDTool updated to version ${latestVersion}.`,
-            progress: 0,
-            showLoading: true,
-            canCancel: false
-        }));
-
         console.log(`XVDTool updated to version ${latestVersion}.`);
-        setStatus(DEFAULT_STATUS);
 
         return {
             version: latestVersion,
@@ -122,98 +96,78 @@ export class XVDTool {
     }
 
     static async decrypt(inputFile: string, cikUuid: string, cikData: string): Promise<string | null> {
-        const platform = UseAppState.getState().platform;
-        const setStatus = UseAppState.getState().setStatus;
+        const platform = useAppStore.getState().platform;
+        const { withProgressAsync } = useProgressBar.getState();
         const { executable: xvdtoolExecutable } = await XVDTool.check();
         const command = `"${xvdtoolExecutable}" -nd -eu -cik "${cikUuid}" -cikdata "${cikData}" "${inputFile}"`;
         return new Promise<string | null>(async (resolve, reject) => {
-            await platform.runCommand(command, (data) => {
-                for (const line of data.split("\n")) {
-                    try {
-                        const dataJson: OutputModel = { message: null, error: null, progress: null, total: null, current: null, ...JSON.parse(line) } as OutputModel;
-                        if (dataJson.error) {
-                            console.error(`[XVDTool] Error: ${dataJson.error}`);
+            await withProgressAsync(async ({ setStatus, setMessage, setProgress }) => {
+                setStatus("decrypting");
+                await platform.runCommand(command, (data) => {
+                    for (const line of data.split("\n")) {
+                        try {
+                            const dataJson: OutputModel = { message: null, error: null, progress: null, total: null, current: null, ...JSON.parse(line) } as OutputModel;
+                            if (dataJson.error) {
+                                console.error(`[XVDTool] Error: ${dataJson.error}`);
+                            }
+                            
+                            if (dataJson.message) {
+                                console.log(`[XVDTool] ${dataJson.message}`);
+                                setMessage(dataJson.message);
+                            } 
+                            
+                            if (dataJson.progress !== null) {
+                                setProgress(dataJson.progress);
+                            } else if (dataJson.current !== null && dataJson.total !== null) {
+                                setProgress((dataJson.current ?? 0) / (dataJson.total ?? 1));
+                            }
                         }
-                        
-                        if (dataJson.message) {
-                            console.log(`[XVDTool] ${dataJson.message}`);
-                            setStatus(prev => ({ ...prev,
-                                taskName: dataJson.message,
-                                progress: dataJson.progress !== undefined ? dataJson.progress : prev.progress,
-                                showLoading: true,
-                                canCancel: false
-                            }));
-                        } 
-                        
-                        if (dataJson.progress !== null) {
-                            setStatus(prev => ({ ...prev, 
-                                progress: dataJson.progress,
-                                showLoading: true,
-                                canCancel: false
-                            }));
-                        } else if (dataJson.current !== null && dataJson.total !== null) {
-                            setStatus(prev => ({ ...prev,
-                                progress: (dataJson.current ?? 0) / (dataJson.total ?? 1),
-                                showLoading: true,
-                                canCancel: false
-                            }));
-                        }
+                        catch {}
                     }
-                    catch {}
-                }
-            }).catch(err => {
-                console.error("Failed to run XVDTool:", err);
-                reject(err);
-            });
-            resolve(null);
+                }).catch(err => {
+                    console.error("Failed to run XVDTool:", err);
+                    reject(err);
+                });
+                resolve(null);
+            }, true, FULL_PROGRESS_RESET_OPTIONS);
         });
     }
 
     static async extract(inputFile: string, outputFolder: string): Promise<string | null> {
-        const platform = UseAppState.getState().platform;
-        const setStatus = UseAppState.getState().setStatus;
+        const platform = useAppStore.getState().platform;
+        const { withProgressAsync } = useProgressBar.getState();
         const { executable: xvdtoolExecutable } = await XVDTool.check();
         const command = `"${xvdtoolExecutable}" -nd -xf "${outputFolder}" "${inputFile}"`;
         return new Promise<string | null>(async (resolve, reject) => {
-            await platform.runCommand(command, (data) => {
-                for (const line of data.split("\n")) {
-                    try {
-                        const dataJson: OutputModel = { message: null, error: null, progress: null, total: null, current: null, ...JSON.parse(line) } as OutputModel;
-                        if (dataJson.error) {
-                            console.error(`[XVDTool] Error: ${dataJson.error}`);
+            await withProgressAsync(async ({ setStatus, setMessage, setProgress }) => {
+                setStatus("extracting");
+                await platform.runCommand(command, (data) => {
+                    for (const line of data.split("\n")) {
+                        try {
+                            const dataJson: OutputModel = { message: null, error: null, progress: null, total: null, current: null, ...JSON.parse(line) } as OutputModel;
+                            if (dataJson.error) {
+                                console.error(`[XVDTool] Error: ${dataJson.error}`);
+                            }
+                            
+                            if (dataJson.message) {
+                                console.log(`[XVDTool] ${dataJson.message}`);
+                                setMessage(dataJson.message);
+                            } 
+                            
+                            if (dataJson.progress !== null) {
+                                setProgress(dataJson.progress);
+                            } else if (dataJson.current !== null && dataJson.total !== null) {
+                                setProgress((dataJson.current ?? 0) / (dataJson.total ?? 1));
+                            }
                         }
-                        
-                        if (dataJson.message) {
-                            console.log(`[XVDTool] ${dataJson.message}`);
-                            setStatus(prev => ({ ...prev,
-                                taskName: dataJson.message,
-                                progress: dataJson.progress !== undefined ? dataJson.progress : prev.progress,
-                                showLoading: true,
-                                canCancel: false
-                            }));
-                        } 
-                        
-                        if (dataJson.progress !== null) {
-                            setStatus(prev => ({ ...prev, 
-                                progress: dataJson.progress,
-                                showLoading: true,
-                                canCancel: false
-                            }));
-                        } else if (dataJson.current !== null && dataJson.total !== null) {
-                            setStatus(prev => ({ ...prev,
-                                progress: (dataJson.current ?? 0) / (dataJson.total ?? 1),
-                                showLoading: true,
-                                canCancel: false
-                            }));
-                        }
+                        catch {}
                     }
-                    catch {}
-                }
-            }).catch(err => {
-                console.error("Failed to run XVDTool:", err);
-                reject(err);
-            });
-            resolve(null);
+                }).catch(err => {
+                    console.error("Failed to run XVDTool:", err);
+                    reject(err);
+                });
+                resolve(null);
+            }, true, FULL_PROGRESS_RESET_OPTIONS);
         });
     }
 }

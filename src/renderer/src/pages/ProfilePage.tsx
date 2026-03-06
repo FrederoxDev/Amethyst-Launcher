@@ -3,14 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { MainPanel } from "@renderer/components/MainPanel";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 
-import { UseAppState } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/contexts/AppState";
 
 import { Profile } from "@renderer/scripts/Profiles";
 
 const ProfileButton = ({ profile, index }: { profile: Profile; index: number }) => {
     const navigate = useNavigate();
-    const setSelectedProfile = UseAppState(state => state.setSelectedProfile);
-    const allValidMods = UseAppState(state => state.allValidMods);
+    const setSelectedProfile = useAppStore(state => state.setSelectedProfile);
+    const allValidMods = useAppStore(state => state.allValidMods);
 
     const openProfile = (index: number) => {
         setSelectedProfile(index);
@@ -39,9 +39,9 @@ const ProfileButton = ({ profile, index }: { profile: Profile; index: number }) 
 
 export function ProfilePage() {
     const navigate = useNavigate();
-    const allProfiles = UseAppState(state => state.allProfiles);
-    const setAllProfiles = UseAppState(state => state.setAllProfiles);
-    const setSelectedProfile = UseAppState(state => state.setSelectedProfile);
+    const allProfiles = useAppStore(state => state.allProfiles);
+    const setAllProfiles = useAppStore(state => state.setAllProfiles);
+    const setSelectedProfile = useAppStore(state => state.setSelectedProfile);
 
     return (
         <MainPanel>

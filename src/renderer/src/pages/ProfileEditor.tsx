@@ -6,7 +6,7 @@ import { MainPanel } from "@renderer/components/MainPanel";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
 import { TextInput } from "@renderer/components/TextInput";
-import { UseAppState } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/contexts/AppState";
 import { MinecraftToggle } from "@renderer/components/MinecraftToggle";
 import { MinecraftVersionData } from "@renderer/scripts/VersionDatabase";
 
@@ -17,14 +17,14 @@ export function ProfileEditor() {
     const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<string>("");
     const [remoteVersions, setRemoteVersions] = useState<MinecraftVersionData[]>([]);
 
-    const allValidMods = UseAppState(state => state.allValidMods);
-    const allRuntimes = UseAppState(state => state.allRuntimes);
-    const allProfiles = UseAppState(state => state.allProfiles);
-    const setAllProfiles = UseAppState(state => state.setAllProfiles);
-    const selectedProfile = UseAppState(state => state.selectedProfile);
-    const saveData = UseAppState(state => state.saveData);
-    const allInvalidMods = UseAppState(state => state.allInvalidMods);
-    const versionManager = UseAppState(state => state.versionManager);
+    const allValidMods = useAppStore(state => state.allValidMods);
+    const allRuntimes = useAppStore(state => state.allRuntimes);
+    const allProfiles = useAppStore(state => state.allProfiles);
+    const setAllProfiles = useAppStore(state => state.setAllProfiles);
+    const selectedProfile = useAppStore(state => state.selectedProfile);
+    const saveData = useAppStore(state => state.saveData);
+    const allInvalidMods = useAppStore(state => state.allInvalidMods);
+    const versionManager = useAppStore(state => state.versionManager);
     const navigate = useNavigate();
 
     useEffect(() => {

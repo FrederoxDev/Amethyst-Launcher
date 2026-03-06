@@ -1,5 +1,5 @@
 import { Profile } from "../Profiles";
-import { InstalledVersion } from "../VersionDatabase";
+import { InstalledVersionModel } from "../VersionManager";
 
 export interface ShortcutOptions {
     target: string;
@@ -25,5 +25,5 @@ export interface ILauncherPlatform {
     runCommand(command: string, stdout?: (data: string) => void): Promise<number>;
     createShortcut(options: ShortcutOptions): Promise<void>;
     getPaths(): LauncherPaths;
-    runProfile(profile: Profile, version: InstalledVersion): Promise<void>;
+    runProfile(profile: Profile, version: InstalledVersionModel): Promise<void>;
 }

@@ -1,4 +1,4 @@
-import { AnalyticsConsent, UseAppState } from "@renderer/contexts/AppState";
+import { AnalyticsConsent, useAppStore } from "@renderer/contexts/AppState";
 import { Link, Route, Routes, useLocation } from "react-router-dom";
 
 import lushCaveImage from "@renderer/assets/images/art/lush_cave.png";
@@ -29,8 +29,8 @@ import { XVDTool } from "./scripts/backend/tools/XVDTool";
 const { shell } = window.require("electron");
 
 function GetAnalyticsConsent() {
-    const analyticsConsent = UseAppState(state => state.analyticsConsent);
-    const setAnalyticsConsent = UseAppState(state => state.setAnalyticsConsent);
+    const analyticsConsent = useAppStore(state => state.analyticsConsent);
+    const setAnalyticsConsent = useAppStore(state => state.setAnalyticsConsent);
 
     if (analyticsConsent !== AnalyticsConsent.Unknown) return <></>;
 

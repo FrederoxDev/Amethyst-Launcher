@@ -6,22 +6,22 @@ import { MinecraftRadialButtonPanel } from "@renderer/components/MinecraftRadial
 import { MinecraftToggle } from "@renderer/components/MinecraftToggle";
 import { ReadOnlyTextBox } from "@renderer/components/ReadOnlyTextBox";
 
-import { AnalyticsConsent, UseAppState } from "@renderer/contexts/AppState";
+import { AnalyticsConsent, useAppStore } from "@renderer/contexts/AppState";
 
 const fs = window.require("fs") as typeof import("fs");
 
 export function SettingsPage() {
-    const keepLauncherOpen = UseAppState(state => state.keepLauncherOpen);
-    const setKeepLauncherOpen = UseAppState(state => state.setKeepLauncherOpen);
-    const developerMode = UseAppState(state => state.developerMode);
-    const setDeveloperMode = UseAppState(state => state.setDeveloperMode);
-    const UITheme = UseAppState(state => state.UITheme);
-    const setUITheme = UseAppState(state => state.setUITheme);
-    const allProfiles = UseAppState(state => state.allProfiles);
-    const selectedProfile = UseAppState(state => state.selectedProfile);
-    const analyticsConsent = UseAppState(state => state.analyticsConsent);
-    const setAnalyticsConsent = UseAppState(state => state.setAnalyticsConsent);
-    const platform = UseAppState(state => state.platform);
+    const keepLauncherOpen = useAppStore(state => state.keepLauncherOpen);
+    const setKeepLauncherOpen = useAppStore(state => state.setKeepLauncherOpen);
+    const developerMode = useAppStore(state => state.developerMode);
+    const setDeveloperMode = useAppStore(state => state.setDeveloperMode);
+    const UITheme = useAppStore(state => state.UITheme);
+    const setUITheme = useAppStore(state => state.setUITheme);
+    const allProfiles = useAppStore(state => state.allProfiles);
+    const selectedProfile = useAppStore(state => state.selectedProfile);
+    const analyticsConsent = useAppStore(state => state.analyticsConsent);
+    const setAnalyticsConsent = useAppStore(state => state.setAnalyticsConsent);
+    const platform = useAppStore(state => state.platform);
     const [launcherCfg, setLauncherCfg] = useState<string>("");
 
     const paths = platform.getPaths();

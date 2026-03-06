@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import { useEffect, useState } from "react";
 
-import { UseAppState } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/contexts/AppState";
 
 import { Extractor } from "@renderer/scripts/backend/Extractor";
 import { CopyRecursive } from "@renderer/scripts/Files";
@@ -11,8 +11,8 @@ const path = window.require("path");
 export function DropWindow() {
     const [hovered, setHovered] = useState(false);
 
-    const setError = UseAppState(state => state.setError);
-    const platform = UseAppState(state => state.platform);
+    const setError = useAppStore(state => state.setError);
+    const platform = useAppStore(state => state.platform);
     const paths = platform.getPaths();
 
     useEffect(() => {

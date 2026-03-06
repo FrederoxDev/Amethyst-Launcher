@@ -6,12 +6,12 @@ import { firebaseApp } from "@renderer/firebase/Firebase";
 import { GetLauncherConfig, LauncherConfig, SetLauncherConfig } from "@renderer/scripts/Launcher";
 import { GetAllMods, ValidatedMod } from "@renderer/scripts/Mods";
 import { GetProfiles, Profile, SetProfiles } from "@renderer/scripts/Profiles";
-import { FetchMinecraftVersions, MinecraftVersion, VersionDatabase } from "@renderer/scripts/VersionDatabase";
 import { ILauncherPlatform } from "@renderer/scripts/platform/LauncherPlatform";
 import { WindowsLauncherPlatform } from "@renderer/scripts/platform/WindowsLauncherPlatform";
 import { LinuxLauncherPlatform } from "@renderer/scripts/platform/LinuxLauncherPlatform";
-import { BLOCKED_ACTIONS, DEFAULT_STATUS } from "@renderer/scripts/LauncherStatus";
+import { BLOCKED_ACTIONS } from "@renderer/scripts/LauncherStatus";
 import { VersionManager } from "@renderer/scripts/VersionManager";
+import { FileLocker } from "@renderer/scripts/FileLocker";
 
 const { ipcRenderer } = window.require("electron");
 
@@ -23,6 +23,7 @@ function resolveSetStateAction<T>(value: SetStateAction<T>, previous: T): T {
 }
 
 export type AppStatusType = 
+    | "other"
     | "idle"
     | "downloading"
     | "extracting"
@@ -31,22 +32,13 @@ export type AppStatusType =
 
 export type ActionType = "launch" | "download" | "extract" | "decrypt";
 
-export interface LauncherStatus {
-    type: AppStatusType;
-    taskName: string | null;
-    progress: number | null;
-    errorMsg: string | null;
-    showLoading: boolean;
-    canCancel: boolean;
-}
-
 export enum AnalyticsConsent {
     Unknown = "Unknown",
     Accepted = "Accepted",
     Declined = "Declined",
 }
 
-interface TAppStateContext {
+interface AppStore {
     allMods: ValidatedMod[];
 
     allValidMods: string[];
@@ -69,9 +61,6 @@ interface TAppStateContext {
     keepLauncherOpen: boolean;
     setKeepLauncherOpen: StateSetter<boolean>;
 
-    status: LauncherStatus;
-    setStatus: StateSetter<LauncherStatus>;
-
     error: string;
     setError: StateSetter<string>;
 
@@ -84,11 +73,51 @@ interface TAppStateContext {
     refreshAllMods: () => void;
 
     platform: ILauncherPlatform;
-
-    isBusy: () => boolean;
-    canDoAction: (action: ActionType) => boolean;
-
     versionManager: VersionManager;
+    fileLocker: FileLocker;
+}
+
+interface ProgressBarState {
+    currentStatus: AppStatusType;
+    message: string;
+    progress: number;
+    show: boolean;
+
+    setStatus(status: AppStatusType): void;
+    setMessage(message: SetStateAction<string>): void;
+    setProgress(progress: SetStateAction<number>): void;
+    setShow(show: SetStateAction<boolean>): void;
+    reset(): void;
+}
+
+type ProgressResetOptions = {
+    status: boolean;
+    message: boolean;
+    progress: boolean;
+    show: boolean;
+}
+
+export const DEFAULT_PROGRESS_RESET_OPTIONS: ProgressResetOptions = {
+    status: true,
+    message: false,
+    progress: false,
+    show: false
+}
+
+export const FULL_PROGRESS_RESET_OPTIONS: ProgressResetOptions = {
+    status: true,
+    message: true,
+    progress: true,
+    show: true
+}
+
+interface ProgressBarStore {
+    state: ProgressBarState;
+
+    withProgress: (callback: (state: ProgressBarState) => void, showProgressBar: boolean, resetOptions?: ProgressResetOptions) => void;
+    withProgressAsync: (callback: (state: ProgressBarState) => Promise<void>, showProgressBar: boolean, resetOptions?: ProgressResetOptions) => Promise<void>;
+    isBusy: () => boolean;
+    canDoAction: (actionType: ActionType) => boolean;
 }
 
 function getInitialAnalyticsConsent(): AnalyticsConsent {
@@ -103,7 +132,70 @@ function getAnalyticsInstanceForConsent(consent: AnalyticsConsent): Analytics | 
     return getAnalytics(firebaseApp);
 }
 
-export const UseAppState = create<TAppStateContext>((set, get) => {
+export const useProgressBar = create<ProgressBarStore>((set, get) => {
+    return {
+        state: {
+            currentStatus: "idle",
+            message: "",
+            progress: 0,
+            show: false,
+            setMessage: value => set(store => ({ state: { ...store.state, message: resolveSetStateAction(value, store.state.message) } })),
+            setProgress: value => set(state => ({ state: { ...state.state, progress: resolveSetStateAction(value, state.state.progress) } })),
+            setShow: value => set(state => ({ state: { ...state.state, show: resolveSetStateAction(value, state.state.show) } })),
+            setStatus: value => set(state => ({ state: { ...state.state, currentStatus: resolveSetStateAction(value, state.state.currentStatus) } })),
+            reset: () => set(state => ({ state: { ...state.state, currentStatus: "idle", message: "", progress: 0, show: false } })),
+        },
+        withProgress: (callback, showProgressBar, resetOptions = DEFAULT_PROGRESS_RESET_OPTIONS) => {
+            const state = get().state;
+
+            state.setShow(showProgressBar);
+            state.setProgress(0);
+            state.setMessage("");
+
+            try {
+                callback(state);
+            } finally {
+                if (resetOptions) {
+                    if (resetOptions.status) state.setStatus("idle");
+                    if (resetOptions.message) state.setMessage("");
+                    if (resetOptions.progress) state.setProgress(0);
+                    if (resetOptions.show) state.setShow(false);
+                }
+            }
+        },
+        withProgressAsync: async (callback, showProgressBar, resetOptions = DEFAULT_PROGRESS_RESET_OPTIONS) => {
+            const state = get().state;
+
+            state.setShow(showProgressBar);
+            state.setProgress(0);
+            state.setMessage("");
+
+            try {
+                await callback(state);
+            } finally {
+                if (resetOptions) {
+                    if (resetOptions.status) state.setStatus("idle");
+                    if (resetOptions.message) state.setMessage("");
+                    if (resetOptions.progress) state.setProgress(0);
+                    if (resetOptions.show) state.setShow(false);
+                }
+            }
+        },
+        isBusy: () => {
+            const state = get().state;
+            return state.currentStatus !== "idle";
+        },
+        canDoAction: actionType => {
+            const status = get().state.currentStatus;
+            if (BLOCKED_ACTIONS[status].includes(actionType)) {
+                return false;
+            }
+            return true;
+        }
+    };
+});
+
+export const useAppStore = create<AppStore>((set, get) => {
     const initialConsent = getInitialAnalyticsConsent();
 
     let platformInstance: ILauncherPlatform;
@@ -126,7 +218,6 @@ export const UseAppState = create<TAppStateContext>((set, get) => {
         UITheme: "System",
         keepLauncherOpen: true,
         developerMode: false,
-        status: DEFAULT_STATUS,
         error: "",
         analyticsConsent: initialConsent,
         analyticsInstance: getAnalyticsInstanceForConsent(initialConsent),
@@ -145,7 +236,6 @@ export const UseAppState = create<TAppStateContext>((set, get) => {
             }),
         setKeepLauncherOpen: value =>
             set(state => ({ keepLauncherOpen: resolveSetStateAction(value, state.keepLauncherOpen) })),
-        setStatus: value => set(state => ({ status: resolveSetStateAction(value, state.status) })),
         setError: value => set(state => ({ error: resolveSetStateAction(value, state.error) })),
 
         setAnalyticsConsent: value =>
@@ -194,19 +284,8 @@ export const UseAppState = create<TAppStateContext>((set, get) => {
         },
 
         platform: platformInstance,
-
-        isBusy: () => {
-            const status = get().status.type;
-            return status !== "idle";
-        },
-
-        canDoAction: (action: ActionType) => {
-            const status = get().status.type;
-            const blockedActions = BLOCKED_ACTIONS[status];
-            return !blockedActions.includes(action);
-        },
-
-        versionManager: new VersionManager()
+        versionManager: new VersionManager(),
+        fileLocker: FileLocker.create(),
     };
 });
 
@@ -220,15 +299,15 @@ async function hydrateStoreOnce(): Promise<void> {
     const profiles = GetProfiles();
     const config = GetLauncherConfig();
 
-    UseAppState.setState({
+    useAppStore.setState({
         allProfiles: profiles,
         keepLauncherOpen: config.keep_open ?? true,
         selectedProfile: config.selected_profile ?? 0,
         UITheme: config.ui_theme ?? "Light"
     });
 
-    ipcRenderer.send("WINDOW_UI_THEME", UseAppState.getState().UITheme);
-    UseAppState.getState().refreshAllMods();
+    ipcRenderer.send("WINDOW_UI_THEME", useAppStore.getState().UITheme);
+    useAppStore.getState().refreshAllMods();
 }
 
 export function InitializeAppState(): void {
