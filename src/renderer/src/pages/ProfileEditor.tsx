@@ -6,7 +6,7 @@ import { MainPanel } from "@renderer/components/MainPanel";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
 import { TextInput } from "@renderer/components/TextInput";
-import { useAppStore } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/states/AppStore";
 import { MinecraftToggle } from "@renderer/components/MinecraftToggle";
 import { MinecraftVersionData } from "@renderer/scripts/VersionDatabase";
 

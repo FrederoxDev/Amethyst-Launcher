@@ -1,17 +1,14 @@
-import child from "child_process";
-import { useEffect, useRef } from "react";
-
 import warningIcon from "@renderer/assets/images/icons/warning-icon.png";
 
 import { Dropdown } from "@renderer/components/Dropdown";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
-import { FULL_PROGRESS_RESET_OPTIONS, useAppStore, useProgressBar } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/states/AppStore";
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 import { useShallow } from "zustand/shallow";
+import ProgressBarRenderer from "@renderer/components/ProgressBarRenderer";
+import { ProgressBar } from "@renderer/states/ProgressBarStore";
 
 export function LauncherPage() {
-    const loadingProgressBarRef = useRef<HTMLDivElement | null>(null);
-
     const [
         allProfiles,
         selectedProfile,
@@ -30,31 +27,12 @@ export function LauncherPage() {
         state.versionManager
     ]));
 
-    const {
-        state: {
-            message,
-            progress,
-            show: showProgress,
-            reset: resetProgressBar
-        },
-        canDoAction,
-        withProgressAsync
-    } = useProgressBar(state => state);
-
-    // useEffect(() => {
-    //     const progressBar = loadingProgressBarRef.current;
-    //     if (!progressBar) return;
-
-    //     const widthPercent = ;
-    //     progressBar.style.width = `${widthPercent}%`;
-    // }, [status.progress]);
-
     const LaunchGame = async () => {
         const log = (msg: string) => {
             console.log(msg);
         };
 
-        if (!canDoAction("launch")) 
+        if (!ProgressBar.canDoAction("launch")) 
             return;
 
         if (allProfiles.length === 0) {
@@ -77,7 +55,7 @@ export function LauncherPage() {
             throw new Error(`Minecraft version ${semVersion.toString()} not found in version database!`);
         }
 
-        await withProgressAsync(async ({ setStatus, setMessage, setProgress, setShow }) => {
+        await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress, setShow }) => {
             setStatus("other");
             setProgress(0);
             setMessage(`Preparing to launch Minecraft ${semVersion.toString()}...`);
@@ -90,7 +68,7 @@ export function LauncherPage() {
                 log("Target version is not installed.");
                 await versionManager.downloadExtractAndInstallVersion(minecraftVersion.uuid);
             }
-        }, true, FULL_PROGRESS_RESET_OPTIONS);
+        }, true);
 
         // InstallProxy(minecraftVersion);
 
@@ -109,7 +87,7 @@ export function LauncherPage() {
         } catch (e) {
             console.error(e);
             setError((e as Error).message);
-            resetProgressBar();
+            ProgressBar.reset();
         }
     };
 
@@ -148,18 +126,7 @@ export function LauncherPage() {
                 </div>
 
                 {/* Loading bar */}
-                <div
-                    className={`launcher-progress ${showProgress ? "launcher-progress-visible" : "launcher-progress-hidden"}`}
-                >
-                    <div
-                        ref={loadingProgressBarRef}
-                        className={`launcher-progress-bar ${showProgress ? "launcher-progress-bar-visible" : "launcher-progress-bar-hidden"}`}
-                        style={{ width: `${Math.max(0, Math.min(100, (progress ?? 0) * 100))}%` }}
-                    ></div>
-                    <p className="minecraft-seven launcher-progress-text">
-                        {message}
-                    </p>
-                </div>
+                <ProgressBarRenderer />
 
                 {/* Profile Selector & Play Button */}
                 <div className="launcher-actions">

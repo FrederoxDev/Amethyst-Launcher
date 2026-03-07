@@ -1,4 +1,4 @@
-import { useAppStore } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/states/AppStore";
 import { PathUtils } from "./PathUtils";
 
 const { v4: uuidv4 } = require("uuid") as typeof import("uuid");

@@ -24,11 +24,12 @@ export function MainPanelSection({ children, className }: MainPanelSectionProps)
 
 interface PanelIndentProps extends MainPanelProps {
     className?: string;
+    style?: React.CSSProperties;
 }
 
-export function PanelIndent({ children, className }: PanelIndentProps) {
+export function PanelIndent({ children, className, style }: PanelIndentProps) {
     return (
-        <div className={`panel-indent scrollbar ${className}`}>
+        <div className={`panel-indent scrollbar ${className}`} style={style}>
             {children}
         </div>
     );

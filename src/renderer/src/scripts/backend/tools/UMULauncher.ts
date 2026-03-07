@@ -5,10 +5,11 @@ const fs = window.require("fs") as typeof import("fs");
 const child = window.require("child_process") as typeof import("child_process");
 const { shellEnv } = window.require("shell-env") as typeof import("shell-env");
 
-import { FULL_PROGRESS_RESET_OPTIONS, useAppStore, useProgressBar } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/states/AppStore";
 import { GithubTools } from "../github/GithubTools";
 import { Downloader } from "../Downloader";
 import { Extractor } from "../Extractor";
+import { ProgressBar } from "@renderer/states/ProgressBarStore";
 
 export class UMULauncher {
     private static Repository: string = "raonygamer/umu-launcher";
@@ -50,10 +51,8 @@ export class UMULauncher {
         if (!asset) {
             throw new Error("No compatible UMU Launcher release found.");
         }
-
-        const { withProgressAsync } = useProgressBar.getState();
         
-        await withProgressAsync(async ({ setStatus, setMessage, setProgress }) => {
+        await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
             setStatus("downloading");
             const downloadPath = path.join(toolsPath, "umu-launcher.zip");
             await Downloader.downloadFile(asset.downloadUrl, downloadPath, (downloaded, total) => {
@@ -70,7 +69,7 @@ export class UMULauncher {
                 setProgress(percent);
             });
             fs.rmSync(downloadPath);
-        }, true, FULL_PROGRESS_RESET_OPTIONS);
+        });
 
         await PathUtils.chmodRecursive(path.join(toolsPath, "umu-launcher"), 0o755);
         fs.writeFileSync(umuLauncherTagFile, tag);

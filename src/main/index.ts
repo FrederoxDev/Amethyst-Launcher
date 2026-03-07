@@ -159,6 +159,14 @@ ipcMain.handle("update-download", async () => {
     await autoUpdater.downloadUpdate();
 });
 
+ipcMain.handle("dialog:openFile", async (_, filters) => {
+    const result = await dialog.showOpenDialog({
+        properties: ["openFile"],
+        filters
+    });
+    return result.filePaths[0] ?? null;
+});
+
 autoUpdater.on("update-available", info => {
     mainWindow!.webContents.send("update-available", info);
 });

@@ -60,3 +60,9 @@
 .button_side.warn {
     background-color: #ad1d1d;
 }
+
+.button-disabled, .button-disabled * {
+    filter: grayscale(35%);
+    cursor: not-allowed;
+    pointer-events: none;
+}

@@ -28,4 +28,18 @@ export class PathUtils {
             }
         }));
     }
+
+    static isValidFileName(name: string): boolean {
+        if (!name || name.trim().length === 0) return false;
+
+        if (process.platform === "win32") {
+            // Windows: proíbe \ / : * ? " < > | e nomes reservados
+            const invalidChars = /[\\/:*?"<>|]/;
+            const reservedNames = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i;
+            return !invalidChars.test(name) && !reservedNames.test(name);
+        }
+
+        // Linux/Mac: só proíbe / e null byte
+        return !/[/\0]/.test(name);
+    }
 }

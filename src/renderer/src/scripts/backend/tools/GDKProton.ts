@@ -1,11 +1,12 @@
 const path = window.require("path") as typeof import("path");
 const fs = window.require("fs") as typeof import("fs");
 
-import { FULL_PROGRESS_RESET_OPTIONS, useAppStore, useProgressBar } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/states/AppStore";
 import { PathUtils } from "../../PathUtils";
 import { GithubTools } from "../github/GithubTools";
 import { Downloader } from "../Downloader";
 import { Extractor } from "../Extractor";
+import { ProgressBar } from "@renderer/states/ProgressBarStore";
 
 export class GDKProton {
     private static Repository: string = "raonygamer/gdk-proton";
@@ -47,10 +48,8 @@ export class GDKProton {
         if (!asset) {
             throw new Error("No compatible GDK Proton release found.");
         }
-
-        const { withProgressAsync } = useProgressBar.getState();
         
-        await withProgressAsync(async ({ setStatus, setMessage, setProgress }) => {
+        await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
             setStatus("downloading");
             const downloadPath = path.join(toolsPath, "gdk-proton.zip");
             await Downloader.downloadFile(asset.downloadUrl, downloadPath, (downloaded, total) => {
@@ -69,7 +68,7 @@ export class GDKProton {
             fs.rmSync(downloadPath);
             await PathUtils.chmodRecursive(path.join(toolsPath, "gdk-proton"), 0o755);
             fs.writeFileSync(gdkProtonTagFile, tag);
-        }, true, FULL_PROGRESS_RESET_OPTIONS);
+        });
         console.log(`GDK Proton updated to version ${tag}.`);
         return {
             version: tag,

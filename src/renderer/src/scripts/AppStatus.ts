@@ -1,4 +1,12 @@
-import { ActionType, AppStatusType } from "@renderer/contexts/AppState";
+export type AppStatusType = 
+    | "other"
+    | "idle"
+    | "downloading"
+    | "extracting"
+    | "decrypting"
+    | "launching";
+
+export type ActionType = "launch" | "download" | "extract" | "decrypt";
 
 export const BLOCKED_ACTIONS: Record<AppStatusType, ActionType[]> = {
     idle: [],

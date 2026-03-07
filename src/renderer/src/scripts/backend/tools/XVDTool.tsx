@@ -1,4 +1,4 @@
-import { FULL_PROGRESS_RESET_OPTIONS, useAppStore, useProgressBar, useToolStore } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/states/AppStore";
 import { GithubTools } from "../github/GithubTools";
 import { Downloader } from "../Downloader";
 import { Extractor } from "../Extractor";
@@ -6,9 +6,9 @@ import { PathUtils } from "../../PathUtils";
 import { PopupPanel } from "@renderer/components/PopupPanel";
 import { MainPanel, MainPanelSection, PanelIndent } from "@renderer/components/MainPanel";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
-import { MinecraftToggle } from "@renderer/components/MinecraftToggle";
 import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
-import { useEffect, useState } from "react";
+import { ProgressBar } from "@renderer/states/ProgressBarStore";
+import { Popup } from "@renderer/states/PopupStore";
 
 const path = window.require("path") as typeof import("path");
 const fs = window.require("fs") as typeof import("fs");
@@ -22,78 +22,61 @@ interface OutputModel {
     current: number | null
 };
 
+function XVDToolUpdatePopup({ 
+    accept, 
+    decline,
+    currentVersion,
+    upstreamVersion
+}: { 
+    accept: () => void, 
+    decline: () => void,
+    currentVersion: string,
+    upstreamVersion: string
+}) {
+    return (
+        <PopupPanel>
+            <div className="app-consent-panel" onClick={e => e.stopPropagation()}>
+                <MainPanel>
+                    <MainPanelSection>
+                        <p>New XVDTool update available</p>
+                        <PanelIndent className="app-consent-indent">
+                            <p>XVDTool is outdated, do you want to update it?</p>
+                            <p>Current version: {currentVersion}</p>
+                            <p>Latest version: {upstreamVersion}</p>
+                        </PanelIndent>
+                        <div className="app-consent-actions">
+                            <MinecraftButton
+                                text="Update!"
+                                onClick={() => accept()}
+                            />
+                            <MinecraftButton
+                                text="Don't update!"
+                                style={MinecraftButtonStyle.Warn}
+                                onClick={() => decline()}
+                            />
+                        </div>
+                    </MainPanelSection>
+                </MainPanel>
+            </div>
+        </PopupPanel>
+    );
+}
+
 export class XVDTool {
     static readonly Repository: string = "raonygamer/xvdtool";
 
-    static getShouldUpdatePopup() {
-        const [upstreamVersion, setUpstreamVersion] = useState<string>("Fetching...");
-
-        const xvdToolState = useToolStore.getState().xvdTool;
-        if (!xvdToolState.showUpdatePopup) 
-            return null;
-
-        useEffect(() => {
-            const checkVersion = async () => {
-                try {
-                    const version = await xvdToolState.getUpstreamVersion();
-                    setUpstreamVersion(version ?? "Unknown");
-                }
-                catch (err) {
-                    console.error("Failed to fetch XVDTool latest version:", err);
-                    setUpstreamVersion("Unknown");
-                }
-            }
-            checkVersion();
-        }, [xvdToolState.showUpdatePopup]);
-
-        return (
-            <PopupPanel>
-                <div className="app-consent-panel" onClick={e => e.stopPropagation()}>
-                    <MainPanel>
-                        <MainPanelSection>
-                            <p>New XVDTool update available</p>
-                            <PanelIndent className="app-consent-indent">
-                                <p>XVDTool is outdated, do you want to update it?</p>
-                                <p>Current version: {xvdToolState.getInstalledVersion()}</p>
-                                <p>Latest version: {upstreamVersion}</p>
-                            </PanelIndent>
-                            <div className="app-consent-actions">
-                                <MinecraftButton
-                                    text="Update!"
-                                    onClick={() => xvdToolState.setUpdateAccepted(true)}
-                                />
-                                <MinecraftButton
-                                    text="Don't update!"
-                                    style={MinecraftButtonStyle.Warn}
-                                    onClick={() => xvdToolState.setUpdateAccepted(false)}
-                                />
-                            </div>
-                        </MainPanelSection>
-                    </MainPanel>
-                </div>
-            </PopupPanel>
-        );
-    }
-
-    private static async requestUpdate(): Promise<boolean> {
-        return new Promise((resolve) => {
-            useToolStore.getState().xvdTool.setShowUpdatePopup(true);
-            const unsubscribe = useToolStore.subscribe(state => {
-                if (state.xvdTool.updateAccepted) {
-                    unsubscribe();
-                    state.xvdTool.setShowUpdatePopup(false);
-                    resolve(true);
-                }
-                else if (state.xvdTool.updateAccepted === false) {
-                    unsubscribe();
-                    state.xvdTool.setShowUpdatePopup(false);
-                    resolve(false);
-                }
-            });
+    private static async askUpdate(currentVersion: string, upstreamVersion: string): Promise<boolean> {
+        return Popup.useAsync<boolean>(({ submit }) => {
+            return <XVDToolUpdatePopup 
+                accept={() => submit(true)} 
+                decline={() => submit(false)} 
+                currentVersion={currentVersion} 
+                upstreamVersion={upstreamVersion} 
+            />;
         });
     }
 
-    static async check(): Promise<{ version: string, path: string, executable: string }> {
+    static async check(shouldAskUpdate: boolean = false): Promise<{ version: string, path: string, executable: string }> {
         if (!XVDTool.isSupported()) {
             throw new Error("XVDTool is not supported on this platform.");
         }
@@ -123,13 +106,27 @@ export class XVDTool {
         }
 
         console.log(`Latest XVDTool version: ${latestVersion}, Installed version: ${currentVersion}`);
-        if (toolIsInstalled && await XVDTool.requestUpdate() === false) {
-            console.log(`XVDTool update declined by user. Current version: ${currentVersion}, Latest version: ${latestVersion}`);
-            return {
-                version: currentVersion,
-                path: path.join(toolsPath, "xvdtool"),
-                executable: process.platform === "win32" ? path.join(toolsPath, "xvdtool", "XVDTool.exe") : path.join(toolsPath, "xvdtool", "XVDTool")
-            };
+        if (toolIsInstalled) {
+            if (!shouldAskUpdate) {
+                console.log(`XVDTool update available but user will not be prompted due to shouldAskUpdate=false. Current version: ${currentVersion}, Latest version: ${latestVersion}`);
+                return {
+                    version: currentVersion,
+                    path: path.join(toolsPath, "xvdtool"),
+                    executable: process.platform === "win32" ? path.join(toolsPath, "xvdtool", "XVDTool.exe") : path.join(toolsPath, "xvdtool", "XVDTool")
+                };
+            }
+            else {
+                console.log(`XVDTool update available, prompting user for update. Current version: ${currentVersion}, Latest version: ${latestVersion}`);
+                const userWantsUpdate = await XVDTool.askUpdate(currentVersion, latestVersion);
+                if (!userWantsUpdate) {
+                    console.log(`XVDTool update declined by user. Current version: ${currentVersion}, Latest version: ${latestVersion}`);
+                    return {
+                        version: currentVersion,
+                        path: path.join(toolsPath, "xvdtool"),
+                        executable: process.platform === "win32" ? path.join(toolsPath, "xvdtool", "XVDTool.exe") : path.join(toolsPath, "xvdtool", "XVDTool")
+                    };
+                }
+            }
         }
 
         console.log(`Updating XVDTool from version ${currentVersion} to ${latestVersion}...`);
@@ -143,8 +140,7 @@ export class XVDTool {
             throw new Error("No compatible XVDTool release found.");
         }
 
-        const { withProgressAsync } = useProgressBar.getState();
-        await withProgressAsync(async ({ setStatus, setMessage, setProgress }) => {
+        await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
             setStatus("downloading");
             await Downloader.downloadFile(asset.downloadUrl, path.join(toolsPath, `xvdtool-${process.platform}-${process.arch}.zip`), (downloaded, total) => {
                 const percent = total > 0 ? downloaded / total : 0;
@@ -159,7 +155,7 @@ export class XVDTool {
                 setMessage(`Extracting XVDTool ${latestVersion}... (${(percent * 100).toFixed(2)}%)`);
                 setProgress(percent);
             });
-        }, true, FULL_PROGRESS_RESET_OPTIONS);
+        });
         
         fs.rmSync(path.join(toolsPath, `xvdtool-${process.platform}-${process.arch}.zip`));
         if (process.platform === "linux") {
@@ -179,13 +175,12 @@ export class XVDTool {
         return (window.process.platform === "win32" || window.process.platform === "linux") && window.process.arch === "x64";
     }
 
-    static async decrypt(inputFile: string, cikUuid: string, cikData: string): Promise<string | null> {
+    static async decrypt(inputFile: string, cikUuid: string, cikData: string, shouldAskUpdate: boolean = false): Promise<string | null> {
         const platform = useAppStore.getState().platform;
-        const { withProgressAsync } = useProgressBar.getState();
-        const { executable: xvdtoolExecutable } = await XVDTool.check();
+        const { executable: xvdtoolExecutable } = await XVDTool.check(shouldAskUpdate);
         const command = `"${xvdtoolExecutable}" -nd -eu -cik "${cikUuid}" -cikdata "${cikData}" "${inputFile}"`;
         return new Promise<string | null>(async (resolve, reject) => {
-            await withProgressAsync(async ({ setStatus, setMessage, setProgress }) => {
+            await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
                 setStatus("decrypting");
                 await platform.runCommand(command, (data) => {
                     for (const line of data.split("\n")) {
@@ -213,17 +208,16 @@ export class XVDTool {
                     reject(err);
                 });
                 resolve(null);
-            }, true, FULL_PROGRESS_RESET_OPTIONS);
+            });
         });
     }
 
-    static async extract(inputFile: string, outputFolder: string): Promise<string | null> {
+    static async extract(inputFile: string, outputFolder: string, shouldAskUpdate: boolean = false): Promise<string | null> {
         const platform = useAppStore.getState().platform;
-        const { withProgressAsync } = useProgressBar.getState();
-        const { executable: xvdtoolExecutable } = await XVDTool.check();
+        const { executable: xvdtoolExecutable } = await XVDTool.check(shouldAskUpdate);
         const command = `"${xvdtoolExecutable}" -nd -xf "${outputFolder}" "${inputFile}"`;
         return new Promise<string | null>(async (resolve, reject) => {
-            await withProgressAsync(async ({ setStatus, setMessage, setProgress }) => {
+            await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
                 setStatus("extracting");
                 await platform.runCommand(command, (data) => {
                     for (const line of data.split("\n")) {
@@ -251,7 +245,7 @@ export class XVDTool {
                     reject(err);
                 });
                 resolve(null);
-            }, true, FULL_PROGRESS_RESET_OPTIONS);
+            });
         });
     }
 }

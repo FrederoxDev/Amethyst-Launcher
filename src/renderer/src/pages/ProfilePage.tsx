@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { MainPanel } from "@renderer/components/MainPanel";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 
-import { useAppStore } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/states/AppStore";
 
 import { Profile } from "@renderer/scripts/Profiles";
 

@@ -14,7 +14,7 @@ import { MinecraftRadialButtonPanel } from "@renderer/components/MinecraftRadial
 import { PopupPanel } from "@renderer/components/PopupPanel";
 import { TextInput } from "@renderer/components/TextInput";
 
-import { useAppStore } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/states/AppStore";
 
 import { db } from "@renderer/firebase/Firebase";
 

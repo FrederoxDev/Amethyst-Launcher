@@ -67,44 +67,6 @@
     font-size: 13px;
 }
 
-.launcher-progress {
-    background-color: #313233;
-    transition: all 300ms ease-in-out;
-}
-
-.launcher-progress-visible {
-    height: 25px;
-}
-
-.launcher-progress-hidden {
-    height: 0;
-}
-
-.launcher-progress-bar {
-    background-color: #3C8527;
-    position: absolute;
-    
-}
-
-.launcher-progress-bar-visible {
-    min-height: 25px;
-}
-
-.launcher-progress-bar-hidden {
-    min-height: 0;
-}
-
-.launcher-progress-text {
-    position: absolute;
-    z-index: 30;
-    color: white;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100%;
-    padding: 0 8px;
-}
-
 .launcher-actions {
     display: flex;
     flex-direction: row;

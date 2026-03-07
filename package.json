@@ -28,6 +28,7 @@
     "electron-updater": "^6.3.9",
     "firebase": "^12.10.0",
     "jszip": "^3.10.1",
+    "lucide-react": "^0.577.0",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.13.1",
     "regedit-rs": "^1.0.4",
