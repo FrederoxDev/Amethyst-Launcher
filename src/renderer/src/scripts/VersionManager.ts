@@ -1,12 +1,13 @@
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 import { MinecraftVersionType, VersionDatabase } from "@renderer/scripts/VersionDatabase";
-import { FULL_PROGRESS_RESET_OPTIONS, useAppStore, useProgressBar } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/states/AppStore";
 import { PathUtils } from "./PathUtils";
 import { XVDTool } from "./backend/tools/XVDTool";
 import { CIK_DATA_PREVIEW_GDK, CIK_DATA_RELEASE_GDK, CIK_UUID_PREVIEW_GDK, CIK_UUID_RELEASE_GDK } from "./backend/Decryption";
 import { Downloader } from "./backend/Downloader";
 import { IJSONModel } from "./contracts/IJSONModel";
 import { FileLocker } from "./FileLocker";
+import { ProgressBar } from "@renderer/states/ProgressBarStore";
 
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
@@ -30,14 +31,16 @@ export class InstalledVersionModel implements IJSONModel {
     name: string;
     path: string;
     type: MinecraftVersionType;
+    version: SemVersion;
     imported: boolean;
     installedFrom: string;
 
-    constructor(uuid: string, name: string, path: string, type: MinecraftVersionType, imported: boolean, installedFrom: string) {
+    constructor(uuid: string, name: string, path: string, type: MinecraftVersionType, version: SemVersion, imported: boolean, installedFrom: string) {
         this.uuid = uuid;
         this.name = name;
         this.path = path;
         this.type = type;
+        this.version = version;
         this.imported = imported;
         this.installedFrom = installedFrom;
     }
@@ -47,7 +50,7 @@ export class InstalledVersionModel implements IJSONModel {
     }
 
     static fromObject(obj: any): InstalledVersionModel {
-        if (!("uuid" in obj) || !("name" in obj) || !("path" in obj) || !("type" in obj) || !("imported" in obj) || !("installed_from" in obj)) {
+        if (!("uuid" in obj) || !("name" in obj) || !("path" in obj) || !("type" in obj) || !("version" in obj) || !("imported" in obj) || !("installed_from" in obj)) {
             throw new Error("Invalid installed version object");
         }
 
@@ -56,6 +59,7 @@ export class InstalledVersionModel implements IJSONModel {
             obj.name,
             obj.path,
             obj.type,
+            SemVersion.fromString(obj.version),
             obj.imported,
             obj.installed_from
         );
@@ -67,6 +71,7 @@ export class InstalledVersionModel implements IJSONModel {
             name: obj.name,
             path: obj.path,
             type: obj.type,
+            version: obj.version.toString(),
             imported: obj.imported,
             installed_from: obj.installedFrom
         };
@@ -154,11 +159,41 @@ export class InstalledVersionListModel implements IJSONModel {
     }
 }
 
+type VersionManagerEventCallbacks = {
+    version_installed: (version: InstalledVersionModel) => void;
+    version_uninstalled: (uuid: string) => void;
+    // adiciona mais eventos aqui com seus próprios tipos
+}
+
+type VersionManagerEvent = keyof VersionManagerEventCallbacks;
+
 export class VersionManager {
     public readonly database: VersionDatabase = new VersionDatabase();
     private installedVersions: InstalledVersionListModel = new InstalledVersionListModel([]);
+    private subscribers: { 
+        [E in VersionManagerEvent]?: VersionManagerEventCallbacks[E][] 
+    } = {};
 
     constructor() {}
+
+    subscribe<E extends VersionManagerEvent>(event: E, callback: VersionManagerEventCallbacks[E]): () => void {
+        if (!this.subscribers[event]) 
+            this.subscribers[event] = [];
+        this.subscribers[event]!.push(callback);
+        return () => {
+            this.unsubscribe(event, callback);
+        };
+    }
+
+    unsubscribe<E extends VersionManagerEvent>(event: E, callback: VersionManagerEventCallbacks[E]) {
+        if (!this.subscribers[event])
+            return;
+        this.subscribers[event] = this.subscribers[event]!.filter(cb => cb !== callback) as any;
+    }
+
+    private notify<E extends VersionManagerEvent>(event: E, ...args: Parameters<VersionManagerEventCallbacks[E]>) {
+        this.subscribers[event]?.forEach(cb => (cb as (...a: any[]) => void)(...args));
+    }
 
     isLocked(versionFileName: string): boolean {
         const paths = getPaths();
@@ -190,7 +225,6 @@ export class VersionManager {
     }
 
     async downloadVersion(uuid: string): Promise<boolean> {
-        const { withProgressAsync } = useProgressBar.getState();
         const versionsPath = useAppStore.getState().platform.getPaths().versionsPath;
         PathUtils.ValidatePath(versionsPath);
         
@@ -281,7 +315,7 @@ export class VersionManager {
         console.log(`Selected mirror for downloading version ${version.version.toString()}: ${mirror}`);
         console.log(`Starting download at ${performance.now()} ms`);
         const nowTime = new Date();
-        await withProgressAsync(async ({ setStatus, setMessage, setProgress }) => {
+        await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
             // Set the status to downloading and show the progress bar, we will update the progress in the Downloader.downloadFile callback
             setStatus("downloading");
             await Downloader.downloadFile(mirror, versionFilePath, (transferred, total) => {
@@ -293,7 +327,7 @@ export class VersionManager {
                     throw new Error("Failed to download Minecraft!");
                 }
             });
-        }, true, FULL_PROGRESS_RESET_OPTIONS);
+        });
 
         // Unlock the version after the download is complete
         console.log(`Finished download at ${performance.now()} ms, total time: ${((new Date().getTime() - nowTime.getTime()) / 1000).toFixed(2)} seconds`);
@@ -324,9 +358,9 @@ export class VersionManager {
         versionFilePath: string, 
         targetOutputPath: string, 
         version: SemVersion, 
-        type: MinecraftVersionType
+        type: MinecraftVersionType,
+        shouldAskUpdate: boolean = true
     ): Promise<boolean> {
-        const { withProgressAsync } = useProgressBar.getState();
         const versionFileName = path.basename(versionFilePath);
 
         // Check if the version is already locked, if so something's wrong
@@ -340,7 +374,10 @@ export class VersionManager {
         // Perform decryption and extraction with progress updates
         const cikUuid = type === "release" ? CIK_UUID_PREVIEW_GDK : CIK_UUID_RELEASE_GDK;
         const cikData = type === "preview" ? CIK_DATA_PREVIEW_GDK : CIK_DATA_RELEASE_GDK;
-        await withProgressAsync(async ({ setStatus, setMessage, setProgress }) => {
+        await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
+            // Check XVDTool version and ask for update if needed before starting decryption and extraction
+            await XVDTool.check(shouldAskUpdate);
+
             // Show status for decryption
             setStatus("decrypting");
             setMessage(`Decrypting MSIXVC of Minecraft ${version.toString()}...`);
@@ -348,7 +385,7 @@ export class VersionManager {
 
             // XVDTool.decrypt will call the tool to perform decryption, it will return an error message if decryption fails, otherwise null
             // It will also update the progress bar internally by reading the tool's output, so we don't need to worry about that here
-            const decryptErr = await XVDTool.decrypt(versionFilePath, cikUuid, cikData);
+            const decryptErr = await XVDTool.decrypt(versionFilePath, cikUuid, cikData, false);
             if (decryptErr) {
                 throw new Error(`Failed to decrypt MSIXVC! (${decryptErr})`);
             }
@@ -360,13 +397,13 @@ export class VersionManager {
 
             // XVDTool.extract will call the tool to perform extraction, it will return an error message if extraction fails, otherwise null
             // It will also update the progress bar internally by reading the tool's output, so we don't need to worry about that here
-            const extractErr = await XVDTool.extract(versionFilePath, targetOutputPath);
+            const extractErr = await XVDTool.extract(versionFilePath, targetOutputPath, false);
             if (extractErr) {
                 throw new Error(`Failed to extract Minecraft! (${extractErr})`);
             }
 
             // If we reached this point, decryption and extraction were successful
-        }, true, FULL_PROGRESS_RESET_OPTIONS);
+        });
 
         // Unlock the version after decryption and extraction are complete
         this.unlockVersion(versionFileName);
@@ -424,6 +461,7 @@ export class VersionManager {
                 dbVersion.type === "release" ? `Minecraft ${dbVersion.version.toString()}` : `Minecraft ${dbVersion.version.toString()} (Preview)`,
                 version.versionOutputPath,
                 dbVersion.type,
+                dbVersion.version,
                 false,
                 version.versionFile
             );
@@ -431,6 +469,7 @@ export class VersionManager {
             // Add the new installed version to the list and save it to file
             this.installedVersions.versions.push(newInstalledVersion);
             this.installedVersions.saveToFile(InstalledVersionListModel.getDefaultFilePath());
+            this.notify("version_installed", newInstalledVersion);
             return true;
         }
         // For imported versions, we will copy the version file to the versions folder and then decrypt and/or extract it from there, 
@@ -467,6 +506,7 @@ export class VersionManager {
                 version.name,
                 extractedVersionPath,
                 version.type,
+                version.version,
                 true,
                 version.versionFile
             );
@@ -474,6 +514,7 @@ export class VersionManager {
             // Add the new installed version to the list and save it to file
             this.installedVersions.versions.push(newInstalledVersion);
             this.installedVersions.saveToFile(InstalledVersionListModel.getDefaultFilePath());
+            this.notify("version_installed", newInstalledVersion);
             return true;
         }
 
@@ -481,6 +522,28 @@ export class VersionManager {
         // we will throw an error, this should never happen if the function is used correctly, 
         // but it's good to have this check just in case
         throw new Error("Invalid version installation data! For imported versions, 'versionFile' must be a valid path to an .msixvc file. For non-imported versions, 'versionOutputPath' must be a valid path to the extracted version folder.");
+    }
+
+    async uninstallVersion(uuid: string): Promise<boolean> {
+        // Get the installed version by UUID, if it doesn't exist we can't uninstall it
+        const installedVersion = this.getInstalledVersionByUUID(uuid);
+        if (!installedVersion) {
+            throw new Error(`Version with UUID: '${uuid}' is not installed!`);
+        }
+
+        // Remove the version folder, we will also log a warning if the folder doesn't exist, but we will still proceed to remove the version from the installed versions list, since the end result is the same (the version is uninstalled)
+        if (fs.existsSync(installedVersion.path) && fs.statSync(installedVersion.path).isDirectory()) {
+            fs.rmSync(installedVersion.path, { recursive: true, force: true });
+        } else {
+            console.warn(`Trying to uninstall version with UUID: '${uuid}' but the version folder doesn't exist at path: ${installedVersion.path}`);
+        }
+
+        // Remove the version from the installed versions list and save it to file
+        const updatedVersions = this.installedVersions.versions.filter(v => v.uuid !== uuid);
+        this.installedVersions.versions = updatedVersions;
+        this.installedVersions.saveToFile(InstalledVersionListModel.getDefaultFilePath());
+        this.notify("version_uninstalled", uuid);
+        return true;
     }
 
     async downloadExtractAndInstallVersion(uuid: string): Promise<boolean> {

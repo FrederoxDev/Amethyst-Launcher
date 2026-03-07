@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import { useEffect, useState } from "react";
 
-import { useAppStore } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/states/AppStore";
 
 import { Extractor } from "@renderer/scripts/backend/Extractor";
 import { CopyRecursive } from "@renderer/scripts/Files";

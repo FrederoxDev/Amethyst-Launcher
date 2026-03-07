@@ -7,7 +7,7 @@ import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { PopupPanel } from "@renderer/components/PopupPanel";
 
 import { GetAllMods, ValidatedMod } from "@renderer/scripts/Mods";
-import { useAppStore } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/states/AppStore";
 
 function getPaths() {
     return useAppStore.getState().platform.getPaths();

@@ -146,6 +146,13 @@ electron.ipcMain.handle("set-auto-install-on-app-quit", (_, bool) => {
 electron.ipcMain.handle("update-download", async () => {
   await electronUpdater.autoUpdater.downloadUpdate();
 });
+electron.ipcMain.handle("dialog:openFile", async (_, filters) => {
+  const result = await electron.dialog.showOpenDialog({
+    properties: ["openFile"],
+    filters
+  });
+  return result.filePaths[0] ?? null;
+});
 electronUpdater.autoUpdater.on("update-available", (info) => {
   mainWindow.webContents.send("update-available", info);
 });

@@ -1,4 +1,4 @@
-import { useAppStore } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/states/AppStore";
 import { InstalledVersion } from "@renderer/scripts/VersionDatabase";
 import { PathUtils } from "./PathUtils";
 

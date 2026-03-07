@@ -1,7 +1,7 @@
 const fs = window.require("fs");
 const path = window.require("path");
 
-import { useAppStore } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/states/AppStore";
 import {
     ajv,
     FromValidatedV1_1_0ToConfig,

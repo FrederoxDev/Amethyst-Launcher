@@ -2,11 +2,16 @@ export type TextInputProps = {
     label: string;
     text: string;
     setText: React.Dispatch<React.SetStateAction<string>>;
+    style: React.CSSProperties;
 };
 
-export function TextInput({ label, text, setText }: TextInputProps) {
+export function TextInput({ label, text, setText, style }: TextInputProps) {
     return (
-        <div>
+        <div style={{
+                display: "flex",
+                flexDirection: "column",
+                ...style
+            }}>
             <p className="minecraft-seven text-input-label">{label}</p>
             <div className="text-input-box">
                 <input

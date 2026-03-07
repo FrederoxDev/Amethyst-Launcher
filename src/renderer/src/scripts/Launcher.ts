@@ -1,4 +1,4 @@
-import { useAppStore } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/states/AppStore";
 
 const path = window.require("path");
 const fs = window.require("fs");
@@ -13,6 +13,7 @@ export interface LauncherConfig {
     keep_open: boolean;
     selected_profile: number;
     ui_theme: string;
+    developer_mode: boolean;
 }
 
 export function GetLauncherConfig(): LauncherConfig {
@@ -32,6 +33,7 @@ export function GetLauncherConfig(): LauncherConfig {
         mods: [],
         runtime: "Vanilla",
         selected_profile: 0,
+        developer_mode: false,
         ...data,
     };
 }

@@ -3,12 +3,14 @@ export class SemVersion {
     minor: number;
     patch: number;
     build: number;
+    originalString?: string;
 
-    constructor(major: number, minor: number, patch: number, build: number) {
+    constructor(major: number, minor: number, patch: number, build: number, originalString?: string) {
         this.major = major;
         this.minor = minor;
         this.patch = patch;
         this.build = build;
+        this.originalString = originalString;
     }
 
     static fromString(versionString: string): SemVersion {
@@ -17,14 +19,14 @@ export class SemVersion {
 
         if (match) {
             const [, major, minor, patch, build] = match.map(Number);
-            return new SemVersion(major, minor, patch, build);
+            return new SemVersion(major, minor, patch, build, versionString);
         }
 
         const newVersionRegex = /^(\d+)\.(\d+)\.(\d+)/;
         const newMatch = versionString.match(newVersionRegex);
         if (newMatch) {
             const [, major, minor, patch] = newMatch.map(Number);
-            return new SemVersion(major, minor, patch, 0);
+            return new SemVersion(major, minor, patch, 0, versionString);
         }
 
         throw new Error(`Invalid version string format ${versionString}`);
@@ -40,11 +42,11 @@ export class SemVersion {
     }
 
     static toString(version: SemVersion) {
-        return `${version.major}.${version.minor}.${version.patch}.${version.build}`;
+        return version.originalString ? version.originalString : `${version.major}.${version.minor}.${version.patch}.${version.build}`;
     }
 
     toString(): string {
-        return `${this.major}.${this.minor}.${this.patch}.${this.build}`;
+        return SemVersion.toString(this);
     }
 
     matches(other: SemVersion): boolean {

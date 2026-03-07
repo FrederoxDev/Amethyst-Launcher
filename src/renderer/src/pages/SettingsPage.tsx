@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
@@ -6,25 +6,28 @@ import { MinecraftRadialButtonPanel } from "@renderer/components/MinecraftRadial
 import { MinecraftToggle } from "@renderer/components/MinecraftToggle";
 import { ReadOnlyTextBox } from "@renderer/components/ReadOnlyTextBox";
 
-import { AnalyticsConsent, useAppStore } from "@renderer/contexts/AppState";
+import { AnalyticsConsent, useAppStore } from "@renderer/states/AppStore";
+import { AskAnalyticsConsent } from "@renderer/components/AnalyticsConsentPanel";
 
 const fs = window.require("fs") as typeof import("fs");
 
-export function SettingsPage() {
+export function GeneralSettingsTab() {
     const keepLauncherOpen = useAppStore(state => state.keepLauncherOpen);
     const setKeepLauncherOpen = useAppStore(state => state.setKeepLauncherOpen);
     const developerMode = useAppStore(state => state.developerMode);
     const setDeveloperMode = useAppStore(state => state.setDeveloperMode);
-    const UITheme = useAppStore(state => state.UITheme);
-    const setUITheme = useAppStore(state => state.setUITheme);
     const allProfiles = useAppStore(state => state.allProfiles);
     const selectedProfile = useAppStore(state => state.selectedProfile);
+    const UITheme = useAppStore(state => state.UITheme);
+    const setUITheme = useAppStore(state => state.setUITheme);
     const analyticsConsent = useAppStore(state => state.analyticsConsent);
     const setAnalyticsConsent = useAppStore(state => state.setAnalyticsConsent);
     const platform = useAppStore(state => state.platform);
-    const [launcherCfg, setLauncherCfg] = useState<string>("");
-
     const paths = platform.getPaths();
+    const [ 
+        launcherCfg,
+        setLauncherCfg
+    ] = useState<string>("");
 
     const updateCfgText = () => {
         if (!fs.existsSync(paths.launcherConfigPath)) {
@@ -40,7 +43,7 @@ export function SettingsPage() {
         const timer = setTimeout(updateCfgText, 0);
         return () => clearTimeout(timer);
     }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode, UITheme]);
-
+    
     return (
         <div className="settings-page settings-scroll-hidden">
             <div className="settings-section">
@@ -55,13 +58,17 @@ export function SettingsPage() {
                         <MinecraftToggle
                             isChecked={analyticsConsent === AnalyticsConsent.Accepted}
                             setIsChecked={isChecked => {
-                                // Re-give them the option to choose again
-                                console.log("Setting analytics consent to unknown");
                                 if (!isChecked) {
                                     setAnalyticsConsent(AnalyticsConsent.Declined);
                                     return;
                                 }
-                                setAnalyticsConsent(AnalyticsConsent.Unknown);
+
+                                console.log("Asking user for analytics consent...");
+                                AskAnalyticsConsent().then(consent => {
+                                    if (!consent || consent === AnalyticsConsent.Unknown)
+                                        return;
+                                    setAnalyticsConsent(consent);
+                                });
                             }}
                         />
                     </div>
@@ -120,6 +127,38 @@ export function SettingsPage() {
             <div className="settings-section">
                 <ReadOnlyTextBox text={launcherCfg} label="Launcher Config" />
             </div>
+        </div>
+    );
+}
+
+export function SettingsPage() {
+    const [tab, setTab] = useState<string>("general_tab");
+    let node: React.ReactNode | null = null;
+    switch (tab) {
+        case "general_tab":
+            node = <GeneralSettingsTab />;
+            break;
+        default:
+            node = <GeneralSettingsTab />;
+            break;
+    }
+
+    return (
+        <div style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
+        }}>
+            <MinecraftRadialButtonPanel
+                elements={[
+                    { text: "General", value: "general_tab" }
+                ]}
+                default_selected_value={"general_tab"}
+                onChange={value => {
+                    setTab(value);
+                }}
+            />
+            {node}
         </div>
     );
 }

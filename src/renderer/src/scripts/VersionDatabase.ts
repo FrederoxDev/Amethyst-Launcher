@@ -1,4 +1,4 @@
-import { useAppStore } from "@renderer/contexts/AppState";
+import { useAppStore } from "@renderer/states/AppStore";
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 import { IJSONModel } from "@renderer/scripts/contracts/IJSONModel";
 

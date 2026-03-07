@@ -17,7 +17,21 @@
 
 .version-page-title {
     color: white;
-    font-size: 14px;
+    font-size: 16px;
+}
+
+.version-page-header {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.version-header-actions {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
 }
 
 .version-page-list {
@@ -55,7 +69,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center;
+    align-items: right;
     min-width: 0;
     padding: 8px;
 }
@@ -63,6 +77,13 @@
 .version-card-name {
     color: white;
     font-size: 16px;
+}
+
+.version-card-path {
+    color: #ababab;
+    font-size: 12px;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .version-card-actions {

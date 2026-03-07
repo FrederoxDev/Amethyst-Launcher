@@ -1,4 +1,4 @@
-import { AnalyticsConsent, useAppStore, useToolStore } from "@renderer/contexts/AppState";
+import { AnalyticsConsent, useAppStore } from "@renderer/states/AppStore";
 import { Link, Route, Routes, useLocation } from "react-router-dom";
 
 import lushCaveImage from "@renderer/assets/images/art/lush_cave.png";
@@ -10,10 +10,6 @@ import settingsIcon from "@renderer/assets/images/icons/settings-icon.png";
 import shulkerIcon from "@renderer/assets/images/icons/shulker-icon.png";
 
 import { DropWindow } from "@renderer/components/DropWindow";
-import { MainPanel, MainPanelSection, PanelIndent } from "@renderer/components/MainPanel";
-import { MinecraftButton } from "@renderer/components/MinecraftButton";
-import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
-import { PopupPanel } from "@renderer/components/PopupPanel";
 import Title from "@renderer/components/Title";
 
 import { LauncherPage } from "@renderer/pages/LauncherPage";
@@ -24,75 +20,24 @@ import { ProfilePage } from "@renderer/pages/ProfilePage";
 import { SettingsPage } from "@renderer/pages/SettingsPage";
 import { UpdatePage } from "@renderer/pages/UpdatePage";
 import { VersionPage } from "@renderer/pages/VersionPage";
-import { XVDTool } from "./scripts/backend/tools/XVDTool";
-
-const { shell } = window.require("electron");
-
-function GetAnalyticsConsent() {
-    const analyticsConsent = useAppStore(state => state.analyticsConsent);
-    const setAnalyticsConsent = useAppStore(state => state.setAnalyticsConsent);
-
-    if (analyticsConsent !== AnalyticsConsent.Unknown) return <></>;
-
-    return (
-        <PopupPanel>
-            <div className="app-consent-panel" onClick={e => e.stopPropagation()}>
-                <MainPanel>
-                    <MainPanelSection>
-                        <p>Analytics Consent</p>
-                        <PanelIndent className="app-consent-indent">
-                            <p>
-                                Amethyst Launcher uses Firebase Analytics to collect anonymized usage data to help
-                                improve the launcher. The data collected may include:
-                            </p>
-                            <ul>
-                                <p> - App interactions (e.g., mod downloads, button clicks)</p>
-                                <p> - Device information (device type, OS version)</p>
-                                <p> - Session and engagement data</p>
-                            </ul>
-                            <p>No personal information (like names or emails) is collected.</p>
-                            <p>
-                                By clicking “I Agree”, you consent to this data collection. You can later revoke consent
-                                in the launcher settings.
-                            </p>
-                            <p>
-                                For more details, see{" "}
-                                <a
-                                    href="https://firebase.google.com/support/privacy"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="app-consent-link"
-                                    onClick={e => {
-                                        e.preventDefault();
-                                        shell.openExternal("https://firebase.google.com/support/privacy");
-                                    }}
-                                >
-                                    Firebase Privacy & Security
-                                </a>
-                                .
-                            </p>
-                        </PanelIndent>
-                        <div className="app-consent-actions">
-                            <MinecraftButton
-                                text="I Agree"
-                                onClick={() => setAnalyticsConsent(AnalyticsConsent.Accepted)}
-                            />
-                            <MinecraftButton
-                                text="Decline"
-                                onClick={() => setAnalyticsConsent(AnalyticsConsent.Declined)}
-                                style={MinecraftButtonStyle.Warn}
-                            />
-                        </div>
-                    </MainPanelSection>
-                </MainPanel>
-            </div>
-        </PopupPanel>
-    );
-}
+import PopupRenderer from "./components/PopupRenderer";
+import { useEffect } from "react";
+import LoadingSpinnerRenderer from "./components/LoadingSpinnerRenderer";
+import { AskAnalyticsConsent } from "./components/AnalyticsConsentPanel";
 
 export default function App() {
     const location = useLocation();
-    const xvdToolState = useToolStore(state => state.xvdTool);
+    useEffect(() => {
+        const currentConsent = useAppStore.getState().analyticsConsent;
+        if (currentConsent !== AnalyticsConsent.Unknown)
+            return;
+
+        AskAnalyticsConsent().then(consent => {
+            if (!consent || consent === AnalyticsConsent.Unknown)
+                return;
+            useAppStore.getState().setAnalyticsConsent(consent);
+        });
+    }, []);
 
     return (
         <>
@@ -203,8 +148,8 @@ export default function App() {
                 </div>
             </div>
 
-            <GetAnalyticsConsent />
-            {xvdToolState.showUpdatePopup && <XVDTool.getShouldUpdatePopup />}
+            <PopupRenderer />
+            <LoadingSpinnerRenderer />
         </>
     );
 }

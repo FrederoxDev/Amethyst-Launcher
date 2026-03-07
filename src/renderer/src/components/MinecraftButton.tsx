@@ -12,7 +12,7 @@ type MinecraftButtonProps = {
 export function MinecraftButton({ text, onClick, disabled = false, style }: MinecraftButtonProps) {
     return (
         <div
-            className={`button_base`}
+            className={`button_base ${disabled ? "button-disabled" : ""}`}
             onClick={() => {
                 if (!disabled) {
                     onClick?.();
