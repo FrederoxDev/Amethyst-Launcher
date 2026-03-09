@@ -8,6 +8,7 @@ import { Downloader } from "./backend/Downloader";
 import { IJSONModel } from "./contracts/IJSONModel";
 import { FileLocker } from "./FileLocker";
 import { FULL_PROGRESS_RESET_OPTIONS, ProgressBar } from "@renderer/states/ProgressBarStore";
+import { LauncherTools } from "./backend/tools/LauncherTools";
 
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
@@ -387,7 +388,7 @@ export class VersionManager {
         const cikData = type === "preview" ? CIK_DATA_PREVIEW_GDK : CIK_DATA_RELEASE_GDK;
         await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
             // Check XVDTool version and ask for update if needed before starting decryption and extraction
-            await XVDTool.check(shouldAskUpdate);
+            await LauncherTools.XVDTool.check();
 
             // Show status for decryption
             setStatus("decrypting");
@@ -396,7 +397,7 @@ export class VersionManager {
 
             // XVDTool.decrypt will call the tool to perform decryption, it will return an error message if decryption fails, otherwise null
             // It will also update the progress bar internally by reading the tool's output, so we don't need to worry about that here
-            const decryptErr = await XVDTool.decrypt(versionFilePath, cikUuid, cikData, false);
+            const decryptErr = await LauncherTools.XVDTool.decryptFile(versionFilePath, cikUuid, cikData, false);
             if (decryptErr) {
                 throw new Error(`Failed to decrypt MSIXVC! (${decryptErr})`);
             }
@@ -408,7 +409,7 @@ export class VersionManager {
 
             // XVDTool.extract will call the tool to perform extraction, it will return an error message if extraction fails, otherwise null
             // It will also update the progress bar internally by reading the tool's output, so we don't need to worry about that here
-            const extractErr = await XVDTool.extract(versionFilePath, targetOutputPath, false);
+            const extractErr = await LauncherTools.XVDTool.extractFile(versionFilePath, targetOutputPath, false);
             if (extractErr) {
                 throw new Error(`Failed to extract Minecraft! (${extractErr})`);
             }

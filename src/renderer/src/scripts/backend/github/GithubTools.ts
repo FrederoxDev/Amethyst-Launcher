@@ -2,7 +2,7 @@ import { fetchWithTimeout } from "@renderer/scripts/Utility";
 import { GithubRelease } from "./GithubRelease";
 
 export class GithubTools {
-    static async getLatestRelease(repo: string, timeout: number | null = null): Promise<GithubRelease> {
+    static async getLatestRelease(repo: string, timeout?: number): Promise<GithubRelease> {
         const apiUrl = `https://api.github.com/repos/${repo}/releases/latest`;
 
         try {

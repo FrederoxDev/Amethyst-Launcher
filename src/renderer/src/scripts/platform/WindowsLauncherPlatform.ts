@@ -1,7 +1,7 @@
 import { ILauncherPlatform, LauncherPaths, ShortcutOptions } from "@renderer/scripts/platform/LauncherPlatform";
 import { PathUtils } from "../PathUtils";
 import { Profile } from "../Profiles";
-import { InstalledVersion } from "../VersionDatabase";
+import { InstalledVersionModel } from "../VersionManager";
 
 const os = window.require("os") as typeof import("os");
 const child = window.require("child_process") as typeof import("child_process");
@@ -79,7 +79,8 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             cachedVersionsFilePath: `${appDataPath}\\Amethyst\\Launcher\\Versions\\cached_versions.json`,
             profilesFilePath: `${appDataPath}\\Amethyst\\Launcher\\Profiles\\profiles.json`,
             modsPath: `${appDataPath}\\Amethyst\\Launcher\\Mods`,
-            launcherConfigPath: `${appDataPath}\\Amethyst\\Launcher\\launcher_config.json`
+            launcherConfigPath: `${appDataPath}\\Amethyst\\Launcher\\launcher_config.json`,
+            toolsPath: `${appDataPath}\\Amethyst\\Launcher\\Tools`
         };
 
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.amethystPath);
@@ -90,10 +91,11 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.profilesFilePath);
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.modsPath);
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.launcherConfigPath);
+        PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.toolsPath);
         return WindowsLauncherPlatform.CachedLauncherPaths;
     }
 
-    async runProfile(profile: Profile, version: InstalledVersion): Promise<void> {
+    async runProfile(profile: Profile, version: InstalledVersionModel): Promise<void> {
         throw new Error("Running profiles is not implemented on Windows platforms yet.");
     }
 

@@ -18,6 +18,7 @@ export interface LauncherPaths {
     profilesFilePath: string;
     modsPath: string;
     launcherConfigPath: string;
+    toolsPath: string;
 }
 
 export interface ILauncherPlatform {

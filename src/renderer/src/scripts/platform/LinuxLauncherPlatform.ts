@@ -2,8 +2,8 @@ import { ILauncherPlatform, LauncherPaths, ShortcutOptions } from "@renderer/scr
 import { PathUtils } from "../PathUtils";
 import { Profile } from "../Profiles";
 import { GDKProton } from "../backend/tools/GDKProton";
-import { InstalledVersion } from "../VersionDatabase";
 import { UMULauncher } from "../backend/tools/UMULauncher";
+import { InstalledVersionModel } from "../VersionManager";
 
 const fs = window.require("fs") as typeof import("fs");
 const os = window.require("os") as typeof import("os");
@@ -65,9 +65,10 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
             versionsPath: `${home}/.amethyst/launcher/versions`,
             versionsFilePath: `${home}/.amethyst/launcher/versions/versions.json`,
             cachedVersionsFilePath: `${home}/.amethyst/launcher/versions/cached_versions.json`,
-            profilesFilePath: `${home}/.amethyst/launcher/Profiles/profiles.json`,
+            profilesFilePath: `${home}/.amethyst/launcher/profiles/profiles.json`,
             modsPath: `${home}/.amethyst/launcher/Mods`,
-            launcherConfigPath: `${home}/.amethyst/launcher/launcher_config.json`
+            launcherConfigPath: `${home}/.amethyst/launcher/launcher_config.json`,
+            toolsPath: `${home}/.amethyst/launcher/tools`
         };
 
         PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.amethystPath);
@@ -78,10 +79,11 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
         PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.profilesFilePath);
         PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.modsPath);
         PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.launcherConfigPath);
+        PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.toolsPath);
         return LinuxLauncherPlatform.CachedLauncherPaths;
     }
 
-    async runProfile(profile: Profile, version: InstalledVersion): Promise<void> {
+    async runProfile(profile: Profile, version: InstalledVersionModel): Promise<void> {
         const versionPath = path.join(version.path, "Minecraft.Windows.exe");
         const gdkProtonInfo = await GDKProton.check();
         const prefixPath = path.join(this.getPaths().launcherPath, "gamedata", "default");
