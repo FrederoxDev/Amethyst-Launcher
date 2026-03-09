@@ -7,6 +7,7 @@ import { GithubTools } from "../github/GithubTools";
 import { Downloader } from "../Downloader";
 import { Extractor } from "../Extractor";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
+import { GithubRelease } from "../github/GithubRelease";
 
 export class GDKProton {
     private static Repository: string = "raonygamer/gdk-proton";
@@ -18,16 +19,36 @@ export class GDKProton {
 
         const launcherPath = useAppStore.getState().platform.getPaths().launcherPath;
         const toolsPath = path.join(launcherPath, "tools");
+        const gdkProtonPath = path.join(toolsPath, "gdk-proton");
         const gdkProtonTagFile = path.join(toolsPath, "gdk-proton.txt");
     
         PathUtils.ValidatePath(gdkProtonTagFile);
 
+        let toolIsInstalled = false;
         let currentTag: string | null = null;
-        if (fs.existsSync(gdkProtonTagFile)) {
+        if (fs.existsSync(gdkProtonTagFile) && fs.existsSync(gdkProtonPath) && fs.statSync(gdkProtonPath).isDirectory()) {
             currentTag = fs.readFileSync(gdkProtonTagFile, "utf-8").trim();
+            toolIsInstalled = true;
         }
 
-        const release = await GithubTools.getLatestRelease(GDKProton.Repository);
+        let release: GithubRelease | undefined;
+        try {
+            release = await GithubTools.getLatestRelease(GDKProton.Repository, 1000);
+        }
+        catch (error) {
+            console.error(`Failed to fetch GDK Proton version from '${GDKProton.Repository}'!`);
+            if (toolIsInstalled) {
+                console.log(`Using outdated version (${currentTag}) instead.`);
+                return {
+                    version: currentTag!,
+                    path: path.join(toolsPath, "gdk-proton"),
+                    executable: path.join(toolsPath, "gdk-proton", "proton")
+                };
+            }
+            console.error("No GDK Proton version available and failed to fetch latest version. Cannot continue.");
+            throw error;
+        }
+        
         const tag = release.tagName;
 
         if (currentTag === tag) {

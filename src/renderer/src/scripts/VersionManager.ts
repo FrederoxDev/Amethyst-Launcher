@@ -1,5 +1,5 @@
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
-import { MinecraftVersionType, VersionDatabase } from "@renderer/scripts/VersionDatabase";
+import { MinecraftVersionData, MinecraftVersionType, VersionDatabase } from "@renderer/scripts/VersionDatabase";
 import { useAppStore } from "@renderer/states/AppStore";
 import { PathUtils } from "./PathUtils";
 import { XVDTool } from "./backend/tools/XVDTool";
@@ -7,7 +7,7 @@ import { CIK_DATA_PREVIEW_GDK, CIK_DATA_RELEASE_GDK, CIK_UUID_PREVIEW_GDK, CIK_U
 import { Downloader } from "./backend/Downloader";
 import { IJSONModel } from "./contracts/IJSONModel";
 import { FileLocker } from "./FileLocker";
-import { ProgressBar } from "@renderer/states/ProgressBarStore";
+import { FULL_PROGRESS_RESET_OPTIONS, ProgressBar } from "@renderer/states/ProgressBarStore";
 
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
@@ -16,15 +16,26 @@ function getPaths() {
     return useAppStore.getState().platform.getPaths();
 }
 
-export interface VersionInstallationData {
+export interface ImportedVersionInstallationData {
+    kind: "imported";
     uuid: string;
     name: string;
     version: SemVersion;
     type: MinecraftVersionType;
-    imported: boolean;
-    versionFile: string;
-    versionOutputPath?: string;
+    file: string;
 };
+
+export interface DownloadedVersionInstallationData {
+    kind: "downloaded";
+    uuid: string;
+    name: string;
+    version: SemVersion;
+    type: MinecraftVersionType;
+    from: string;
+    path: string;
+}
+
+type VersionInstallationData = ImportedVersionInstallationData | DownloadedVersionInstallationData;
 
 export class InstalledVersionModel implements IJSONModel {
     uuid: string;
@@ -447,7 +458,12 @@ export class VersionManager {
         
         // For non-imported versions, we expect the versionOutputPath to be present and valid, 
         // for imported versions, we expect the versionFile to be present and valid
-        if (!version.imported && version.versionOutputPath && fs.existsSync(version.versionOutputPath)) {
+        if (version.kind === "downloaded") {
+            // For downloaded versions, we will directly use the extracted version folder as the version path
+            if (!fs.existsSync(version.path) || !fs.statSync(version.path).isDirectory()) {
+                throw new Error("Invalid version output path!");
+            }
+
             // Get the version information from the database, 
             // we need the version number and type to determine the name and other properties for the installed version record
             const dbVersion = this.database.getVersionByUUID(version.uuid);
@@ -459,11 +475,11 @@ export class VersionManager {
             const newInstalledVersion = new InstalledVersionModel(
                 dbVersion.uuid,
                 dbVersion.type === "release" ? `Minecraft ${dbVersion.version.toString()}` : `Minecraft ${dbVersion.version.toString()} (Preview)`,
-                version.versionOutputPath,
+                version.path,
                 dbVersion.type,
                 dbVersion.version,
                 false,
-                version.versionFile
+                version.from
             );
 
             // Add the new installed version to the list and save it to file
@@ -475,29 +491,32 @@ export class VersionManager {
         // For imported versions, we will copy the version file to the versions folder and then decrypt and/or extract it from there, 
         // this is to ensure that all version files are stored in a consistent location and we can manage them properly, 
         // we will also mark the installed version as imported and store the original file path for reference
-        else if (
-            version.imported && 
-            version.versionFile && 
-            fs.existsSync(version.versionFile) && 
-            fs.statSync(version.versionFile).isFile()
-        ) {
+        else {
+            // Check if the version file path is valid, it must exist and be a file
+            if (!fs.existsSync(version.file) || !fs.statSync(version.file).isFile()) {
+                throw new Error("Invalid version file path!");
+            }
+
             // Check if the version file has the correct extension, we only support .msixvc files for import,
             // I don't know .msixvc files MAGIC, so I have no way to verify if the file is actually a valid .msixvc file other than checking the extension,
-            if (!version.versionFile.toLowerCase().endsWith(".msixvc")) {
+            if (!version.file.toLowerCase().endsWith(".msixvc")) {
                 throw new Error("Only .msixvc files are supported for import!");
             }
 
             // Copy the version file to the versions folder
-            const versionFileName = path.basename(version.versionFile, ".msixvc");
-            const copyTargetPath = path.join(getPaths().versionsPath, `${versionFileName}.msixvc`);
-            const extractedVersionPath = path.join(getPaths().versionsPath, versionFileName);
-            fs.copyFileSync(version.versionFile, copyTargetPath);
+            const copyTargetPath = MinecraftVersionData.buildVersionPath(false, version.version.toString(), version.type, version.uuid);
+            const extractedVersionPath = copyTargetPath.replace(".msixvc", "");
+            await ProgressBar.useAsync(async ({ setMessage, setProgress }) => {
+                setMessage(`Copying ${version.file}...`);
+                setProgress(0.5);
+                await fs.promises.copyFile(version.file, copyTargetPath);
+            }, true, FULL_PROGRESS_RESET_OPTIONS);
 
             // After copying the file, we will attempt to decrypt and/or extract it using the same process as for downloaded versions
             try {
                 await this.extractVersionByPath(copyTargetPath, extractedVersionPath, version.version, version.type);
             } finally {
-                fs.unlinkSync(copyTargetPath);
+                await fs.promises.unlink(copyTargetPath);
             }
 
             // If we reached this point, we can consider the version as successfully installed
@@ -508,7 +527,7 @@ export class VersionManager {
                 version.type,
                 version.version,
                 true,
-                version.versionFile
+                copyTargetPath
             );
 
             // Add the new installed version to the list and save it to file
@@ -591,14 +610,14 @@ export class VersionManager {
         // After the version is extracted, we will proceed to install it,
         // we create the installation data for the version, 
         // this will be used to create the installed version record and save it to the installed versions list
-        const installationData: VersionInstallationData = {
+        const installationData: DownloadedVersionInstallationData = {
+            kind: "downloaded",
             uuid: version.uuid,
             name: version.type === "release" ? `Minecraft ${version.version.toString()}` : `Minecraft ${version.version.toString()} (Preview)`,
             version: version.version,
             type: version.type,
-            imported: false,
-            versionFile: path.join(getPaths().versionsPath, `${versionFileName}.msixvc`),
-            versionOutputPath: extractedVersionPath
+            from: path.join(getPaths().versionsPath, `${versionFileName}.msixvc`),
+            path: extractedVersionPath
         };
 
         // Now we can proceed to install the version using the installation data we created,

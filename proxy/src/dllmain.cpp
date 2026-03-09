@@ -1,16 +1,13 @@
 #include "dllmain.hpp"
 #include <filesystem>
-#include <winrt/Windows.Storage.h>
+#include <winrt/windows.storage.h>
 #include <Json.hpp>
 #include <format>
 #include <print>
+#include <iostream>
+#include <filesystem>
+#include <fstream>
 namespace fs = std::filesystem;
-
-#include <winrt/Windows.Storage.h>
-#include <winrt/base.h>
-
-using namespace winrt;
-using namespace Windows::Storage;
 
 typedef NTSTATUS(NTAPI* NtSuspendThreadPtr)(HANDLE ThreadHandle, PULONG PreviousSuspendCount);
 typedef NTSTATUS(NTAPI* NtResumeThreadPtr)(HANDLE ThreadHandle, PULONG PreviousSuspendCount);

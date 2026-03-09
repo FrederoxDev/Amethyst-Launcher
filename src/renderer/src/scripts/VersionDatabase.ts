@@ -4,6 +4,7 @@ import { IJSONModel } from "@renderer/scripts/contracts/IJSONModel";
 
 const fs = window.require("fs") as typeof import("fs");
 const { createHash } = window.require("crypto") as typeof import("crypto");
+const path = window.require("path") as typeof import("path");
 
 function getPaths() {
     return useAppStore.getState().platform.getPaths();
@@ -11,6 +12,9 @@ function getPaths() {
 
 export type MinecraftVersionType = "preview" | "release";
 export class MinecraftVersionData implements IJSONModel {
+    static readonly VERSION_REGEX = /(\d+)\.(\d+)\.(\d+)$/;
+    static readonly CAL_VER_START_NUMBER = 26;
+
     version: SemVersion;
     uuid: string;
     type: MinecraftVersionType;
@@ -64,6 +68,45 @@ export class MinecraftVersionData implements IJSONModel {
 
     toJSON(): string {
         return JSON.stringify(this.toObject());
+    }
+
+    // Version prettify copied from https://github.com/LukasPAH/minecraft-windows-gdk-version-db/blob/main/getLatestVersion.ts
+    static prettifyVersionNumbers(version: string): string | null {
+        version = version.toLowerCase().replace("microsoft.minecraftuwp_", "").replace("microsoft.minecraftwindowsbeta_", "").replace(".0_x64__8wekyb3d8bbwe", "");
+
+        const versionMatch = version.match(this.VERSION_REGEX);
+
+        if (versionMatch === null) {
+            return null;
+        }
+
+        const majorVersion = versionMatch[1];
+        if (majorVersion === undefined) {
+            return null;
+        }
+
+        const minorVersion = versionMatch[2];
+        if (minorVersion === undefined) {
+            return null;
+        }
+
+        const patchVersionUnprocessed = versionMatch[3];
+        if (patchVersionUnprocessed === undefined) {
+            return null;
+        }
+
+        const patchVersion = (parseInt(patchVersionUnprocessed) / 100).toFixed(2);
+
+        let versionString = `${majorVersion}.${minorVersion}.${patchVersion}`;
+        if (parseInt(minorVersion) >= this.CAL_VER_START_NUMBER) {
+            versionString = `${minorVersion}.${patchVersion}`;
+        }
+
+        return versionString;
+    }
+
+    static buildVersionPath(versionHasError: boolean, format: string, type: string, uuid: string): string {
+        return path.join(getPaths().versionsPath, `Minecraft-${!versionHasError ? format + "-" : "x.x.x.x-"}${type.toLowerCase()}-${uuid}.msixvc`);
     }
 }
 

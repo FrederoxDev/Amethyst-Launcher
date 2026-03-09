@@ -10,6 +10,7 @@ import { GithubTools } from "../github/GithubTools";
 import { Downloader } from "../Downloader";
 import { Extractor } from "../Extractor";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
+import { GithubRelease } from "../github/GithubRelease";
 
 export class UMULauncher {
     private static Repository: string = "raonygamer/umu-launcher";
@@ -21,16 +22,35 @@ export class UMULauncher {
 
         const launcherPath = useAppStore.getState().platform.getPaths().launcherPath;
         const toolsPath = path.join(launcherPath, "tools");
+        const umuLauncherPath = path.join(toolsPath, "umu-launcher");
         const umuLauncherTagFile = path.join(toolsPath, "umu-launcher.txt");
 
         PathUtils.ValidatePath(umuLauncherTagFile);
 
+        let toolIsInstalled = false;
         let currentTag: string | null = null;
-        if (fs.existsSync(umuLauncherTagFile)) {
+        if (fs.existsSync(umuLauncherTagFile) && fs.existsSync(umuLauncherPath) && fs.statSync(umuLauncherPath).isDirectory()) {
             currentTag = fs.readFileSync(umuLauncherTagFile, "utf-8").trim();
+            toolIsInstalled = true;
         }
 
-        const release = await GithubTools.getLatestRelease(UMULauncher.Repository);
+        let release: GithubRelease | undefined;
+        try {
+            release = await GithubTools.getLatestRelease(UMULauncher.Repository, 1000);
+        }
+        catch (error) {
+            console.error(`Failed to fetch UMU Launcher version from '${UMULauncher.Repository}'!`);
+            if (toolIsInstalled) {
+                console.log(`Using outdated version (${currentTag}) instead.`);
+                return {
+                    version: currentTag!,
+                    path: path.join(toolsPath, "umu-launcher"),
+                    executable: path.join(toolsPath, "umu-launcher", "umu-run")
+                };
+            }
+            console.error("No UMU Launcher version available and failed to fetch latest version. Cannot continue.");
+            throw error;
+        }
         const tag = release.tagName;
 
         if (currentTag === tag) {

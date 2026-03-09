@@ -5,64 +5,19 @@ import { InstalledVersionModel } from "@renderer/scripts/VersionManager";
 import DeleteIconAsset from "@renderer/assets/images/icons/delete-icon.png";
 import OpenFolderIconAsset from "@renderer/assets/images/icons/open-folder-icon.png";
 import InfoIconAsset from "@renderer/assets/images/icons/info-icon.png";
-import { Popup, PopupUseArguments } from "@renderer/states/PopupStore";
+import { Popup } from "@renderer/states/PopupStore";
 import { PopupPanel } from "@renderer/components/PopupPanel";
 import { MainPanel, MainPanelSection, PanelIndent } from "@renderer/components/MainPanel";
 import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 
 const { shell: { openPath } } = window.require("electron") as typeof import("electron");
-const path = window.require("path") as typeof import("path");
-const { v4: uuidv4 } = window.require("uuid") as typeof import("uuid");
-const fs = window.require("fs") as typeof import("fs");
-const { ipcRenderer } = window.require("electron") as typeof import("electron");
 
 import "@renderer/styles/pages/SettingsPage.css"
 import "@renderer/styles/pages/LauncherPage.css"
 
-import { TextInput } from "@renderer/components/TextInput";
-import { Dropdown } from "@renderer/components/Dropdown";
-import { SemVersion } from "@renderer/scripts/classes/SemVersion";
-import { FileInput, PlusIcon } from "lucide-react";
-import { PathUtils } from "@renderer/scripts/PathUtils";
-import { MinecraftVersionType } from "@renderer/scripts/VersionDatabase";
-
-// Version prettify copied from https://github.com/LukasPAH/minecraft-windows-gdk-version-db/blob/main/getLatestVersion.ts
-const VERSION_REGEX = /(\d+)\.(\d+)\.(\d+)$/;
-const CAL_VER_START_NUMBER = 26;
-function prettifyVersionNumbers(version: string): string | null {
-    version = version.toLowerCase().replace("microsoft.minecraftuwp_", "").replace("microsoft.minecraftwindowsbeta_", "").replace(".0_x64__8wekyb3d8bbwe", "");
-
-    const versionMatch = version.match(VERSION_REGEX);
-
-    if (versionMatch === null) {
-        return null;
-    }
-
-    const majorVersion = versionMatch[1];
-    if (majorVersion === undefined) {
-        return null;
-    }
-
-    const minorVersion = versionMatch[2];
-    if (minorVersion === undefined) {
-        return null;
-    }
-
-    const patchVersionUnprocessed = versionMatch[3];
-    if (patchVersionUnprocessed === undefined) {
-        return null;
-    }
-
-    const patchVersion = (parseInt(patchVersionUnprocessed) / 100).toFixed(2);
-
-    let versionString = `${majorVersion}.${minorVersion}.${patchVersion}`;
-    if (parseInt(minorVersion) >= CAL_VER_START_NUMBER) {
-        versionString = `${minorVersion}.${patchVersion}`;
-    }
-
-    return versionString;
-}
+import { PlusIcon } from "lucide-react";
+import { ImportVersionPopup, ImportVersionPopupData } from "@renderer/popups/ImportVersionPopup";
 
 type VersionButtonProps = {
     version: InstalledVersionModel;
@@ -70,203 +25,11 @@ type VersionButtonProps = {
     onDelete: (version: InstalledVersionModel) => void;
 };
 
-interface ImportVersionPopupData {
-    versionName: string;
-    versionType: MinecraftVersionType;
-    versionVersion: SemVersion;
-    versionUUID: string;
-    versionFile: string;
-};
-
-const ImportVersionPopup = ({ submit }: PopupUseArguments<ImportVersionPopupData | null>) => {
-    const paths = useAppStore(state => state.platform.getPaths());
-    const [versionName, setVersionName] = useState("");
-    const [versionType, setVersionType] = useState("Release");
-    const [versionFormat, setVersionFormat] = useState("");
-    const [versionFile, setVersionFile] = useState<string | null>(null);
-    const [versionUUID] = useState(uuidv4());
-    
-    const getVersionFormatError = () => {
-        if (versionFormat === "")
-            return ["Version format cannot be empty!"];
-        
-        try {
-            SemVersion.fromString(versionFormat);
-            return null;
-        }
-        catch (e) {
-            return [
-                "Invalid version format!",
-                "Version format must be in the form of 'x.x.x' or 'x.x.x.x' where x is a number. Examples: '1.14.60.5', '26.3.1.0', '1.16.201.1'",
-                "Where the first three numbers (x.x.x) represent the Minecraft version and the optional fourth number (x) represents the build or revision number.",
-            ];
-        }
-    }
-    
-    const [targetPath, setTargetPath] = useState("");
-    const isNameValid = versionName !== "" && PathUtils.isValidFileName(versionName);
-    const canImport = isNameValid && !getVersionFormatError() && versionFile !== null && fs.existsSync(versionFile) && fs.statSync(versionFile).isFile();
-
-    useEffect(() => {
-        if (!versionFile) {
-            return;
-        }
-
-        const fileName = path.basename(versionFile, ".msixvc").toLowerCase();
-        const prettifiedVersion = prettifyVersionNumbers(fileName);
-        let finalVersion: string | null = null;
-        if (prettifiedVersion) {
-            console.log(`Prettified version for file '${fileName}' is '${prettifiedVersion}'`);
-            finalVersion = prettifiedVersion;
-        }
-        else {
-            const versionMatch = fileName.match(/\d+\.\d+\.\d+\.\d+/);
-            if (versionMatch) {
-                finalVersion = versionMatch[0];
-            }
-        }
-
-        if (finalVersion) {
-            setVersionFormat(finalVersion);
-        }
-
-        if (fileName.match(/microsoft\.minecraftuwp_/)) {
-            setVersionType("Release");
-        }
-        else if (fileName.match(/microsoft\.minecraftwindowsbeta_/)) {
-            setVersionType("Preview");
-        }
-    }, [versionFile]);
-
-    useEffect(() => {
-        const isDefaultName = versionName === "" || versionName.match(/^Minecraft \d+\.\d+\.\d+(\.\d+)? \((Release|Preview)\)$/);
-        if (isDefaultName && versionFormat !== "") {
-            setVersionName(`Minecraft ${versionFormat} (${versionType})`);
-        }
-    }, [versionType]);
-
-    useEffect(() => {
-        setTargetPath(path.join(paths.versionsPath, `Minecraft-${!getVersionFormatError() ? versionFormat + "-" : "x.x.x.x-"}${versionType.toLowerCase()}-${versionUUID}.msixvc`));
-    }, [versionFormat, versionType, versionUUID]);
-
-    return (
-        <PopupPanel>
-            <div className="app-consent-panel" onClick={e => e.stopPropagation()}>
-                <MainPanel>
-                    <MainPanelSection>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            <p>Import Version</p>
-                            <div
-                                className="version-popup-close"
-                                onClick={() => submit(null)}
-                            >
-                                <svg width="12" height="12" viewBox="0 0 12 12">
-                                    <polygon
-                                        className="fill-[#FFFFFF]"
-                                        fillRule="evenodd"
-                                        points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"
-                                    />
-                                </svg>
-                            </div>
-                        </div>
-                        <PanelIndent style={{ gap: "0px" }}>
-                            <div className="settings-section" style={{ paddingTop: "2px", paddingBottom: "6px" }}>
-                                <TextInput label="Version Name" text={versionName} setText={setVersionName} style={{
-                                    width: "100%"
-                                }} />
-                                {!isNameValid && <p style={{ fontSize: "12px", color: "red" }}>Invalid version name</p>}
-                            </div>
-                            <div className="settings-section" style={{ paddingTop: "2px", paddingBottom: "6px" }}>
-                                <Dropdown
-                                    id="version-type"
-                                    labelText="Version Type"
-                                    options={[
-                                        "Release",
-                                        "Preview"
-                                    ]}
-                                    value={versionType}
-                                    setValue={setVersionType}
-                                />
-                            </div>
-                            <div className="settings-section" style={{ paddingTop: "2px", paddingBottom: "6px" }}>
-                                <TextInput label="Version" text={versionFormat} setText={setVersionFormat} style={{
-                                    width: "100%"
-                                }} />
-                                {
-                                    getVersionFormatError()?.map((error, index) => {
-                                        return <p style={{ fontSize: "12px", color: "red" }} key={index}>{error}</p>
-                                    })
-                                }
-                            </div>
-                            <div className="settings-section" style={{ paddingTop: "2px", paddingBottom: "6px" }}>
-                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                    <p style={{ fontSize: "14px" }}>Version file</p>
-                                    <div
-                                        className="version-icon-action version-icon-action-neutral"
-                                        onClick={async () => {
-                                            const result = await ipcRenderer.invoke("dialog:openFile", [
-                                                { name: "MSIXVC Files", extensions: ["msixvc"] }
-                                            ]) as string | null;
-
-                                            if (!result)
-                                                return;
-
-                                            if (!fs.existsSync(result) || !fs.statSync(result).isFile()) {
-                                                return;
-                                            }
-
-                                            setVersionFile(result);
-                                        }}
-                                        style={{
-                                            display: "flex",
-                                            justifyContent: "center",
-                                            alignItems: "center"
-                                        }}
-                                    >
-                                        <FileInput size={22} color="white" />
-                                    </div>
-                                </div>
-                                <p style={{ fontSize: "12px", color: versionFile ? "#9f9f9f" : "red" }}>{versionFile || "No version file selected"}</p>
-                            </div>
-                        </PanelIndent>
-                        <p style={{ fontSize: "12px", color: "#9f9f9f" }}>
-                            Import information
-                            <br />
-                            UUID: {versionUUID}
-                            <br />
-                            Path: {targetPath}
-                        </p>
-                        <div className="app-consent-actions">
-                            <MinecraftButton
-                                text="Import!"
-                                disabled={!canImport}
-                                onClick={async () => {
-                                    if (!canImport)
-                                        return;
-
-                                    if (fs.existsSync(versionFile)) {
-                                        console.log(`Copying version file from ${versionFile} to ${targetPath}`);
-                                        await fs.promises.copyFile(versionFile, targetPath);
-                                    }
-
-                                    submit({
-                                        versionName,
-                                        versionType: versionType.toLowerCase() as MinecraftVersionType,
-                                        versionVersion: SemVersion.fromString(versionFormat),
-                                        versionUUID,
-                                        versionFile: targetPath
-                                    });
-                                }}
-                            />
-                        </div>
-                    </MainPanelSection>
-                </MainPanel>
-            </div>
-        </PopupPanel>
-    );
-};
-
-const VersionButton = ({ version, onInspect, onDelete }: VersionButtonProps) => {
+const VersionButton = ({ 
+    version, 
+    onInspect, 
+    onDelete 
+}: VersionButtonProps) => {
     return (
         <div className="version-card">
             <div className="version-card-inner">
@@ -340,12 +103,12 @@ export function VersionPage() {
                                     return;
 
                                 versionManager.installVersion({
-                                    name: result.versionName,
-                                    version: result.versionVersion,
-                                    type: result.versionType,
-                                    uuid: result.versionUUID,
-                                    imported: true,
-                                    versionFile: result.versionFile
+                                    kind: "imported",
+                                    name: result.name,
+                                    version: result.version,
+                                    type: result.type,
+                                    uuid: result.uuid,
+                                    file: result.file
                                 }).then(() => {
                                     console.log("Version installed successfully!");
                                 }).catch(e => {
