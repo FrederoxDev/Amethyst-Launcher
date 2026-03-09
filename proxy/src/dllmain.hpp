@@ -20,14 +20,9 @@
 #pragma comment(linker, "/export:SetAppCompatStringPointer=c:\\windows\\system32\\dxgi.SetAppCompatStringPointer,@8")
 #pragma comment(linker, "/export:UpdateHMDEmulationStatus=c:\\windows\\system32\\dxgi.UpdateHMDEmulationStatus,@9")
 
-#include "filesystem"
-#include "fstream"
-#include "ios"
-#include "windows.h"
 #include <shlobj_core.h>
 
 #pragma warning(disable: 4996)
-#include "iostream"
 
 #define PROXY_VERSION "1.2.0"
 

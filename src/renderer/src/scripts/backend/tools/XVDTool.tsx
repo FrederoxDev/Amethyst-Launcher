@@ -9,6 +9,7 @@ import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { Popup } from "@renderer/states/PopupStore";
+import { GithubRelease } from "../github/GithubRelease";
 
 const path = window.require("path") as typeof import("path");
 const fs = window.require("fs") as typeof import("fs");
@@ -84,17 +85,35 @@ export class XVDTool {
         const launcherPath = useAppStore.getState().platform.getPaths().launcherPath;
         const toolsPath = path.join(launcherPath, "tools");
         const xvdtoolVersionFile = path.join(toolsPath, "xvdtool.txt");
+        const xvdtoolPath = path.join(toolsPath, "xvdtool");
 
         PathUtils.ValidatePath(xvdtoolVersionFile);
 
         let currentVersion = "0.0.0";
         let toolIsInstalled = false;
-        if (fs.existsSync(xvdtoolVersionFile)) {
+        if (fs.existsSync(xvdtoolVersionFile) && fs.existsSync(xvdtoolPath) && fs.statSync(xvdtoolPath).isDirectory()) {
             currentVersion = fs.readFileSync(xvdtoolVersionFile, "utf-8").trim();
             toolIsInstalled = true;
         }
 
-        const release = await GithubTools.getLatestRelease(XVDTool.Repository);
+        let release: GithubRelease | undefined;
+        try {
+            release = await GithubTools.getLatestRelease(XVDTool.Repository, 1000);
+        }
+        catch (error) {
+            console.error(`Failed to fetch XVDTool version from '${XVDTool.Repository}'!`);
+            if (toolIsInstalled) {
+                console.log(`Using outdated version (${currentVersion}) instead.`);
+                return {
+                    version: currentVersion,
+                    path: path.join(toolsPath, "xvdtool"),
+                    executable: process.platform === "win32" ? path.join(toolsPath, "xvdtool", "XVDTool.exe") : path.join(toolsPath, "xvdtool", "XVDTool")
+                };
+            }
+            console.error("No XVDTool version available and failed to fetch latest version. Cannot continue.");
+            throw error;
+        }
+
         const latestVersion = release.tagName.replace(/^v/, "");
         if (semver.gte(currentVersion, latestVersion)) {
             console.log(`XVDTool is up to date (version ${currentVersion}).`);

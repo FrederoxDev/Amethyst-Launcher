@@ -27,3 +27,5 @@ build
 /out
 /out/renderer
 /out/renderer/assets
+/proxy/.cache
+proxy/compile_commands.json

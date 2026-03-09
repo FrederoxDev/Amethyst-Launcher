@@ -18,7 +18,7 @@ export default function ProgressBarRenderer(): React.ReactNode | null {
                 className={`launcher-progress-bar ${show ? "launcher-progress-bar-visible" : "launcher-progress-bar-hidden"}`}
                 style={{ width: `${Math.max(0, Math.min(100, (progress ?? 0) * 100))}%` }}
             ></div>
-            <p className="minecraft-seven launcher-progress-text">
+            <p className="minecraft-seven launcher-progress-text" style={{ display: show ? "initial" : "none" }}>
                 {message}
             </p>
         </div>
