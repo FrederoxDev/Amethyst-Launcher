@@ -6,6 +6,8 @@ import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { Downloader } from "../Downloader";
 import { Extractor } from "../Extractor";
 import { PathUtils } from "@renderer/scripts/PathUtils";
+import ToolUpdatePopup from "@renderer/popups/ToolUpdatePopup";
+import { Popup } from "@renderer/states/PopupStore";
 
 const path = window.require("path") as typeof import("path");
 const fs = window.require("fs") as typeof import("fs");
@@ -29,6 +31,12 @@ export interface DefaultCheckOptions {
     allowOutdated: boolean;
     /** Milliseconds to wait before aborting the GitHub release fetch. */
     releaseFetchTimeout: number;
+    /**
+     * When `false` (default) and the tool is already installed, skips the
+     * GitHub release fetch entirely and returns the current version immediately.
+     * When `true`, performs the full version check and update flow.
+     */
+    checkForUpdates: boolean;
 }
 
 /**
@@ -130,6 +138,12 @@ export abstract class ToolArtifact<
         const currentVersion = await this.getCurrentVersion();
         const isInstalled = currentVersion !== null;
         console.log(`[${this.name}] Currently installed version: ${currentVersion ?? "(none)"}`);
+
+        // If already installed and the caller does not need an update check, return immediately.
+        if (isInstalled && !options?.checkForUpdates) {
+            console.log(`[${this.name}] checkForUpdates=false and tool is installed – skipping remote check.`);
+            return this.buildResult(currentVersion!, toolPath, executable, "up_to_date");
+        }
 
         // Attempt to fetch the latest release from GitHub.
         let latestRelease: GithubRelease | null = null;
@@ -247,18 +261,18 @@ export abstract class ToolArtifact<
     ): TCheckResult;
     
     /** Returns the absolute path to the tool's installation folder. */
-    protected getFolder(): string {
+    getFolder(): string {
         const toolsPath = this.getToolsPath();
         return path.join(toolsPath, this.getFolderName());
     }
     
     /** Returns the absolute path to the tool executable. */
-    protected getExecutable(): string {
+    getExecutable(): string {
         return path.join(this.getFolder(), this.getExecutableName());
     }
     
     /** Returns the absolute path to the `version.txt` file that tracks the installed version. */
-    protected getVersionFile() {
+    getVersionFile() {
         return path.join(this.getFolder(), "version.txt");
     }
     
@@ -328,13 +342,22 @@ export abstract class ToolArtifact<
     }
 
     /**
-     * Asks the user whether they want to update from `currentVersion` to
-     * `latestVersion`. The base implementation always returns `true`; subclasses
-     * can override this to show a native dialog/popup.
+     * Shows a {@link ToolUpdatePopup} and waits for the user to accept or
+     * decline. Returns `true` if the user accepted the update.
      */
     protected async promptUpdate(currentVersion: string, latestVersion: string): Promise<boolean> {
-        console.log(`[${this.name}] promptUpdate: '${currentVersion}' → '${latestVersion}' (default: accept).`);
-        return true;
+        console.log(`[${this.name}] Prompting user for update: '${currentVersion}' → '${latestVersion}'.`);
+        const accepted = await Popup.useAsync<boolean>(async ({ submit }) => {
+            return <ToolUpdatePopup 
+                name={this.name}
+                currentVersion={currentVersion}
+                latestVersion={latestVersion}
+                accept={() => submit(true)}
+                decline={() => submit(false)}
+            />
+        });
+        console.log(`[${this.name}] User ${accepted ? "accepted" : "declined"} the update.`);
+        return accepted;
     }
 
     /**

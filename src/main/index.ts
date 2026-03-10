@@ -116,6 +116,24 @@ ipcMain.on("APP_STATE_INIT_REQUEST", event => {
 });
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
+
+// Register the custom protocol so OS shortcuts can deep-link into the app.
+app.setAsDefaultProtocolClient("amethyst-launcher");
+
+/** Extracts the first amethyst-launcher:// URL from a argv array, or null. */
+function extractProtocolUrl(argv: string[]): string | null {
+    return argv.find(arg => arg.startsWith("amethyst-launcher://")) ?? null;
+}
+
+/** Forwards a protocol URL to the renderer if the window is ready. */
+function handleProtocolUrl(url: string): void {
+    console.log(`[main] Protocol URL received: ${url}`);
+    if (mainWindow) {
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.focus();
+        mainWindow.webContents.send("AMETHYST_PROTOCOL_URL", url);
+    }
+}
 // Other window is open, so don't create a new one
 if (hasSingleInstanceLock === false) {
     app.quit();
@@ -127,15 +145,21 @@ else {
 
         mainWindow.webContents.once("did-finish-load", () => {
             mainWindow!.show();
+            // Handle the case where the app was cold-started via a protocol URL.
+            const url = extractProtocolUrl(process.argv);
+            if (url) handleProtocolUrl(url);
         });
     });
 
-    app.on("second-instance", () => {
+    app.on("second-instance", (_event, commandLine) => {
         // When second instance is started, restore and focus on existing one.
         if (mainWindow) {
             if (mainWindow.isMinimized()) mainWindow.restore();
             mainWindow.focus();
         }
+        // Forward protocol URL if this instance was opened via deep-link.
+        const url = extractProtocolUrl(commandLine);
+        if (url) handleProtocolUrl(url);
     });
 }
 

@@ -6,7 +6,7 @@ import { useAppStore } from "@renderer/states/AppStore";
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 import { useShallow } from "zustand/shallow";
 import ProgressBarRenderer from "@renderer/components/ProgressBarRenderer";
-import { ProgressBar } from "@renderer/states/ProgressBarStore";
+import { FULL_PROGRESS_RESET_OPTIONS, ProgressBar } from "@renderer/states/ProgressBarStore";
 
 export function LauncherPage() {
     const [
@@ -16,7 +16,9 @@ export function LauncherPage() {
         error,
         setError,
         allValidMods,
-        versionManager
+        versionManager,
+        platform,
+        minecraftIsRunning
     ] = useAppStore(useShallow(state => [
         state.allProfiles,
         state.selectedProfile,
@@ -24,16 +26,21 @@ export function LauncherPage() {
         state.error,
         state.setError,
         state.allValidMods,
-        state.versionManager
+        state.versionManager,
+        state.platform,
+        state.minecraftIsRunning
     ]));
+
+    const currentStatus = ProgressBar.useState(state => state.currentStatus);
 
     const LaunchGame = async () => {
         const log = (msg: string) => {
             console.log(msg);
         };
 
-        if (!ProgressBar.canDoAction("launch")) 
+        if (!ProgressBar.canDoAction("launch") || minecraftIsRunning) 
             return;
+        ProgressBar.getState().setStatus("launching");
 
         if (allProfiles.length === 0) {
             throw new Error("Cannot launch without a profile!");
@@ -59,7 +66,6 @@ export function LauncherPage() {
             setStatus("other");
             setProgress(0);
             setMessage(`Preparing to launch Minecraft ${semVersion.toString()}...`);
-            setShow(true);
 
             const isVersionInstalled = versionManager.getInstalledVersionByUUID(minecraftVersion.uuid) !== null;
 
@@ -72,13 +78,18 @@ export function LauncherPage() {
 
         // InstallProxy(minecraftVersion);
 
-        // const installedVersion = GetInstalledVersion(minecraftVersion);
-        // if (!installedVersion) {
-        //     throw new Error("Failed to find the installed version after downloading and extracting it.");
-        // }
+        await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
+            setStatus("launching");
+            setProgress(0.5);
+            setMessage(`Launching Minecraft ${semVersion.toString()}...`);
 
-        // await platform.runProfile(profile, installedVersion);
-        // setStatus(DEFAULT_STATUS);
+            const installedVersion = versionManager.getInstalledVersionByUUID(minecraftVersion.uuid);
+            if (!installedVersion) {
+                throw new Error("Failed to find the installed version after downloading and extracting it.");
+            }
+            
+            await platform.runProfile(profile, installedVersion);
+        }, true);
     };
 
     const launchGame = async () => {
@@ -145,7 +156,7 @@ export function LauncherPage() {
                     </div>
 
                     <div className="launcher-play">
-                        <MinecraftButton text="Launch Game" onClick={launchGame} />
+                        <MinecraftButton text="Launch Game" onClick={launchGame} disabled={!ProgressBar.canDoAction("launch") || minecraftIsRunning} />
                     </div>
                 </div>
             </div>

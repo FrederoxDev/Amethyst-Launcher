@@ -115,6 +115,18 @@ electron.ipcMain.on("APP_STATE_INIT_REQUEST", (event) => {
   event.sender.send("APP_STATE_INIT");
 });
 const hasSingleInstanceLock = electron.app.requestSingleInstanceLock();
+electron.app.setAsDefaultProtocolClient("amethyst-launcher");
+function extractProtocolUrl(argv) {
+  return argv.find((arg) => arg.startsWith("amethyst-launcher://")) ?? null;
+}
+function handleProtocolUrl(url) {
+  console.log(`[main] Protocol URL received: ${url}`);
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+    mainWindow.webContents.send("AMETHYST_PROTOCOL_URL", url);
+  }
+}
 if (hasSingleInstanceLock === false) {
   electron.app.quit();
 } else {
@@ -122,13 +134,17 @@ if (hasSingleInstanceLock === false) {
     mainWindow = createWindow();
     mainWindow.webContents.once("did-finish-load", () => {
       mainWindow.show();
+      const url = extractProtocolUrl(process.argv);
+      if (url) handleProtocolUrl(url);
     });
   });
-  electron.app.on("second-instance", () => {
+  electron.app.on("second-instance", (_event, commandLine) => {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
     }
+    const url = extractProtocolUrl(commandLine);
+    if (url) handleProtocolUrl(url);
   });
 }
 electron.ipcMain.handle("get-app-version", () => {

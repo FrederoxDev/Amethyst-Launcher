@@ -1,5 +1,4 @@
 import { useAppStore } from "@renderer/states/AppStore";
-import { InstalledVersion } from "@renderer/scripts/VersionDatabase";
 import { PathUtils } from "./PathUtils";
 
 const fs = window.require("fs");
@@ -12,7 +11,7 @@ export interface Profile {
     name: string;
     runtime: string;
     mods: string[];
-    minecraft_version: string;
+    minecraft_version: string | null;
     installed_version?: InstalledVersion;
     use_split_data_folder?: boolean;
 }
