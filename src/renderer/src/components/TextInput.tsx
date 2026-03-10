@@ -2,7 +2,7 @@ export type TextInputProps = {
     label: string;
     text: string;
     setText: React.Dispatch<React.SetStateAction<string>>;
-    style: React.CSSProperties;
+    style?: React.CSSProperties;
 };
 
 export function TextInput({ label, text, setText, style }: TextInputProps) {

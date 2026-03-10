@@ -62,7 +62,7 @@
 }
 
 .button-disabled, .button-disabled * {
-    filter: grayscale(35%);
+    filter: grayscale(75%);
     cursor: not-allowed;
     pointer-events: none;
 }

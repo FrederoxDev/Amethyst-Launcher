@@ -1,10 +1,11 @@
-import { ILauncherPlatform, LauncherPaths, ShortcutOptions } from "@renderer/scripts/platform/LauncherPlatform";
+import { ILauncherPlatform, LauncherPaths, ProcessInfo, ShortcutOptions } from "@renderer/scripts/platform/LauncherPlatform";
 import { PathUtils } from "../PathUtils";
 import { Profile } from "../Profiles";
 import { InstalledVersionModel } from "../VersionManager";
 
 const os = window.require("os") as typeof import("os");
 const child = window.require("child_process") as typeof import("child_process");
+const path = window.require("path") as typeof import("path");
 const { ipcRenderer } = window.require("electron");
 
 type RegeditModule = typeof import("regedit-rs");
@@ -47,12 +48,41 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         return `Windows ${os.release()} (${os.arch()})`;
     }
 
+    isProcessRunning(executableName: string): ProcessInfo | null {
+        try {
+            // Query process by name and retrieve PID + working directory via PowerShell.
+            const script = `Get-Process | Where-Object { $_.MainModule.ModuleName -eq '${executableName}' } | Select-Object -First 1 Id,@{N='cwd';E={(Get-Item (Get-Process -Id $_.Id).MainModule.FileName).DirectoryName}} | ConvertTo-Json`;
+            const result = child.spawnSync(
+                "powershell",
+                ["-NoProfile", "-NonInteractive", "-Command", script],
+                { encoding: "utf-8" }
+            );
+            if (result.status !== 0 || !result.stdout?.trim()) return null;
+            const json = JSON.parse(result.stdout.trim());
+            const pid = parseInt(json["Id"] ?? json["id"] ?? "", 10);
+            const cwd: string = json["cwd"] ?? "";
+            return { pid: isNaN(pid) ? -1 : pid, cwd, executableName };
+        } catch {
+            return null;
+        }
+    }
+
     createShortcut(options: ShortcutOptions): Promise<void> {
         const windowsShortcuts = WindowsLauncherPlatform.getWindowsShortcutsModule();
+        const isProtocolUrl = options.target.startsWith("amethyst-launcher://");
+        // For protocol URLs Windows needs the target to go through explorer.exe
+        // since .lnk files cannot directly invoke custom URI schemes.
+        const target = isProtocolUrl
+            ? `${process.env.WINDIR ?? "C:\\Windows"}\\explorer.exe`
+            : options.target;
+        const args = isProtocolUrl
+            ? options.target
+            : options.args;
         return new Promise<void>((resolve, reject) => {
-            windowsShortcuts.create(WindowsLauncherPlatform.StartMenuFolder, {
-                target: options.target,
-                args: options.args,
+            const shortcutPath = path.join(WindowsLauncherPlatform.StartMenuFolder, `${options.name}.lnk`);
+            windowsShortcuts.create(shortcutPath, {
+                target,
+                args,
                 desc: options.description,
                 icon: options.icon,
                 workingDir: options.workingDir

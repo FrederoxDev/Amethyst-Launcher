@@ -1,20 +1,9 @@
 import { useAppStore } from "@renderer/states/AppStore";
-import { GithubTools } from "../github/GithubTools";
-import { Downloader } from "../Downloader";
-import { Extractor } from "../Extractor";
-import { PathUtils } from "../../PathUtils";
-import { PopupPanel } from "@renderer/components/PopupPanel";
-import { MainPanel, MainPanelSection, PanelIndent } from "@renderer/components/MainPanel";
-import { MinecraftButton } from "@renderer/components/MinecraftButton";
-import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
-import { Popup } from "@renderer/states/PopupStore";
 import { GithubRelease } from "../github/GithubRelease";
 import { CheckAction, DefaultCheckOptions, ToolArtifact, ToolCheckResult, ToolInstalledContext } from "./ToolArtifact";
 import { GithubAsset } from "../github/GithubAsset";
-import ToolUpdatePopup from "@renderer/popups/ToolUpdatePopup";
 
-const path = window.require("path") as typeof import("path");
 const fs = window.require("fs") as typeof import("fs");
 const semver = window.require("semver") as typeof import("semver");
 
@@ -37,7 +26,7 @@ interface OutputModel {
 
 /**
  * Concrete {@link ToolArtifact} implementation for
- * [XVDTool](https://github.com/raonygamer/xvdtool) – a utility for working
+ * [XVDTool](https://github.com/AmethystAPI/xvdtool) – a utility for working
  * with Xbox Virtual Disk (XVD) files.
  *
  * Supported platforms: **Windows x64** and **Linux x64**.
@@ -50,16 +39,16 @@ interface OutputModel {
  * ```
  */
 export class XVDTool extends ToolArtifact {
-    readonly name: string = "XVDTool";
+    readonly name: string = "xvdtool";
     /** GitHub repository that hosts XVDTool releases. */
-    readonly repository: string = "raonygamer/xvdtool";
+    readonly repository: string = "AmethystAPI/xvdtool";
 
     /**
      * XVDTool only ships binaries for Windows x64 and Linux x64.
      */
     isSupported(): boolean {
         const supported = (window.process.platform === "win32" || window.process.platform === "linux") && window.process.arch === "x64";
-        console.log(`[XVDTool] isSupported() → ${supported} (platform='${window.process.platform}', arch='${window.process.arch}').`);
+        console.log(`[${this.name}] isSupported() → ${supported} (platform='${window.process.platform}', arch='${window.process.arch}').`);
         return supported;
     }
 
@@ -73,9 +62,9 @@ export class XVDTool extends ToolArtifact {
         const resolvedOptions = { 
             promptForUpdate: options?.promptForUpdate ?? true,
             allowOutdated: options?.allowOutdated ?? true,
-            releaseFetchTimeout: options?.releaseFetchTimeout ?? 1500
+            releaseFetchTimeout: options?.releaseFetchTimeout ?? 1500,
+            checkForUpdates: options?.checkForUpdates ?? true
         };
-        console.log(`[XVDTool] check() called. Resolved options:`, resolvedOptions);
         return super.check(resolvedOptions);
     }
 
@@ -89,8 +78,8 @@ export class XVDTool extends ToolArtifact {
      * On Windows the `.exe` suffix is appended; on Linux the binary has no extension.
      */
     protected getExecutableName(): string {
-        const exeName = this.name + (window.process.platform === "win32" ? ".exe" : "");
-        console.log(`[XVDTool] getExecutableName() → '${exeName}'.`);
+        const exeName = "XVDTool" + (window.process.platform === "win32" ? ".exe" : "");
+        console.log(`[${this.name}] getExecutableName() → '${exeName}'.`);
         return exeName;
     }
 
@@ -103,17 +92,13 @@ export class XVDTool extends ToolArtifact {
     protected async findAsset(release: GithubRelease): Promise<GithubAsset | null> {
         const platform = window.process.platform;
         const arch = window.process.arch;
-        console.log(`[XVDTool] Searching release assets for platform='${platform}', arch='${arch}'. Total assets: ${release.assets.length}.`);
-
         for (const asset of release.assets) {
             const name = asset.name.toLowerCase();
             if (name.includes(platform) && name.includes(arch)) {
-                console.log(`[XVDTool] Matched asset: '${asset.name}'.`);
                 return asset;
             }
         }
 
-        console.warn(`[XVDTool] No matching asset found for platform='${platform}', arch='${arch}'.`);
         return null;
     }
 
@@ -126,24 +111,20 @@ export class XVDTool extends ToolArtifact {
     protected compareTags(current: string | null, latest: string): number {
         // Treat missing version as infinitely old.
         if (!current) {
-            console.log(`[XVDTool] compareTags: no current version → treat as outdated.`);
             return -1;
         }
         try {
             const result = semver.compare(current, latest);
-            console.log(`[XVDTool] compareTags (semver): '${current}' vs '${latest}' → ${result}.`);
             return result;
         } catch {
             // If tags are not valid semver, fallback to string comparison.
             const result = current.localeCompare(latest);
-            console.log(`[XVDTool] compareTags (string fallback): '${current}' vs '${latest}' → ${result}.`);
             return result;
         }
     }
 
     /** Builds the standard {@link ToolCheckResult} returned by `check()`. */
     protected buildResult(version: string, toolPath: string, executable: string, action: CheckAction): ToolCheckResult {
-        console.log(`[XVDTool] buildResult: version='${version}', action='${action}'.`);
         return {
             version,
             path: toolPath,
@@ -157,32 +138,13 @@ export class XVDTool extends ToolArtifact {
      * (`chmod 755`) since GitHub release tarballs do not preserve permissions.
      */
     protected onInstalled(context: ToolInstalledContext): Promise<void> {
-        console.log(`[XVDTool] onInstalled: version='${context.version}', action='${context.action}'.`);
+        console.log(`[${this.name}] onInstalled: version='${context.version}', action='${context.action}'.`);
         if (process.platform === "linux") {
             const exe = this.getExecutable();
-            console.log(`[XVDTool] Applying chmod 755 to '${exe}' (Linux requires explicit execute permission).`);
+            console.log(`[${this.name}] Applying chmod 755 to '${exe}' (Linux requires explicit execute permission).`);
             return fs.promises.chmod(exe, 0o755);
         }
         return Promise.resolve();
-    }
-
-    /**
-     * Shows a {@link ToolUpdatePopup} and waits for the user to accept or
-     * decline. Returns `true` if the user accepted the update.
-     */
-    protected async promptUpdate(currentVersion: string, latestVersion: string): Promise<boolean> {
-        console.log(`[XVDTool] Prompting user for update: '${currentVersion}' → '${latestVersion}'.`);
-        const accepted = await Popup.useAsync<boolean>(async ({ submit }) => {
-            return <ToolUpdatePopup 
-                name={this.name}
-                currentVersion={currentVersion}
-                latestVersion={latestVersion}
-                accept={() => submit(true)}
-                decline={() => submit(false)}
-            />
-        });
-        console.log(`[XVDTool] User ${accepted ? "accepted" : "declined"} the update.`);
-        return accepted;
     }
 
     /**
@@ -200,19 +162,20 @@ export class XVDTool extends ToolArtifact {
      * @param shouldAskUpdate When `true`, prompts the user before updating XVDTool.
      * @returns Always resolves to `null` (output is reported via progress events).
      */
-    async decryptFile(inputFile: string, cikUuid: string, cikData: string, shouldAskUpdate: boolean = false): Promise<string | null> {
-        console.log(`[XVDTool] decryptFile() called. inputFile='${inputFile}', cikUuid='${cikUuid}', shouldAskUpdate=${shouldAskUpdate}.`);
+    async decryptFile(inputFile: string, cikUuid: string, cikData: string, checkForUpdates: boolean = false): Promise<string | null> {
+        console.log(`[${this.name}] decryptFile() called. inputFile='${inputFile}', cikUuid='${cikUuid}', checkForUpdates=${checkForUpdates}.`);
         const platform = useAppStore.getState().platform;
 
         // Ensure XVDTool is installed (and optionally up-to-date) before running.
         const { executable: xvdtoolExecutable } = await this.check({ 
             allowOutdated: true,
-            promptForUpdate: shouldAskUpdate,
-            releaseFetchTimeout: 1500
+            promptForUpdate: true,
+            releaseFetchTimeout: 1500,
+            checkForUpdates
         });
 
         const command = `"${xvdtoolExecutable}" -nd -eu -cik "${cikUuid}" -cikdata "${cikData}" "${inputFile}"`;
-        console.log(`[XVDTool] Running decrypt command: ${command}`);
+        console.log(`[${this.name}] Running decrypt command: ${command}`);
 
         return new Promise<string | null>(async (resolve, reject) => {
             await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
@@ -232,11 +195,10 @@ export class XVDTool extends ToolArtifact {
 
                             if (dataJson.error) {
                                 // Log tool-reported errors but don't reject – the process may still succeed.
-                                console.error(`[XVDTool] Tool error: ${dataJson.error}`);
+                                console.error(`[${this.name}] Tool error: ${dataJson.error}`);
                             }
                             
                             if (dataJson.message) {
-                                console.log(`[XVDTool] ${dataJson.message}`);
                                 setMessage(dataJson.message);
                             } 
                             
@@ -252,10 +214,10 @@ export class XVDTool extends ToolArtifact {
                         }
                     }
                 }).catch(err => {
-                    console.error("[XVDTool] decryptFile: process exited with error:", err);
+                    console.error(`[${this.name}] decryptFile: process exited with error:`, err);
                     reject(err);
                 });
-                console.log(`[XVDTool] decryptFile: operation finished for '${inputFile}'.`);
+                console.log(`[${this.name}] decryptFile: operation finished for '${inputFile}'.`);
                 resolve(null);
             });
         });
@@ -275,19 +237,20 @@ export class XVDTool extends ToolArtifact {
      * @param shouldAskUpdate When `true`, prompts the user before updating XVDTool.
      * @returns Always resolves to `null` (output is reported via progress events).
      */
-    async extractFile(inputFile: string, outputFolder: string, shouldAskUpdate: boolean = false): Promise<string | null> {
-        console.log(`[XVDTool] extractFile() called. inputFile='${inputFile}', outputFolder='${outputFolder}', shouldAskUpdate=${shouldAskUpdate}.`);
+    async extractFile(inputFile: string, outputFolder: string, checkForUpdates: boolean = false): Promise<string | null> {
+        console.log(`[${this.name}] extractFile() called. inputFile='${inputFile}', outputFolder='${outputFolder}', checkForUpdates=${checkForUpdates}.`);
         const platform = useAppStore.getState().platform;
 
         // Ensure XVDTool is installed (and optionally up-to-date) before running.
         const { executable: xvdtoolExecutable } = await this.check({ 
             allowOutdated: true,
-            promptForUpdate: shouldAskUpdate,
-            releaseFetchTimeout: 1500
+            promptForUpdate: true,
+            releaseFetchTimeout: 1500,
+            checkForUpdates
         });
 
         const command = `"${xvdtoolExecutable}" -nd -xf "${outputFolder}" "${inputFile}"`;
-        console.log(`[XVDTool] Running extract command: ${command}`);
+        console.log(`[${this.name}] Running extract command: ${command}`);
 
         return new Promise<string | null>(async (resolve, reject) => {
             await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
@@ -307,11 +270,10 @@ export class XVDTool extends ToolArtifact {
 
                             if (dataJson.error) {
                                 // Log tool-reported errors but don't reject – the process may still succeed.
-                                console.error(`[XVDTool] Tool error: ${dataJson.error}`);
+                                console.error(`[${this.name}] Tool error: ${dataJson.error}`);
                             }
                             
                             if (dataJson.message) {
-                                console.log(`[XVDTool] ${dataJson.message}`);
                                 setMessage(dataJson.message);
                             } 
                             
@@ -327,10 +289,10 @@ export class XVDTool extends ToolArtifact {
                         }
                     }
                 }).catch(err => {
-                    console.error("[XVDTool] extractFile: process exited with error:", err);
+                    console.error(`[${this.name}] extractFile: process exited with error:`, err);
                     reject(err);
                 });
-                console.log(`[XVDTool] extractFile: operation finished for '${inputFile}'.`);
+                console.log(`[${this.name}] extractFile: operation finished for '${inputFile}'.`);
                 resolve(null);
             });
         });

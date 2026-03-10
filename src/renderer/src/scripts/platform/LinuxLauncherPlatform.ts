@@ -1,9 +1,9 @@
-import { ILauncherPlatform, LauncherPaths, ShortcutOptions } from "@renderer/scripts/platform/LauncherPlatform";
+import { ILauncherPlatform, LauncherPaths, ProcessInfo, ShortcutOptions } from "@renderer/scripts/platform/LauncherPlatform";
 import { PathUtils } from "../PathUtils";
 import { Profile } from "../Profiles";
-import { GDKProton } from "../backend/tools/GDKProton";
-import { UMULauncher } from "../backend/tools/UMULauncher";
+import { LauncherTools } from "../backend/tools/LauncherTools";
 import { InstalledVersionModel } from "../VersionManager";
+import { checkIfMinecraftIsRunning } from "../MinecraftWatcher";
 
 const fs = window.require("fs") as typeof import("fs");
 const os = window.require("os") as typeof import("os");
@@ -51,7 +51,37 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
     }
 
     createShortcut(options: ShortcutOptions): Promise<void> {
-        throw new Error("Shortcut creation is not implemented on Linux platforms.");
+        const isProtocolUrl = options.target.startsWith("amethyst-launcher://");
+        const appName = options.name;
+        const desktopDir = path.join(os.homedir(), ".local", "share", "applications");
+        const desktopFile = path.join(desktopDir, `${appName}.desktop`);
+
+        // For protocol URLs use xdg-open; otherwise invoke the executable directly.
+        const exec = isProtocolUrl
+            ? `xdg-open ${options.target}`
+            : (options.args ? `${options.target} ${options.args}` : options.target);
+
+        const lines = [
+            "[Desktop Entry]",
+            "Version=1.0",
+            "Type=Application",
+            `Name=${appName}`,
+            options.description ? `Comment=${options.description}` : null,
+            `Exec=${exec}`,
+            options.workingDir ? `Path=${options.workingDir}` : null,
+            options.icon ? `Icon=${options.icon}` : null,
+            "Terminal=false",
+            "Categories=Game;",
+        ].filter(Boolean).join("\n") + "\n";
+
+        fs.mkdirSync(desktopDir, { recursive: true });
+        fs.writeFileSync(desktopFile, lines, { encoding: "utf-8" });
+        fs.chmodSync(desktopFile, 0o755);
+
+        // Notify the desktop environment to refresh the menu.
+        child.spawn("update-desktop-database", [desktopDir], { detached: true, stdio: "ignore" }).unref();
+
+        return Promise.resolve();
     }
 
     getPaths(): LauncherPaths {
@@ -83,14 +113,32 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
         return LinuxLauncherPlatform.CachedLauncherPaths;
     }
 
+    isProcessRunning(executableName: string): ProcessInfo | null {
+        try {
+            for (const pid of fs.readdirSync("/proc")) {
+                if (!/^\d+$/.test(pid)) continue;
+                try {
+                    const cwd = fs.readlinkSync(`/proc/${pid}/cwd`);
+                    if (fs.existsSync(path.join(cwd, executableName))) {
+                        return { pid: parseInt(pid, 10), cwd, executableName };
+                    }
+                } catch {
+                    // process may have died or insufficient permissions — skip
+                }
+            }
+        } catch {
+            return null;
+        }
+        return null;
+    }
+
     async runProfile(profile: Profile, version: InstalledVersionModel): Promise<void> {
         const versionPath = path.join(version.path, "Minecraft.Windows.exe");
-        const gdkProtonInfo = await GDKProton.check();
         const prefixPath = path.join(this.getPaths().launcherPath, "gamedata", "default");
         fs.mkdirSync(path.join(prefixPath, "dosdevices"), { recursive: true });
-        await UMULauncher.runGame(versionPath, {
-            "WINEPREFIX": prefixPath,
-            "PROTONPATH": gdkProtonInfo.path
+        await LauncherTools.UMULauncher.runGame(versionPath, {
+            "WINEPREFIX": prefixPath
         });
+        checkIfMinecraftIsRunning();
     }
 }

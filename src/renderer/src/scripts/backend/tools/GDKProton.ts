@@ -1,104 +1,105 @@
-const path = window.require("path") as typeof import("path");
-const fs = window.require("fs") as typeof import("fs");
-
-import { useAppStore } from "@renderer/states/AppStore";
 import { PathUtils } from "../../PathUtils";
-import { GithubTools } from "../github/GithubTools";
-import { Downloader } from "../Downloader";
-import { Extractor } from "../Extractor";
-import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { GithubRelease } from "../github/GithubRelease";
+import { GithubAsset } from "../github/GithubAsset";
+import { CheckAction, DefaultCheckOptions, ToolArtifact, ToolCheckResult, ToolInstalledContext } from "./ToolArtifact";
 
-export class GDKProton {
-    private static Repository: string = "raonygamer/gdk-proton";
-    
-    static async check(): Promise<{ version: string, path: string, executable: string }> {
-        if (process.platform !== "linux") {
-            throw new Error("GDK Proton is only supported on Linux.");
+/**
+ * Concrete {@link ToolArtifact} implementation for
+ * [GDK Proton](https://github.com/raonygamer/gdk-proton) – a Proton build
+ * tailored for running GDK games on Linux.
+ *
+ * Supported platforms: **Linux** only.
+ *
+ * Typical usage:
+ * ```ts
+ * const gdkProton = new GDKProton("gdk-proton", "raonygamer/gdk-proton");
+ * const { path: protonPath } = await gdkProton.check();
+ * ```
+ */
+export class GDKProton extends ToolArtifact {
+    readonly name: string = "gdk-proton";
+    /** GitHub repository that hosts GDK Proton releases. */
+    readonly repository: string = "raonygamer/gdk-proton";
+
+    /**
+     * GDK Proton only ships builds for Linux.
+     */
+    isSupported(): boolean {
+        const supported = window.process.platform === "linux";
+        console.log(`[${this.name}] isSupported() → ${supported} (platform='${window.process.platform}').`);
+        return supported;
+    }
+
+    /**
+     * Overrides the base `check()` to supply GDK Proton-specific defaults:
+     * - `promptForUpdate`: `false` – always auto-update without prompting.
+     * - `allowOutdated`: `true` – tolerate an older version when GitHub is unreachable.
+     * - `releaseFetchTimeout`: `1000` ms.
+     */
+    check(options?: DefaultCheckOptions | undefined): Promise<ToolCheckResult> {
+        const resolvedOptions = {
+            promptForUpdate: options?.promptForUpdate ?? false,
+            allowOutdated: options?.allowOutdated ?? true,
+            releaseFetchTimeout: options?.releaseFetchTimeout ?? 1000,
+            checkForUpdates: options?.checkForUpdates ?? true
+        };
+        return super.check(resolvedOptions);
+    }
+
+    /** The installation folder is simply named after the tool. */
+    protected getFolderName(): string {
+        return this.name;
+    }
+
+    /**
+     * Returns the executable filename (`proton`).
+     */
+    protected getExecutableName(): string {
+        console.log(`[${this.name}] getExecutableName() → 'proton'.`);
+        return "proton";
+    }
+
+    /**
+     * Returns the first available release asset. GDK Proton releases ship
+     * a single archive per release.
+     */
+    protected async findAsset(release: GithubRelease): Promise<GithubAsset | null> {
+        console.log(`[${this.name}] Searching release assets. Total assets: ${release.assets.length}.`);
+        const asset = release.assets[0] ?? null;
+        return asset;
+    }
+
+    /**
+     * Compares two version tags using simple string equality.
+     *
+     * @returns `-1` if `current` is missing or differs from `latest`, `0` if equal.
+     */
+    protected compareTags(current: string | null, latest: string): number {
+        if (!current) {
+            return -1;
         }
+        const result = current === latest ? 0 : -1;
+        return result;
+    }
 
-        const launcherPath = useAppStore.getState().platform.getPaths().launcherPath;
-        const toolsPath = path.join(launcherPath, "tools");
-        const gdkProtonPath = path.join(toolsPath, "gdk-proton");
-        const gdkProtonTagFile = path.join(toolsPath, "gdk-proton.txt");
-    
-        PathUtils.ValidatePath(gdkProtonTagFile);
-
-        let toolIsInstalled = false;
-        let currentTag: string | null = null;
-        if (fs.existsSync(gdkProtonTagFile) && fs.existsSync(gdkProtonPath) && fs.statSync(gdkProtonPath).isDirectory()) {
-            currentTag = fs.readFileSync(gdkProtonTagFile, "utf-8").trim();
-            toolIsInstalled = true;
-        }
-
-        let release: GithubRelease | undefined;
-        try {
-            release = await GithubTools.getLatestRelease(GDKProton.Repository, 1000);
-        }
-        catch (error) {
-            console.error(`Failed to fetch GDK Proton version from '${GDKProton.Repository}'!`);
-            if (toolIsInstalled) {
-                console.log(`Using outdated version (${currentTag}) instead.`);
-                return {
-                    version: currentTag!,
-                    path: path.join(toolsPath, "gdk-proton"),
-                    executable: path.join(toolsPath, "gdk-proton", "proton")
-                };
-            }
-            console.error("No GDK Proton version available and failed to fetch latest version. Cannot continue.");
-            throw error;
-        }
-        
-        const tag = release.tagName;
-
-        if (currentTag === tag) {
-            console.log(`GDK Proton is up to date (version ${currentTag}).`);
-            return {
-                version: currentTag,
-                path: path.join(toolsPath, "gdk-proton"),
-                executable: path.join(toolsPath, "gdk-proton", "proton")
-            };
-        }
-
-        console.log(`Updating GDK Proton from version ${currentTag ?? "none"} to ${tag}...`);
-        await fs.promises.rm(path.join(toolsPath, "gdk-proton"), { recursive: true, force: true });
-        if (release.assets.length < 1)
-            throw new Error("No assets found for the latest GDK Proton release.");
-
-        const asset = release.assets[0];
-        if (!asset) {
-            throw new Error("No compatible GDK Proton release found.");
-        }
-        
-        await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
-            setStatus("downloading");
-            const downloadPath = path.join(toolsPath, "gdk-proton.zip");
-            await Downloader.downloadFile(asset.downloadUrl, downloadPath, (downloaded, total) => {
-                const percent = total > 0 ? downloaded / total : 0;
-                setMessage(`Downloading GDK Proton ${tag}... (${(percent * 100).toFixed(2)}%)`);
-                setProgress(percent);
-            });
-
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setStatus("extracting");
-            await Extractor.extractFile(downloadPath, path.join(toolsPath, "gdk-proton"), [], (fileIndex, totalFiles, name) => {
-                const percent = totalFiles > 0 ? fileIndex / totalFiles : 0;
-                setMessage(`Extracting ${name}... (${fileIndex}/${totalFiles})`);
-                setProgress(percent);
-            });
-            fs.rmSync(downloadPath);
-            await PathUtils.chmodRecursive(path.join(toolsPath, "gdk-proton"), 0o755);
-            fs.writeFileSync(gdkProtonTagFile, tag);
-        });
-        console.log(`GDK Proton updated to version ${tag}.`);
+    /** Builds the standard {@link ToolCheckResult} returned by `check()`. */
+    protected buildResult(version: string, toolPath: string, executable: string, action: CheckAction): ToolCheckResult {
         return {
-            version: tag,
-            path: path.join(toolsPath, "gdk-proton"),
-            executable: path.join(toolsPath, "gdk-proton", "proton")
+            version,
+            path: toolPath,
+            executable,
+            action
         };
     }
 
-    static isSupported(): boolean {
-        return process.platform === "linux";
+    /**
+     * Post-install hook: recursively marks all extracted files as executable
+     * (`chmod 755`) since GitHub release archives may not preserve permissions.
+     */
+    protected async onInstalled(context: ToolInstalledContext): Promise<void> {
+        console.log(`[${this.name}] onInstalled: version='${context.version}', action='${context.action}'.`);
+        const folder = this.getFolder();
+        console.log(`[${this.name}] Applying chmod 755 recursively to '${folder}'.`);
+        await PathUtils.chmodRecursive(folder, 0o755);
     }
 }

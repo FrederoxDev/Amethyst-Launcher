@@ -12,6 +12,7 @@ import { LinuxLauncherPlatform } from "@renderer/scripts/platform/LinuxLauncherP
 import { VersionManager } from "@renderer/scripts/VersionManager";
 import { FileLocker } from "@renderer/scripts/FileLocker";
 import { StateSetter, StateUtils } from "./StateUtils";
+import { checkIfMinecraftIsRunning, startMinecraftWatcher } from "@renderer/scripts/MinecraftWatcher";
 
 const { ipcRenderer } = window.require("electron");
 
@@ -54,6 +55,9 @@ interface AppStore {
     setAnalyticsConsent: StateSetter<AnalyticsConsent>;
 
     analyticsInstance: Analytics | null;
+
+    minecraftIsRunning: boolean;
+    setMinecraftIsRunning: StateSetter<boolean>;
 
     saveData: () => void;
     refreshAllMods: () => void;
@@ -101,6 +105,7 @@ export const useAppStore = create<AppStore>((set, get) => {
         error: "",
         analyticsConsent: initialConsent,
         analyticsInstance: getAnalyticsInstanceForConsent(initialConsent),
+        minecraftIsRunning: false,
 
         setAllValidMods: value =>
             set(state => ({ allValidMods: StateUtils.resolveSetStateAction(value, state.allValidMods) })),
@@ -133,6 +138,9 @@ export const useAppStore = create<AppStore>((set, get) => {
                     analyticsInstance: getAnalyticsInstanceForConsent(nextConsent),
                 };
             }),
+
+        setMinecraftIsRunning: value =>
+            set(state => ({ minecraftIsRunning: StateUtils.resolveSetStateAction(value, state.minecraftIsRunning) })),
 
         refreshAllMods: () => {
             const mods = GetAllMods();
@@ -202,6 +210,8 @@ export function InitializeAppState(): void {
     });
 
     ipcRenderer.send("APP_STATE_INIT_REQUEST");
+    checkIfMinecraftIsRunning();
+    startMinecraftWatcher();
 }
 
 InitializeAppState();

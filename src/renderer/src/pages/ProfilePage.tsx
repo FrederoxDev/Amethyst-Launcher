@@ -1,11 +1,15 @@
 import { useNavigate } from "react-router-dom";
-
 import { MainPanel } from "@renderer/components/MainPanel";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
-
 import { useAppStore } from "@renderer/states/AppStore";
-
 import { Profile } from "@renderer/scripts/Profiles";
+
+const { ipcRenderer } = window.require("electron") as typeof import("electron");
+
+ipcRenderer.on("AMETHYST_PROTOCOL_URL", (event, url) => {
+    console.log(`[renderer] Protocol URL received: ${url}`);
+    // Handle the protocol URL as needed, e.g., navigate to a specific page or perform an action.
+});
 
 const ProfileButton = ({ profile, index }: { profile: Profile; index: number }) => {
     const navigate = useNavigate();
@@ -42,6 +46,7 @@ export function ProfilePage() {
     const allProfiles = useAppStore(state => state.allProfiles);
     const setAllProfiles = useAppStore(state => state.setAllProfiles);
     const setSelectedProfile = useAppStore(state => state.setSelectedProfile);
+    const versionDatabase = useAppStore(state => state.versionManager.database);
 
     return (
         <MainPanel>
@@ -58,7 +63,7 @@ export function ProfilePage() {
                         onClick={() => {
                             const defaultProfile: Profile = {
                                 name: "New Profile",
-                                minecraft_version: "1.21.0.3",
+                                minecraft_version: versionDatabase.getAllVersions().find(v => v.type === "release")?.version.toString(),
                                 mods: [],
                                 runtime: "Vanilla",
                             };

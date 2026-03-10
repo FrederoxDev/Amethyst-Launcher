@@ -25,6 +25,7 @@ export function ProfileEditor() {
     const saveData = useAppStore(state => state.saveData);
     const allInvalidMods = useAppStore(state => state.allInvalidMods);
     const versionManager = useAppStore(state => state.versionManager);
+    const platform = useAppStore(state => state.platform);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -92,7 +93,7 @@ export function ProfileEditor() {
         setProfileMinecraftVersion(profile?.minecraft_version ?? "1.21.0.3");
     }, [allProfiles, selectedProfile]);
 
-    const saveProfile = () => {
+    const saveProfile = async () => {
         allProfiles[selectedProfile].name = profileName;
 
         allProfiles[selectedProfile].runtime = profileRuntime;
@@ -100,6 +101,13 @@ export function ProfileEditor() {
         allProfiles[selectedProfile].minecraft_version = profileMinecraftVersion;
 
         console.log("Saving profile:", allProfiles[selectedProfile]);
+        platform.createShortcut({
+            name: profileName,
+            target: "amethyst-launcher://startprofile/uuid_here",
+            args: "",
+            description: `Launches the ${profileName} profile with Amethyst Launcher`,
+            icon: ""
+        });
         saveData();
         navigate("/profiles");
     };
