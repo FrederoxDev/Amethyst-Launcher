@@ -61,6 +61,10 @@ export class InstalledVersionModel implements IJSONModel {
         return `InstalledVersion with UUID: ${this.uuid}, name: ${this.name}, path: ${this.path}, type: ${this.type}, imported: ${this.imported}, installedFrom: ${this.installedFrom}`;
     }
 
+    getName(): string {
+        return this.name;
+    }
+
     static fromObject(obj: any): InstalledVersionModel {
         if (!("uuid" in obj) || !("name" in obj) || !("path" in obj) || !("type" in obj) || !("version" in obj) || !("imported" in obj) || !("installed_from" in obj)) {
             throw new Error("Invalid installed version object");
@@ -102,6 +106,8 @@ export class InstalledVersionModel implements IJSONModel {
         return JSON.stringify(this.toObject(), undefined, 4);
     }
 }
+
+export type MinecraftGeneralVersionInfo = MinecraftVersionData | InstalledVersionModel;
 
 export class InstalledVersionListModel implements IJSONModel {
     versions: InstalledVersionModel[];

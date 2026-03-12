@@ -1,68 +1,65 @@
-.button_base {
-    width: 100%;
-    height: 51px;
-}
-
-.button_border {
-    height: 100%;
-    border-width: 3px;
-    border-color: #1e1e1f;
+.button-container {
+    width: var(--mc-button-container-w);
+    height: var(--mc-button-container-h);
+    display: flex;
+    align-items: end;
     cursor: pointer;
+    margin: 0px;
 }
 
-.button_border:active {
-    transform: translateY(5px);
-    height: calc(100% - 5px);
-
-    .button_top {
-        height: 100%;
-    }
-
-    .button_side {
-        height: 0;
-    }
+.button-container *,
+.button-container *::before,
+.button-container *::after {
+    transition: all 0.075s ease;
 }
 
-.button_top {
-    height: calc(100% - 5px);
-    border-width: 3px;
-    border-color: #4f913c;
-    background-color: #3c8527;
+.button-real-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border-style: solid;
+    border-width: var(--mc-button-container-border-width);
+    border-color: var(--mc-button-container-border-color);
+    box-sizing: border-box;
+}
+
+.button-real-container::after {
+    content: "";
+    display: block;
+    width: 100%;
+    height: var(--mc-button-shadow-size);
+    background-color: var(--mc-button-real-container-border-color);
+}
+
+.button-real-container:hover .button-base {
+    background-color: var(--mc-button-base-hover-bg-color);
+}
+
+.button-real-container:active {
+    height: calc(100% - var(--mc-button-shadow-size));
+}
+
+.button-real-container:active::after {
+    height: 0;
+}
+
+.button-base {
+    width: 100%;
+    height: 100%;
+    background-color: var(--mc-button-base-bg-color);
+    border-left: 2px solid var(--mc-button-base-topleft-border-color);
+    border-top: 2px solid var(--mc-button-base-topleft-border-color);
+    border-bottom: 2px solid var(--mc-button-base-bottomright-border-color);
+    border-right: 2px solid var(--mc-button-base-bottomright-border-color);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.button_top.warn {
-    border-color: #cf4a4a;
-    background-color: #ca3636;
-}
-
-.button_top:hover {
-    background-color: #2a641c;
-}
-
-.button_top.warn:hover {
-    background-color: #c02d2d;
-}
-
-.button_text {
+.button-text {
     font-family: 'Minecraft-Seven', sans-serif;
     font-size: 16px;
-    color: #ffffff;
-}
-
-.button_side {
-    background-color: #1d4d13;
-    height: 5px;
-}
-
-.button_side.warn {
-    background-color: #ad1d1d;
-}
-
-.button-disabled, .button-disabled * {
-    filter: grayscale(75%);
-    cursor: not-allowed;
-    pointer-events: none;
+    color: var(--mc-button-text-color);
+    text-align: center;
 }

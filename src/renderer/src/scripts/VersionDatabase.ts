@@ -31,6 +31,11 @@ export class MinecraftVersionData implements IJSONModel {
         return MinecraftVersionData.toString(this);
     }
 
+    getName() {
+        const versionString = this.version.toString();
+        return this.type === "preview" ? `Preview ${versionString}` : `Release ${versionString}`;
+    }
+
     static toString(version: MinecraftVersionData): string {
         return `${version.version.toString()}-${version.type}`
     }
