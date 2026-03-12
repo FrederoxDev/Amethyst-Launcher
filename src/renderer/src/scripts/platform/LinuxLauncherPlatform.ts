@@ -136,6 +136,7 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
         const versionPath = path.join(version.path, "Minecraft.Windows.exe");
         const prefixPath = path.join(this.getPaths().launcherPath, "gamedata", "default");
         fs.mkdirSync(path.join(prefixPath, "dosdevices"), { recursive: true });
+
         await LauncherTools.UMULauncher.runGame(versionPath, {
             "WINEPREFIX": prefixPath
         });

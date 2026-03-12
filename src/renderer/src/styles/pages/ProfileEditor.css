@@ -59,9 +59,14 @@
 }
 
 .profile-editor-actions {
+    height: fit-content;
+    width: 100%;
     display: flex;
-    justify-content: space-around;
     gap: 8px;
+}
+
+.profile-editor-actions * {
+    flex: 1;
 }
 
 .profile-editor-mod-card {

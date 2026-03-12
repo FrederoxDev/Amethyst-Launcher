@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { Dropdown } from "@renderer/components/Dropdown";
 import { MainPanel } from "@renderer/components/MainPanel";
-import { MinecraftButton } from "@renderer/components/MinecraftButton";
+import { MinecraftButton, RED_MINECRAFT_BUTTON } from "@renderer/components/MinecraftButton";
 import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
 import { TextInput } from "@renderer/components/TextInput";
 import { useAppStore } from "@renderer/states/AppStore";
@@ -38,7 +38,7 @@ export function ProfileEditor() {
         const fetchVersions = async () => {
             try {
                 const versions = await versionManager.database.update();
-                if (versions instanceof Error) 
+                if (versions instanceof Error)
                     throw versions;
                 setRemoteVersions([...versions]);
             }
@@ -46,7 +46,7 @@ export function ProfileEditor() {
                 console.error("Failed to fetch versions from database:", e);
             }
         };
-        
+
         fetchVersions();
     }, []);
 
@@ -172,7 +172,7 @@ export function ProfileEditor() {
                                 <MinecraftToggle
                                     isChecked={false}
                                     setIsChecked={isChecked => {
-                                        
+
                                     }}
                                 />
                             </div>
@@ -224,11 +224,11 @@ export function ProfileEditor() {
 
                 {/* Profile Actions */}
                 <div className="profile-editor-actions">
-                    <MinecraftButton text="Save Profile" onClick={() => saveProfile()} />
+                    <MinecraftButton text="Save Profile" onClick={() => saveProfile()}/>
                     <MinecraftButton
                         text="Delete Profile"
-                        style={MinecraftButtonStyle.Warn}
                         onClick={() => deleteProfile()}
+                        colorPallete={RED_MINECRAFT_BUTTON}
                     />
                 </div>
             </div>
