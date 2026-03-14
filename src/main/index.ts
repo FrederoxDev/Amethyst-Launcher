@@ -95,6 +95,10 @@ ipcMain.handle("get-appdata-path", () => {
     return app.getPath("home");
 });
 
+ipcMain.on("get-appdata-path-sync", (event) => {
+    event.returnValue = app.getPath("appData");
+});
+
 ipcMain.handle("get-localappdata-path", () => {
     return process.env.LOCALAPPDATA;
 });

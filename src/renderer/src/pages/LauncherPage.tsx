@@ -3,10 +3,10 @@ import warningIcon from "@renderer/assets/images/icons/warning-icon.png";
 import { Dropdown } from "@renderer/components/Dropdown";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { useAppStore } from "@renderer/states/AppStore";
-import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 import { useShallow } from "zustand/shallow";
 import ProgressBarRenderer from "@renderer/components/ProgressBarRenderer";
-import { FULL_PROGRESS_RESET_OPTIONS, ProgressBar } from "@renderer/states/ProgressBarStore";
+import { ProgressBar } from "@renderer/states/ProgressBarStore";
+import { launchProfile } from "@renderer/scripts/LaunchUtils";
 
 export function LauncherPage() {
     const [
@@ -15,9 +15,6 @@ export function LauncherPage() {
         setSelectedProfile,
         error,
         setError,
-        allValidMods,
-        versionManager,
-        platform,
         minecraftIsRunning
     ] = useAppStore(useShallow(state => [
         state.allProfiles,
@@ -25,76 +22,17 @@ export function LauncherPage() {
         state.setSelectedProfile,
         state.error,
         state.setError,
-        state.allValidMods,
-        state.versionManager,
-        state.platform,
         state.minecraftIsRunning
     ]));
 
-    const currentStatus = ProgressBar.useState(state => state.currentStatus);
-
-    const LaunchGame = async () => {
-        const log = (msg: string) => {
-            console.log(msg);
-        };
-
-        if (!ProgressBar.canDoAction("launch") || minecraftIsRunning) 
-            return;
-        ProgressBar.getState().setStatus("launching");
-
-        if (allProfiles.length === 0) {
-            throw new Error("Cannot launch without a profile!");
-        }
-
-        const profile = allProfiles[selectedProfile];
-
-        const profileInvalidMods = profile.mods.filter(mod => !allValidMods.includes(mod));
-        if (profileInvalidMods.length > 0) {
-            throw new Error(
-                `Profile has ${profileInvalidMods.length} missing mod${profileInvalidMods.length > 1 ? "s" : ""}, edit profile to launch! Missing mods: ${profileInvalidMods.map(mod => `'${mod}'`).join(", ")}`
-            );
-        }
-
-        const semVersion = SemVersion.fromString(profile.minecraft_version);
-        await versionManager.database.update();
-        const minecraftVersion = versionManager.database.getVersionBySemVersion(semVersion);
-        if (!minecraftVersion) {
-            throw new Error(`Minecraft version ${semVersion.toString()} not found in version database!`);
-        }
-
-        await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress, setShow }) => {
-            setStatus("other");
-            setProgress(0);
-            setMessage(`Preparing to launch Minecraft ${semVersion.toString()}...`);
-
-            const isVersionInstalled = versionManager.getInstalledVersionByUUID(minecraftVersion.uuid) !== null;
-
-            // Check for the folder for the version we are targeting, if not present we need to fetch.
-            if (!isVersionInstalled) {
-                log("Target version is not installed.");
-                await versionManager.downloadExtractAndInstallVersion(minecraftVersion.uuid);
-            }
-        }, true);
-
-        // InstallProxy(minecraftVersion);
-
-        await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
-            setStatus("launching");
-            setProgress(0.5);
-            setMessage(`Launching Minecraft ${semVersion.toString()}...`);
-
-            const installedVersion = versionManager.getInstalledVersionByUUID(minecraftVersion.uuid);
-            if (!installedVersion) {
-                throw new Error("Failed to find the installed version after downloading and extracting it.");
-            }
-            
-            await platform.runProfile(profile, installedVersion);
-        }, true);
-    };
-
     const launchGame = async () => {
+        if (allProfiles.length === 0) {
+            setError("Cannot launch without a profile!");
+            return;
+        }
+
         try {
-            await LaunchGame();
+            await launchProfile(allProfiles[selectedProfile]);
         } catch (e) {
             console.error(e);
             setError((e as Error).message);

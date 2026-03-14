@@ -157,32 +157,50 @@ export class XVDTool extends ToolArtifact {
      * Progress is reported through the global {@link ProgressBar}.
      *
      * @param inputFile      Absolute path to the `.xvd` file to decrypt.
-     * @param cikUuid        UUID of the CIK to use for decryption.
-     * @param cikData        Hex-encoded raw CIK data.
+     * @param cikKeys        Record of CIK UUID to hex-encoded CIK data. All keys will be tried until one succeeds.
      * @param shouldAskUpdate When `true`, prompts the user before updating XVDTool.
      * @returns Always resolves to `null` (output is reported via progress events).
      */
-    async decryptFile(inputFile: string, cikUuid: string, cikData: string, checkForUpdates: boolean = false): Promise<string | null> {
-        console.log(`[${this.name}] decryptFile() called. inputFile='${inputFile}', cikUuid='${cikUuid}', checkForUpdates=${checkForUpdates}.`);
+    async decryptFile(inputFile: string, cikKeys: Record<string, string>, checkForUpdates: boolean = false): Promise<string | null> {
+        console.log(`[${this.name}] decryptFile() called. inputFile='${inputFile}', keys=${Object.keys(cikKeys).length}, checkForUpdates=${checkForUpdates}.`);
         const platform = useAppStore.getState().platform;
 
         // Ensure XVDTool is installed (and optionally up-to-date) before running.
-        const { executable: xvdtoolExecutable } = await this.check({ 
+        const { executable: xvdtoolExecutable } = await this.check({
             allowOutdated: true,
             promptForUpdate: true,
             releaseFetchTimeout: 1500,
             checkForUpdates
         });
 
-        const command = `"${xvdtoolExecutable}" -nd -eu -cik "${cikUuid}" -cikdata "${cikData}" "${inputFile}"`;
+        const entries = Object.entries(cikKeys);
+        let lastError: string = "No CIK keys provided";
+        for (const [cikUuid, cikData] of entries) {
+            const command = `"${xvdtoolExecutable}" -nd -eu -cik "${cikUuid}" -cikdata "${cikData}" "${inputFile}"`;
+            console.log(`[${this.name}] Trying CIK ${cikUuid}...`);
+            try {
+                await this.runDecrypt(platform, command, inputFile);
+                return null; // success
+            } catch (err: any) {
+                lastError = err.message ?? String(err);
+                console.warn(`[${this.name}] CIK ${cikUuid} failed: ${lastError}`);
+            }
+        }
+        throw new Error(`Decryption failed: none of the ${entries.length} known CIK keys worked. Last error: ${lastError}`);
+    }
+
+    private async runDecrypt(platform: any, command: string, inputFile: string): Promise<string | null> {
         console.log(`[${this.name}] Running decrypt command: ${command}`);
 
         return new Promise<string | null>(async (resolve, reject) => {
             await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
                 setStatus("decrypting");
+                let toolError: string | null = null;
                 await platform.runCommand(command, (data) => {
                     // XVDTool emits one JSON object per line; non-JSON lines are silently skipped.
                     for (const line of data.split("\n")) {
+                        const trimmed = line.trim();
+                        if (!trimmed) continue;
                         try {
                             const dataJson: OutputModel = {
                                 message: null,
@@ -190,18 +208,21 @@ export class XVDTool extends ToolArtifact {
                                 progress: null,
                                 total: null,
                                 current: null,
-                                ...JSON.parse(line)
+                                ...JSON.parse(trimmed)
                             } as OutputModel;
 
                             if (dataJson.error) {
-                                // Log tool-reported errors but don't reject – the process may still succeed.
-                                console.error(`[${this.name}] Tool error: ${dataJson.error}`);
+                                const errorDetail = dataJson.message
+                                    ? `${dataJson.error}: ${dataJson.message}`
+                                    : `${dataJson.error} (raw: ${trimmed})`;
+                                console.error(`[${this.name}] Tool error: ${errorDetail}`);
+                                toolError = errorDetail;
                             }
-                            
+
                             if (dataJson.message) {
                                 setMessage(dataJson.message);
-                            } 
-                            
+                            }
+
                             // Prefer an explicit [0,1] progress value; otherwise derive it from current/total.
                             if (dataJson.progress !== null) {
                                 setProgress(dataJson.progress);
@@ -210,15 +231,20 @@ export class XVDTool extends ToolArtifact {
                             }
                         }
                         catch {
-                            // Skip lines that are not valid JSON (e.g. blank lines or plain-text output).
+                            // Non-JSON output — log it as it may contain useful error info.
+                            console.warn(`[${this.name}] Non-JSON output: ${trimmed}`);
                         }
                     }
                 }).catch(err => {
                     console.error(`[${this.name}] decryptFile: process exited with error:`, err);
-                    reject(err);
+                    toolError = toolError ?? err.message;
                 });
                 console.log(`[${this.name}] decryptFile: operation finished for '${inputFile}'.`);
-                resolve(null);
+                if (toolError) {
+                    reject(new Error(toolError));
+                } else {
+                    resolve(null);
+                }
             });
         });
     }
@@ -255,9 +281,12 @@ export class XVDTool extends ToolArtifact {
         return new Promise<string | null>(async (resolve, reject) => {
             await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
                 setStatus("extracting");
+                let toolError: string | null = null;
                 await platform.runCommand(command, (data) => {
                     // XVDTool emits one JSON object per line; non-JSON lines are silently skipped.
                     for (const line of data.split("\n")) {
+                        const trimmed = line.trim();
+                        if (!trimmed) continue;
                         try {
                             const dataJson: OutputModel = {
                                 message: null,
@@ -265,18 +294,21 @@ export class XVDTool extends ToolArtifact {
                                 progress: null,
                                 total: null,
                                 current: null,
-                                ...JSON.parse(line)
+                                ...JSON.parse(trimmed)
                             } as OutputModel;
 
                             if (dataJson.error) {
-                                // Log tool-reported errors but don't reject – the process may still succeed.
-                                console.error(`[${this.name}] Tool error: ${dataJson.error}`);
+                                const errorDetail = dataJson.message
+                                    ? `${dataJson.error}: ${dataJson.message}`
+                                    : `${dataJson.error} (raw: ${trimmed})`;
+                                console.error(`[${this.name}] Tool error: ${errorDetail}`);
+                                toolError = errorDetail;
                             }
-                            
+
                             if (dataJson.message) {
                                 setMessage(dataJson.message);
-                            } 
-                            
+                            }
+
                             // Prefer an explicit [0,1] progress value; otherwise derive it from current/total.
                             if (dataJson.progress !== null) {
                                 setProgress(dataJson.progress);
@@ -285,15 +317,20 @@ export class XVDTool extends ToolArtifact {
                             }
                         }
                         catch {
-                            // Skip lines that are not valid JSON (e.g. blank lines or plain-text output).
+                            // Non-JSON output — log it as it may contain useful error info.
+                            console.warn(`[${this.name}] Non-JSON output: ${trimmed}`);
                         }
                     }
                 }).catch(err => {
                     console.error(`[${this.name}] extractFile: process exited with error:`, err);
-                    reject(err);
+                    toolError = toolError ?? err.message;
                 });
                 console.log(`[${this.name}] extractFile: operation finished for '${inputFile}'.`);
-                resolve(null);
+                if (toolError) {
+                    reject(new Error(toolError));
+                } else {
+                    resolve(null);
+                }
             });
         });
     }

@@ -3,7 +3,7 @@ import { MinecraftVersionData, MinecraftVersionType, VersionDatabase } from "@re
 import { useAppStore } from "@renderer/states/AppStore";
 import { PathUtils } from "./PathUtils";
 import { XVDTool } from "./backend/tools/XVDTool";
-import { CIK_DATA_PREVIEW_GDK, CIK_DATA_RELEASE_GDK, CIK_UUID_PREVIEW_GDK, CIK_UUID_RELEASE_GDK } from "./backend/Decryption";
+import { CIK_KEYS } from "./backend/Decryption";
 import { Downloader } from "./backend/Downloader";
 import { IJSONModel } from "./contracts/IJSONModel";
 import { FileLocker } from "./FileLocker";
@@ -390,8 +390,6 @@ export class VersionManager {
         this.lockVersion(versionFileName);
         
         // Perform decryption and extraction with progress updates
-        const cikUuid = type === "release" ? CIK_UUID_PREVIEW_GDK : CIK_UUID_RELEASE_GDK;
-        const cikData = type === "preview" ? CIK_DATA_PREVIEW_GDK : CIK_DATA_RELEASE_GDK;
         await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
             // Check XVDTool version and ask for update if needed before starting decryption and extraction
             await LauncherTools.XVDTool.check();
@@ -401,12 +399,8 @@ export class VersionManager {
             setMessage(`Decrypting MSIXVC of Minecraft ${version.toString()}...`);
             setProgress(0.5);
 
-            // XVDTool.decrypt will call the tool to perform decryption, it will return an error message if decryption fails, otherwise null
-            // It will also update the progress bar internally by reading the tool's output, so we don't need to worry about that here
-            const decryptErr = await LauncherTools.XVDTool.decryptFile(versionFilePath, cikUuid, cikData, false);
-            if (decryptErr) {
-                throw new Error(`Failed to decrypt MSIXVC! (${decryptErr})`);
-            }
+            // Try all known CIK keys until one works (throws on failure)
+            await LauncherTools.XVDTool.decryptFile(versionFilePath, CIK_KEYS, false);
 
             // Show status for extraction
             setStatus("extracting");

@@ -99,6 +99,9 @@ electron.ipcMain.handle("get-app-path", () => {
 electron.ipcMain.handle("get-appdata-path", () => {
   return electron.app.getPath("home");
 });
+electron.ipcMain.on("get-appdata-path-sync", (event) => {
+  event.returnValue = electron.app.getPath("appData");
+});
 electron.ipcMain.handle("get-localappdata-path", () => {
   return process.env.LOCALAPPDATA;
 });
