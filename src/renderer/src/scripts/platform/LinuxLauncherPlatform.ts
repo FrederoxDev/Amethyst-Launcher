@@ -113,7 +113,7 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
         return LinuxLauncherPlatform.CachedLauncherPaths;
     }
 
-    isProcessRunning(executableName: string): ProcessInfo | null {
+    async isProcessRunning(executableName: string): Promise<ProcessInfo | null> {
         try {
             for (const pid of fs.readdirSync("/proc")) {
                 if (!/^\d+$/.test(pid)) continue;

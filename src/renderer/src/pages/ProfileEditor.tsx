@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { Dropdown } from "@renderer/components/Dropdown";
+import { Dropdown, DropdownOption } from "@renderer/components/Dropdown";
 import { MainPanel } from "@renderer/components/MainPanel";
 import { MinecraftButton, RED_MINECRAFT_BUTTON } from "@renderer/components/MinecraftButton";
 import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
@@ -15,8 +15,10 @@ export function ProfileEditor() {
     const [profileActiveMods, setProfileActiveMods] = useState<string[]>([]);
     const [profileRuntime, setProfileRuntime] = useState<string>("");
     const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<string>("");
+    const [profileVersionUuid, setProfileVersionUuid] = useState<string | null>(null);
     const [remoteVersions, setRemoteVersions] = useState<MinecraftVersionData[]>([]);
 
+    const [, forceUpdate] = useReducer(x => x + 1, 0);
     const allValidMods = useAppStore(state => state.allValidMods);
     const allRuntimes = useAppStore(state => state.allRuntimes);
     const allProfiles = useAppStore(state => state.allProfiles);
@@ -48,6 +50,10 @@ export function ProfileEditor() {
         };
 
         fetchVersions();
+
+        const unsubInstall = versionManager.subscribe("version_installed", () => forceUpdate());
+        const unsubUninstall = versionManager.subscribe("version_uninstalled", () => forceUpdate());
+        return () => { unsubInstall(); unsubUninstall(); };
     }, []);
 
     const toggleModActive = (name: string) => {
@@ -91,6 +97,7 @@ export function ProfileEditor() {
         setProfileRuntime(profile?.runtime ?? "Vanilla");
         setProfileActiveMods(profile?.mods ?? []);
         setProfileMinecraftVersion(profile?.minecraft_version ?? "1.21.0.3");
+        setProfileVersionUuid(profile?.version_uuid ?? null);
     }, [allProfiles, selectedProfile]);
 
     const saveProfile = async () => {
@@ -99,14 +106,13 @@ export function ProfileEditor() {
         allProfiles[selectedProfile].runtime = profileRuntime;
         allProfiles[selectedProfile].mods = profileActiveMods;
         allProfiles[selectedProfile].minecraft_version = profileMinecraftVersion;
+        allProfiles[selectedProfile].version_uuid = profileVersionUuid;
 
         console.log("Saving profile:", allProfiles[selectedProfile]);
         platform.createShortcut({
             name: profileName,
-            target: "amethyst-launcher://startprofile/uuid_here",
-            args: "",
+            target: `amethyst-launcher://launchprofile/${allProfiles[selectedProfile].uuid}`,
             description: `Launches the ${profileName} profile with Amethyst Launcher`,
-            icon: ""
         });
         saveData();
         navigate("/profiles");
@@ -122,12 +128,26 @@ export function ProfileEditor() {
 
     useEffect(() => {
         loadProfile();
-        saveData();
     }, [loadProfile]);
 
     const formatVersionName = (version: MinecraftVersionData): string => {
         return version.version.toString();
     };
+
+    const installedVersions = useMemo(() => versionManager.getInstalledVersions(), [versionManager, remoteVersions]);
+
+    const versionOptions = useMemo(() => {
+        const installed = installedVersions.map(v => ({
+            label: v.name,
+            value: `uuid:${v.uuid}`
+        }));
+        const remote = remoteVersions.map(v => ({
+            label: formatVersionName(v),
+            value: formatVersionName(v)
+        }));
+        // Merge installed first, then remote (no dedup needed since UUIDs won't collide with version strings)
+        return [...installed, ...remote];
+    }, [remoteVersions, installedVersions]);
 
     return (
         <MainPanel>
@@ -137,9 +157,20 @@ export function ProfileEditor() {
                     <TextInput label="Profile Name" text={profileName} setText={setProfileName} />
                     <Dropdown
                         labelText="Minecraft Version"
-                        value={profileMinecraftVersion}
-                        setValue={setProfileMinecraftVersion}
-                        options={remoteVersions.map(formatVersionName)}
+                        value={profileVersionUuid ? `uuid:${profileVersionUuid}` : profileMinecraftVersion}
+                        setValue={(val) => {
+                            const value = typeof val === "function" ? val("") : val;
+                            if (value.startsWith("uuid:")) {
+                                const uuid = value.slice(5);
+                                setProfileVersionUuid(uuid);
+                                const installed = installedVersions.find(v => v.uuid === uuid);
+                                setProfileMinecraftVersion(installed?.version.toString() ?? "");
+                            } else {
+                                setProfileVersionUuid(null);
+                                setProfileMinecraftVersion(value);
+                            }
+                        }}
+                        options={versionOptions}
                         id="minecraft-version"
                     />
                     <Dropdown

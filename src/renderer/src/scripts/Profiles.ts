@@ -8,11 +8,13 @@ function getPaths() {
 }
 
 export interface Profile {
+    uuid: string;
     name: string;
     runtime: string;
     mods: string[];
     minecraft_version: string | null;
-    installed_version?: InstalledVersion;
+    /** UUID of the installed version, used for imported versions that may not exist in the remote database. */
+    version_uuid?: string | null;
     use_split_data_folder?: boolean;
 }
 
@@ -23,6 +25,17 @@ export function GetProfiles(): Profile[] {
     const json_data = fs.readFileSync(paths.profilesFilePath, "utf-8");
     try {
         const profiles = JSON.parse(json_data) as Profile[];
+        let migrated = false;
+        for (const profile of profiles) {
+            if (!profile.uuid) {
+                profile.uuid = crypto.randomUUID();
+                migrated = true;
+            }
+        }
+        if (migrated) {
+            PathUtils.ValidatePath(paths.profilesFilePath);
+            fs.writeFileSync(paths.profilesFilePath, JSON.stringify(profiles, undefined, 4));
+        }
         return profiles;
     } catch {
         return [];

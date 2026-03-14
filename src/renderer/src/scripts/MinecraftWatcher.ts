@@ -1,28 +1,28 @@
 import { useAppStore } from "@renderer/states/AppStore";
 
 const MINECRAFT_EXECUTABLE = "Minecraft.Windows.exe";
-const POLL_INTERVAL_MS = 1000;
+const POLL_INTERVAL_MS = 3000;
 
 let watcherInterval: ReturnType<typeof setInterval> | null = null;
 
-export function checkIfMinecraftIsRunning(): boolean {
+export async function checkIfMinecraftIsRunning(): Promise<boolean> {
     const { platform, setMinecraftIsRunning } = useAppStore.getState();
-    const info = platform.isProcessRunning(MINECRAFT_EXECUTABLE);
+    const info = await platform.isProcessRunning(MINECRAFT_EXECUTABLE);
     setMinecraftIsRunning(info !== null);
     return info !== null;
 }
 
 /**
- * Starts polling `isProcessRunning` every second and updates
+ * Starts polling `isProcessRunning` every few seconds and updates
  * `minecraftIsRunning` in the AppStore accordingly.
  * Safe to call multiple times — only one watcher runs at a time.
  */
 export function startMinecraftWatcher(): void {
     if (watcherInterval !== null) return;
 
-    watcherInterval = setInterval(() => {
+    watcherInterval = setInterval(async () => {
         try {
-            checkIfMinecraftIsRunning();
+            await checkIfMinecraftIsRunning();
         } catch {
             stopMinecraftWatcher();
         }

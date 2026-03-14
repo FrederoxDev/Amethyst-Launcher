@@ -1,4 +1,5 @@
 import { ILauncherPlatform, LauncherPaths, ProcessInfo, ShortcutOptions } from "@renderer/scripts/platform/LauncherPlatform";
+import { EnsureVersionFiles, IsRegistered, LaunchMinecraft, RegisterVersion, UnregisterCurrent } from "../AppRegistry";
 import { PathUtils } from "../PathUtils";
 import { Profile } from "../Profiles";
 import { InstalledVersionModel } from "../VersionManager";
@@ -48,23 +49,34 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         return `Windows ${os.release()} (${os.arch()})`;
     }
 
-    isProcessRunning(executableName: string): ProcessInfo | null {
-        try {
-            // Query process by name and retrieve PID + working directory via PowerShell.
-            const script = `Get-Process | Where-Object { $_.MainModule.ModuleName -eq '${executableName}' } | Select-Object -First 1 Id,@{N='cwd';E={(Get-Item (Get-Process -Id $_.Id).MainModule.FileName).DirectoryName}} | ConvertTo-Json`;
-            const result = child.spawnSync(
-                "powershell",
-                ["-NoProfile", "-NonInteractive", "-Command", script],
-                { encoding: "utf-8" }
+    isProcessRunning(executableName: string): Promise<ProcessInfo | null> {
+        return new Promise((resolve) => {
+            // Use tasklist instead of PowerShell — much faster (~50ms vs ~2000ms).
+            const proc = child.spawn(
+                "tasklist",
+                ["/FI", `IMAGENAME eq ${executableName}`, "/FO", "CSV", "/NH"],
+                { encoding: "utf-8" } as any
             );
-            if (result.status !== 0 || !result.stdout?.trim()) return null;
-            const json = JSON.parse(result.stdout.trim());
-            const pid = parseInt(json["Id"] ?? json["id"] ?? "", 10);
-            const cwd: string = json["cwd"] ?? "";
-            return { pid: isNaN(pid) ? -1 : pid, cwd, executableName };
-        } catch {
-            return null;
-        }
+
+            let stdout = "";
+            proc.stdout?.on("data", (data: string | Buffer) => { stdout += data.toString(); });
+            proc.on("error", () => resolve(null));
+            proc.on("close", () => {
+                try {
+                    const line = stdout.trim();
+                    if (!line || line.includes("No tasks")) {
+                        resolve(null);
+                        return;
+                    }
+                    // CSV format: "name","pid","session","session#","mem"
+                    const match = line.split("\n")[0]?.match(/^"[^"]+","(\d+)"/);
+                    const pid = match ? parseInt(match[1], 10) : -1;
+                    resolve({ pid, cwd: "", executableName });
+                } catch {
+                    resolve(null);
+                }
+            });
+        });
     }
 
     createShortcut(options: ShortcutOptions): Promise<void> {
@@ -99,7 +111,7 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
     getPaths(): LauncherPaths {
         if (WindowsLauncherPlatform.CachedLauncherPaths)
             return WindowsLauncherPlatform.CachedLauncherPaths;
-        const appDataPath: string = ipcRenderer.sendSync("get-appdata-path");
+        const appDataPath: string = ipcRenderer.sendSync("get-appdata-path-sync");
 
         WindowsLauncherPlatform.CachedLauncherPaths = {
             amethystPath: `${appDataPath}\\Amethyst`,
@@ -125,8 +137,20 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         return WindowsLauncherPlatform.CachedLauncherPaths;
     }
 
-    async runProfile(profile: Profile, version: InstalledVersionModel): Promise<void> {
-        throw new Error("Running profiles is not implemented on Windows platforms yet.");
+    async runProfile(_profile: Profile, version: InstalledVersionModel): Promise<void> {
+        // Always ensure required files exist (MicrosoftGame.Config, GameInput, etc.)
+        await EnsureVersionFiles(version);
+
+        if (!IsRegistered(version)) {
+            console.log("[WindowsPlatform] Unregistering current version...");
+            await UnregisterCurrent();
+
+            console.log("[WindowsPlatform] Registering version:", version.name);
+            await RegisterVersion(version);
+        }
+
+        console.log("[WindowsPlatform] Launching Minecraft...");
+        LaunchMinecraft(version);
     }
 
     static getRegeditModule(): RegeditModule {

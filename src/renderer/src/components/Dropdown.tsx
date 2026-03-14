@@ -1,12 +1,18 @@
 import React from "react";
 
+export type DropdownOption = { label: string; value: string };
+
 type DropdownProps = {
     id: string;
     labelText: string;
-    options: string[];
+    options: (string | DropdownOption)[];
     value: string;
     setValue: React.Dispatch<React.SetStateAction<string>>;
 };
+
+function normalizeOption(option: string | DropdownOption): DropdownOption {
+    return typeof option === "string" ? { label: option, value: option } : option;
+}
 
 export function Dropdown({ id, labelText, options, value, setValue }: DropdownProps) {
     const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -27,11 +33,14 @@ export function Dropdown({ id, labelText, options, value, setValue }: DropdownPr
                     value={value}
                     className="minecraft-seven dropdown-select"
                 >
-                    {options.map((option, index) => (
-                        <option value={option} key={index} className="dropdown-option">
-                            {option}
-                        </option>
-                    ))}
+                    {options.map((raw, index) => {
+                        const option = normalizeOption(raw);
+                        return (
+                            <option value={option.value} key={index} className="dropdown-option">
+                                {option.label}
+                            </option>
+                        );
+                    })}
                 </select>
             ) : (
                 <div className="dropdown-empty" />
