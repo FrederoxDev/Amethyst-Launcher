@@ -68,6 +68,11 @@
     pointer-events: auto;
     border-radius: 4px;
     margin: 2px;
+    transition: transform 0.1s ease;
+}
+
+.window_button:active {
+    transform: scale(0.8);
 }
 
 @media (prefers-color-scheme: dark) {

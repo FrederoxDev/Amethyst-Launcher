@@ -1,55 +1,146 @@
-.mod-discovery-title {
+.mod-discovery-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    position: relative;
+}
+
+.mod-grid-search {
+    grid-column: 1 / -1;
+}
+
+.mod-search-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.mod-sort-select {
+    height: 34px;
+    background-color: #313233;
+    border: 3px solid #1E1E1F;
     color: white;
-    font-size: 14px;
+    font-size: 12px;
+    padding: 0 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    outline: none;
+}
+
+.mod-search-box {
+    display: flex;
+    align-items: center;
+    height: 34px;
+    background-color: #313233;
+    border: 3px solid #1E1E1F;
+    padding: 0 8px;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.mod-search-icon {
+    flex-shrink: 0;
+}
+
+.mod-search-input {
+    width: 100%;
+    outline: none;
+    background-color: transparent;
+    color: white;
+    font-size: 16px;
+    border: none;
+}
+
+.mod-search-input::placeholder {
+    color: #6f6f6f;
+}
+
+.mod-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+    padding: 16px;
+    flex: 1;
+    align-content: start;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .mod-card {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 16px;
+    background-color: #48494A;
+    border: 3px solid #1E1E1F;
+    padding: 12px;
     cursor: pointer;
+    transition: border-color 0.1s, transform 0.1s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mod-card:hover {
+    border-color: #6b6c6d;
+}
+
+.mod-card:active {
+    transform: scale(0.97, 0.94);
 }
 
 .mod-card-icon {
-    width: 64px;
-    height: 64px;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
     flex-shrink: 0;
+}
+
+.mod-card-icon-placeholder {
+    background-color: #3a3b3c;
 }
 
 .mod-card-body {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-width: 0;
 }
 
 .mod-card-title {
     color: white;
-    font-size: 18px;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mod-card-authors {
+    color: #a0a0a0;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .mod-card-description {
     color: #BCBEC0;
-    font-size: 14px;
+    font-size: 12px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-.mod-card-authors {
-    color: #BCBEC0;
-    font-size: 14px;
-}
-
-.mod-card-side {
+.mod-card-footer {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: space-between;
-    margin-left: auto;
-    padding-right: 8px;
+    align-items: center;
 }
 
 .mod-card-installs {
-    color: #BCBEC0;
-    font-size: 14px;
-    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #a0a0a0;
+    font-size: 12px;
 }
 
 .mod-readme-container {
@@ -162,6 +253,7 @@
 .mod-confirm-popup {
     width: 30%;
     height: 18%;
+    animation: popup-scale-in 0.1s ease-out;
 }
 
 .mod-confirm-content {
@@ -177,8 +269,11 @@
 .mod-confirm-actions {
     margin-top: auto;
     display: flex;
-    justify-content: space-around;
     gap: 8px;
+}
+
+.mod-confirm-actions > * {
+    flex: 1;
 }
 
 .mod-release-empty {
@@ -245,12 +340,49 @@
     padding: 16px;
 }
 
+.mod-details-icon {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+}
+
 .mod-details-link {
     color: white;
     font-size: 14px;
 }
 
 .mod-details-popup {
-    width: 80%;
-    height: 80%;
+    width: 80vw;
+    height: 85vh;
+    max-height: 85vh;
+}
+
+.mod-card-skeleton {
+    cursor: default;
+    pointer-events: none;
+}
+
+.mod-card-skeleton:hover {
+    border-color: #1E1E1F;
+}
+
+.mod-card-skeleton-icon {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    flex-shrink: 0;
+    border-radius: 3px;
+    background-color: #3a3b3c;
+    animation: mod-skeleton-pulse 1s ease-in-out infinite;
+}
+
+.mod-card-skeleton-text {
+    border-radius: 3px;
+    background-color: #3a3b3c;
+    margin-bottom: 4px;
+    animation: mod-skeleton-pulse 1s ease-in-out infinite;
+}
+
+@keyframes mod-skeleton-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
 }

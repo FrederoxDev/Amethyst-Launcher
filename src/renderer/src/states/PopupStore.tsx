@@ -19,10 +19,11 @@ export class NodeUtils {
 
 export class Popup {
     private static nodeFactory: (() => React.ReactNode) | null = null;
+    private static busy = false;
     private static state = create<PopupState>((set) => ({
         node: null,
-        setNode: (node) => set((state) => ({ 
-            node: StateUtils.resolveSetStateAction(node, state.node) 
+        setNode: (node) => set((state) => ({
+            node: StateUtils.resolveSetStateAction(node, state.node)
         }))
     }));
 
@@ -36,10 +37,18 @@ export class Popup {
         return this.state.getState();
     }
 
+    static isOpen() {
+        return this.busy;
+    }
+
     static async useAsync<T = void>(node: NodeOrCallback<T>): Promise<T> {
+        if (this.busy) return new Promise<T>(() => {});
+        this.busy = true;
+
         return new Promise<T>((resolve) => {
             const nodeArgs: PopupUseArguments<T> = {
                 submit: (result: T) => {
+                    this.busy = false;
                     this.state.getState().setNode(null);
                     resolve(result);
                 },

@@ -2,10 +2,11 @@ export type TextInputProps = {
     label: string;
     text: string;
     setText: React.Dispatch<React.SetStateAction<string>>;
+    placeholder?: string;
     style?: React.CSSProperties;
 };
 
-export function TextInput({ label, text, setText, style }: TextInputProps) {
+export function TextInput({ label, text, setText, placeholder, style }: TextInputProps) {
     return (
         <div style={{
                 display: "flex",
@@ -18,6 +19,7 @@ export function TextInput({ label, text, setText, style }: TextInputProps) {
                     type="text"
                     className="minecraft-seven text-input-control"
                     spellCheck={false}
+                    placeholder={placeholder}
                     value={text}
                     onInput={event => {
                         setText(event.currentTarget.value);

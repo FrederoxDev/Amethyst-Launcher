@@ -2,6 +2,8 @@
     position: relative;
     width: 100%;
     height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .launcher-error-banner {
@@ -13,6 +15,7 @@
     border: 3px solid #CF4A4A;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .launcher-error-body {
@@ -47,18 +50,155 @@
     padding: 4px;
 }
 
+/* Profile Grid */
+.launcher-profile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 10px;
+    padding: 16px;
+    flex: 1;
+    align-content: start;
+    overflow-y: auto;
+}
+
+.launcher-profile-card {
+    background-color: #48494A;
+    border: 3px solid #1E1E1F;
+    padding: 12px;
+    cursor: pointer;
+    transition: border-color 0.1s, transform 0.1s ease;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+}
+
+.launcher-profile-card:hover {
+    border-color: #6b6c6d;
+}
+
+.launcher-profile-card:active:not(:has(.launcher-profile-card-dots:active)) {
+    transform: scale(0.97, 0.94);
+}
+
+.launcher-create-card {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-style: dashed;
+    border-color: #8a8b8c;
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
+.launcher-create-card-text {
+    color: #c0c0c0;
+    font-size: 14px;
+    margin: 0;
+}
+
+.launcher-profile-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.launcher-profile-card-actions {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+}
+
+.launcher-profile-card-play {
+    width: 80px;
+}
+
+.launcher-profile-card-menu {
+    position: relative;
+}
+
+.launcher-profile-card-dots {
+    cursor: pointer;
+    padding: 4px;
+    opacity: 0.5;
+    transition: opacity 0.1s;
+}
+
+.launcher-profile-card-dots:hover {
+    opacity: 1;
+}
+
+@keyframes dropdown-open {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.launcher-profile-card-dropdown {
+    position: fixed;
+    background-color: #313233;
+    border: 3px solid #1E1E1F;
+    z-index: 10;
+    min-width: 160px;
+    transform-origin: top right;
+    animation: dropdown-open 0.1s ease-out;
+    padding: 4px;
+}
+
+.launcher-profile-card-dropdown-item {
+    padding: 6px 10px;
+    cursor: pointer;
+    color: #FFFFFF;
+    font-size: 15px;
+    white-space: nowrap;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    border-radius: 3px;
+    transition: transform 0.1s ease;
+}
+
+.launcher-profile-card-dropdown-item:active {
+    transform: scale(0.95, 0.9);
+}
+
+.launcher-profile-card-dropdown-item:hover {
+    background-color: #48494A;
+}
+
+.launcher-profile-card-dropdown-item--danger {
+    color: #FF6B6B;
+}
+
+.launcher-profile-card-name {
+    color: #FFFFFF;
+    font-size: 15px;
+    margin: 0;
+}
+
+.launcher-profile-card-version {
+    color: #a0a0a0;
+    font-size: 12px;
+    margin: 2px 0 0 0;
+}
+
+/* Footer */
 .launcher-footer {
     position: absolute;
     bottom: 0;
-    width: 100%;
+    right: 0;
 }
 
 .launcher-disclaimer {
     background-color: #0c0c0cc5;
     width: fit-content;
-    margin-left: auto;
     border-top-left-radius: 3px;
-    border-top-right-radius: 3px;
 }
 
 .launcher-disclaimer-text {
@@ -67,20 +207,3 @@
     font-size: 13px;
 }
 
-.launcher-actions {
-    display: flex;
-    flex-direction: row;
-    gap: 8px;
-    border: 3px solid #1E1E1F;
-    padding: 8px;
-    background-color: #48494A;
-}
-
-.launcher-profile-select {
-    width: 30%;
-    margin-top: auto;
-}
-
-.launcher-play {
-    width: 70%;
-}

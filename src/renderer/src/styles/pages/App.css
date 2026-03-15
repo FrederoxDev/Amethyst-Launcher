@@ -73,6 +73,12 @@
     height: 46px;
     border-width: 3px;
     border-color: #1E1E1F;
+    transition: transform 0.1s ease;
+    cursor: pointer;
+}
+
+.nav-icon:active {
+    transform: scale(0.85, 0.8);
 }
 
 .nav-icon--active {
@@ -84,6 +90,20 @@
     height: 100%;
 }
 
+.nav-icon-add {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.1s;
+}
+
+.nav-icon-add:hover {
+    opacity: 1;
+}
+
 .app-settings-button {
     position: relative;
     display: flex;
@@ -91,6 +111,12 @@
     align-items: center;
     width: 46px;
     height: 46px;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+.app-settings-button:active {
+    transform: scale(0.85, 0.8);
 }
 
 .app-settings-icon {
@@ -101,4 +127,145 @@
 
 .app-view-container {
     width: calc(100% - 80px);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.app-view-content {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+}
+
+/* Download Manager */
+.download-manager-btn {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 46px;
+    height: 46px;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.1s;
+}
+
+.download-manager-btn:hover {
+    opacity: 1;
+}
+
+.download-manager-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    background-color: #3b82f6;
+    border-radius: 50%;
+}
+
+.download-manager-panel {
+    position: fixed;
+    width: 280px;
+    max-height: 320px;
+    background-color: #313233;
+    border: 3px solid #1E1E1F;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    transform-origin: bottom left;
+    animation: dropdown-open 0.1s ease-out;
+    padding: 8px;
+    gap: 6px;
+}
+
+.download-manager-title {
+    color: white;
+    font-size: 13px;
+    padding: 2px 0;
+}
+
+.download-manager-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.download-manager-empty {
+    color: #6f6f6f;
+    font-size: 12px;
+    text-align: center;
+    padding: 16px 0;
+}
+
+.download-manager-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px;
+    background-color: #48494a;
+    border-radius: 3px;
+}
+
+.download-manager-item-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.download-manager-item-name {
+    color: white;
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+}
+
+.download-manager-item-status {
+    color: #9f9f9f;
+    font-size: 10px;
+    flex-shrink: 0;
+    margin-left: 6px;
+}
+
+.download-manager-progress-track {
+    height: 3px;
+    background-color: #1E1E1F;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.download-manager-progress-fill {
+    height: 100%;
+    background-color: #3b82f6;
+    transition: width 0.2s ease;
+}
+
+.download-manager-progress-error {
+    background-color: #f87171;
+}
+
+.download-manager-item-cancel {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 2px;
+    opacity: 0;
+    transition: opacity 0.1s;
+}
+
+.download-manager-item:hover .download-manager-item-cancel {
+    opacity: 1;
+}
+
+.download-manager-item-cancel:hover {
+    background-color: #5a5b5c;
 }

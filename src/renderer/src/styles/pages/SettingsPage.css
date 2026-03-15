@@ -17,16 +17,19 @@
 }
 
 .settings-section {
-    border-top: 3px solid #5a5b5c;
-    border-bottom: 3px solid #333334;
-    background-color: #48494a;
-    padding: 8px;
+    background-color: #313233;
+    padding: 8px 16px;
+}
+
+.settings-regular {
+    padding: 8px 16px;
 }
 
 .settings-row {
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 6px 0;
 }
 
 .settings-toggle-wrap {
@@ -44,10 +47,7 @@
 }
 
 .settings-debug {
-    border-top: 3px solid #5a5b5c;
-    border-bottom: 3px solid #333334;
-    background-color: #48494a;
-    padding: 8px;
+    padding: 8px 16px;
     color: #BCBEC0;
     font-size: 14px;
     flex-shrink: 0;

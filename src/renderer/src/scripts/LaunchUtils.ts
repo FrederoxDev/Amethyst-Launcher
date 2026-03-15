@@ -42,14 +42,12 @@ export async function launchProfile(profile: Profile): Promise<void> {
             throw new Error(`Installed version with UUID ${profile.version_uuid} not found! It may have been deleted.`);
         }
 
-        const versionLabel = installedVersion.name;
-
         await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
             setStatus("launching");
             setProgress(0.5);
-            setMessage(`Launching ${versionLabel}...`);
+            setMessage(`Preparing ${installedVersion.name}...`);
 
-            await platform.runProfile(profile, installedVersion);
+            await platform.runProfile(profile, installedVersion, setMessage);
         }, true);
         return;
     }
@@ -64,12 +62,12 @@ export async function launchProfile(profile: Profile): Promise<void> {
     await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
         setStatus("other");
         setProgress(0);
-        setMessage(`Preparing to launch Minecraft ${semVersion.toString()}...`);
+        setMessage(`Checking version ${semVersion.toString()}...`);
 
         const isVersionInstalled = versionManager.getInstalledVersionByUUID(minecraftVersion.uuid) !== null;
 
         if (!isVersionInstalled) {
-            console.log("Target version is not installed.");
+            setMessage(`Downloading ${semVersion.toString()}...`);
             await versionManager.downloadExtractAndInstallVersion(minecraftVersion.uuid);
         }
     }, true);
@@ -77,13 +75,13 @@ export async function launchProfile(profile: Profile): Promise<void> {
     await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
         setStatus("launching");
         setProgress(0.5);
-        setMessage(`Launching Minecraft ${semVersion.toString()}...`);
+        setMessage(`Preparing ${semVersion.toString()}...`);
 
         const installedVersion = versionManager.getInstalledVersionByUUID(minecraftVersion.uuid);
         if (!installedVersion) {
             throw new Error("Failed to find the installed version after downloading and extracting it.");
         }
 
-        await platform.runProfile(profile, installedVersion);
+        await platform.runProfile(profile, installedVersion, setMessage);
     }, true);
 }

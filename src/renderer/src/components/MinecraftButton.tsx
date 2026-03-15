@@ -53,6 +53,18 @@ export const WHITE_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
     pointerEvents: "auto"
 };
 
+export const GRAY_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
+    containerBorderColor: "#1e1e1f",
+    realContainerBorderColor: "#333334",
+    baseBgColor: "#48494a",
+    baseTopleftBorderColor: "#5a5b5c",
+    baseBottomrightBorderColor: "#3a3b3c",
+    baseHoverBgColor: "#3a3b3c",
+    textColor: "#fff",
+    cursor: "pointer",
+    pointerEvents: "auto"
+};
+
 export const DISABLED_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
     containerBorderColor: "#58585a",
     realContainerBorderColor: "#8c8d90",

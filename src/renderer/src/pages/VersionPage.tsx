@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
 import { useAppStore } from "@renderer/states/AppStore";
 import { InstalledVersionModel } from "@renderer/scripts/VersionManager";
 
@@ -18,6 +18,7 @@ import "@renderer/styles/pages/LauncherPage.css"
 
 import { PlusIcon } from "lucide-react";
 import { ImportVersionPopup, ImportVersionPopupData } from "@renderer/popups/ImportVersionPopup";
+import { useDownloadStore } from "@renderer/states/DownloadStore";
 
 type VersionButtonProps = {
     version: InstalledVersionModel;
@@ -70,6 +71,7 @@ const VersionButton = ({
 export function VersionPage() {
     const versionManager = useAppStore(state => state.versionManager);
     const [, forceUpdate] = useReducer(x => x + 1, 0);
+    const [hiddenUuids, setHiddenUuids] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         const unsubscribeInstalled = versionManager.subscribe("version_installed", () => {
@@ -102,6 +104,17 @@ export function VersionPage() {
                                 if (!result)
                                     return;
 
+                                const dlId = `version-import-${result.uuid}-${Date.now()}`;
+                                const dlStore = useDownloadStore.getState();
+                                dlStore.addDownload({
+                                    id: dlId,
+                                    name: result.name,
+                                    type: "version",
+                                    progress: 0,
+                                    status: "extracting",
+                                    abortController: null,
+                                });
+
                                 versionManager.installVersion({
                                     kind: "imported",
                                     name: result.name,
@@ -111,8 +124,10 @@ export function VersionPage() {
                                     file: result.file
                                 }).then(() => {
                                     console.log("Version installed successfully!");
+                                    useDownloadStore.getState().updateDownload(dlId, { status: "done", progress: 1 });
                                 }).catch(e => {
                                     console.error("Failed to install version:", e);
+                                    useDownloadStore.getState().updateDownload(dlId, { status: "error", progress: 0 });
                                 });
                             }}
                         >
@@ -122,7 +137,7 @@ export function VersionPage() {
                 </div>
                 <div className="version-page-list scrollbar">
                     {
-                        versionManager.getInstalledVersions().map((version, index) => {
+                        versionManager.getInstalledVersions().filter(v => !hiddenUuids.has(v.uuid)).map((version, index) => {
                             return (
                                 <VersionButton
                                     version={version}
@@ -187,7 +202,8 @@ export function VersionPage() {
                                             );
                                         });
                                         if (result) {
-                                            await versionManager.uninstallVersion(version.uuid);
+                                            setHiddenUuids(prev => new Set(prev).add(version.uuid));
+                                            versionManager.uninstallVersion(version.uuid);
                                         }
                                     }}
                                     key={index}

@@ -10,12 +10,12 @@ function getPaths() {
 export interface Profile {
     uuid: string;
     name: string;
+    is_modded: boolean;
     runtime: string;
     mods: string[];
     minecraft_version: string | null;
     /** UUID of the installed version, used for imported versions that may not exist in the remote database. */
     version_uuid?: string | null;
-    use_split_data_folder?: boolean;
 }
 
 export function GetProfiles(): Profile[] {
@@ -29,6 +29,10 @@ export function GetProfiles(): Profile[] {
         for (const profile of profiles) {
             if (!profile.uuid) {
                 profile.uuid = crypto.randomUUID();
+                migrated = true;
+            }
+            if (profile.is_modded === undefined) {
+                profile.is_modded = profile.runtime !== "Vanilla";
                 migrated = true;
             }
         }
