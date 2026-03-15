@@ -150,6 +150,16 @@
     align-items: center;
     margin-left: auto;
     cursor: pointer;
+    border-radius: 3px;
+    transition: background-color 0.1s, transform 0.1s ease;
+}
+
+.version-popup-close:hover {
+    background-color: #5a5b5c;
+}
+
+.version-popup-close:active {
+    transform: scale(0.8);
 }
 
 .version-popup-body {

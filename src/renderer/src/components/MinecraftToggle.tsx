@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 
 type MinecraftToggleProps = {
     isChecked: boolean;
@@ -6,9 +6,16 @@ type MinecraftToggleProps = {
 };
 
 export function MinecraftToggle({ isChecked, setIsChecked }: MinecraftToggleProps) {
+    const hasInteracted = useRef(false);
+
     const handleCheckboxChange = () => {
+        hasInteracted.current = true;
         setIsChecked(!isChecked);
     };
+
+    const toggleClass = hasInteracted.current
+        ? (isChecked ? " toggle-anim-on" : " toggle-anim-off")
+        : (isChecked ? " toggle-no-anim-on" : " toggle-no-anim-off");
 
     return (
         <div className="toggle_panel" onClick={handleCheckboxChange}>
@@ -22,7 +29,7 @@ export function MinecraftToggle({ isChecked, setIsChecked }: MinecraftToggleProp
                 </div>
             </div>
 
-            <div className={"toggle" + (isChecked ? " toggle-anim-on" : " toggle-anim-off")}>
+            <div className={"toggle" + toggleClass}>
                 <div className="toggle_top"></div>
                 <div className="toggle_side"></div>
             </div>

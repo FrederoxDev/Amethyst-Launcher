@@ -13,6 +13,7 @@ import { VersionManager } from "@renderer/scripts/VersionManager";
 import { FileLocker } from "@renderer/scripts/FileLocker";
 import { StateSetter, StateUtils } from "./StateUtils";
 import { checkIfMinecraftIsRunning, startMinecraftWatcher } from "@renderer/scripts/MinecraftWatcher";
+import { resumePendingDownloads } from "@renderer/scripts/DownloadRecovery";
 
 const { ipcRenderer } = window.require("electron");
 
@@ -58,6 +59,12 @@ interface AppStore {
 
     minecraftIsRunning: boolean;
     setMinecraftIsRunning: StateSetter<boolean>;
+
+    downloadingMods: string[];
+    setDownloadingMods: StateSetter<string[]>;
+
+    installingForProfile: number | null;
+    setInstallingForProfile: StateSetter<number | null>;
 
     saveData: () => void;
     refreshAllMods: () => void;
@@ -106,6 +113,8 @@ export const useAppStore = create<AppStore>((set, get) => {
         analyticsConsent: initialConsent,
         analyticsInstance: getAnalyticsInstanceForConsent(initialConsent),
         minecraftIsRunning: false,
+        downloadingMods: [],
+        installingForProfile: null,
 
         setAllValidMods: value =>
             set(state => ({ allValidMods: StateUtils.resolveSetStateAction(value, state.allValidMods) })),
@@ -141,13 +150,17 @@ export const useAppStore = create<AppStore>((set, get) => {
 
         setMinecraftIsRunning: value =>
             set(state => ({ minecraftIsRunning: StateUtils.resolveSetStateAction(value, state.minecraftIsRunning) })),
+        setDownloadingMods: value =>
+            set(state => ({ downloadingMods: StateUtils.resolveSetStateAction(value, state.downloadingMods) })),
+        setInstallingForProfile: value =>
+            set(state => ({ installingForProfile: StateUtils.resolveSetStateAction(value, state.installingForProfile) })),
 
         refreshAllMods: () => {
             const mods = GetAllMods();
             const invalidMods = mods.filter(mod => !mod.ok).map(mod => mod.id);
             const validMods = mods.filter(mod => mod.ok);
             const runtimes = validMods.filter(mod => mod.config.meta.type === "runtime");
-            const modIds = validMods.filter(mod => mod.config.meta.type !== "runtime").map(mod => mod.id);
+            const modIds = validMods.map(mod => mod.id);
 
             set({
                 allMods: mods,
@@ -180,13 +193,7 @@ export const useAppStore = create<AppStore>((set, get) => {
     };
 });
 
-let hasBoundInitializationIpc = false;
-let hasInitializedState = false;
-
-async function hydrateStoreOnce(): Promise<void> {
-    if (hasInitializedState) return;
-    hasInitializedState = true;
-
+async function hydrateStore(): Promise<void> {
     const profiles = GetProfiles();
     const config = GetLauncherConfig();
 
@@ -202,11 +209,12 @@ async function hydrateStoreOnce(): Promise<void> {
 }
 
 export function InitializeAppState(): void {
-    if (hasBoundInitializationIpc) return;
-    hasBoundInitializationIpc = true;
+    // Remove any previous listener so reloads don't stack handlers
+    ipcRenderer.removeAllListeners("APP_STATE_INIT");
 
-    ipcRenderer.once("APP_STATE_INIT", async () => {
-        await hydrateStoreOnce();
+    ipcRenderer.on("APP_STATE_INIT", async () => {
+        await hydrateStore();
+        resumePendingDownloads();
     });
 
     ipcRenderer.send("APP_STATE_INIT_REQUEST");

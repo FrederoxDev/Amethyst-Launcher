@@ -137,18 +137,23 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         return WindowsLauncherPlatform.CachedLauncherPaths;
     }
 
-    async runProfile(_profile: Profile, version: InstalledVersionModel): Promise<void> {
-        // Always ensure required files exist (MicrosoftGame.Config, GameInput, etc.)
-        await EnsureVersionFiles(version);
+    async runProfile(_profile: Profile, version: InstalledVersionModel, onStatus?: (message: string) => void): Promise<void> {
+        const status = onStatus ?? (() => {});
+
+        status("Ensuring version files...");
+        await EnsureVersionFiles(version, status);
 
         if (!IsRegistered(version)) {
+            status("Unregistering old version...");
             console.log("[WindowsPlatform] Unregistering current version...");
             await UnregisterCurrent();
 
+            status("Registering version...");
             console.log("[WindowsPlatform] Registering version:", version.name);
             await RegisterVersion(version);
         }
 
+        status("Launching Minecraft...");
         console.log("[WindowsPlatform] Launching Minecraft...");
         LaunchMinecraft(version);
     }

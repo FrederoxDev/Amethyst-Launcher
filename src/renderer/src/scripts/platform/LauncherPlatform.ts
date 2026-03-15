@@ -36,6 +36,6 @@ export interface ILauncherPlatform {
     runCommand(command: string, stdout?: (data: string) => void): Promise<number>;
     createShortcut(options: ShortcutOptions): Promise<void>;
     getPaths(): LauncherPaths;
-    runProfile(profile: Profile, version: InstalledVersionModel): Promise<void>;
+    runProfile(profile: Profile, version: InstalledVersionModel, onStatus?: (message: string) => void): Promise<void>;
     isProcessRunning(executableName: string): Promise<ProcessInfo | null>;
 }

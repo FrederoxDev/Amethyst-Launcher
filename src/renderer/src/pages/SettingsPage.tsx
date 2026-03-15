@@ -49,9 +49,9 @@ export function GeneralSettingsTab() {
             <div className="settings-section">
                 <div className="settings-row">
                     <div>
-                        <p className="minecraft-seven settings-title">{"Analytics Consent"}</p>
+                        <p className="minecraft-seven settings-title">Analytics Consent</p>
                         <p className="minecraft-seven settings-subtitle">
-                            {"Send anonymous usage data to help improve the launcher."}
+                            Send anonymous usage data to help improve the launcher.
                         </p>
                     </div>
                     <div className="settings-toggle-wrap">
@@ -73,28 +73,22 @@ export function GeneralSettingsTab() {
                         />
                     </div>
                 </div>
-            </div>
-
-            <div className="settings-section">
                 <div className="settings-row">
                     <div>
-                        <p className="minecraft-seven settings-title">{"Keep launcher open"}</p>
+                        <p className="minecraft-seven settings-title">Keep launcher open</p>
                         <p className="minecraft-seven settings-subtitle">
-                            {"Prevents the launcher from closing after launching the game."}
+                            Prevents the launcher from closing after launching the game.
                         </p>
                     </div>
                     <div className="settings-toggle-wrap">
                         <MinecraftToggle isChecked={keepLauncherOpen} setIsChecked={setKeepLauncherOpen} />
                     </div>
                 </div>
-            </div>
-
-            <div className="settings-section">
                 <div className="settings-row">
                     <div>
-                        <p className="minecraft-seven settings-title">{"Developer mode"}</p>
+                        <p className="minecraft-seven settings-title">Developer mode</p>
                         <p className="minecraft-seven settings-subtitle">
-                            {"Enables hot-reloading and prompting to attach a debugger."}
+                            Enables hot-reloading and prompting to attach a debugger.
                         </p>
                     </div>
                     <div className="settings-toggle-wrap">
@@ -103,7 +97,9 @@ export function GeneralSettingsTab() {
                 </div>
             </div>
 
-            <div className="settings-section">
+            <div className="version-picker-divider" />
+
+            <div className="settings-regular">
                 <p className="minecraft-seven settings-title">UI Theme</p>
                 <MinecraftRadialButtonPanel
                     elements={[
@@ -124,7 +120,7 @@ export function GeneralSettingsTab() {
                 <p>Amethyst Folder: {paths.amethystPath}</p>
             </div>
 
-            <div className="settings-section">
+            <div className="settings-regular">
                 <ReadOnlyTextBox text={launcherCfg} label="Launcher Config" />
             </div>
         </div>

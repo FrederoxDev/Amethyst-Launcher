@@ -145,6 +145,22 @@
     background-color: #58585a;
 }
 
+.toggle-no-anim-on {
+    left: 25px;
+}
+
+.toggle-no-anim-on.large {
+    left: 35px;
+}
+
+.toggle-no-anim-off {
+    right: 25px;
+}
+
+.toggle-no-anim-off.large {
+    right: 35px;
+}
+
 .toggle-anim-on,
 .toggle-anim-off {
     animation-duration: 250ms;

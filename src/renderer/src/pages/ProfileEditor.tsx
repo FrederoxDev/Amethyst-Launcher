@@ -1,14 +1,99 @@
-import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 
-import { Dropdown, DropdownOption } from "@renderer/components/Dropdown";
-import { MainPanel } from "@renderer/components/MainPanel";
-import { MinecraftButton, RED_MINECRAFT_BUTTON } from "@renderer/components/MinecraftButton";
-import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
+import { MinecraftButton, GRAY_MINECRAFT_BUTTON } from "@renderer/components/MinecraftButton";
+import { PopupPanel, usePopupClose } from "@renderer/components/PopupPanel";
 import { TextInput } from "@renderer/components/TextInput";
+import { Popup, PopupUseArguments } from "@renderer/states/PopupStore";
 import { useAppStore } from "@renderer/states/AppStore";
-import { MinecraftToggle } from "@renderer/components/MinecraftToggle";
-import { MinecraftVersionData } from "@renderer/scripts/VersionDatabase";
+import { VersionPickerPopup, VersionPickerResult } from "@renderer/popups/VersionPickerPopup";
+import { launchProfile as doLaunchProfile } from "@renderer/scripts/LaunchUtils";
+
+const fs = window.require("fs") as typeof import("fs");
+const path = window.require("path") as typeof import("path");
+const { shell } = window.require("electron");
+
+function getModIconPath(modsPath: string, modName: string): string | null {
+    const iconPath = path.join(modsPath, modName, "resource_packs", "main_rp", "pack_icon.png");
+    return fs.existsSync(iconPath) ? iconPath : null;
+}
+
+function AddContentPopup({ submit: rawSubmit }: PopupUseArguments<string | "browse" | null>) {
+    const animateClose = usePopupClose();
+    const submit = (val: string | "browse" | null) => animateClose(() => rawSubmit(val));
+    const mods = useAppStore(state => state.allValidMods);
+    const activeMods = useAppStore(state => state.allProfiles)[useAppStore(state => state.selectedProfile)]?.mods ?? [];
+    const modsPath = useMemo(() => useAppStore.getState().platform.getPaths().modsPath, []);
+    const availableMods = useMemo(() => mods.filter(m => !activeMods.includes(m)), [mods, activeMods]);
+    const [search, setSearch] = useState("");
+    const filtered = useMemo(() => {
+        if (!search) return availableMods;
+        const q = search.toLowerCase();
+        return availableMods.filter(m => m.toLowerCase().includes(q));
+    }, [availableMods, search]);
+
+    return (
+        <PopupPanel onExit={() => submit(null)}>
+            <div className="version-picker" onClick={e => e.stopPropagation()}>
+                <div className="version-picker-header">
+                    <p className="minecraft-seven" style={{ fontSize: "16px" }}>Add Content</p>
+                    <div className="version-popup-close" onClick={() => submit(null)}>
+                        <svg width="20" height="20" viewBox="0 0 12 12">
+                            <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
+                                points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
+                        </svg>
+                    </div>
+                </div>
+                <div className="version-picker-divider" />
+                <div style={{ padding: "8px" }}>
+                    <div className="mod-search-box">
+                        <svg className="mod-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f6f6f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                        <input
+                            type="text"
+                            className="minecraft-seven mod-search-input"
+                            spellCheck={false}
+                            placeholder="Search local mods..."
+                            value={search}
+                            onInput={e => setSearch(e.currentTarget.value)}
+                        />
+                    </div>
+                </div>
+                <div className="version-picker-list scrollbar">
+                    {filtered.length === 0 && (
+                        <p className="minecraft-seven" style={{ color: "#9f9f9f", padding: "12px", textAlign: "center" }}>
+                            {search ? "No mods match your search." : "No local mods available."}
+                        </p>
+                    )}
+                    {filtered.map(mod => {
+                        const iconPath = getModIconPath(modsPath, mod);
+                        return (
+                            <div key={mod} className="version-picker-item" style={{ justifyContent: "flex-start", gap: 10, padding: "4px 6px" }} onClick={() => submit(mod)}>
+                                <div className="profile-editor-mod-icon">
+                                    {iconPath
+                                        ? <img src={`file://${iconPath}`} width="36" height="36" className="pixelated" style={{ borderRadius: 3 }} alt="" />
+                                        : <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <rect x="2" y="2" width="12" height="12" rx="2" stroke="#6f6f6f" strokeWidth="1.5" />
+                                            <path d="M5 8h6M8 5v6" stroke="#6f6f6f" strokeWidth="1.5" strokeLinecap="round" />
+                                        </svg>}
+                                </div>
+                                <p className="minecraft-seven">{mod}</p>
+                            </div>
+                        );
+                    })}
+                </div>
+                <div className="version-picker-divider" />
+                <div className="version-picker-footer" style={{ justifyContent: "flex-start", gap: 8 }}>
+                    <MinecraftButton text="Browse Mods" style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "140px" }} onClick={() => submit("browse")} />
+                    <MinecraftButton text="Open Mods Folder" colorPallete={GRAY_MINECRAFT_BUTTON} style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "160px" }} onClick={() => shell.openPath(modsPath)} />
+                </div>
+            </div>
+        </PopupPanel>
+    );
+}
 
 export function ProfileEditor() {
     const [profileName, setProfileName] = useState("");
@@ -16,18 +101,21 @@ export function ProfileEditor() {
     const [profileRuntime, setProfileRuntime] = useState<string>("");
     const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<string>("");
     const [profileVersionUuid, setProfileVersionUuid] = useState<string | null>(null);
-    const [remoteVersions, setRemoteVersions] = useState<MinecraftVersionData[]>([]);
+    const [modSearch, setModSearch] = useState("");
 
+    const [showMenu, setShowMenu] = useState(false);
+    const dotsRef = useRef<HTMLDivElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
     const [, forceUpdate] = useReducer(x => x + 1, 0);
     const allValidMods = useAppStore(state => state.allValidMods);
-    const allRuntimes = useAppStore(state => state.allRuntimes);
     const allProfiles = useAppStore(state => state.allProfiles);
     const setAllProfiles = useAppStore(state => state.setAllProfiles);
     const selectedProfile = useAppStore(state => state.selectedProfile);
     const saveData = useAppStore(state => state.saveData);
     const allInvalidMods = useAppStore(state => state.allInvalidMods);
+    const downloadingMods = useAppStore(state => state.downloadingMods);
     const versionManager = useAppStore(state => state.versionManager);
-    const platform = useAppStore(state => state.platform);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -37,59 +125,15 @@ export function ProfileEditor() {
     }, [allProfiles, navigate]);
 
     useEffect(() => {
-        const fetchVersions = async () => {
-            try {
-                const versions = await versionManager.database.update();
-                if (versions instanceof Error)
-                    throw versions;
-                setRemoteVersions([...versions]);
-            }
-            catch (e) {
-                console.error("Failed to fetch versions from database:", e);
-            }
-        };
-
-        fetchVersions();
-
         const unsubInstall = versionManager.subscribe("version_installed", () => forceUpdate());
         const unsubUninstall = versionManager.subscribe("version_uninstalled", () => forceUpdate());
         return () => { unsubInstall(); unsubUninstall(); };
     }, []);
 
-    const toggleModActive = (name: string) => {
-        if (profileActiveMods.includes(name)) {
-            const newActive = profileActiveMods.filter(m => m !== name);
-            setProfileActiveMods(newActive);
-        } else {
-            const newActive = [...profileActiveMods, name];
-            setProfileActiveMods(newActive);
-        }
-    };
+    const platform = useAppStore(state => state.platform);
+    const modsPath = useMemo(() => platform.getPaths().modsPath, [platform]);
 
-    const ModButton = ({ name, exists }: { name: string; exists: boolean }) => {
-        return (
-            <div
-                className="profile-editor-mod-card"
-                onClick={() => {
-                    if (profileRuntime === "Vanilla") {
-                        alert("Cannot add mods to a vanilla profile");
-                        return;
-                    }
-
-                    toggleModActive(name);
-                }}
-            >
-                <div className="profile-editor-mod-card-inner">
-                    <p
-                        className={`minecraft-seven ${exists ? "profile-editor-mod-exists" : "profile-editor-mod-missing"}`}
-                        title={exists ? undefined : `${name} is missing, click to remove from profile`}
-                    >
-                        {name}
-                    </p>
-                </div>
-            </div>
-        );
-    };
+    const profileLoaded = useRef(false);
 
     const loadProfile = useCallback(() => {
         const profile = allProfiles[selectedProfile];
@@ -98,171 +142,299 @@ export function ProfileEditor() {
         setProfileActiveMods(profile?.mods ?? []);
         setProfileMinecraftVersion(profile?.minecraft_version ?? "1.21.0.3");
         setProfileVersionUuid(profile?.version_uuid ?? null);
+        profileLoaded.current = true;
     }, [allProfiles, selectedProfile]);
 
-    const saveProfile = async () => {
-        allProfiles[selectedProfile].name = profileName;
-
-        allProfiles[selectedProfile].runtime = profileRuntime;
-        allProfiles[selectedProfile].mods = profileActiveMods;
-        allProfiles[selectedProfile].minecraft_version = profileMinecraftVersion;
-        allProfiles[selectedProfile].version_uuid = profileVersionUuid;
-
-        console.log("Saving profile:", allProfiles[selectedProfile]);
-        platform.createShortcut({
-            name: profileName,
-            target: `amethyst-launcher://launchprofile/${allProfiles[selectedProfile].uuid}`,
-            description: `Launches the ${profileName} profile with Amethyst Launcher`,
-        });
+    // Auto-save on every change (skip until profile is loaded to avoid overwriting with empty state)
+    useEffect(() => {
+        if (!profileLoaded.current) return;
+        const profile = allProfiles[selectedProfile];
+        if (!profile) return;
+        profile.name = profileName;
+        profile.runtime = profileActiveMods.length > 0 ? profileRuntime : "Vanilla";
+        profile.mods = profileActiveMods;
+        profile.minecraft_version = profileMinecraftVersion;
+        profile.version_uuid = profileVersionUuid;
         saveData();
-        navigate("/profiles");
+    }, [profileName, profileRuntime, profileActiveMods, profileMinecraftVersion, profileVersionUuid]);
+
+    const getOrphanedMods = (modNames: string[], excludeProfileIndex: number) => {
+        return modNames.filter(modName => {
+            if (modName.includes("0.0.0-dev")) return false;
+            const otherProfilesUsingMod = allProfiles.filter((p, i) =>
+                i !== excludeProfileIndex && p.mods.includes(modName)
+            );
+            return otherProfilesUsingMod.length === 0;
+        });
     };
 
-    const deleteProfile = () => {
+    const promptDeleteOrphanedMods = async (orphanedMods: string[]): Promise<boolean> => {
+        if (orphanedMods.length === 0) return true;
+
+        const result = await Popup.useAsync<"delete" | "keep" | null>(({ submit }) => (
+            <PopupPanel onExit={() => submit(null)}>
+                <div className="version-picker" style={{ width: 380 }} onClick={e => e.stopPropagation()}>
+                    <div className="version-picker-header">
+                        <p className="minecraft-seven" style={{ fontSize: "16px" }}>Delete Mods?</p>
+                        <div className="version-popup-close" onClick={() => submit(null)}>
+                            <svg width="20" height="20" viewBox="0 0 12 12">
+                                <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
+                                    points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div className="version-picker-divider" />
+                    <div style={{ padding: "12px 16px" }}>
+                        <p className="minecraft-seven" style={{ color: "#9f9f9f", fontSize: "12px", marginBottom: 8 }}>
+                            {orphanedMods.length === 1
+                                ? "This mod is not used by any other profile:"
+                                : "These mods are not used by any other profile:"}
+                        </p>
+                        {orphanedMods.map(name => (
+                            <p key={name} className="minecraft-seven" style={{ color: "white", fontSize: "13px", padding: "2px 0" }}>{name}</p>
+                        ))}
+                    </div>
+                    <div className="version-picker-divider" />
+                    <div className="version-picker-footer" style={{ justifyContent: "flex-start", gap: 8 }}>
+                        <MinecraftButton text="Delete from Disk" style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "160px" }} onClick={() => submit("delete")} />
+                        <MinecraftButton text="Keep Files" colorPallete={GRAY_MINECRAFT_BUTTON} style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "120px" }} onClick={() => submit("keep")} />
+                    </div>
+                </div>
+            </PopupPanel>
+        ));
+
+        if (result === null) return false; // cancelled
+        if (result === "delete") {
+            for (const modName of orphanedMods) {
+                const modPath = path.join(modsPath, modName);
+                if (fs.existsSync(modPath)) {
+                    fs.rmSync(modPath, { recursive: true, force: true });
+                }
+            }
+        }
+        return true;
+    };
+
+    const removeMod = async (modName: string) => {
+        const orphaned = getOrphanedMods([modName], selectedProfile);
+        const proceed = await promptDeleteOrphanedMods(orphaned);
+        if (!proceed) return;
+        setProfileActiveMods(profileActiveMods.filter(m => m !== modName));
+        useAppStore.getState().refreshAllMods();
+    };
+
+    const deleteProfile = async () => {
+        const profile = allProfiles[selectedProfile];
+        if (profile) {
+            const orphaned = getOrphanedMods(profile.mods, selectedProfile);
+            const proceed = await promptDeleteOrphanedMods(orphaned);
+            if (!proceed) return;
+        }
         allProfiles.splice(selectedProfile, 1);
         setAllProfiles(allProfiles);
-
         saveData();
-        navigate("/profiles");
+        useAppStore.getState().refreshAllMods();
+        navigate("/");
     };
+
+    const onPlay = async () => {
+        const profile = allProfiles[selectedProfile];
+        if (profile) await doLaunchProfile(profile);
+    };
+
+    // Close menu on outside click
+    useEffect(() => {
+        if (!showMenu) return;
+        const handleClick = (e: MouseEvent) => {
+            if (
+                dotsRef.current && !dotsRef.current.contains(e.target as Node) &&
+                dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
+            ) {
+                setShowMenu(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClick);
+        return () => document.removeEventListener("mousedown", handleClick);
+    }, [showMenu]);
+
+    useEffect(() => {
+        if (!showMenu || !dotsRef.current) return;
+        const rect = dotsRef.current.getBoundingClientRect();
+        setDropdownPos({
+            top: rect.bottom + 10,
+            right: window.innerWidth - rect.right,
+        });
+    }, [showMenu]);
 
     useEffect(() => {
         loadProfile();
     }, [loadProfile]);
 
-    const formatVersionName = (version: MinecraftVersionData): string => {
-        return version.version.toString();
+    const openAddContent = async () => {
+        const result = await Popup.useAsync<string | "browse" | null>(props => {
+            return <AddContentPopup {...props} />;
+        });
+
+        if (result === null) return;
+        if (result === "browse") {
+            useAppStore.getState().setInstallingForProfile(selectedProfile);
+            navigate("/mod-discovery");
+            return;
+        }
+        if (!profileActiveMods.includes(result)) {
+            setProfileActiveMods([...profileActiveMods, result]);
+        }
     };
 
-    const installedVersions = useMemo(() => versionManager.getInstalledVersions(), [versionManager, remoteVersions]);
+    const openVersionPicker = async () => {
+        const result = await Popup.useAsync<VersionPickerResult | null>(props => {
+            return <VersionPickerPopup {...props} />;
+        });
+        if (!result) return;
+        setProfileMinecraftVersion(result.minecraft_version);
+        setProfileVersionUuid(result.version_uuid);
+    };
 
-    const versionOptions = useMemo(() => {
-        const installed = installedVersions.map(v => ({
-            label: v.name,
-            value: `uuid:${v.uuid}`
+    const installedVersions = useMemo(() => versionManager.getInstalledVersions(), [versionManager]);
+
+    const versionDisplayName = useMemo(() => {
+        if (profileVersionUuid) {
+            const installed = installedVersions.find(v => v.uuid === profileVersionUuid);
+            return installed?.name ?? profileMinecraftVersion;
+        }
+        return profileMinecraftVersion || "Select version...";
+    }, [profileVersionUuid, profileMinecraftVersion, installedVersions]);
+
+    const allModsList = useMemo(() => {
+        return profileActiveMods.map(name => ({
+            name,
+            exists: allValidMods.includes(name),
+            isDownloading: downloadingMods.includes(name),
         }));
-        const remote = remoteVersions.map(v => ({
-            label: formatVersionName(v),
-            value: formatVersionName(v)
-        }));
-        // Merge installed first, then remote (no dedup needed since UUIDs won't collide with version strings)
-        return [...installed, ...remote];
-    }, [remoteVersions, installedVersions]);
+    }, [profileActiveMods, allValidMods, downloadingMods]);
+
+    const filteredModsList = useMemo(() => {
+        if (!modSearch) return allModsList;
+        const q = modSearch.toLowerCase();
+        return allModsList.filter(mod => mod.name.toLowerCase().includes(q));
+    }, [allModsList, modSearch]);
 
     return (
-        <MainPanel>
-            <div className="profile-editor">
-                {/* Settings */}
-                <div className="profile-editor-settings">
-                    <TextInput label="Profile Name" text={profileName} setText={setProfileName} />
-                    <Dropdown
-                        labelText="Minecraft Version"
-                        value={profileVersionUuid ? `uuid:${profileVersionUuid}` : profileMinecraftVersion}
-                        setValue={(val) => {
-                            const value = typeof val === "function" ? val("") : val;
-                            if (value.startsWith("uuid:")) {
-                                const uuid = value.slice(5);
-                                setProfileVersionUuid(uuid);
-                                const installed = installedVersions.find(v => v.uuid === uuid);
-                                setProfileMinecraftVersion(installed?.version.toString() ?? "");
-                            } else {
-                                setProfileVersionUuid(null);
-                                setProfileMinecraftVersion(value);
-                            }
-                        }}
-                        options={versionOptions}
-                        id="minecraft-version"
-                    />
-                    <Dropdown
-                        labelText="Runtime"
-                        value={profileRuntime}
-                        setValue={setProfileRuntime}
-                        options={allRuntimes}
-                        id="runtime-mod"
-                    />
-                </div>
-                <div className="profile-editor-mod-list" style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    height: "fit-content",
-                    flex: "shrink",
-                    flexGrow: 0
-                }}>
-                    <div className="settings-section">
-                        <div className="settings-row">
-                            <div>
-                                <p className="minecraft-seven settings-title">{"Use split data folder for profile"}</p>
-                                <p className="minecraft-seven settings-subtitle">
-                                    {"Makes a different folder for the data of this profile."}
-                                </p>
-                                <p className="minecraft-seven settings-subtitle">
-                                    {"Current folder: "}
-                                </p>
-                            </div>
-                            <div className="settings-toggle-wrap">
-                                <MinecraftToggle
-                                    isChecked={false}
-                                    setIsChecked={isChecked => {
+        <div className="profile-editor-page">
+            {allInvalidMods.length > 0 && (
+                <p className="minecraft-seven profile-editor-invalid-mods">
+                    Failed to show {allInvalidMods.length} mods! See Mod Manager for details
+                </p>
+            )}
 
-                                    }}
-                                />
+            <div className="profile-editor-mod-section">
+                <div className="profile-editor-mod-header">
+                    <div className="profile-editor-header-left">
+                        <div className="profile-editor-header-fields">
+                            <TextInput label="Profile Name" text={profileName} setText={setProfileName} />
+                            <div className="profile-editor-field">
+                                <p className="minecraft-seven text-input-label" style={{ paddingBottom: 2 }}>Minecraft Version</p>
+                                <div className="profile-editor-version-btn" onClick={openVersionPicker}>
+                                    <p className="minecraft-seven">{versionDisplayName}</p>
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                        <path d="M3 5L6 8L9 5" stroke="#9f9f9f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </div>
                             </div>
                         </div>
+                        <div className="mod-search-box">
+                            <svg className="mod-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f6f6f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="11" cy="11" r="8" />
+                                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            </svg>
+                            <input
+                                type="text"
+                                className="minecraft-seven mod-search-input"
+                                spellCheck={false}
+                                placeholder="Search mods..."
+                                value={modSearch}
+                                onInput={e => setModSearch(e.currentTarget.value)}
+                            />
+                        </div>
                     </div>
-                </div>
-
-                {allInvalidMods.length > 0 && (
-                    <p className="minecraft-seven profile-editor-invalid-mods">
-                        Failed to show {allInvalidMods.length} mods! See Mod Manager for details
-                    </p>
-                )}
-
-                {/* Mod Selection */}
-                {profileRuntime === "Vanilla" ? (
-                    <div className="profile-editor-vanilla">
-                        <div className="profile-editor-vanilla-inner"></div>
-                    </div>
-                ) : (
-                    <div className="profile-editor-mods">
-                        <div className="profile-editor-column">
-                            <p className="minecraft-seven profile-editor-column-title">Active Mods</p>
-                            <div className="profile-editor-mod-list">
-                                {profileActiveMods.length > 0 ? (
-                                    profileActiveMods.map((mod, index) => (
-                                        <ModButton name={mod} exists={allValidMods.includes(mod)} key={index} />
-                                    ))
-                                ) : (
-                                    <></>
+                    <div className="profile-editor-header-right">
+                        <div className="profile-editor-name-actions">
+                            <div className="launcher-profile-card-play">
+                                <MinecraftButton text="Play" onClick={onPlay} style={{ "--mc-button-container-h": "36px" }} />
+                            </div>
+                            <div className="launcher-profile-card-menu" onClick={e => e.stopPropagation()}>
+                                <div className="launcher-profile-card-dots" ref={dotsRef} onClick={() => setShowMenu(!showMenu)}>
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <circle cx="8" cy="3" r="1.5" fill="#FFFFFF" />
+                                        <circle cx="8" cy="8" r="1.5" fill="#FFFFFF" />
+                                        <circle cx="8" cy="13" r="1.5" fill="#FFFFFF" />
+                                    </svg>
+                                </div>
+                                {showMenu && createPortal(
+                                    <div
+                                        className="launcher-profile-card-dropdown"
+                                        ref={dropdownRef}
+                                        style={{ top: dropdownPos.top, right: dropdownPos.right }}
+                                        onClick={e => e.stopPropagation()}
+                                    >
+                                        <div className="launcher-profile-card-dropdown-item launcher-profile-card-dropdown-item--danger" onClick={() => { deleteProfile(); setShowMenu(false); }}>
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                                <path d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                            </svg>
+                                            <p className="minecraft-seven">Delete Profile</p>
+                                        </div>
+                                    </div>,
+                                    document.body
                                 )}
                             </div>
                         </div>
-                        <div className="profile-editor-column">
-                            <p className="minecraft-seven profile-editor-column-title">Inactive Mods</p>
-                            <div className="profile-editor-mod-list">
-                                {allValidMods.length > 0 ? (
-                                    allValidMods
-                                        .filter(mod => !profileActiveMods.includes(mod))
-                                        .map((mod, index) => (
-                                            <ModButton name={mod} exists={allValidMods.includes(mod)} key={index} />
-                                        ))
-                                ) : (
-                                    <></>
+                        <MinecraftButton text="Add Content" onClick={openAddContent} colorPallete={GRAY_MINECRAFT_BUTTON} style={{ "--mc-button-container-h": "34px", "--mc-button-container-w": "100%" }} />
+                    </div>
+                </div>
+                <div className="profile-editor-mod-divider" />
+                <div className="profile-editor-mod-list scrollbar">
+                    {filteredModsList.length === 0 && (
+                        <p className="minecraft-seven" style={{ color: "#9f9f9f", padding: "12px", textAlign: "center" }}>
+                            {modSearch ? "No mods match your search." : "No mods installed."}
+                        </p>
+                    )}
+                    {filteredModsList.map(mod => (
+                        <div
+                            key={mod.name}
+                            className="profile-editor-mod-row"
+                        >
+                            <div className="profile-editor-mod-icon">
+                                {(() => {
+                                    const iconPath = getModIconPath(modsPath, mod.name);
+                                    return iconPath
+                                        ? <img src={`file://${iconPath}`} width="36" height="36" className="pixelated" style={{ borderRadius: 3 }} alt="" />
+                                        : <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <rect x="2" y="2" width="12" height="12" rx="2" stroke="#6f6f6f" strokeWidth="1.5" />
+                                            <path d="M5 8h6M8 5v6" stroke="#6f6f6f" strokeWidth="1.5" strokeLinecap="round" />
+                                        </svg>;
+                                })()}
+                            </div>
+                            <div className="profile-editor-mod-row-info">
+                                <p className={`minecraft-seven ${mod.exists ? "" : "profile-editor-mod-missing"}`}>
+                                    {mod.name}
+                                </p>
+                                {mod.isDownloading && (
+                                    <span className="minecraft-seven profile-editor-mod-downloading">Downloading...</span>
                                 )}
                             </div>
+                            <div
+                                    className="profile-editor-mod-delete"
+                                    onClick={() => removeMod(mod.name)}
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 12 12">
+                                        <path d="M3 3L9 9M9 3L3 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                    </svg>
+                                </div>
                         </div>
-                    </div>
-                )}
-
-                {/* Profile Actions */}
-                <div className="profile-editor-actions">
-                    <MinecraftButton text="Save Profile" onClick={() => saveProfile()}/>
-                    <MinecraftButton
-                        text="Delete Profile"
-                        onClick={() => deleteProfile()}
-                        colorPallete={RED_MINECRAFT_BUTTON}
-                    />
+                    ))}
                 </div>
             </div>
-        </MainPanel>
+
+        </div>
     );
 }

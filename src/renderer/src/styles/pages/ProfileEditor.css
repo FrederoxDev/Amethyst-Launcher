@@ -1,94 +1,169 @@
-.profile-editor {
+.profile-editor-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
     width: 100%;
-    height: 100%;
+    padding: 16px;
+    gap: 12px;
+}
+
+.profile-editor-name-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.profile-editor-field {
     display: flex;
     flex-direction: column;
-    padding: 8px;
-    gap: 8px;
+    gap: 2px;
+}
+
+.profile-editor-version-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 36px;
+    background-color: #313233;
     border: 3px solid #1E1E1F;
-    background-color: #48494A;
-}
-
-.profile-editor-settings {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.profile-editor-invalid-mods {
-    color: #f87171;
-    font-size: 16px;
-}
-
-.profile-editor-vanilla {
-    flex-grow: 1;
-    display: flex;
-    justify-content: space-around;
-}
-
-.profile-editor-vanilla-inner {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.profile-editor-mods {
-    background-color: #48494a;
-    flex-grow: 1;
-    display: flex;
-    justify-content: space-around;
-    gap: 8px;
-}
-
-.profile-editor-column {
-    width: 50%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.profile-editor-column-title {
+    padding: 0 8px;
+    cursor: pointer;
     color: white;
     font-size: 14px;
 }
 
-.profile-editor-mod-list {
-    border: 3px solid #1E1E1F;
-    background-color: #313233;
-    flex-grow: 1;
+.profile-editor-version-btn:hover {
+    background-color: #3a3b3c;
 }
 
-.profile-editor-actions {
-    height: fit-content;
-    width: 100%;
+.profile-editor-invalid-mods {
+    color: #f87171;
+    font-size: 14px;
+}
+
+.profile-editor-mod-section {
     display: flex;
-    gap: 8px;
-}
-
-.profile-editor-actions * {
+    flex-direction: column;
     flex: 1;
-}
-
-.profile-editor-mod-card {
-    margin: -3px;
+    min-height: 0;
+    background-color: #48494A;
     border: 3px solid #1E1E1F;
+    overflow: hidden;
 }
 
-.profile-editor-mod-card-inner {
-    cursor: pointer;
-    border: 3px solid;
-    border-top-color: #5a5b5c;
-    border-left-color: #5a5b5c;
-    border-bottom-color: #333334;
-    border-right-color: #333334;
-    background-color: #48494a;
-    padding: 4px;
+.profile-editor-mod-header {
+    display: flex;
+    gap: 12px;
+    padding: 12px 16px;
 }
 
-.profile-editor-mod-exists {
+.profile-editor-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-editor-header-fields {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.profile-editor-header-fields > * {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-editor-header-right {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+    justify-content: flex-end;
+}
+
+.profile-editor-mod-divider {
+    height: 3px;
+    background-color: #1E1E1F;
+    flex-shrink: 0;
+}
+
+.profile-editor-mod-list {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background-color: #313233;
+    padding: 8px 16px;
+}
+
+.profile-editor-mod-row {
+    display: flex;
+    align-items: center;
+    padding: 4px 6px;
+    min-height: 40px;
+    box-sizing: border-box;
     color: white;
+    font-size: 14px;
+    border-radius: 3px;
+    transition: background-color 0.1s;
+    gap: 10px;
+}
+
+.profile-editor-mod-row:hover {
+    background-color: #5a5b5c;
+}
+
+.profile-editor-mod-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 3px;
+    background-color: #48494a;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-editor-mod-row-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
 }
 
 .profile-editor-mod-missing {
     color: #f87171;
+}
+
+.profile-editor-mod-downloading {
+    color: #60a5fa;
+    font-size: 11px;
+}
+
+.profile-editor-mod-delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #9f9f9f;
+    flex-shrink: 0;
+    transition: background-color 0.1s, transform 0.1s ease;
+}
+
+.profile-editor-mod-delete:hover {
+    background-color: rgba(255, 0, 0, 0.3);
+    color: #ff6b6b;
+}
+
+.profile-editor-mod-delete:active {
+    transform: scale(0.8);
 }

@@ -1,6 +1,9 @@
 .launcher-progress {
     background-color: #313233;
     transition: all 300ms ease-in-out;
+    width: 100%;
+    position: relative;
+    flex-shrink: 0;
 }
 
 .launcher-progress-visible {

@@ -15,7 +15,7 @@ export class Extractor {
     ): Promise<void> {
         if (!fs.existsSync(to)) {
             try {
-                fs.mkdirSync(to);
+                fs.mkdirSync(to, { recursive: true });
             } catch (err) {
                 console.error(err);
             }

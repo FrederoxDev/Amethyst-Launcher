@@ -218,12 +218,18 @@ async function installGameInputRedist(versionPath: string): Promise<void> {
  * Ensures all required files exist for the version (manifest patches, MicrosoftGame.Config, GameInput).
  * Safe to call repeatedly — each step is idempotent.
  */
-export async function EnsureVersionFiles(version: InstalledVersionModel): Promise<void> {
+export async function EnsureVersionFiles(version: InstalledVersionModel, onStatus?: (message: string) => void): Promise<void> {
+    const status = onStatus ?? (() => {});
     const appxManifest = path.join(version.path, "appxmanifest.xml");
     const manifestXml = fs.readFileSync(appxManifest, "utf-8");
 
+    status("Patching manifest...");
     patchManifest(appxManifest, version.path);
+
+    status("Generating game config...");
     ensureMicrosoftGameConfig(version.path, manifestXml);
+
+    status("Installing GameInput...");
     await installGameInputRedist(version.path);
 }
 

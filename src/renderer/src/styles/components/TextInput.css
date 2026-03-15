@@ -1,20 +1,26 @@
 .text-input-label {
     color: white;
     font-size: 14px;
+    padding-bottom: 2px;
 }
 
 .text-input-box {
     border: 3px solid #1E1E1F;
-    height: 25px;
+    height: 36px;
     background-color: #313233;
+    display: flex;
+    align-items: center;
 }
 
 .text-input-control {
     width: 100%;
     outline: none;
     background-color: transparent;
-    transform: translateY(1px);
     padding-left: 4px;
     color: white;
-    font-size: 12px;
+    font-size: 14px;
+}
+
+.text-input-control::placeholder {
+    color: #6f6f6f;
 }

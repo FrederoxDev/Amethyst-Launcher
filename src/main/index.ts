@@ -19,7 +19,6 @@ process.env["ELECTRON_DISABLE_SECURITY_WARNINGS"] = "true";
 }
 
 let mainWindow: Electron.BrowserWindow | null = null;
-const appStateInitSentToRenderers = new Set<number>();
 
 function createWindow(): BrowserWindow {
     const win = new BrowserWindow({
@@ -112,10 +111,6 @@ ipcMain.handle("show-message", async (_, args) => {
 });
 
 ipcMain.on("APP_STATE_INIT_REQUEST", event => {
-    const senderId = event.sender.id;
-    if (appStateInitSentToRenderers.has(senderId)) return;
-
-    appStateInitSentToRenderers.add(senderId);
     event.sender.send("APP_STATE_INIT");
 });
 

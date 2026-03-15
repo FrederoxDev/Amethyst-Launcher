@@ -9,6 +9,7 @@ import { IJSONModel } from "./contracts/IJSONModel";
 import { FileLocker } from "./FileLocker";
 import { FULL_PROGRESS_RESET_OPTIONS, ProgressBar } from "@renderer/states/ProgressBarStore";
 import { LauncherTools } from "./backend/tools/LauncherTools";
+import { useDownloadStore, addPendingDownload, removePendingDownload } from "@renderer/states/DownloadStore";
 
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
@@ -333,19 +334,50 @@ export class VersionManager {
         console.log(`Selected mirror for downloading version ${version.version.toString()}: ${mirror}`);
         console.log(`Starting download at ${performance.now()} ms`);
         const nowTime = new Date();
-        await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
-            // Set the status to downloading and show the progress bar, we will update the progress in the Downloader.downloadFile callback
-            setStatus("downloading");
-            await Downloader.downloadFile(mirror, versionFilePath, (transferred, total) => {
-                setMessage(`Downloading Minecraft ${version.version.toString()}... (${(transferred / (1024 * 1024)).toFixed(1)}MB / ${(total / (1024 * 1024)).toFixed(1)}MB)`);
-                setProgress(total > 0 ? transferred / total : 0);
-            }, success => {
-                // Should probably return a error on this callback but meh
-                if (!success) {
-                    throw new Error("Failed to download Minecraft!");
-                }
-            });
+
+        // Track in download manager
+        const dlId = `version-${uuid}-${Date.now()}`;
+        const dlStore = useDownloadStore.getState();
+        dlStore.addDownload({
+            id: dlId,
+            name: `Minecraft ${version.version.toString()}`,
+            type: "version",
+            progress: 0,
+            status: "downloading",
+            abortController: null,
         });
+
+        // Persist for crash recovery
+        addPendingDownload({
+            id: dlId,
+            name: `Minecraft ${version.version.toString()}`,
+            type: "version",
+            url: mirror,
+            versionUuid: uuid,
+        });
+
+        try {
+            await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
+                setStatus("downloading");
+                await Downloader.downloadFile(mirror, versionFilePath, (transferred, total) => {
+                    const progress = total > 0 ? transferred / total : 0;
+                    setMessage(`Downloading Minecraft ${version.version.toString()}... (${(transferred / (1024 * 1024)).toFixed(1)}MB / ${(total / (1024 * 1024)).toFixed(1)}MB)`);
+                    setProgress(progress);
+                    useDownloadStore.getState().updateDownload(dlId, { progress });
+                }, success => {
+                    if (!success) {
+                        throw new Error("Failed to download Minecraft!");
+                    }
+                });
+            });
+
+            useDownloadStore.getState().updateDownload(dlId, { status: "done", progress: 1 });
+            removePendingDownload(dlId);
+        } catch (e) {
+            useDownloadStore.getState().updateDownload(dlId, { status: "error" });
+            removePendingDownload(dlId);
+            throw e;
+        }
 
         // Unlock the version after the download is complete
         console.log(`Finished download at ${performance.now()} ms, total time: ${((new Date().getTime() - nowTime.getTime()) / 1000).toFixed(2)} seconds`);
@@ -598,7 +630,16 @@ export class VersionManager {
             throw new Error("Failed to download version!");
         }
 
-        // After the version is downloaded, procees to decrypt and extract it, 
+        // Update the download manager to show extracting status
+        // Find the most recent version download entry for this uuid
+        const dlEntry = useDownloadStore.getState().downloads.find(
+            d => d.type === "version" && d.id.startsWith(`version-${uuid}-`)
+        );
+        if (dlEntry) {
+            useDownloadStore.getState().updateDownload(dlEntry.id, { status: "extracting" });
+        }
+
+        // After the version is downloaded, procees to decrypt and extract it,
         // if this fails we will throw an error
         const extractSuccess = await this.extractVersionByUUID(uuid);
         if (!extractSuccess) {
@@ -614,7 +655,7 @@ export class VersionManager {
         const installationData: DownloadedVersionInstallationData = {
             kind: "downloaded",
             uuid: version.uuid,
-            name: version.type === "release" ? `Minecraft ${version.version.toString()}` : `Minecraft ${version.version.toString()} (Preview)`,
+            name: version.version.toString(),
             version: version.version,
             type: version.type,
             from: path.join(getPaths().versionsPath, `${versionFileName}.msixvc`),
