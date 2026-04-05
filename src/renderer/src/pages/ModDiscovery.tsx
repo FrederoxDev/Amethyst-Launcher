@@ -20,7 +20,7 @@ import { NewInstancePopup, NewInstanceResult } from "@renderer/popups/NewInstanc
 import { VersionPickerPopup, VersionPickerResult } from "@renderer/popups/VersionPickerPopup";
 
 import { Profile } from "@renderer/scripts/Profiles";
-import { useAppStore } from "@renderer/states/AppStore";
+import { AnalyticsConsent, useAppStore } from "@renderer/states/AppStore";
 import { Popup } from "@renderer/states/PopupStore";
 
 import { db } from "@renderer/firebase/Firebase";
@@ -893,8 +893,10 @@ export function ModDiscovery() {
     const [mods, setMods] = useState<ModDiscoveryData[]>(modsCache ?? []);
     const [fetching, setFetching] = useState(!modsCache);
     const [sortMode, setSortMode] = useState<SortMode>("downloads");
+    const analyticsConsent = useAppStore(state => state.analyticsConsent);
 
     useEffect(() => {
+        if (analyticsConsent !== AnalyticsConsent.Accepted) return;
         if (modsCache) return;
 
         const fetchMods = async () => {
@@ -915,7 +917,30 @@ export function ModDiscovery() {
         };
 
         fetchMods();
-    }, []);
+    }, [analyticsConsent]);
+
+    if (analyticsConsent !== AnalyticsConsent.Accepted) {
+        return (
+            <div className="mod-discovery-page mod-consent-required">
+                <div className="mod-no-consent-card">
+                    <p className="minecraft-seven mod-no-consent-face">:(</p>
+                    <div className="mod-no-consent-text">
+                        <p className="minecraft-seven mod-no-consent-title">Analytics disabled</p>
+                        <p className="minecraft-seven mod-no-consent-description">
+                            Unable to browse community mods. To enable Mod Discovery, open Settings and turn on Analytics Consent.
+                        </p>
+                    </div>
+                </div>
+                <div className="launcher-footer">
+                    <div className="launcher-disclaimer">
+                        <p className="minecraft-seven launcher-disclaimer-text">
+                            Not approved by or associated with Mojang or Microsoft
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     const filteredMods = mods
         .filter(mod => mod.name.toLowerCase().includes(searchText.toLowerCase()) && !mod.hidden)
