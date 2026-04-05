@@ -669,6 +669,7 @@
     font-size: 96px;
     color: #ffffff;
     text-shadow: 5px 5px 0 #3f3f3f;
+    padding: 20px 0px 0 0px;
     line-height: 1;
     image-rendering: pixelated;
     align-self: center;
