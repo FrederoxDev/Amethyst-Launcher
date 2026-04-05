@@ -540,6 +540,69 @@
     max-height: 85vh;
 }
 
+/* ModReadme image skeleton */
+.mod-md-img-skeleton {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    max-height: 400px;
+    border-radius: 4px;
+    background-color: #3a3b3c;
+    margin: 4px 2px;
+    animation: mod-skeleton-pulse 1s ease-in-out infinite;
+}
+
+/* ModVideoPlayer skeleton */
+.mod-video-skeleton {
+    position: absolute;
+    inset: 0;
+    background-color: #3a3b3c;
+    animation: mod-skeleton-pulse 1s ease-in-out infinite;
+}
+
+/* ModReadme skeleton */
+.mod-readme-skeleton {
+    max-width: 900px;
+    width: 100%;
+    margin: 8px auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.mod-readme-skeleton-heading {
+    height: 22px;
+    border-radius: 3px;
+    background-color: #3a3b3c;
+    margin-bottom: 6px;
+    animation: mod-skeleton-pulse 1s ease-in-out infinite;
+}
+
+.mod-readme-skeleton-line {
+    height: 14px;
+    border-radius: 3px;
+    background-color: #3a3b3c;
+    animation: mod-skeleton-pulse 1s ease-in-out infinite;
+}
+
+.mod-readme-skeleton-block {
+    height: 80px;
+    border-radius: 4px;
+    background-color: #3a3b3c;
+    margin: 4px 0;
+    animation: mod-skeleton-pulse 1s ease-in-out infinite;
+}
+
+/* ModDownloads skeleton */
+.mod-downloads-skeleton-item {
+    pointer-events: none;
+    cursor: default;
+}
+
+.mod-downloads-skeleton-item:hover {
+    background-color: transparent;
+}
+
 .mod-card-skeleton {
     cursor: default;
     pointer-events: none;

@@ -8,6 +8,7 @@ export function ModVideoPlayer(rawProps: React.VideoHTMLAttributes<HTMLVideoElem
     const [playing, setPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
+    const [loading, setLoading] = useState(true);
 
     const togglePlay = (): void => {
         const v = videoRef.current;
@@ -37,12 +38,14 @@ export function ModVideoPlayer(rawProps: React.VideoHTMLAttributes<HTMLVideoElem
 
     return (
         <div className={`mod-video-player${playing ? " mod-video-player--playing" : ""}`}>
+            {loading && <div className="mod-video-skeleton" />}
             <video
                 ref={videoRef}
                 className="mod-video-element"
                 src={src}
                 onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime ?? 0)}
                 onLoadedMetadata={() => setDuration(videoRef.current?.duration ?? 0)}
+                onLoadedData={() => setLoading(false)}
                 onEnded={() => setPlaying(false)}
                 onClick={togglePlay}
                 {...props}

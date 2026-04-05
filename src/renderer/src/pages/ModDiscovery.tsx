@@ -2,7 +2,7 @@ import { logEvent } from "firebase/analytics";
 import { collection, doc, getDocs, increment, updateDoc } from "firebase/firestore";
 const fs = window.require("fs") as typeof import("fs");
 const os = window.require("os") as typeof import("os");
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Dropdown } from "@renderer/components/Dropdown";
 import ReactMarkdown from "react-markdown";
 import { ModVideoPlayer } from "@renderer/components/ModVideoPlayer";
@@ -137,7 +137,31 @@ function resolveGithubAsset(src: string, githubUrl: string): string {
 }
 
 export function ModReadme({ githubUrl }: { githubUrl: string }) {
-    const [readme, setReadme] = useState<string>(() => readmeCache.get(githubUrl) ?? "Loading...");
+    const [readme, setReadme] = useState<string>(() => readmeCache.get(githubUrl) ?? "");
+    const [loading, setLoading] = useState(!readmeCache.has(githubUrl));
+
+    const MarkdownImage = useMemo(
+        () =>
+            function MarkdownImage({ src, alt, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) {
+                const [loaded, setLoaded] = useState(false);
+                if (!src) return null;
+                return (
+                    <>
+                        {!loaded && <div className="mod-md-img-skeleton" />}
+                        <img
+                            className="mod-md-img"
+                            style={loaded ? undefined : { display: "none" }}
+                            draggable
+                            {...props}
+                            src={resolveGithubAsset(src, githubUrl)}
+                            alt={alt}
+                            onLoad={() => setLoaded(true)}
+                        />
+                    </>
+                );
+            },
+        [githubUrl],
+    );
 
     useEffect(() => {
         if (readmeCache.has(githubUrl)) return;
@@ -157,6 +181,8 @@ export function ModReadme({ githubUrl }: { githubUrl: string }) {
                 const fallback = "README could not be loaded.";
                 readmeCache.set(githubUrl, fallback);
                 setReadme(fallback);
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -165,6 +191,20 @@ export function ModReadme({ githubUrl }: { githubUrl: string }) {
 
     return (
         <PanelIndent>
+            {loading ? (
+                <div className="mod-readme-skeleton">
+                    <div className="mod-readme-skeleton-heading" style={{ width: "45%" }} />
+                    <div className="mod-readme-skeleton-line" style={{ width: "95%" }} />
+                    <div className="mod-readme-skeleton-line" style={{ width: "88%" }} />
+                    <div className="mod-readme-skeleton-line" style={{ width: "92%" }} />
+                    <div className="mod-readme-skeleton-line" style={{ width: "65%" }} />
+                    <div className="mod-readme-skeleton-block" />
+                    <div className="mod-readme-skeleton-heading" style={{ width: "30%" }} />
+                    <div className="mod-readme-skeleton-line" style={{ width: "90%" }} />
+                    <div className="mod-readme-skeleton-line" style={{ width: "80%" }} />
+                    <div className="mod-readme-skeleton-line" style={{ width: "55%" }} />
+                </div>
+            ) : (
             <div className="mod-readme-container">
                 <ReactMarkdown
                     components={{
@@ -208,19 +248,7 @@ export function ModReadme({ githubUrl }: { githubUrl: string }) {
                         tr: ({ node, ...props }) => <tr className="mod-md-tr" {...props} />,
                         th: ({ node, ...props }) => <th className="minecraft-seven mod-md-th" {...props} />,
                         td: ({ node, ...props }) => <td className="minecraft-seven mod-md-td" {...props} />,
-                        img: ({ src, alt, ...props }) => {
-                            if (src)
-                                return (
-                                    <img
-                                        className="mod-md-img"
-                                        draggable
-                                        {...props}
-                                        src={resolveGithubAsset(src, githubUrl)}
-                                        alt={alt}
-                                    />
-                                );
-                            return null;
-                        },
+                        img: MarkdownImage,
                         video: props => <ModVideoPlayer {...props} />,
                         source: ({ src, type }: { src?: string; type?: string }) => (
                             <source type={type} src={src ? resolveGithubAsset(src, githubUrl) : undefined} />
@@ -248,6 +276,7 @@ export function ModReadme({ githubUrl }: { githubUrl: string }) {
                     {readme}
                 </ReactMarkdown>
             </div>
+            )}
         </PanelIndent>
     );
 }
@@ -660,7 +689,16 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
 
     return (
         <PanelIndent>
-            {loading && <p className="minecraft-seven mod-release-empty">Loading releases...</p>}
+            {loading &&
+                Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="version-picker-item mod-downloads-skeleton-item">
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                            <div className="mod-card-skeleton-text" style={{ width: "180px", height: "13px" }} />
+                            <div className="mod-card-skeleton-text" style={{ width: "90px", height: "11px" }} />
+                        </div>
+                    </div>
+                ))
+            }
             {!loading && releases.length === 0 && (
                 <p className="minecraft-seven mod-release-empty">No releases found.</p>
             )}
