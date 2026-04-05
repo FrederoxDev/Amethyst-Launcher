@@ -2,12 +2,13 @@
     position: absolute;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: safe center;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     background-color: #000000BB;
+    overflow-y: auto;
 }
 
 .version-picker {
@@ -261,6 +262,7 @@
 
 .analytics-consent-popup {
     width: 540px;
+    max-height: none;
 }
 
 .analytics-consent-title {

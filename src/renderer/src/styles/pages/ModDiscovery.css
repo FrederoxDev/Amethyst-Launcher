@@ -252,6 +252,7 @@
 
 .mod-confirm-popup {
     width: 520px;
+    max-height: none;
 }
 
 .mod-confirm-title {

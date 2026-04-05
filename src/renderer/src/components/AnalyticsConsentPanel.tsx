@@ -13,8 +13,11 @@ export default function AnalyticsConsentPanel({ accept, decline }: { accept: () 
                     <p className="minecraft-seven analytics-consent-title">Analytics Consent</p>
                     <div className="version-popup-close" onClick={decline}>
                         <svg width="20" height="20" viewBox="0 0 12 12">
-                            <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
-                                points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
+                            <polygon
+                                className="fill-[#FFFFFF]"
+                                fillRule="evenodd"
+                                points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"
+                            />
                         </svg>
                     </div>
                 </div>
@@ -23,8 +26,8 @@ export default function AnalyticsConsentPanel({ accept, decline }: { accept: () 
 
                 <div className="analytics-consent-body">
                     <p className="minecraft-seven analytics-consent-description">
-                        Amethyst Launcher collects anonymous usage data to help improve your experience.
-                        No personal information is ever collected.
+                        Amethyst Launcher collects anonymous usage data to help improve your experience. No personal
+                        information is ever collected.
                     </p>
 
                     <div className="analytics-consent-items">
@@ -77,3 +80,4 @@ export async function AskAnalyticsConsent() {
         />
     ));
 }
+
