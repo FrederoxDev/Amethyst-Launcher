@@ -156,6 +156,7 @@ export default function App() {
             <div className="container app-root">
                 <Title />
 
+                <div className="app-body">
                 <div className="launcher_background app-background-layer">
                     <img src={lushCaveImage} className="app-background-image" alt="" />
                 </div>
@@ -267,10 +268,11 @@ export default function App() {
                         <ProgressBarRenderer />
                     </div>
                 </div>
-            </div>
 
-            <PopupRenderer />
-            <LoadingSpinnerRenderer />
+                <PopupRenderer />
+                <LoadingSpinnerRenderer />
+                </div>
+            </div>
         </>
     );
 }

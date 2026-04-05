@@ -14,6 +14,7 @@ export interface LauncherConfig {
     selected_profile: number;
     ui_theme: string;
     developer_mode: boolean;
+    trust_all_mods: boolean;
 }
 
 export function GetLauncherConfig(): LauncherConfig {

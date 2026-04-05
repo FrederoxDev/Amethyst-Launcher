@@ -49,6 +49,9 @@ interface AppStore {
     developerMode: boolean;
     setDeveloperMode: StateSetter<boolean>;
 
+    trustAllMods: boolean;
+    setTrustAllMods: StateSetter<boolean>;
+
     error: string;
     setError: StateSetter<string>;
 
@@ -109,6 +112,7 @@ export const useAppStore = create<AppStore>((set, get) => {
         UITheme: "System",
         keepLauncherOpen: true,
         developerMode: false,
+        trustAllMods: false,
         error: "",
         analyticsConsent: initialConsent,
         analyticsInstance: getAnalyticsInstanceForConsent(initialConsent),
@@ -136,6 +140,10 @@ export const useAppStore = create<AppStore>((set, get) => {
         },
         setDeveloperMode: value => {
             set(state => ({ developerMode: StateUtils.resolveSetStateAction(value, state.developerMode) }));
+            get().saveData();
+        },
+        setTrustAllMods: value => {
+            set(state => ({ trustAllMods: StateUtils.resolveSetStateAction(value, state.trustAllMods) }));
             get().saveData();
         },
         setError: value => set(state => ({ error: StateUtils.resolveSetStateAction(value, state.error) })),
