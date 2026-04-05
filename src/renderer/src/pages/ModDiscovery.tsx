@@ -689,6 +689,7 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
 
     return (
         <PanelIndent>
+            <div className="mod-release-container">
             {loading &&
                 Array.from({ length: 4 }).map((_, i) => (
                     <div key={i} className="version-picker-item mod-downloads-skeleton-item">
@@ -816,6 +817,7 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                         </div>
                     );
                 })}
+            </div>
         </PanelIndent>
     );
 }

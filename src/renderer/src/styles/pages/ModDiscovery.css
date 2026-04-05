@@ -459,6 +459,14 @@
     color: #9f9f9f;
 }
 
+.mod-release-container {
+    max-width: 900px;
+    width: 100%;
+    margin: 8px auto;
+    padding: 0 16px;
+    box-sizing: border-box;
+}
+
 .mod-release-empty {
     color: #bcbec0;
     font-size: 14px;
