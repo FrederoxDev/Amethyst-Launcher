@@ -122,16 +122,22 @@ export const useAppStore = create<AppStore>((set, get) => {
         setAllProfiles: value => set(state => ({ allProfiles: StateUtils.resolveSetStateAction(value, state.allProfiles) })),
         setSelectedProfile: value =>
             set(state => ({ selectedProfile: StateUtils.resolveSetStateAction(value, state.selectedProfile) })),
-        setUITheme: value =>
+        setUITheme: value => {
             set(state => {
                 const nextTheme = StateUtils.resolveSetStateAction(value, state.UITheme);
                 ipcRenderer.send("WINDOW_UI_THEME", nextTheme);
                 return { UITheme: nextTheme };
-            }),
-        setKeepLauncherOpen: value =>
-            set(state => ({ keepLauncherOpen: StateUtils.resolveSetStateAction(value, state.keepLauncherOpen) })),
-        setDeveloperMode: value =>
-            set(state => ({ developerMode: StateUtils.resolveSetStateAction(value, state.developerMode) })),
+            });
+            get().saveData();
+        },
+        setKeepLauncherOpen: value => {
+            set(state => ({ keepLauncherOpen: StateUtils.resolveSetStateAction(value, state.keepLauncherOpen) }));
+            get().saveData();
+        },
+        setDeveloperMode: value => {
+            set(state => ({ developerMode: StateUtils.resolveSetStateAction(value, state.developerMode) }));
+            get().saveData();
+        },
         setError: value => set(state => ({ error: StateUtils.resolveSetStateAction(value, state.error) })),
 
         setAnalyticsConsent: value =>
@@ -201,7 +207,8 @@ async function hydrateStore(): Promise<void> {
         allProfiles: profiles,
         keepLauncherOpen: config.keep_open ?? true,
         selectedProfile: config.selected_profile ?? 0,
-        UITheme: config.ui_theme ?? "Light"
+        UITheme: config.ui_theme ?? "Light",
+        developerMode: config.developer_mode ?? false,
     });
 
     ipcRenderer.send("WINDOW_UI_THEME", useAppStore.getState().UITheme);
