@@ -43,33 +43,33 @@ export function SettingsPopup({ submit: rawSubmit }: PopupUseArguments<void>) {
                 <div className="version-picker-divider" />
                 <div className="settings-popup-body scrollbar">
                     <GeneralSettingsTab />
-                </div>
-                <div className="version-picker-divider" />
-                <div className="settings-popup-footer">
-                    <div className="settings-footer-links">
-                        <div
-                            className="minecraft-seven settings-footer-link"
-                            onClick={() => shell.openExternal("https://discord.gg/HscUFVVwwQ")}
-                        >
-                            <LinkIcon />
-                            <span>Discord</span>
+                    <div className="version-picker-divider" />
+                    <div className="settings-popup-footer">
+                        <div className="settings-footer-links">
+                            <div
+                                className="minecraft-seven settings-footer-link"
+                                onClick={() => shell.openExternal("https://discord.gg/HscUFVVwwQ")}
+                            >
+                                <LinkIcon />
+                                <span>Discord</span>
+                            </div>
+                            <div
+                                className="minecraft-seven settings-footer-link"
+                                onClick={() => shell.openExternal("https://github.com/FrederoxDev/Amethyst-Launcher")}
+                            >
+                                <LinkIcon />
+                                <span>GitHub</span>
+                            </div>
+                            <div
+                                className="minecraft-seven settings-footer-link"
+                                onClick={() => Popup.useAsync<void>(props => <DebugInfoPopup {...props} />)}
+                            >
+                                <LinkIcon />
+                                <span>Debug Info</span>
+                            </div>
                         </div>
-                        <div
-                            className="minecraft-seven settings-footer-link"
-                            onClick={() => shell.openExternal("https://github.com/FrederoxDev/Amethyst-Launcher")}
-                        >
-                            <LinkIcon />
-                            <span>GitHub</span>
-                        </div>
-                        <div
-                            className="minecraft-seven settings-footer-link"
-                            onClick={() => Popup.useAsync<void>(props => <DebugInfoPopup {...props} />)}
-                        >
-                            <LinkIcon />
-                            <span>Debug Info</span>
-                        </div>
+                        <p className="minecraft-seven settings-copyright">© 2026 Amethyst Team — All rights reserved.</p>
                     </div>
-                    <p className="minecraft-seven settings-copyright">© 2026 Amethyst Team — All rights reserved.</p>
                 </div>
             </div>
         </PopupPanel>

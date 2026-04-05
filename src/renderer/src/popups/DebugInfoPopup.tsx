@@ -44,11 +44,16 @@ export function DebugInfoPopup({ submit: rawSubmit }: PopupUseArguments<void>) {
         <PopupPanel onExit={submit}>
             <div className="version-picker debug-info-popup" onClick={e => e.stopPropagation()}>
                 <div className="version-picker-header">
-                    <p className="minecraft-seven" style={{ fontSize: "16px" }}>Debug Info</p>
+                    <p className="minecraft-seven" style={{ fontSize: "16px" }}>
+                        Debug Info
+                    </p>
                     <div className="version-popup-close" onClick={submit}>
                         <svg width="20" height="20" viewBox="0 0 12 12">
-                            <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
-                                points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
+                            <polygon
+                                className="fill-[#FFFFFF]"
+                                fillRule="evenodd"
+                                points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"
+                            />
                         </svg>
                     </div>
                 </div>
@@ -108,10 +113,10 @@ export function DebugInfoPopup({ submit: rawSubmit }: PopupUseArguments<void>) {
                         {launcherCfg}
                     </SyntaxHighlighter>
 
-                    <div className="version-picker-divider" style={{ margin: "12px 0" }} />
                     <p className="minecraft-seven debug-info-secret">thanku freddie &lt;3</p>
                 </div>
             </div>
         </PopupPanel>
     );
 }
+

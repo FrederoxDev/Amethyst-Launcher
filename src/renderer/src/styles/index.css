@@ -13,6 +13,13 @@
 @import url('./components/TextInput.css');
 @import url('./components/ReadOnlyTextBox.css');
 @import url('./components/PopupPanel.css');
+@import url('./components/Collapseable.css');
+@import url('./popups/VersionPickerPopup.css');
+@import url('./popups/ImportVersionPopup.css');
+@import url('./popups/SettingsPopup.css');
+@import url('./popups/NewInstancePopup.css');
+@import url('./popups/AnalyticsConsentPanel.css');
+@import url('./popups/DebugInfoPopup.css');
 @import url('./components/LoadingWheel.css');
 @import url('./components/DropWindow.css');
 @import url('./components/Tooltip.css');

@@ -1,0 +1,24 @@
+.new-instance-popup {
+    width: 450px;
+}
+
+.new-instance-popup .version-picker-footer {
+    justify-content: flex-end;
+}
+
+.new-instance-version-field {
+    border: 3px solid #1e1e1f;
+    height: 32px;
+    background-color: #313233;
+    display: flex;
+    align-items: center;
+    padding-left: 4px;
+    cursor: pointer;
+    color: white;
+    font-size: 14px;
+    transition: background-color 0.1s;
+}
+
+.new-instance-version-field:hover {
+    background-color: #3d3e3f;
+}

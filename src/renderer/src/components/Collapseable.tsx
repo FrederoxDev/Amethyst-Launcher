@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import "@renderer/styles/components/Collapseable.css";
 
 type CollapseableProps = {
     title: string;
