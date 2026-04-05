@@ -259,3 +259,63 @@
     from { opacity: 1; max-height: 40px; padding-top: 8px; padding-bottom: 8px; }
     to { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
 }
+
+.analytics-consent-popup {
+    width: 540px;
+}
+
+.analytics-consent-title {
+    font-size: 14px;
+    color: #FFFFFF;
+}
+
+.analytics-consent-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 16px;
+    background-color: #313233;
+}
+
+.analytics-consent-description {
+    font-size: 13px;
+    color: #FFFFFF;
+}
+
+.analytics-consent-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    background-color: #48494a;
+    border: 3px solid #1E1E1F;
+}
+
+.analytics-consent-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.analytics-consent-item .minecraft-seven {
+    font-size: 12px;
+    color: #d0d1d4;
+}
+
+.analytics-consent-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #4f913c;
+    flex-shrink: 0;
+}
+
+.analytics-consent-note {
+    font-size: 12px;
+    color: #9f9f9f;
+}
+
+.analytics-consent-link {
+    color: #60a5fa;
+    text-decoration: underline;
+    cursor: pointer;
+}
