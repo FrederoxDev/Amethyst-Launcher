@@ -24,7 +24,7 @@ export function GeneralSettingsTab() {
     const setAnalyticsConsent = useAppStore(state => state.setAnalyticsConsent);
     const platform = useAppStore(state => state.platform);
     const paths = platform.getPaths();
-    const [ 
+    const [
         launcherCfg,
         setLauncherCfg
     ] = useState<string>("");
@@ -63,7 +63,6 @@ export function GeneralSettingsTab() {
                                     return;
                                 }
 
-                                console.log("Asking user for analytics consent...");
                                 AskAnalyticsConsent().then(consent => {
                                     if (!consent || consent === AnalyticsConsent.Unknown)
                                         return;
