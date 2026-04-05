@@ -256,7 +256,7 @@ export function LauncherPage() {
             )}
 
             {/* Profile Grid */}
-            <div className="launcher-profile-grid" ref={gridRef}>
+            <div className="launcher-profile-grid scrollbar" ref={gridRef}>
                 {allProfiles.map((profile, index) => (
                     <ProfileCard
                         key={profile.uuid}
