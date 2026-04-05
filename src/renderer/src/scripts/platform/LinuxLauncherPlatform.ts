@@ -93,7 +93,7 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
             amethystPath: `${home}/.amethyst`,
             launcherPath: `${home}/.amethyst/launcher`,
             versionsPath: `${home}/.amethyst/launcher/versions`,
-            versionsFilePath: `${home}/.amethyst/launcher/versions/versions.json`,
+            installedVersionsFilePath: `${home}/.amethyst/launcher/versions/installed_versions.json`,
             cachedVersionsFilePath: `${home}/.amethyst/launcher/versions/cached_versions.json`,
             profilesFilePath: `${home}/.amethyst/launcher/profiles/profiles.json`,
             modsPath: `${home}/.amethyst/launcher/Mods`,
@@ -104,7 +104,7 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
         PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.amethystPath);
         PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.launcherPath);
         PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.versionsPath);
-        PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.versionsFilePath);
+        PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.installedVersionsFilePath);
         PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.cachedVersionsFilePath);
         PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.profilesFilePath);
         PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.modsPath);

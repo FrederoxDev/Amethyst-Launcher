@@ -6,7 +6,7 @@ import { PopupPanel, usePopupClose } from "@renderer/components/PopupPanel";
 import { useAppStore } from "@renderer/states/AppStore";
 import { PopupUseArguments } from "@renderer/states/PopupStore";
 
-const { ipcRenderer } = window.require("electron");
+const { ipcRenderer, shell } = window.require("electron");
 const fs = window.require("fs") as typeof import("fs");
 
 export function DebugInfoPopup({ submit: rawSubmit }: PopupUseArguments<void>) {
@@ -33,7 +33,8 @@ export function DebugInfoPopup({ submit: rawSubmit }: PopupUseArguments<void>) {
         ["Amethyst Folder", paths.amethystPath],
         ["Launcher Path", paths.launcherPath],
         ["Versions Path", paths.versionsPath],
-        ["Versions File", paths.versionsFilePath],
+        ["Installed Versions", paths.installedVersionsFilePath],
+        ["Cached Versions", paths.cachedVersionsFilePath],
         ["Profiles File", paths.profilesFilePath],
         ["Mods Path", paths.modsPath],
         ["Launcher Config", paths.launcherConfigPath],
@@ -88,7 +89,7 @@ export function DebugInfoPopup({ submit: rawSubmit }: PopupUseArguments<void>) {
                     <p className="minecraft-seven debug-info-section-title">Paths</p>
                     <div className="debug-info-rows">
                         {pathRows.map(([key, value]) => (
-                            <div className="debug-info-row" key={key}>
+                            <div className="debug-info-row debug-info-row--clickable" key={key} onClick={() => shell.openPath(value)}>
                                 <span className="debug-info-key">{key}</span>
                                 <span className="debug-info-value debug-info-value--path">{value}</span>
                             </div>

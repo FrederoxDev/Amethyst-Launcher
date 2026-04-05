@@ -33,6 +33,14 @@
     background-color: #5a5b5c;
 }
 
+.debug-info-row--clickable {
+    cursor: pointer;
+}
+
+.debug-info-row--clickable:active {
+    transform: scale(0.99, 0.95);
+}
+
 .debug-info-key {
     font-family: "minecraft-seven", monospace;
     font-size: 12px;
