@@ -16,17 +16,6 @@
     align-items: center;
 }
 
-.mod-sort-select {
-    height: 34px;
-    background-color: #313233;
-    border: 3px solid #1e1e1f;
-    color: white;
-    font-size: 12px;
-    padding: 0 8px;
-    cursor: pointer;
-    flex-shrink: 0;
-    outline: none;
-}
 
 .mod-search-box {
     display: flex;

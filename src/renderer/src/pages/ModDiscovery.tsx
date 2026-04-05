@@ -2,7 +2,8 @@ import { logEvent } from "firebase/analytics";
 import { collection, doc, getDocs, increment, updateDoc } from "firebase/firestore";
 const fs = window.require("fs") as typeof import("fs");
 const os = window.require("os") as typeof import("os");
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { Dropdown } from "@renderer/components/Dropdown";
 import ReactMarkdown from "react-markdown";
 import { ModVideoPlayer } from "@renderer/components/ModVideoPlayer";
 import rehypeRaw from "rehype-raw";
@@ -912,14 +913,14 @@ export function ModDiscovery() {
                                 onInput={e => setSearchText(e.currentTarget.value)}
                             />
                         </div>
-                        <select
-                            className="minecraft-seven mod-sort-select"
+                        <Dropdown
+                            options={[
+                                { label: "Downloads", value: "downloads" },
+                                { label: "Newest", value: "date" },
+                            ]}
                             value={sortMode}
-                            onChange={e => setSortMode(e.target.value as SortMode)}
-                        >
-                            <option value="downloads">Downloads</option>
-                            <option value="date">Newest</option>
-                        </select>
+                            setValue={setSortMode as React.Dispatch<React.SetStateAction<string>>}
+                        />
                     </div>
                 </div>
                 {fetching
