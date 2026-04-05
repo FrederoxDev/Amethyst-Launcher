@@ -37,18 +37,33 @@ function AddContentPopup({ submit: rawSubmit }: PopupUseArguments<string | "brow
         <PopupPanel onExit={() => submit(null)}>
             <div className="version-picker" onClick={e => e.stopPropagation()}>
                 <div className="version-picker-header">
-                    <p className="minecraft-seven" style={{ fontSize: "16px" }}>Add Content</p>
+                    <p className="minecraft-seven" style={{ fontSize: "16px" }}>
+                        Add Content
+                    </p>
                     <div className="version-popup-close" onClick={() => submit(null)}>
                         <svg width="20" height="20" viewBox="0 0 12 12">
-                            <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
-                                points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
+                            <polygon
+                                className="fill-[#FFFFFF]"
+                                fillRule="evenodd"
+                                points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"
+                            />
                         </svg>
                     </div>
                 </div>
                 <div className="version-picker-divider" />
                 <div style={{ padding: "8px" }}>
                     <div className="mod-search-box">
-                        <svg className="mod-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f6f6f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                            className="mod-search-icon"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#6f6f6f"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
                             <circle cx="11" cy="11" r="8" />
                             <line x1="21" y1="21" x2="16.65" y2="16.65" />
                         </svg>
@@ -64,21 +79,51 @@ function AddContentPopup({ submit: rawSubmit }: PopupUseArguments<string | "brow
                 </div>
                 <div className="version-picker-list scrollbar">
                     {filtered.length === 0 && (
-                        <p className="minecraft-seven" style={{ color: "#9f9f9f", padding: "12px", textAlign: "center" }}>
+                        <p
+                            className="minecraft-seven"
+                            style={{ color: "#9f9f9f", padding: "12px", textAlign: "center" }}
+                        >
                             {search ? "No mods match your search." : "No local mods available."}
                         </p>
                     )}
                     {filtered.map(mod => {
                         const iconPath = getModIconPath(modsPath, mod);
                         return (
-                            <div key={mod} className="version-picker-item" style={{ justifyContent: "flex-start", gap: 10, padding: "4px 6px" }} onClick={() => submit(mod)}>
+                            <div
+                                key={mod}
+                                className="version-picker-item"
+                                style={{ justifyContent: "flex-start", gap: 10, padding: "4px 6px" }}
+                                onClick={() => submit(mod)}
+                            >
                                 <div className="profile-editor-mod-icon">
-                                    {iconPath
-                                        ? <img src={`file://${iconPath}`} width="36" height="36" className="pixelated" style={{ borderRadius: 3 }} alt="" />
-                                        : <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                            <rect x="2" y="2" width="12" height="12" rx="2" stroke="#6f6f6f" strokeWidth="1.5" />
-                                            <path d="M5 8h6M8 5v6" stroke="#6f6f6f" strokeWidth="1.5" strokeLinecap="round" />
-                                        </svg>}
+                                    {iconPath ? (
+                                        <img
+                                            src={`file://${iconPath}`}
+                                            width="36"
+                                            height="36"
+                                            className="pixelated"
+                                            style={{ borderRadius: 3 }}
+                                            alt=""
+                                        />
+                                    ) : (
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <rect
+                                                x="2"
+                                                y="2"
+                                                width="12"
+                                                height="12"
+                                                rx="2"
+                                                stroke="#6f6f6f"
+                                                strokeWidth="1.5"
+                                            />
+                                            <path
+                                                d="M5 8h6M8 5v6"
+                                                stroke="#6f6f6f"
+                                                strokeWidth="1.5"
+                                                strokeLinecap="round"
+                                            />
+                                        </svg>
+                                    )}
                                 </div>
                                 <p className="minecraft-seven">{mod}</p>
                             </div>
@@ -87,8 +132,17 @@ function AddContentPopup({ submit: rawSubmit }: PopupUseArguments<string | "brow
                 </div>
                 <div className="version-picker-divider" />
                 <div className="version-picker-footer" style={{ justifyContent: "flex-start", gap: 8 }}>
-                    <MinecraftButton text="Browse Mods" style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "140px" }} onClick={() => submit("browse")} />
-                    <MinecraftButton text="Open Mods Folder" colorPallete={GRAY_MINECRAFT_BUTTON} style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "160px" }} onClick={() => shell.openPath(modsPath)} />
+                    <MinecraftButton
+                        text="Browse Mods"
+                        style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "140px" }}
+                        onClick={() => submit("browse")}
+                    />
+                    <MinecraftButton
+                        text="Open Mods Folder"
+                        colorPallete={GRAY_MINECRAFT_BUTTON}
+                        style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "160px" }}
+                        onClick={() => shell.openPath(modsPath)}
+                    />
                 </div>
             </div>
         </PopupPanel>
@@ -127,7 +181,10 @@ export function ProfileEditor() {
     useEffect(() => {
         const unsubInstall = versionManager.subscribe("version_installed", () => forceUpdate());
         const unsubUninstall = versionManager.subscribe("version_uninstalled", () => forceUpdate());
-        return () => { unsubInstall(); unsubUninstall(); };
+        return () => {
+            unsubInstall();
+            unsubUninstall();
+        };
     }, []);
 
     const platform = useAppStore(state => state.platform);
@@ -161,8 +218,8 @@ export function ProfileEditor() {
     const getOrphanedMods = (modNames: string[], excludeProfileIndex: number) => {
         return modNames.filter(modName => {
             if (modName.includes("0.0.0-dev")) return false;
-            const otherProfilesUsingMod = allProfiles.filter((p, i) =>
-                i !== excludeProfileIndex && p.mods.includes(modName)
+            const otherProfilesUsingMod = allProfiles.filter(
+                (p, i) => i !== excludeProfileIndex && p.mods.includes(modName)
             );
             return otherProfilesUsingMod.length === 0;
         });
@@ -175,11 +232,16 @@ export function ProfileEditor() {
             <PopupPanel onExit={() => submit(null)}>
                 <div className="version-picker" style={{ width: 380 }} onClick={e => e.stopPropagation()}>
                     <div className="version-picker-header">
-                        <p className="minecraft-seven" style={{ fontSize: "16px" }}>Delete Mods?</p>
+                        <p className="minecraft-seven" style={{ fontSize: "16px" }}>
+                            Delete Mods?
+                        </p>
                         <div className="version-popup-close" onClick={() => submit(null)}>
                             <svg width="20" height="20" viewBox="0 0 12 12">
-                                <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
-                                    points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
+                                <polygon
+                                    className="fill-[#FFFFFF]"
+                                    fillRule="evenodd"
+                                    points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"
+                                />
                             </svg>
                         </div>
                     </div>
@@ -191,13 +253,28 @@ export function ProfileEditor() {
                                 : "These mods are not used by any other profile:"}
                         </p>
                         {orphanedMods.map(name => (
-                            <p key={name} className="minecraft-seven" style={{ color: "white", fontSize: "13px", padding: "2px 0" }}>{name}</p>
+                            <p
+                                key={name}
+                                className="minecraft-seven"
+                                style={{ color: "white", fontSize: "13px", padding: "2px 0" }}
+                            >
+                                {name}
+                            </p>
                         ))}
                     </div>
                     <div className="version-picker-divider" />
                     <div className="version-picker-footer" style={{ justifyContent: "flex-start", gap: 8 }}>
-                        <MinecraftButton text="Delete from Disk" style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "160px" }} onClick={() => submit("delete")} />
-                        <MinecraftButton text="Keep Files" colorPallete={GRAY_MINECRAFT_BUTTON} style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "120px" }} onClick={() => submit("keep")} />
+                        <MinecraftButton
+                            text="Delete from Disk"
+                            style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "160px" }}
+                            onClick={() => submit("delete")}
+                        />
+                        <MinecraftButton
+                            text="Keep Files"
+                            colorPallete={GRAY_MINECRAFT_BUTTON}
+                            style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "120px" }}
+                            onClick={() => submit("keep")}
+                        />
                     </div>
                 </div>
             </PopupPanel>
@@ -247,8 +324,10 @@ export function ProfileEditor() {
         if (!showMenu) return;
         const handleClick = (e: MouseEvent) => {
             if (
-                dotsRef.current && !dotsRef.current.contains(e.target as Node) &&
-                dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
+                dotsRef.current &&
+                !dotsRef.current.contains(e.target as Node) &&
+                dropdownRef.current &&
+                !dropdownRef.current.contains(e.target as Node)
             ) {
                 setShowMenu(false);
             }
@@ -323,7 +402,7 @@ export function ProfileEditor() {
         <div className="profile-editor-page">
             {allInvalidMods.length > 0 && (
                 <p className="minecraft-seven profile-editor-invalid-mods">
-                    Failed to show {allInvalidMods.length} mods! See Mod Manager for details
+                    Failed to show {allInvalidMods.length} mod(s)! See Mod Manager for details
                 </p>
             )}
 
@@ -333,17 +412,35 @@ export function ProfileEditor() {
                         <div className="profile-editor-header-fields">
                             <TextInput label="Profile Name" text={profileName} setText={setProfileName} />
                             <div className="profile-editor-field">
-                                <p className="minecraft-seven text-input-label" style={{ paddingBottom: 2 }}>Minecraft Version</p>
+                                <p className="minecraft-seven text-input-label" style={{ paddingBottom: 2 }}>
+                                    Minecraft Version
+                                </p>
                                 <div className="profile-editor-version-btn" onClick={openVersionPicker}>
                                     <p className="minecraft-seven">{versionDisplayName}</p>
                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                                        <path d="M3 5L6 8L9 5" stroke="#9f9f9f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path
+                                            d="M3 5L6 8L9 5"
+                                            stroke="#9f9f9f"
+                                            strokeWidth="1.5"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
                                     </svg>
                                 </div>
                             </div>
                         </div>
                         <div className="mod-search-box">
-                            <svg className="mod-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f6f6f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <svg
+                                className="mod-search-icon"
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="#6f6f6f"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
                                 <circle cx="11" cy="11" r="8" />
                                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
                             </svg>
@@ -360,58 +457,105 @@ export function ProfileEditor() {
                     <div className="profile-editor-header-right">
                         <div className="profile-editor-name-actions">
                             <div className="launcher-profile-card-play">
-                                <MinecraftButton text="Play" onClick={onPlay} style={{ "--mc-button-container-h": "36px" }} />
+                                <MinecraftButton
+                                    text="Play"
+                                    onClick={onPlay}
+                                    style={{ "--mc-button-container-h": "36px" }}
+                                />
                             </div>
                             <div className="launcher-profile-card-menu" onClick={e => e.stopPropagation()}>
-                                <div className="launcher-profile-card-dots" ref={dotsRef} onClick={() => setShowMenu(!showMenu)}>
+                                <div
+                                    className="launcher-profile-card-dots"
+                                    ref={dotsRef}
+                                    onClick={() => setShowMenu(!showMenu)}
+                                >
                                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                         <circle cx="8" cy="3" r="1.5" fill="#FFFFFF" />
                                         <circle cx="8" cy="8" r="1.5" fill="#FFFFFF" />
                                         <circle cx="8" cy="13" r="1.5" fill="#FFFFFF" />
                                     </svg>
                                 </div>
-                                {showMenu && createPortal(
-                                    <div
-                                        className="launcher-profile-card-dropdown"
-                                        ref={dropdownRef}
-                                        style={{ top: dropdownPos.top, right: dropdownPos.right }}
-                                        onClick={e => e.stopPropagation()}
-                                    >
-                                        <div className="launcher-profile-card-dropdown-item launcher-profile-card-dropdown-item--danger" onClick={() => { deleteProfile(); setShowMenu(false); }}>
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                                                <path d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                            </svg>
-                                            <p className="minecraft-seven">Delete Profile</p>
-                                        </div>
-                                    </div>,
-                                    document.body
-                                )}
+                                {showMenu &&
+                                    createPortal(
+                                        <div
+                                            className="launcher-profile-card-dropdown"
+                                            ref={dropdownRef}
+                                            style={{ top: dropdownPos.top, right: dropdownPos.right }}
+                                            onClick={e => e.stopPropagation()}
+                                        >
+                                            <div
+                                                className="launcher-profile-card-dropdown-item launcher-profile-card-dropdown-item--danger"
+                                                onClick={() => {
+                                                    deleteProfile();
+                                                    setShowMenu(false);
+                                                }}
+                                            >
+                                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                                    <path
+                                                        d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4"
+                                                        stroke="currentColor"
+                                                        strokeWidth="1.5"
+                                                        strokeLinecap="round"
+                                                    />
+                                                </svg>
+                                                <p className="minecraft-seven">Delete Profile</p>
+                                            </div>
+                                        </div>,
+                                        document.body
+                                    )}
                             </div>
                         </div>
-                        <MinecraftButton text="Add Content" onClick={openAddContent} colorPallete={GRAY_MINECRAFT_BUTTON} style={{ "--mc-button-container-h": "34px", "--mc-button-container-w": "100%" }} />
+                        <MinecraftButton
+                            text="Add Content"
+                            onClick={openAddContent}
+                            colorPallete={GRAY_MINECRAFT_BUTTON}
+                            style={{ "--mc-button-container-h": "34px", "--mc-button-container-w": "100%" }}
+                        />
                     </div>
                 </div>
                 <div className="profile-editor-mod-divider" />
                 <div className="profile-editor-mod-list scrollbar">
                     {filteredModsList.length === 0 && (
-                        <p className="minecraft-seven" style={{ color: "#9f9f9f", padding: "12px", textAlign: "center" }}>
+                        <p
+                            className="minecraft-seven"
+                            style={{ color: "#9f9f9f", padding: "12px", textAlign: "center" }}
+                        >
                             {modSearch ? "No mods match your search." : "No mods installed."}
                         </p>
                     )}
                     {filteredModsList.map(mod => (
-                        <div
-                            key={mod.name}
-                            className="profile-editor-mod-row"
-                        >
+                        <div key={mod.name} className="profile-editor-mod-row">
                             <div className="profile-editor-mod-icon">
                                 {(() => {
                                     const iconPath = getModIconPath(modsPath, mod.name);
-                                    return iconPath
-                                        ? <img src={`file://${iconPath}`} width="36" height="36" className="pixelated" style={{ borderRadius: 3 }} alt="" />
-                                        : <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                            <rect x="2" y="2" width="12" height="12" rx="2" stroke="#6f6f6f" strokeWidth="1.5" />
-                                            <path d="M5 8h6M8 5v6" stroke="#6f6f6f" strokeWidth="1.5" strokeLinecap="round" />
-                                        </svg>;
+                                    return iconPath ? (
+                                        <img
+                                            src={`file://${iconPath}`}
+                                            width="36"
+                                            height="36"
+                                            className="pixelated"
+                                            style={{ borderRadius: 3 }}
+                                            alt=""
+                                        />
+                                    ) : (
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <rect
+                                                x="2"
+                                                y="2"
+                                                width="12"
+                                                height="12"
+                                                rx="2"
+                                                stroke="#6f6f6f"
+                                                strokeWidth="1.5"
+                                            />
+                                            <path
+                                                d="M5 8h6M8 5v6"
+                                                stroke="#6f6f6f"
+                                                strokeWidth="1.5"
+                                                strokeLinecap="round"
+                                            />
+                                        </svg>
+                                    );
                                 })()}
                             </div>
                             <div className="profile-editor-mod-row-info">
@@ -419,22 +563,25 @@ export function ProfileEditor() {
                                     {mod.name}
                                 </p>
                                 {mod.isDownloading && (
-                                    <span className="minecraft-seven profile-editor-mod-downloading">Downloading...</span>
+                                    <span className="minecraft-seven profile-editor-mod-downloading">
+                                        Downloading...
+                                    </span>
                                 )}
                             </div>
-                            <div
-                                    className="profile-editor-mod-delete"
-                                    onClick={() => removeMod(mod.name)}
-                                >
-                                    <svg width="14" height="14" viewBox="0 0 12 12">
-                                        <path d="M3 3L9 9M9 3L3 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                    </svg>
-                                </div>
+                            <div className="profile-editor-mod-delete" onClick={() => removeMod(mod.name)}>
+                                <svg width="14" height="14" viewBox="0 0 12 12">
+                                    <path
+                                        d="M3 3L9 9M9 3L3 9"
+                                        stroke="currentColor"
+                                        strokeWidth="1.5"
+                                        strokeLinecap="round"
+                                    />
+                                </svg>
+                            </div>
                         </div>
                     ))}
                 </div>
             </div>
-
         </div>
     );
 }
