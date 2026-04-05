@@ -1,45 +1,22 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 import { MinecraftRadialButtonPanel } from "@renderer/components/MinecraftRadialButtonPanel";
 import { MinecraftToggle } from "@renderer/components/MinecraftToggle";
-import { ReadOnlyTextBox } from "@renderer/components/ReadOnlyTextBox";
 
 import { AnalyticsConsent, useAppStore } from "@renderer/states/AppStore";
 import { AskAnalyticsConsent } from "@renderer/components/AnalyticsConsentPanel";
-
-const fs = window.require("fs") as typeof import("fs");
 
 export function GeneralSettingsTab() {
     const keepLauncherOpen = useAppStore(state => state.keepLauncherOpen);
     const setKeepLauncherOpen = useAppStore(state => state.setKeepLauncherOpen);
     const developerMode = useAppStore(state => state.developerMode);
     const setDeveloperMode = useAppStore(state => state.setDeveloperMode);
-    const allProfiles = useAppStore(state => state.allProfiles);
-    const selectedProfile = useAppStore(state => state.selectedProfile);
     const UITheme = useAppStore(state => state.UITheme);
     const setUITheme = useAppStore(state => state.setUITheme);
     const analyticsConsent = useAppStore(state => state.analyticsConsent);
     const setAnalyticsConsent = useAppStore(state => state.setAnalyticsConsent);
     const trustAllMods = useAppStore(state => state.trustAllMods);
     const setTrustAllMods = useAppStore(state => state.setTrustAllMods);
-    const platform = useAppStore(state => state.platform);
-    const paths = platform.getPaths();
-    const [launcherCfg, setLauncherCfg] = useState<string>("");
-
-    const updateCfgText = () => {
-        if (!fs.existsSync(paths.launcherConfigPath)) {
-            setLauncherCfg("Launcher config does not exist...");
-            return;
-        }
-
-        const data = fs.readFileSync(paths.launcherConfigPath, "utf-8");
-        setLauncherCfg(data);
-    };
-
-    useEffect(() => {
-        const timer = setTimeout(updateCfgText, 0);
-        return () => clearTimeout(timer);
-    }, [allProfiles, selectedProfile, analyticsConsent, keepLauncherOpen, developerMode, UITheme, trustAllMods]);
 
     return (
         <div className="settings-page settings-scroll-hidden">
@@ -123,18 +100,6 @@ export function GeneralSettingsTab() {
                         <MinecraftToggle isChecked={trustAllMods} setIsChecked={setTrustAllMods} />
                     </div>
                 </div>
-            </div>
-
-            <div className="version-picker-divider" />
-
-            <div className="minecraft-seven settings-debug">
-                <p className="settings-debug-title">Debug Info</p>
-                <p>Running Platform: {platform.getPlatformFullName()}</p>
-                <p>Amethyst Folder: {paths.amethystPath}</p>
-            </div>
-
-            <div className="settings-regular">
-                <ReadOnlyTextBox text={launcherCfg} label="Launcher Config" />
             </div>
         </div>
     );
