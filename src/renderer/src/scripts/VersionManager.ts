@@ -639,42 +639,53 @@ export class VersionManager {
             useDownloadStore.getState().updateDownload(dlEntry.id, { status: "extracting" });
         }
 
-        // After the version is downloaded, procees to decrypt and extract it,
-        // if this fails we will throw an error
-        const extractSuccess = await this.extractVersionByUUID(uuid);
-        if (!extractSuccess) {
-            throw new Error("Failed to extract version!");
-        }
+        try {
+            // After the version is downloaded, procees to decrypt and extract it,
+            // if this fails we will throw an error
+            const extractSuccess = await this.extractVersionByUUID(uuid);
+            if (!extractSuccess) {
+                throw new Error("Failed to extract version!");
+            }
 
-        const versionFileName = `Minecraft-${version.version.toString()}`;
-        const extractedVersionPath = path.join(getPaths().versionsPath, versionFileName);
-        
-        // After the version is extracted, we will proceed to install it,
-        // we create the installation data for the version, 
-        // this will be used to create the installed version record and save it to the installed versions list
-        const installationData: DownloadedVersionInstallationData = {
-            kind: "downloaded",
-            uuid: version.uuid,
-            name: version.version.toString(),
-            version: version.version,
-            type: version.type,
-            from: path.join(getPaths().versionsPath, `${versionFileName}.msixvc`),
-            path: extractedVersionPath
-        };
+            const versionFileName = `Minecraft-${version.version.toString()}`;
+            const extractedVersionPath = path.join(getPaths().versionsPath, versionFileName);
 
-        // Now we can proceed to install the version using the installation data we created,
-        // if the installation fails, we will throw an error, if it succeeds
-        const installSuccess = await this.installVersion(installationData);
-        if (!installSuccess) {
-            throw new Error("Failed to install version after download and extraction!");
+            // After the version is extracted, we will proceed to install it,
+            // we create the installation data for the version,
+            // this will be used to create the installed version record and save it to the installed versions list
+            const installationData: DownloadedVersionInstallationData = {
+                kind: "downloaded",
+                uuid: version.uuid,
+                name: version.version.toString(),
+                version: version.version,
+                type: version.type,
+                from: path.join(getPaths().versionsPath, `${versionFileName}.msixvc`),
+                path: extractedVersionPath
+            };
+
+            // Now we can proceed to install the version using the installation data we created,
+            // if the installation fails, we will throw an error, if it succeeds
+            const installSuccess = await this.installVersion(installationData);
+            if (!installSuccess) {
+                throw new Error("Failed to install version after download and extraction!");
+            }
+
+            // If we reached this point, it means the version was successfully downloaded, extracted and installed,
+            // we can return true to indicate success, but before that we want to clean up any leftover files from the process,
+            // this includes the .msixvc file and the .lock file,
+            // we will also log a message to indicate that the process was completed successfully
+            console.log(`Version ${version.version.toString()} downloaded, extracted and installed successfully!`);
+            await cleanupVersionShenanigans(true);
+
+            if (dlEntry) {
+                useDownloadStore.getState().updateDownload(dlEntry.id, { status: "done", progress: 1 });
+            }
+            return true;
+        } catch (e) {
+            if (dlEntry) {
+                useDownloadStore.getState().updateDownload(dlEntry.id, { status: "error", progress: 0 });
+            }
+            throw e;
         }
-        
-        // If we reached this point, it means the version was successfully downloaded, extracted and installed, 
-        // we can return true to indicate success, but before that we want to clean up any leftover files from the process, 
-        // this includes the .msixvc file and the .lock file, 
-        // we will also log a message to indicate that the process was completed successfully
-        console.log(`Version ${version.version.toString()} downloaded, extracted and installed successfully!`);
-        await cleanupVersionShenanigans(true);
-        return true;
     }
 }

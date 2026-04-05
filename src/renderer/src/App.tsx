@@ -103,6 +103,20 @@ function DownloadManagerButton() {
                                     <p className="minecraft-seven download-manager-item-status">
                                         {dl.status === "downloading" ? `${Math.round(dl.progress * 100)}%` : dl.status}
                                     </p>
+                                    {(dl.status === "downloading" || dl.status === "queued") && (
+                                        <div className="download-manager-item-cancel" onClick={() => cancelDownload(dl.id)}>
+                                            <svg width="10" height="10" viewBox="0 0 12 12">
+                                                <path d="M2 2L10 10M10 2L2 10" stroke="#9f9f9f" strokeWidth="2" strokeLinecap="round" />
+                                            </svg>
+                                        </div>
+                                    )}
+                                    {(dl.status === "done" || dl.status === "error") && (
+                                        <div className="download-manager-item-cancel" onClick={() => removeDownload(dl.id)}>
+                                            <svg width="10" height="10" viewBox="0 0 12 12">
+                                                <path d="M2 2L10 10M10 2L2 10" stroke="#9f9f9f" strokeWidth="2" strokeLinecap="round" />
+                                            </svg>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="download-manager-progress-track">
                                     <div
@@ -110,20 +124,6 @@ function DownloadManagerButton() {
                                         style={{ width: `${Math.round(dl.progress * 100)}%` }}
                                     />
                                 </div>
-                                {(dl.status === "downloading" || dl.status === "queued") && (
-                                    <div className="download-manager-item-cancel" onClick={() => cancelDownload(dl.id)}>
-                                        <svg width="10" height="10" viewBox="0 0 12 12">
-                                            <path d="M2 2L10 10M10 2L2 10" stroke="#9f9f9f" strokeWidth="2" strokeLinecap="round" />
-                                        </svg>
-                                    </div>
-                                )}
-                                {(dl.status === "done" || dl.status === "error") && (
-                                    <div className="download-manager-item-cancel" onClick={() => removeDownload(dl.id)}>
-                                        <svg width="10" height="10" viewBox="0 0 12 12">
-                                            <path d="M2 2L10 10M10 2L2 10" stroke="#9f9f9f" strokeWidth="2" strokeLinecap="round" />
-                                        </svg>
-                                    </div>
-                                )}
                             </div>
                         ))}
                     </div>

@@ -406,7 +406,7 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
 
     const handleInstallClick = async (release: ParsedGithubRelease, isTrusted: boolean) => {
         if (isTrusted || trustAllMods) {
-            installMod(release);
+            await installMod(release);
             onClose?.();
             return;
         }
@@ -471,7 +471,7 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
         ));
 
         if (confirmed) {
-            installMod(release);
+            await installMod(release);
             onClose?.();
         }
     };
@@ -598,7 +598,6 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
         state.setSelectedProfile(targetProfileIndex);
         state.setDownloadingMods([...state.downloadingMods, release.download_name]);
         state.saveData();
-        setConfirmingMod(null);
 
         // Download and install in background
         const dlId = `mod-${release.download_name}-${Date.now()}`;
@@ -710,7 +709,7 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                                             className="version-picker-item-btn"
                                             style={{ display: "flex" }}
                                             title="Add to profile"
-                                            onClick={e => {
+                                            onClick={async e => {
                                                 e.stopPropagation();
                                                 const installingFor = useAppStore.getState().installingForProfile;
                                                 if (installingFor !== null) {
@@ -726,11 +725,12 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                                                         state.setAllProfiles(updatedProfiles);
                                                         state.saveData();
                                                     }
+                                                    onClose?.();
                                                 } else {
                                                     // No profile context — use same picker flow as install
-                                                    handleInstallClick(release, mod.isAmethystOrgMod ?? false);
+                                                    // handleInstallClick awaits installMod and calls onClose itself
+                                                    await handleInstallClick(release, mod.isAmethystOrgMod ?? false);
                                                 }
-                                                onClose?.();
                                             }}
                                         >
                                             <svg
