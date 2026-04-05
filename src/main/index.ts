@@ -22,10 +22,10 @@ let mainWindow: Electron.BrowserWindow | null = null;
 
 function createWindow(): BrowserWindow {
     const win = new BrowserWindow({
-        width: 800,
-        height: 600,
-        minWidth: 600,
-        minHeight: 400,
+        width: 1400,
+        height: 780,
+        minWidth: 1060,
+        minHeight: 600,
         backgroundColor: "#1E1E1F",
         show: false,
         webPreferences: {
@@ -94,7 +94,7 @@ ipcMain.handle("get-appdata-path", () => {
     return app.getPath("home");
 });
 
-ipcMain.on("get-appdata-path-sync", (event) => {
+ipcMain.on("get-appdata-path-sync", event => {
     event.returnValue = app.getPath("appData");
 });
 
@@ -185,7 +185,7 @@ ipcMain.handle("update-download", async () => {
 ipcMain.handle("dialog:openFile", async (_, filters) => {
     const result = await dialog.showOpenDialog({
         properties: ["openFile"],
-        filters
+        filters,
     });
     return result.filePaths[0] ?? null;
 });
