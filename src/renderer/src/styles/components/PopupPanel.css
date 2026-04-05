@@ -11,6 +11,10 @@
     overflow-y: auto;
 }
 
+.popup-panel-no-overlay {
+    background-color: transparent;
+}
+
 .version-picker {
     position: relative;
     width: 900px;
