@@ -78,7 +78,7 @@ function DownloadManagerButton() {
     };
 
     return (
-        <div className="download-manager-btn" ref={btnRef} onClick={() => setPanelOpen(!panelOpen)}>
+        <div className="download-manager-btn" ref={btnRef} data-tooltip="Downloads" onClick={() => setPanelOpen(!panelOpen)}>
             <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round">
                 <path d="M8 2v8M4.5 7.5L8 11l3.5-3.5M2 14h12" />
             </svg>
@@ -168,6 +168,7 @@ export default function App() {
                                 <Link to="/" draggable={false}>
                                     <div
                                         className={`nav-icon ${location.pathname === "/" ? "nav-icon--active" : ""}`}
+                                        data-tooltip="Launcher"
                                     >
                                         <img
                                             src={craftingIcon}
@@ -179,6 +180,7 @@ export default function App() {
                                 <Link to="/mod-discovery" draggable={false}>
                                     <div
                                         className={`nav-icon ${location.pathname === "/mod-discovery" ? "nav-icon--active" : ""}`}
+                                        data-tooltip="Browse Mods"
                                     >
                                         <img
                                             src={earthIcon}
@@ -189,6 +191,7 @@ export default function App() {
                                 </Link>
                                 <div
                                     className="nav-icon nav-icon-add"
+                                    data-tooltip="New Instance"
                                     onClick={async () => {
                                         let versionResult = await Popup.useAsync<VersionPickerResult | null>(props => {
                                             return <VersionPickerPopup {...props} />;
@@ -240,7 +243,7 @@ export default function App() {
 
                             <DownloadManagerButton />
 
-                            <div className="app-settings-button" onClick={() => {
+                            <div className="app-settings-button" data-tooltip="Settings" onClick={() => {
                                 Popup.useAsync<void>(props => <SettingsPopup {...props} />);
                             }}>
                                 <img

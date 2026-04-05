@@ -15,6 +15,7 @@
 @import url('./components/PopupPanel.css');
 @import url('./components/LoadingWheel.css');
 @import url('./components/DropWindow.css');
+@import url('./components/Tooltip.css');
 
 @import url('./utilities/BackgroundImage.css');
 @import url('./utilities/Scrollbar.css');
