@@ -8,8 +8,7 @@ import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 
 import { MainPanelSection, PanelIndent } from "@renderer/components/MainPanel";
-import { MinecraftButton } from "@renderer/components/MinecraftButton";
-import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
+import { MinecraftButton, RED_MINECRAFT_BUTTON } from "@renderer/components/MinecraftButton";
 import { MinecraftRadialButtonPanel } from "@renderer/components/MinecraftRadialButtonPanel";
 import { PopupPanel, usePopupClose } from "@renderer/components/PopupPanel";
 
@@ -319,7 +318,7 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
     const allMods = useAppStore(state => state.allMods);
     const refreshAllMods = useAppStore(state => state.refreshAllMods);
     const downloadingMods = useAppStore(state => state.downloadingMods);
-    const [confirmingMod, setConfirmingMod] = useState<ParsedGithubRelease | null>(null);
+    const trustAllMods = useAppStore(state => state.trustAllMods);
 
     useEffect(() => {
         if (releasesCache.has(mod.githubUrl)) return;
@@ -359,14 +358,68 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
         fetchReleases();
     }, [mod.githubUrl]);
 
-    const handleInstallClick = (release: ParsedGithubRelease, isTrusted: boolean) => {
-        if (isTrusted) {
-            // proceed directly
+    const handleInstallClick = async (release: ParsedGithubRelease, isTrusted: boolean) => {
+        if (isTrusted || trustAllMods) {
             installMod(release);
             onClose?.();
-        } else {
-            // show confirmation popup
-            setConfirmingMod(release);
+            return;
+        }
+
+        const confirmed = await Popup.useAsync<boolean>(({ submit }) => (
+            <PopupPanel onExit={() => submit(false)}>
+                <div className="version-picker mod-confirm-popup" onClick={e => e.stopPropagation()}>
+                    <div className="version-picker-header">
+                        <p className="minecraft-seven mod-confirm-title">Install Community Mod</p>
+                        <div className="version-popup-close" onClick={() => submit(false)}>
+                            <svg width="20" height="20" viewBox="0 0 12 12">
+                                <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
+                                    points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div className="version-picker-divider" />
+
+                    <div className="mod-confirm-body">
+                        <p className="minecraft-seven mod-confirm-description">
+                            {release.download_name} is not officially published or reviewed by the Amethyst team.
+                        </p>
+
+                        <div className="mod-confirm-items">
+                            {[
+                                "Code has not been reviewed for security issues",
+                                "May cause instability or unexpected behaviour",
+                                "Only install if you trust the source",
+                            ].map(item => (
+                                <div key={item} className="mod-confirm-item">
+                                    <span className="mod-confirm-dot" />
+                                    <p className="minecraft-seven">{item}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        <p className="minecraft-seven mod-confirm-note">
+                            To skip this warning for all community mods, enable Trust all community mods in Settings.
+                        </p>
+                    </div>
+
+                    <div className="version-picker-divider" />
+
+                    <div className="version-picker-footer">
+                        <div style={{ flex: 1 }}>
+                            <MinecraftButton text="Cancel" onClick={() => submit(false)} colorPallete={RED_MINECRAFT_BUTTON} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <MinecraftButton text="Install Anyway" onClick={() => submit(true)} />
+                        </div>
+                    </div>
+                </div>
+            </PopupPanel>
+        ));
+
+        if (confirmed) {
+            installMod(release);
+            onClose?.();
         }
     };
 
@@ -538,38 +591,6 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
 
     return (
         <PanelIndent>
-            {confirmingMod && (
-                <PopupPanel onExit={() => setConfirmingMod(null)}>
-                    <div className="mod-confirm-popup" onClick={e => e.stopPropagation()}>
-                        <MainPanelSection className="mod-confirm-content">
-                            <p>{confirmingMod.download_name}</p>
-                            <p className="mod-confirm-warning">
-                                This mod is not officially published or reviewed by the Amethyst team. The code has not
-                                been checked for security or stability issues, and may behave unexpectedly. Only install
-                                if you trust the source.
-                            </p>
-
-                            {/* Spacer pushes buttons to bottom */}
-                            <div className="mod-confirm-actions">
-                                <MinecraftButton
-                                    text="Cancel"
-                                    onClick={() => setConfirmingMod(null)}
-                                    style={MinecraftButtonStyle.Warn}
-                                />
-                                <MinecraftButton
-                                    text="Continue"
-                                    onClick={() => {
-                                        if (confirmingMod) installMod(confirmingMod);
-                                        setConfirmingMod(null);
-                                        onClose?.();
-                                    }}
-                                />
-                            </div>
-                        </MainPanelSection>
-                    </div>
-                </PopupPanel>
-            )}
-
             {loading && <p className="minecraft-seven mod-release-empty">Loading releases...</p>}
             {!loading && releases.length === 0 && (
                 <p className="minecraft-seven mod-release-empty">No releases found.</p>
@@ -731,7 +752,6 @@ function ModDetailsPopup({ mod, onClose }: { mod: ModDiscoveryData; onClose: () 
 export function ModDiscovery() {
     const [searchText, setSearchText] = useState("");
     const [mods, setMods] = useState<ModDiscoveryData[]>(modsCache ?? []);
-    const [selectedMod, setSelectedMod] = useState<ModDiscoveryData | null>(null);
     const [fetching, setFetching] = useState(!modsCache);
     const [sortMode, setSortMode] = useState<SortMode>("downloads");
 
@@ -810,7 +830,9 @@ export function ModDiscovery() {
                     ))
                 ) : (
                     filteredMods.map(mod => (
-                        <ModCard key={mod.name} mod={mod} onOpenDetails={() => setSelectedMod(mod)} />
+                        <ModCard key={mod.name} mod={mod} onOpenDetails={() => {
+                            Popup.useAsync<void>(({ submit }) => <ModDetailsPopup mod={mod} onClose={submit} />);
+                        }} />
                     ))
                 )}
             </div>
@@ -823,7 +845,6 @@ export function ModDiscovery() {
                 </div>
             </div>
 
-            {selectedMod && <ModDetailsPopup mod={selectedMod} onClose={() => setSelectedMod(null)} />}
         </div>
     );
 }

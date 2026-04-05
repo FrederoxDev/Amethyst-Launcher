@@ -22,12 +22,11 @@ export function GeneralSettingsTab() {
     const setUITheme = useAppStore(state => state.setUITheme);
     const analyticsConsent = useAppStore(state => state.analyticsConsent);
     const setAnalyticsConsent = useAppStore(state => state.setAnalyticsConsent);
+    const trustAllMods = useAppStore(state => state.trustAllMods);
+    const setTrustAllMods = useAppStore(state => state.setTrustAllMods);
     const platform = useAppStore(state => state.platform);
     const paths = platform.getPaths();
-    const [
-        launcherCfg,
-        setLauncherCfg
-    ] = useState<string>("");
+    const [launcherCfg, setLauncherCfg] = useState<string>("");
 
     const updateCfgText = () => {
         if (!fs.existsSync(paths.launcherConfigPath)) {
@@ -42,8 +41,8 @@ export function GeneralSettingsTab() {
     useEffect(() => {
         const timer = setTimeout(updateCfgText, 0);
         return () => clearTimeout(timer);
-    }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode, UITheme]);
-    
+    }, [allProfiles, selectedProfile, analyticsConsent, keepLauncherOpen, developerMode, UITheme, trustAllMods]);
+
     return (
         <div className="settings-page settings-scroll-hidden">
             <div className="settings-section">
@@ -64,8 +63,7 @@ export function GeneralSettingsTab() {
                                 }
 
                                 AskAnalyticsConsent().then(consent => {
-                                    if (!consent || consent === AnalyticsConsent.Unknown)
-                                        return;
+                                    if (!consent || consent === AnalyticsConsent.Unknown) return;
                                     setAnalyticsConsent(consent);
                                 });
                             }}
@@ -113,6 +111,24 @@ export function GeneralSettingsTab() {
                 />
             </div>
 
+            <div className="version-picker-divider" />
+
+            <div className="settings-section">
+                <div className="settings-row">
+                    <div>
+                        <p className="minecraft-seven settings-title">Trust all community mods</p>
+                        <p className="minecraft-seven settings-subtitle">
+                            Skip the safety warning when installing mods not published by the Amethyst team.
+                        </p>
+                    </div>
+                    <div className="settings-toggle-wrap">
+                        <MinecraftToggle isChecked={trustAllMods} setIsChecked={setTrustAllMods} />
+                    </div>
+                </div>
+            </div>
+
+            <div className="version-picker-divider" />
+
             <div className="minecraft-seven settings-debug">
                 <p className="settings-debug-title">Debug Info</p>
                 <p>Running Platform: {platform.getPlatformFullName()}</p>
@@ -139,15 +155,15 @@ export function SettingsPage() {
     }
 
     return (
-        <div style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-        }}>
+        <div
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "20px",
+            }}
+        >
             <MinecraftRadialButtonPanel
-                elements={[
-                    { text: "General", value: "general_tab" }
-                ]}
+                elements={[{ text: "General", value: "general_tab" }]}
                 default_selected_value={"general_tab"}
                 onChange={value => {
                     setTab(value);

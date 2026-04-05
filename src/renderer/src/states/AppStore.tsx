@@ -122,8 +122,10 @@ export const useAppStore = create<AppStore>((set, get) => {
 
         setAllValidMods: value =>
             set(state => ({ allValidMods: StateUtils.resolveSetStateAction(value, state.allValidMods) })),
-        setAllRuntimes: value => set(state => ({ allRuntimes: StateUtils.resolveSetStateAction(value, state.allRuntimes) })),
-        setAllProfiles: value => set(state => ({ allProfiles: StateUtils.resolveSetStateAction(value, state.allProfiles) })),
+        setAllRuntimes: value =>
+            set(state => ({ allRuntimes: StateUtils.resolveSetStateAction(value, state.allRuntimes) })),
+        setAllProfiles: value =>
+            set(state => ({ allProfiles: StateUtils.resolveSetStateAction(value, state.allProfiles) })),
         setSelectedProfile: value =>
             set(state => ({ selectedProfile: StateUtils.resolveSetStateAction(value, state.selectedProfile) })),
         setUITheme: value => {
@@ -167,7 +169,9 @@ export const useAppStore = create<AppStore>((set, get) => {
         setDownloadingMods: value =>
             set(state => ({ downloadingMods: StateUtils.resolveSetStateAction(value, state.downloadingMods) })),
         setInstallingForProfile: value =>
-            set(state => ({ installingForProfile: StateUtils.resolveSetStateAction(value, state.installingForProfile) })),
+            set(state => ({
+                installingForProfile: StateUtils.resolveSetStateAction(value, state.installingForProfile),
+            })),
 
         refreshAllMods: () => {
             const mods = GetAllMods();
@@ -196,6 +200,7 @@ export const useAppStore = create<AppStore>((set, get) => {
                 selected_profile: state.selectedProfile,
                 ui_theme: state.UITheme,
                 developer_mode: state.developerMode,
+                trust_all_mods: state.trustAllMods,
             };
 
             SetLauncherConfig(launcherConfig);
@@ -217,6 +222,7 @@ async function hydrateStore(): Promise<void> {
         selectedProfile: config.selected_profile ?? 0,
         UITheme: config.ui_theme ?? "Light",
         developerMode: config.developer_mode ?? false,
+        trustAllMods: config.trust_all_mods ?? false,
     });
 
     ipcRenderer.send("WINDOW_UI_THEME", useAppStore.getState().UITheme);

@@ -251,29 +251,57 @@
 }
 
 .mod-confirm-popup {
-    width: 30%;
-    height: 18%;
-    animation: popup-scale-in 0.1s ease-out;
+    width: 520px;
 }
 
-.mod-confirm-content {
+.mod-confirm-title {
+    font-size: 14px;
+    color: #FFFFFF;
+}
+
+.mod-confirm-body {
     display: flex;
     flex-direction: column;
-    flex: 1;
+    gap: 12px;
+    padding: 14px 16px;
+    background-color: #313233;
 }
 
-.mod-confirm-warning {
-    color: #BCBEC0;
+.mod-confirm-description {
+    font-size: 13px;
+    color: #FFFFFF;
 }
 
-.mod-confirm-actions {
-    margin-top: auto;
+.mod-confirm-items {
     display: flex;
+    flex-direction: column;
     gap: 8px;
+    padding: 10px 12px;
+    background-color: #48494a;
+    border: 3px solid #1E1E1F;
 }
 
-.mod-confirm-actions > * {
-    flex: 1;
+.mod-confirm-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mod-confirm-item .minecraft-seven {
+    font-size: 12px;
+    color: #d0d1d4;
+}
+
+.mod-confirm-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #c0392b;
+    flex-shrink: 0;
+}
+
+.mod-confirm-note {
+    font-size: 12px;
+    color: #9f9f9f;
 }
 
 .mod-release-empty {

@@ -14,6 +14,15 @@
 
 .app-root {
     position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-body {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
 }
 
 .app-consent-actions {
@@ -25,6 +34,10 @@
 .app-background-layer {
     position: absolute;
     display: flex;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
 }
 
 .app-background-image {
@@ -40,7 +53,7 @@
     flex-direction: row;
     width: 100%;
     gap: 12px;
-    height: calc(100% - 64px);
+    height: 100%;
     padding: 12px;
 }
 

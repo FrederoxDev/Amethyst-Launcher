@@ -35,6 +35,7 @@ export function GetLauncherConfig(): LauncherConfig {
         runtime: "Vanilla",
         selected_profile: 0,
         developer_mode: false,
+        trust_all_mods: false,
         ...data,
     };
 }
