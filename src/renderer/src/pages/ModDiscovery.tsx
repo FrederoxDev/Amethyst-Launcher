@@ -413,7 +413,7 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
         }
 
         const confirmed = await Popup.useAsync<boolean>(({ submit }) => (
-            <PopupPanel onExit={() => submit(false)}>
+            <PopupPanel onExit={() => submit(false)} onConfirm={() => submit(true)}>
                 <div className="version-picker mod-confirm-popup" onClick={e => e.stopPropagation()}>
                     <div className="version-picker-header">
                         <p className="minecraft-seven mod-confirm-title">Install Community Mod</p>

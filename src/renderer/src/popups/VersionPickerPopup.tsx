@@ -176,7 +176,7 @@ export function VersionPickerPopup({ submit: rawSubmit }: PopupUseArguments<Vers
     // Upload sub-view
     if (upload) {
         return (
-            <PopupPanel onExit={() => setUpload(null)}>
+            <PopupPanel onExit={() => setUpload(null)} onConfirm={canImport ? doImport : undefined}>
                 <div className="version-picker import-version-popup" onClick={e => e.stopPropagation()}>
                     <div className="version-picker-header">
                         <p className="minecraft-seven" style={{ fontSize: "16px" }}>Import Version</p>

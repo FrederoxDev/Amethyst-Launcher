@@ -7,7 +7,7 @@ const { shell } = window.require("electron");
 
 export default function AnalyticsConsentPanel({ accept, decline }: { accept: () => void; decline: () => void }) {
     return (
-        <PopupPanel onExit={decline}>
+        <PopupPanel onExit={decline} onConfirm={accept}>
             <div className="version-picker analytics-consent-popup" onClick={e => e.stopPropagation()}>
                 <div className="version-picker-header">
                     <p className="minecraft-seven analytics-consent-title">Analytics Consent</p>

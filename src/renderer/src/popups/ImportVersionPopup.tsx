@@ -22,27 +22,23 @@ export interface ImportVersionPopupData {
     version: SemVersion;
     uuid: string;
     file: string;
-};
+}
 
-export function ImportVersionPopup({ 
-    submit 
-}: PopupUseArguments<ImportVersionPopupData | null>) {
+export function ImportVersionPopup({ submit }: PopupUseArguments<ImportVersionPopupData | null>) {
     const [versionName, setVersionName] = useState("");
     const [versionType, setVersionType] = useState("Release");
     const [versionFormat, setVersionFormat] = useState("");
     const [versionFile, setVersionFile] = useState<string | null>(null);
     const [versionUUID] = useState(uuidv4());
     const [targetPath, setTargetPath] = useState("");
-    
+
     const versionFormatError = useMemo(() => {
-        if (versionFormat === "")
-            return ["Version format cannot be empty!"];
-        
+        if (versionFormat === "") return ["Version format cannot be empty!"];
+
         try {
             SemVersion.fromString(versionFormat);
             return null;
-        }
-        catch (e) {
+        } catch (e) {
             return [
                 "Invalid version format!",
                 "Version format must be in the form of 'x.x.x' or 'x.x.x.x' where x is a number. Examples: '1.14.60.5', '26.3.1.0', '1.16.201.1'",
@@ -56,7 +52,13 @@ export function ImportVersionPopup({
     }, [versionName]);
 
     const canImport = useMemo(() => {
-        return isNameValid && !versionFormatError && versionFile !== null && fs.existsSync(versionFile) && fs.statSync(versionFile).isFile();
+        return (
+            isNameValid &&
+            !versionFormatError &&
+            versionFile !== null &&
+            fs.existsSync(versionFile) &&
+            fs.statSync(versionFile).isFile()
+        );
     }, [versionName, versionFormatError, versionFile]);
 
     const isDefaultName = useMemo(() => {
@@ -74,8 +76,7 @@ export function ImportVersionPopup({
         if (prettifiedVersion) {
             console.log(`Prettified version for file '${fileName}' is '${prettifiedVersion}'`);
             finalVersion = prettifiedVersion;
-        }
-        else {
+        } else {
             const versionMatch = fileName.match(/\d+\.\d+\.\d+\.\d+/);
             if (versionMatch) {
                 finalVersion = versionMatch[0];
@@ -88,8 +89,7 @@ export function ImportVersionPopup({
 
         if (fileName.match(/microsoft\.minecraftuwp_/)) {
             setVersionType("Release");
-        }
-        else if (fileName.match(/microsoft\.minecraftwindowsbeta_/)) {
+        } else if (fileName.match(/microsoft\.minecraftwindowsbeta_/)) {
             setVersionType("Preview");
         }
     }, [versionFile]);
@@ -101,7 +101,9 @@ export function ImportVersionPopup({
     }, [versionType]);
 
     useEffect(() => {
-        setTargetPath(MinecraftVersionData.buildVersionPath(!!versionFormatError, versionFormat, versionType, versionUUID));
+        setTargetPath(
+            MinecraftVersionData.buildVersionPath(!!versionFormatError, versionFormat, versionType, versionUUID)
+        );
     }, [versionFormat, versionType, versionUUID]);
 
     return (
@@ -111,10 +113,7 @@ export function ImportVersionPopup({
                     <MainPanelSection>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                             <p>Import Version</p>
-                            <div
-                                className="version-popup-close"
-                                onClick={() => submit(null)}
-                            >
+                            <div className="version-popup-close" onClick={() => submit(null)}>
                                 <svg width="12" height="12" viewBox="0 0 12 12">
                                     <polygon
                                         className="fill-[#FFFFFF]"
@@ -126,32 +125,41 @@ export function ImportVersionPopup({
                         </div>
                         <PanelIndent style={{ gap: "0px" }}>
                             <div className="settings-section" style={{ paddingTop: "2px", paddingBottom: "6px" }}>
-                                <TextInput label="Version Name" text={versionName} setText={setVersionName} style={{
-                                    width: "100%"
-                                }} />
+                                <TextInput
+                                    label="Version Name"
+                                    text={versionName}
+                                    setText={setVersionName}
+                                    style={{
+                                        width: "100%",
+                                    }}
+                                />
                                 {!isNameValid && <p style={{ fontSize: "12px", color: "red" }}>Invalid version name</p>}
                             </div>
                             <div className="settings-section" style={{ paddingTop: "2px", paddingBottom: "6px" }}>
                                 <Dropdown
                                     id="version-type"
                                     labelText="Version Type"
-                                    options={[
-                                        "Release",
-                                        "Preview"
-                                    ]}
+                                    options={["Release", "Preview"]}
                                     value={versionType}
                                     setValue={setVersionType}
                                 />
                             </div>
                             <div className="settings-section" style={{ paddingTop: "2px", paddingBottom: "6px" }}>
-                                <TextInput label="Version" text={versionFormat} setText={setVersionFormat} style={{
-                                    width: "100%"
-                                }} />
-                                {
-                                    versionFormatError?.map((error, index) => {
-                                        return <p style={{ fontSize: "12px", color: "red" }} key={index}>{error}</p>
-                                    })
-                                }
+                                <TextInput
+                                    label="Version"
+                                    text={versionFormat}
+                                    setText={setVersionFormat}
+                                    style={{
+                                        width: "100%",
+                                    }}
+                                />
+                                {versionFormatError?.map((error, index) => {
+                                    return (
+                                        <p style={{ fontSize: "12px", color: "red" }} key={index}>
+                                            {error}
+                                        </p>
+                                    );
+                                })}
                             </div>
                             <div className="settings-section" style={{ paddingTop: "2px", paddingBottom: "6px" }}>
                                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -159,12 +167,11 @@ export function ImportVersionPopup({
                                     <div
                                         className="version-icon-action version-icon-action-neutral"
                                         onClick={async () => {
-                                            const result = await ipcRenderer.invoke("dialog:openFile", [
-                                                { name: "MSIXVC Files", extensions: ["msixvc"] }
-                                            ]) as string | null;
+                                            const result = (await ipcRenderer.invoke("dialog:openFile", [
+                                                { name: "MSIXVC Files", extensions: ["msixvc"] },
+                                            ])) as string | null;
 
-                                            if (!result)
-                                                return;
+                                            if (!result) return;
 
                                             if (!fs.existsSync(result) || !fs.statSync(result).isFile()) {
                                                 return;
@@ -175,13 +182,15 @@ export function ImportVersionPopup({
                                         style={{
                                             display: "flex",
                                             justifyContent: "center",
-                                            alignItems: "center"
+                                            alignItems: "center",
                                         }}
                                     >
                                         <FileInput size={22} color="white" />
                                     </div>
                                 </div>
-                                <p style={{ fontSize: "12px", color: versionFile ? "#9f9f9f" : "red" }}>{versionFile || "No version file selected"}</p>
+                                <p style={{ fontSize: "12px", color: versionFile ? "#9f9f9f" : "red" }}>
+                                    {versionFile || "No version file selected"}
+                                </p>
                             </div>
                         </PanelIndent>
                         <p style={{ fontSize: "12px", color: "#9f9f9f" }}>
@@ -196,15 +205,14 @@ export function ImportVersionPopup({
                                 text="Import!"
                                 disabled={!canImport}
                                 onClick={async () => {
-                                    if (!canImport || versionFile === null)
-                                        return;
+                                    if (!canImport || versionFile === null) return;
 
                                     submit({
                                         name: versionName,
                                         type: versionType.toLowerCase() as MinecraftVersionType,
                                         version: SemVersion.fromString(versionFormat),
                                         uuid: versionUUID,
-                                        file: versionFile
+                                        file: versionFile,
                                     });
                                 }}
                             />

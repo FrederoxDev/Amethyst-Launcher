@@ -11,7 +11,7 @@ export default function ToolUpdatePopup({ name, currentVersion, latestVersion, a
     decline: () => void;
 }) {
     return (
-        <PopupPanel>
+        <PopupPanel onConfirm={accept}>
             <div className="app-consent-panel" onClick={e => e.stopPropagation()}>
                 <MainPanel>
                     <MainPanelSection>
