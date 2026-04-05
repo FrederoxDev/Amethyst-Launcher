@@ -3,7 +3,7 @@ import { create } from "zustand";
 export interface DownloadItem {
     id: string;
     name: string;
-    type: "mod" | "version";
+    type: "mod" | "version" | "file";
     progress: number;
     status: "queued" | "downloading" | "extracting" | "done" | "error";
     abortController: AbortController | null;
@@ -13,7 +13,7 @@ export interface DownloadItem {
 export interface PendingDownload {
     id: string;
     name: string;
-    type: "mod" | "version";
+    type: "mod" | "version" | "file";
     url: string;
     /** For mods: the profile index to add the mod to */
     profileIndex?: number;

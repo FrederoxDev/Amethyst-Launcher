@@ -19,7 +19,7 @@
 .mod-sort-select {
     height: 34px;
     background-color: #313233;
-    border: 3px solid #1E1E1F;
+    border: 3px solid #1e1e1f;
     color: white;
     font-size: 12px;
     padding: 0 8px;
@@ -33,7 +33,7 @@
     align-items: center;
     height: 34px;
     background-color: #313233;
-    border: 3px solid #1E1E1F;
+    border: 3px solid #1e1e1f;
     padding: 0 8px;
     gap: 8px;
     flex: 1;
@@ -69,11 +69,13 @@
 }
 
 .mod-card {
-    background-color: #48494A;
-    border: 3px solid #1E1E1F;
+    background-color: #48494a;
+    border: 3px solid #1e1e1f;
     padding: 12px;
     cursor: pointer;
-    transition: border-color 0.1s, transform 0.1s ease;
+    transition:
+        border-color 0.1s,
+        transform 0.1s ease;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -122,7 +124,7 @@
 }
 
 .mod-card-description {
-    color: #BCBEC0;
+    color: #bcbec0;
     font-size: 12px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -144,19 +146,34 @@
 }
 
 .mod-readme-container {
-    margin: 8px;
+    max-width: 900px;
+    width: 100%;
+    margin: 8px auto;
+    padding: 0 16px;
+    box-sizing: border-box;
+    cursor: text;
+}
+
+.mod-readme-container,
+.mod-readme-container * {
+    user-select: text;
+    -webkit-user-select: text;
 }
 
 .mod-md-h1 {
     color: white;
     font-size: 24px;
-    margin: 8px 0;
+    margin: 12px 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #3e3f40;
 }
 
 .mod-md-h2 {
     color: white;
     font-size: 20px;
-    margin: 8px 0;
+    margin: 10px 0 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #3e3f40;
 }
 
 .mod-md-h3 {
@@ -165,14 +182,26 @@
     margin: 8px 0;
 }
 
+.mod-md-h4 {
+    color: white;
+    font-size: 16px;
+    margin: 6px 0;
+}
+
+.mod-md-h5 {
+    color: #bcbec0;
+    font-size: 14px;
+    margin: 4px 0;
+}
+
 .mod-md-p {
-    color: #BCBEC0;
+    color: #bcbec0;
     font-size: 14px;
     margin: 4px 0;
 }
 
 .mod-md-li {
-    color: #BCBEC0;
+    color: #bcbec0;
     font-size: 14px;
     margin: 4px 0;
 }
@@ -188,9 +217,11 @@
 }
 
 .mod-md-code {
-    color: #BCBEC0;
-    padding: 0 4px;
+    color: #a5d6ff;
+    background-color: #3e3e47;
+    padding: 1px 5px;
     border-radius: 4px;
+    font-style: normal;
 }
 
 .mod-md-pre {
@@ -205,7 +236,12 @@
     border-left: 4px solid #5a5b5c;
     padding-left: 16px;
     font-style: italic;
-    color: #BCBEC0;
+    color: #bcbec0;
+}
+
+.mod-md-blockquote code,
+.mod-md-blockquote pre {
+    font-style: normal;
 }
 
 .mod-md-table {
@@ -225,7 +261,7 @@
 }
 
 .mod-md-th {
-    color: #BCBEC0;
+    color: #bcbec0;
     font-size: 14px;
     font-weight: 700;
     padding: 8px 12px;
@@ -233,7 +269,7 @@
 }
 
 .mod-md-td {
-    color: #BCBEC0;
+    color: #bcbec0;
     font-size: 14px;
     padding: 8px 12px;
     border: 1px solid #5a5b5c;
@@ -242,12 +278,141 @@
 .mod-md-img {
     max-width: 100%;
     height: auto;
-    margin: 8px 0;
+    display: inline-block;
+    vertical-align: middle;
+    margin: 4px 2px;
+    border-radius: 4px;
+    cursor: default;
+    -webkit-user-drag: auto;
+}
+
+.mod-video-player {
+    margin: 10px 0;
+    border: 3px solid #1e1e1f;
+    position: relative;
+    background-color: #000;
+    overflow: hidden;
+}
+
+.mod-video-element {
+    width: 100%;
+    display: block;
+    background-color: #000;
+}
+
+.mod-video-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, transparent 100%);
+    user-select: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.mod-video-player:hover .mod-video-controls,
+.mod-video-player:not(.mod-video-player--playing) .mod-video-controls {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.mod-video-play-btn {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #3c8527;
+    border: 2px solid #1e1e1f;
+    box-shadow: inset 0 -3px 0 #1d4d13;
+    cursor: pointer;
+    transition: background-color 0.075s ease;
+}
+
+.mod-video-play-btn:hover {
+    background-color: #2a641c;
+}
+
+.mod-video-play-btn:active {
+    box-shadow: none;
+    transform: translateY(2px);
+}
+
+.mod-video-progress-track {
+    flex: 1;
+    height: 14px;
+    background-color: rgba(49, 50, 51, 0.8);
+    border: 2px solid #1e1e1f;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.mod-video-progress-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background-color: #3c8527;
+    box-shadow: inset 0 -3px 0 #1d4d13;
+    transition: width 0.25s linear;
+}
+
+.mod-video-time {
+    font-size: 11px;
+    color: #ffffff;
+    flex-shrink: 0;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+}
+
+.mod-video-dots {
+    cursor: pointer;
+    padding: 4px;
+    opacity: 0.6;
+    flex-shrink: 0;
+    transition: opacity 0.1s;
+}
+
+.mod-video-dots:hover {
+    opacity: 1;
+}
+
+.mod-video-dropdown {
+    transform-origin: bottom right;
+}
+
+.mod-md-hr {
+    border: none;
+    border-top: 2px solid #3e3f40;
+    margin: 16px 0;
 }
 
 .mod-md-link {
     color: #60a5fa;
     text-decoration: underline;
+}
+
+.mod-md-strong {
+    font-weight: bold;
+    color: inherit;
+}
+
+.mod-md-em {
+    font-style: italic;
+    color: inherit;
+}
+
+.mod-md-del {
+    text-decoration: line-through;
+    color: #9f9f9f;
 }
 
 .mod-confirm-popup {
@@ -257,7 +422,7 @@
 
 .mod-confirm-title {
     font-size: 14px;
-    color: #FFFFFF;
+    color: #ffffff;
 }
 
 .mod-confirm-body {
@@ -270,7 +435,7 @@
 
 .mod-confirm-description {
     font-size: 13px;
-    color: #FFFFFF;
+    color: #ffffff;
 }
 
 .mod-confirm-items {
@@ -279,7 +444,7 @@
     gap: 8px;
     padding: 10px 12px;
     background-color: #48494a;
-    border: 3px solid #1E1E1F;
+    border: 3px solid #1e1e1f;
 }
 
 .mod-confirm-item {
@@ -306,7 +471,7 @@
 }
 
 .mod-release-empty {
-    color: #BCBEC0;
+    color: #bcbec0;
     font-size: 14px;
 }
 
@@ -327,7 +492,7 @@
 }
 
 .mod-release-date {
-    color: #BCBEC0;
+    color: #bcbec0;
     font-size: 12px;
 }
 
@@ -392,7 +557,7 @@
 }
 
 .mod-card-skeleton:hover {
-    border-color: #1E1E1F;
+    border-color: #1e1e1f;
 }
 
 .mod-card-skeleton-icon {
@@ -412,6 +577,11 @@
 }
 
 @keyframes mod-skeleton-pulse {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 1; }
+    0%,
+    100% {
+        opacity: 0.4;
+    }
+    50% {
+        opacity: 1;
+    }
 }
