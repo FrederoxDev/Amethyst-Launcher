@@ -52,6 +52,15 @@ interface AppStore {
     trustAllMods: boolean;
     setTrustAllMods: StateSetter<boolean>;
 
+    autoCheckUpdates: boolean;
+    setAutoCheckUpdates: StateSetter<boolean>;
+
+    showConsole: boolean;
+    setShowConsole: StateSetter<boolean>;
+
+    confirmDelete: boolean;
+    setConfirmDelete: StateSetter<boolean>;
+
     error: string;
     setError: StateSetter<string>;
 
@@ -113,6 +122,9 @@ export const useAppStore = create<AppStore>((set, get) => {
         keepLauncherOpen: true,
         developerMode: false,
         trustAllMods: false,
+        autoCheckUpdates: true,
+        showConsole: false,
+        confirmDelete: true,
         error: "",
         analyticsConsent: initialConsent,
         analyticsInstance: getAnalyticsInstanceForConsent(initialConsent),
@@ -146,6 +158,18 @@ export const useAppStore = create<AppStore>((set, get) => {
         },
         setTrustAllMods: value => {
             set(state => ({ trustAllMods: StateUtils.resolveSetStateAction(value, state.trustAllMods) }));
+            get().saveData();
+        },
+        setAutoCheckUpdates: value => {
+            set(state => ({ autoCheckUpdates: StateUtils.resolveSetStateAction(value, state.autoCheckUpdates) }));
+            get().saveData();
+        },
+        setShowConsole: value => {
+            set(state => ({ showConsole: StateUtils.resolveSetStateAction(value, state.showConsole) }));
+            get().saveData();
+        },
+        setConfirmDelete: value => {
+            set(state => ({ confirmDelete: StateUtils.resolveSetStateAction(value, state.confirmDelete) }));
             get().saveData();
         },
         setError: value => set(state => ({ error: StateUtils.resolveSetStateAction(value, state.error) })),
@@ -201,6 +225,9 @@ export const useAppStore = create<AppStore>((set, get) => {
                 ui_theme: state.UITheme,
                 developer_mode: state.developerMode,
                 trust_all_mods: state.trustAllMods,
+                auto_check_updates: state.autoCheckUpdates,
+                show_console: state.showConsole,
+                confirm_delete: state.confirmDelete,
             };
 
             SetLauncherConfig(launcherConfig);
@@ -223,6 +250,9 @@ async function hydrateStore(): Promise<void> {
         UITheme: config.ui_theme ?? "Light",
         developerMode: config.developer_mode ?? false,
         trustAllMods: config.trust_all_mods ?? false,
+        autoCheckUpdates: config.auto_check_updates ?? true,
+        showConsole: config.show_console ?? false,
+        confirmDelete: config.confirm_delete ?? true,
     });
 
     ipcRenderer.send("WINDOW_UI_THEME", useAppStore.getState().UITheme);

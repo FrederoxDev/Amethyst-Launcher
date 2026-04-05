@@ -9,6 +9,7 @@ import { Popup, PopupUseArguments } from "@renderer/states/PopupStore";
 import { useAppStore } from "@renderer/states/AppStore";
 import { VersionPickerPopup, VersionPickerResult } from "@renderer/popups/VersionPickerPopup";
 import { launchProfile as doLaunchProfile } from "@renderer/scripts/LaunchUtils";
+import { AskConfirmDelete } from "@renderer/components/ConfirmDeletePopup";
 
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
@@ -302,6 +303,13 @@ export function ProfileEditor() {
 
     const deleteProfile = async () => {
         const profile = allProfiles[selectedProfile];
+        if (useAppStore.getState().confirmDelete) {
+            const confirmed = await AskConfirmDelete(
+                "Delete profile?",
+                `Are you sure you want to delete "${profile?.name ?? "this profile"}"?`
+            );
+            if (!confirmed) return;
+        }
         if (profile) {
             const orphaned = getOrphanedMods(profile.mods, selectedProfile);
             const proceed = await promptDeleteOrphanedMods(orphaned);

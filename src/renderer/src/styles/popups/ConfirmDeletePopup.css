@@ -1,0 +1,19 @@
+.confirm-delete-popup {
+    width: 420px;
+    max-height: none;
+}
+
+.confirm-delete-title {
+    font-size: 14px;
+    color: #ffffff;
+}
+
+.confirm-delete-body {
+    padding: 14px 16px;
+    background-color: #313233;
+}
+
+.confirm-delete-description {
+    font-size: 13px;
+    color: #ffffff;
+}

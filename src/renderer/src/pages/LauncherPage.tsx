@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import { Popup } from "@renderer/states/PopupStore";
 import { VersionPickerPopup, VersionPickerResult } from "@renderer/popups/VersionPickerPopup";
 import { NewInstancePopup, NewInstanceResult } from "@renderer/popups/NewInstancePopup";
+import { AskConfirmDelete } from "@renderer/components/ConfirmDeletePopup";
 
 const { shell } = window.require("electron") as typeof import("electron");
 
@@ -204,7 +205,15 @@ export function LauncherPage() {
         }
     }, [allProfiles]);
 
-    const deleteProfile = (index: number) => {
+    const deleteProfile = async (index: number) => {
+        if (useAppStore.getState().confirmDelete) {
+            const profile = allProfiles[index];
+            const confirmed = await AskConfirmDelete(
+                "Delete profile?",
+                `Are you sure you want to delete "${profile?.name ?? "this profile"}"?`
+            );
+            if (!confirmed) return;
+        }
         snapshotPositions();
         const newProfiles = [...allProfiles];
         newProfiles.splice(index, 1);

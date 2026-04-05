@@ -15,6 +15,9 @@ export interface LauncherConfig {
     ui_theme: string;
     developer_mode: boolean;
     trust_all_mods: boolean;
+    auto_check_updates: boolean;
+    show_console: boolean;
+    confirm_delete: boolean;
 }
 
 export function GetLauncherConfig(): LauncherConfig {
@@ -36,6 +39,9 @@ export function GetLauncherConfig(): LauncherConfig {
         selected_profile: 0,
         developer_mode: false,
         trust_all_mods: false,
+        auto_check_updates: true,
+        show_console: false,
+        confirm_delete: true,
         ...data,
     };
 }
