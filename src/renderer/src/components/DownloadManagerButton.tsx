@@ -8,12 +8,14 @@ export function DownloadManagerButton() {
     const setPanelOpen = useDownloadStore(state => state.setPanelOpen);
     const updateDownload = useDownloadStore(state => state.updateDownload);
     const removeDownload = useDownloadStore(state => state.removeDownload);
+    const clearCompleted = useDownloadStore(state => state.clearCompleted);
 
     const btnRef = useRef<HTMLDivElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const [panelPos, setPanelPos] = useState({ bottom: 0, left: 0 });
 
     const activeCount = downloads.filter(d => d.status === "downloading" || d.status === "extracting" || d.status === "queued").length;
+    const completedCount = downloads.filter(d => d.status === "done" || d.status === "error").length;
 
     useEffect(() => {
         if (!panelOpen) return;
@@ -60,7 +62,14 @@ export function DownloadManagerButton() {
                     style={{ bottom: panelPos.bottom, left: panelPos.left }}
                     onClick={e => e.stopPropagation()}
                 >
-                    <p className="minecraft-seven download-manager-title">Downloads</p>
+                    <div className="download-manager-header">
+                        <p className="minecraft-seven download-manager-title">Downloads</p>
+                        {completedCount > 0 && (
+                            <button className="minecraft-seven download-manager-clear" onClick={clearCompleted}>
+                                clear
+                            </button>
+                        )}
+                    </div>
                     <div className="download-manager-list scrollbar">
                         {downloads.length === 0 && (
                             <p className="minecraft-seven download-manager-empty">No downloads</p>
