@@ -13,7 +13,6 @@ export interface Profile {
     name: string;
     is_modded: boolean;
     runtime: string;
-    mods: string[];
     minecraft_version: string | null;
     /** UUID of the installed version, used for imported versions that may not exist in the remote database. */
     version_uuid?: string | null;
@@ -108,9 +107,9 @@ export function MigrateProfiles(): void {
     if (!fs.existsSync(oldProfilesJson)) return;
     if (fs.existsSync(migratedMarker)) return;
 
-    let oldProfiles: Profile[] = [];
+    let oldProfiles: (Profile & { mods?: string[] })[] = [];
     try {
-        oldProfiles = JSON.parse(fs.readFileSync(oldProfilesJson, "utf-8")) as Profile[];
+        oldProfiles = JSON.parse(fs.readFileSync(oldProfilesJson, "utf-8")) as (Profile & { mods?: string[] })[];
     } catch {
         console.warn("[Migration] Could not parse old profiles.json, skipping migration.");
         return;

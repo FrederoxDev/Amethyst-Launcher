@@ -14,6 +14,7 @@ import { FileLocker } from "@renderer/scripts/FileLocker";
 import { StateSetter, StateUtils } from "./StateUtils";
 import { checkIfMinecraftIsRunning, startMinecraftWatcher } from "@renderer/scripts/MinecraftWatcher";
 import { resumePendingDownloads } from "@renderer/scripts/DownloadRecovery";
+import { initProtocolHandler } from "@renderer/scripts/ProtocolHandler";
 
 const { ipcRenderer } = window.require("electron");
 
@@ -296,6 +297,7 @@ export function InitializeAppState(): void {
     });
 
     ipcRenderer.send("APP_STATE_INIT_REQUEST");
+    initProtocolHandler();
     checkIfMinecraftIsRunning();
     startMinecraftWatcher();
 }

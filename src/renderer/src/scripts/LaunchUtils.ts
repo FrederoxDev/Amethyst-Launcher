@@ -3,6 +3,7 @@ import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { Profile } from "./Profiles";
 import { SetActiveProfile } from "./Launcher";
+import { GetAllMods } from "./Mods";
 
 /**
  * Launches a profile by its UUID. Can be called from anywhere (protocol handler, UI, etc.)
@@ -21,14 +22,14 @@ export async function launchProfileByUUID(profileUuid: string): Promise<void> {
  */
 export async function launchProfile(profile: Profile): Promise<void> {
     const state = useAppStore.getState();
-    const { allValidMods, versionManager, platform } = state;
+    const { versionManager, platform } = state;
 
     if (!ProgressBar.canDoAction("launch") || state.minecraftIsRunning) return;
 
-    const profileInvalidMods = profile.mods.filter(mod => !allValidMods.includes(mod));
+    const profileInvalidMods = GetAllMods(profile.uuid).filter(mod => !mod.ok).map(mod => mod.id);
     if (profileInvalidMods.length > 0) {
         throw new Error(
-            `Profile has ${profileInvalidMods.length} missing mod${profileInvalidMods.length > 1 ? "s" : ""}, edit profile to launch! Missing mods: ${profileInvalidMods.map(mod => `'${mod}'`).join(", ")}`
+            `Profile has ${profileInvalidMods.length} invalid mod${profileInvalidMods.length > 1 ? "s" : ""}, edit profile to launch! Invalid mods: ${profileInvalidMods.map(mod => `'${mod}'`).join(", ")}`
         );
     }
 
