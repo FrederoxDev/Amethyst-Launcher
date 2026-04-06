@@ -6,7 +6,7 @@ import { useShallow } from "zustand/shallow";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { launchProfile } from "@renderer/scripts/LaunchUtils";
 import { useNavigate } from "react-router-dom";
-import { Profile } from "@renderer/scripts/Profiles";
+import { DeleteProfileFolder, Profile } from "@renderer/scripts/Profiles";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Popup } from "@renderer/states/PopupStore";
@@ -215,9 +215,11 @@ export function LauncherPage() {
             if (!confirmed) return;
         }
         snapshotPositions();
+        const profileToDelete = allProfiles[index];
         const newProfiles = [...allProfiles];
         newProfiles.splice(index, 1);
         setAllProfiles(newProfiles);
+        if (profileToDelete) DeleteProfileFolder(profileToDelete.uuid);
         saveData();
     };
 

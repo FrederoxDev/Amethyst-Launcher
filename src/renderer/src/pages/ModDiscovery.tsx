@@ -19,7 +19,7 @@ import { PopupPanel, usePopupClose } from "@renderer/components/PopupPanel";
 import { NewInstancePopup, NewInstanceResult } from "@renderer/popups/NewInstancePopup";
 import { VersionPickerPopup, VersionPickerResult } from "@renderer/popups/VersionPickerPopup";
 
-import { Profile } from "@renderer/scripts/Profiles";
+import { GetProfileModsPath, Profile } from "@renderer/scripts/Profiles";
 import { AnalyticsConsent, useAppStore } from "@renderer/states/AppStore";
 import { Popup } from "@renderer/states/PopupStore";
 
@@ -64,9 +64,6 @@ function useCachedIcon(url: string): string {
     return src;
 }
 
-function getPaths() {
-    return useAppStore.getState().platform.getPaths();
-}
 
 interface ModDiscoveryData {
     id: string;
@@ -357,11 +354,11 @@ async function downloadToTemp(
     }
 }
 
-async function ImportZIP(zip_path: string): Promise<void> {
+async function ImportZIP(zip_path: string, profileUuid: string): Promise<void> {
     try {
-        const paths = getPaths();
+        const modsPath = GetProfileModsPath(profileUuid);
         const zip_name = path.basename(zip_path);
-        const extracted_folder_path = path.join(paths.modsPath, zip_name.slice(0, -".zip".length));
+        const extracted_folder_path = path.join(modsPath, zip_name.slice(0, -".zip".length));
         console.log("Extracting", zip_path, "to", extracted_folder_path);
         await Extractor.extractFile(zip_path, extracted_folder_path, [], undefined, success => {
             if (!success) {
@@ -375,9 +372,9 @@ async function ImportZIP(zip_path: string): Promise<void> {
     }
 }
 
-function uninstallMod(modName: string): void {
-    const paths = getPaths();
-    const modPath = path.join(paths.modsPath, modName);
+function uninstallMod(modName: string, profileUuid: string): void {
+    const modsPath = GetProfileModsPath(profileUuid);
+    const modPath = path.join(modsPath, modName);
     if (fs.existsSync(modPath)) {
         fs.rmSync(modPath, { recursive: true, force: true });
         console.log(`Uninstalled mod: ${modName}`);
@@ -508,11 +505,11 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
 
     const installMod = async (release: ParsedGithubRelease) => {
         const installingFor = useAppStore.getState().installingForProfile;
-        let targetProfileIndex: number;
+        let targetProfileUuid: string;
 
         if (installingFor !== null) {
             // Came from a profile's "Add Content" — skip profile picker
-            targetProfileIndex = installingFor;
+            targetProfileUuid = installingFor;
         } else {
             // Ask which profile to add the mod to
             const profileIndex = await Popup.useAsync<number | null>(({ submit }) => {
@@ -572,9 +569,8 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
 
             if (profileIndex === null) return;
 
-            // Handle "New Profile" — run full creation flow
-            targetProfileIndex = profileIndex;
             if (profileIndex === -1) {
+                // Handle "New Profile" — run full creation flow
                 let versionResult = await Popup.useAsync<VersionPickerResult | null>(props => {
                     return <VersionPickerPopup {...props} />;
                 });
@@ -610,22 +606,27 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                     state.setAllProfiles(newProfiles);
                     state.setSelectedProfile(newProfiles.length - 1);
                     state.saveData();
-                    targetProfileIndex = newProfiles.length - 1;
+                    targetProfileUuid = newProfile.uuid;
                     break;
                 }
+            } else {
+                const pickedProfile = useAppStore.getState().allProfiles[profileIndex];
+                if (!pickedProfile) return;
+                targetProfileUuid = pickedProfile.uuid;
             }
         }
 
         // Add mod to profile, download in background, stay on page
         const state = useAppStore.getState();
-        const profile = state.allProfiles[targetProfileIndex];
+        const profile = state.allProfiles.find(p => p.uuid === targetProfileUuid);
         if (profile && !profile.mods.includes(release.download_name)) {
-            const updatedProfiles = state.allProfiles.map((p, i) =>
-                i === targetProfileIndex ? { ...p, mods: [...p.mods, release.download_name] } : p
+            const updatedProfiles = state.allProfiles.map(p =>
+                p.uuid === targetProfileUuid ? { ...p, mods: [...p.mods, release.download_name] } : p
             );
             state.setAllProfiles(updatedProfiles);
         }
-        state.setSelectedProfile(targetProfileIndex);
+        const targetIndex = state.allProfiles.findIndex(p => p.uuid === targetProfileUuid);
+        if (targetIndex !== -1) state.setSelectedProfile(targetIndex);
         state.setDownloadingMods([...state.downloadingMods, release.download_name]);
         state.saveData();
 
@@ -648,7 +649,7 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
             name: release.download_name,
             type: "mod",
             url: release.download_url,
-            profileIndex: targetProfileIndex,
+            profileUuid: targetProfileUuid,
         });
 
         downloadToTemp(
@@ -670,7 +671,7 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
             }
 
             useDownloadStore.getState().updateDownload(dlId, { status: "extracting", progress: 1 });
-            await ImportZIP(path!);
+            await ImportZIP(path!, targetProfileUuid);
             refreshAllMods();
             useAppStore.getState().setDownloadingMods(prev => prev.filter(n => n !== release.download_name));
             useDownloadStore.getState().updateDownload(dlId, { status: "done" });
@@ -755,10 +756,10 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                                                 if (installingFor !== null) {
                                                     // Add directly to the profile we came from
                                                     const state = useAppStore.getState();
-                                                    const profile = state.allProfiles[installingFor];
+                                                    const profile = state.allProfiles.find(p => p.uuid === installingFor);
                                                     if (profile && !profile.mods.includes(release.download_name)) {
-                                                        const updatedProfiles = state.allProfiles.map((p, i) =>
-                                                            i === installingFor
+                                                        const updatedProfiles = state.allProfiles.map(p =>
+                                                            p.uuid === installingFor
                                                                 ? { ...p, mods: [...p.mods, release.download_name] }
                                                                 : p
                                                         );
@@ -790,7 +791,8 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                                             style={{ display: "flex" }}
                                             onClick={e => {
                                                 e.stopPropagation();
-                                                uninstallMod(release.download_name);
+                                                const selectedProfile = useAppStore.getState().allProfiles[useAppStore.getState().selectedProfile];
+                                                if (selectedProfile) uninstallMod(release.download_name, selectedProfile.uuid);
                                                 refreshAllMods();
                                                 if (analyticsInstance) {
                                                     logEvent(analyticsInstance, "mod_uninstall", {

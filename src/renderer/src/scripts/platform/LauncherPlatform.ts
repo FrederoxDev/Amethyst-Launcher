@@ -16,8 +16,7 @@ export interface LauncherPaths {
     versionsPath: string;
     installedVersionsFilePath: string;
     cachedVersionsFilePath: string;
-    profilesFilePath: string;
-    modsPath: string;
+    profilesPath: string;
     launcherConfigPath: string;
     toolsPath: string;
 }

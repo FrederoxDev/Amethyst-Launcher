@@ -35,8 +35,7 @@ export function DebugInfoPopup({ submit: rawSubmit }: PopupUseArguments<void>) {
         ["Versions Path", paths.versionsPath],
         ["Installed Versions", paths.installedVersionsFilePath],
         ["Cached Versions", paths.cachedVersionsFilePath],
-        ["Profiles File", paths.profilesFilePath],
-        ["Mods Path", paths.modsPath],
+        ["Profiles Path", paths.profilesPath],
         ["Launcher Config", paths.launcherConfigPath],
         ["Tools Path", paths.toolsPath],
     ];

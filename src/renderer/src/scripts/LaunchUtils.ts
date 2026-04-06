@@ -2,6 +2,7 @@ import { useAppStore } from "@renderer/states/AppStore";
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { Profile } from "./Profiles";
+import { SetActiveProfile } from "./Launcher";
 
 /**
  * Launches a profile by its UUID. Can be called from anywhere (protocol handler, UI, etc.)
@@ -47,6 +48,7 @@ export async function launchProfile(profile: Profile): Promise<void> {
             setProgress(0.5);
             setMessage(`Preparing ${installedVersion.name}...`);
 
+            SetActiveProfile(profile.uuid);
             await platform.runProfile(profile, installedVersion, setMessage);
         }, true);
         return;
@@ -82,6 +84,7 @@ export async function launchProfile(profile: Profile): Promise<void> {
             throw new Error("Failed to find the installed version after downloading and extracting it.");
         }
 
+        SetActiveProfile(profile.uuid);
         await platform.runProfile(profile, installedVersion, setMessage);
     }, true);
 }

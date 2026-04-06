@@ -10,6 +10,7 @@ import { useAppStore } from "@renderer/states/AppStore";
 import { VersionPickerPopup, VersionPickerResult } from "@renderer/popups/VersionPickerPopup";
 import { launchProfile as doLaunchProfile } from "@renderer/scripts/LaunchUtils";
 import { AskConfirmDelete } from "@renderer/components/ConfirmDeletePopup";
+import { DeleteProfileFolder, GetProfileModsPath } from "@renderer/scripts/Profiles";
 
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
@@ -25,7 +26,8 @@ function AddContentPopup({ submit: rawSubmit }: PopupUseArguments<string | "brow
     const submit = (val: string | "browse" | null) => animateClose(() => rawSubmit(val));
     const mods = useAppStore(state => state.allValidMods);
     const activeMods = useAppStore(state => state.allProfiles)[useAppStore(state => state.selectedProfile)]?.mods ?? [];
-    const modsPath = useMemo(() => useAppStore.getState().platform.getPaths().modsPath, []);
+    const selectedProfileUuid = useAppStore(state => state.allProfiles[state.selectedProfile]?.uuid ?? "");
+    const modsPath = useMemo(() => GetProfileModsPath(selectedProfileUuid), [selectedProfileUuid]);
     const availableMods = useMemo(() => mods.filter(m => !activeMods.includes(m)), [mods, activeMods]);
     const [search, setSearch] = useState("");
     const filtered = useMemo(() => {
@@ -188,8 +190,10 @@ export function ProfileEditor() {
         };
     }, []);
 
-    const platform = useAppStore(state => state.platform);
-    const modsPath = useMemo(() => platform.getPaths().modsPath, [platform]);
+    const modsPath = useMemo(() => {
+        const profile = allProfiles[selectedProfile];
+        return profile ? GetProfileModsPath(profile.uuid) : "";
+    }, [allProfiles, selectedProfile]);
 
     const profileLoaded = useRef(false);
 
@@ -216,87 +220,11 @@ export function ProfileEditor() {
         saveData();
     }, [profileName, profileRuntime, profileActiveMods, profileMinecraftVersion, profileVersionUuid]);
 
-    const getOrphanedMods = (modNames: string[], excludeProfileIndex: number) => {
-        return modNames.filter(modName => {
-            if (modName.includes("0.0.0-dev")) return false;
-            const otherProfilesUsingMod = allProfiles.filter(
-                (p, i) => i !== excludeProfileIndex && p.mods.includes(modName)
-            );
-            return otherProfilesUsingMod.length === 0;
-        });
-    };
-
-    const promptDeleteOrphanedMods = async (orphanedMods: string[]): Promise<boolean> => {
-        if (orphanedMods.length === 0) return true;
-
-        const result = await Popup.useAsync<"delete" | "keep" | null>(({ submit }) => (
-            <PopupPanel onExit={() => submit(null)}>
-                <div className="version-picker" style={{ width: 380 }} onClick={e => e.stopPropagation()}>
-                    <div className="version-picker-header">
-                        <p className="minecraft-seven" style={{ fontSize: "16px" }}>
-                            Delete Mods?
-                        </p>
-                        <div className="version-popup-close" onClick={() => submit(null)}>
-                            <svg width="20" height="20" viewBox="0 0 12 12">
-                                <polygon
-                                    className="fill-[#FFFFFF]"
-                                    fillRule="evenodd"
-                                    points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"
-                                />
-                            </svg>
-                        </div>
-                    </div>
-                    <div className="version-picker-divider" />
-                    <div style={{ padding: "12px 16px" }}>
-                        <p className="minecraft-seven" style={{ color: "#9f9f9f", fontSize: "12px", marginBottom: 8 }}>
-                            {orphanedMods.length === 1
-                                ? "This mod is not used by any other profile:"
-                                : "These mods are not used by any other profile:"}
-                        </p>
-                        {orphanedMods.map(name => (
-                            <p
-                                key={name}
-                                className="minecraft-seven"
-                                style={{ color: "white", fontSize: "13px", padding: "2px 0" }}
-                            >
-                                {name}
-                            </p>
-                        ))}
-                    </div>
-                    <div className="version-picker-divider" />
-                    <div className="version-picker-footer" style={{ justifyContent: "flex-start", gap: 8 }}>
-                        <MinecraftButton
-                            text="Delete from Disk"
-                            style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "160px" }}
-                            onClick={() => submit("delete")}
-                        />
-                        <MinecraftButton
-                            text="Keep Files"
-                            colorPallete={GRAY_MINECRAFT_BUTTON}
-                            style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "120px" }}
-                            onClick={() => submit("keep")}
-                        />
-                    </div>
-                </div>
-            </PopupPanel>
-        ));
-
-        if (result === null) return false; // cancelled
-        if (result === "delete") {
-            for (const modName of orphanedMods) {
-                const modPath = path.join(modsPath, modName);
-                if (fs.existsSync(modPath)) {
-                    fs.rmSync(modPath, { recursive: true, force: true });
-                }
-            }
-        }
-        return true;
-    };
-
     const removeMod = async (modName: string) => {
-        const orphaned = getOrphanedMods([modName], selectedProfile);
-        const proceed = await promptDeleteOrphanedMods(orphaned);
-        if (!proceed) return;
+        const modPath = path.join(modsPath, modName);
+        if (fs.existsSync(modPath)) {
+            fs.rmSync(modPath, { recursive: true, force: true });
+        }
         setProfileActiveMods(profileActiveMods.filter(m => m !== modName));
         useAppStore.getState().refreshAllMods();
     };
@@ -310,13 +238,11 @@ export function ProfileEditor() {
             );
             if (!confirmed) return;
         }
-        if (profile) {
-            const orphaned = getOrphanedMods(profile.mods, selectedProfile);
-            const proceed = await promptDeleteOrphanedMods(orphaned);
-            if (!proceed) return;
-        }
         allProfiles.splice(selectedProfile, 1);
         setAllProfiles(allProfiles);
+        if (profile) {
+            DeleteProfileFolder(profile.uuid);
+        }
         saveData();
         useAppStore.getState().refreshAllMods();
         navigate("/");
@@ -364,7 +290,8 @@ export function ProfileEditor() {
 
         if (result === null) return;
         if (result === "browse") {
-            useAppStore.getState().setInstallingForProfile(selectedProfile);
+            const profile = allProfiles[selectedProfile];
+            if (profile) useAppStore.getState().setInstallingForProfile(profile.uuid);
             navigate("/mod-discovery");
             return;
         }

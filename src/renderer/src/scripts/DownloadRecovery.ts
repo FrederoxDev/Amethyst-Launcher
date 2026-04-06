@@ -1,6 +1,7 @@
 import { useAppStore } from "@renderer/states/AppStore";
 import { useDownloadStore, getPendingDownloads, removePendingDownload, PendingDownload } from "@renderer/states/DownloadStore";
 import { Extractor } from "@renderer/scripts/backend/Extractor";
+import { GetProfileModsPath } from "@renderer/scripts/Profiles";
 
 const fs = window.require("fs") as typeof import("fs");
 const os = window.require("os") as typeof import("os");
@@ -90,13 +91,31 @@ async function resumeModDownload(pending: PendingDownload) {
 
     useDownloadStore.getState().updateDownload(pending.id, { status: "extracting", progress: 1 });
 
-    const modsPath = useAppStore.getState().platform.getPaths().modsPath;
-    const extractedPath = path.join(modsPath, pending.name);
+    if (!pending.profileUuid) {
+        console.error("[Recovery] No profileUuid in pending download, skipping:", pending.name);
+        useAppStore.getState().setDownloadingMods(prev => prev.filter(n => n !== pending.name));
+        useDownloadStore.getState().updateDownload(pending.id, { status: "error", progress: 0 });
+        removePendingDownload(pending.id);
+        return;
+    }
+
+    const extractedPath = path.join(GetProfileModsPath(pending.profileUuid), pending.name);
     await Extractor.extractFile(filePath!, extractedPath, [], undefined, success => {
         if (!success) console.error("Failed to extract mod during recovery:", pending.name);
     });
 
-    useAppStore.getState().refreshAllMods();
+    // Ensure the mod is listed in the profile's mods array
+    const postState = useAppStore.getState();
+    const profiles = postState.allProfiles;
+    const targetProfile = profiles.find(p => p.uuid === pending.profileUuid);
+    if (targetProfile && !targetProfile.mods.includes(pending.name)) {
+        postState.setAllProfiles(profiles.map(p =>
+            p.uuid === pending.profileUuid ? { ...p, mods: [...p.mods, pending.name] } : p
+        ));
+        postState.saveData();
+    }
+
+    postState.refreshAllMods();
     useAppStore.getState().setDownloadingMods(prev => prev.filter(n => n !== pending.name));
     useDownloadStore.getState().updateDownload(pending.id, { status: "done" });
     removePendingDownload(pending.id);

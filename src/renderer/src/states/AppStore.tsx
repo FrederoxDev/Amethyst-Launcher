@@ -5,7 +5,7 @@ import { firebaseApp } from "@renderer/firebase/Firebase";
 
 import { GetLauncherConfig, LauncherConfig, SetLauncherConfig } from "@renderer/scripts/Launcher";
 import { GetAllMods, ValidatedMod } from "@renderer/scripts/Mods";
-import { GetProfiles, Profile, SetProfiles } from "@renderer/scripts/Profiles";
+import { GetProfiles, MigrateProfiles, Profile, SetProfiles } from "@renderer/scripts/Profiles";
 import { ILauncherPlatform } from "@renderer/scripts/platform/LauncherPlatform";
 import { WindowsLauncherPlatform } from "@renderer/scripts/platform/WindowsLauncherPlatform";
 import { LinuxLauncherPlatform } from "@renderer/scripts/platform/LinuxLauncherPlatform";
@@ -75,8 +75,8 @@ interface AppStore {
     downloadingMods: string[];
     setDownloadingMods: StateSetter<string[]>;
 
-    installingForProfile: number | null;
-    setInstallingForProfile: StateSetter<number | null>;
+    installingForProfile: string | null;
+    setInstallingForProfile: StateSetter<string | null>;
 
     saveData: () => void;
     refreshAllMods: () => void;
@@ -198,7 +198,13 @@ export const useAppStore = create<AppStore>((set, get) => {
             })),
 
         refreshAllMods: () => {
-            const mods = GetAllMods();
+            const state = get();
+            const selectedProfile = state.allProfiles[state.selectedProfile];
+            if (!selectedProfile) {
+                set({ allMods: [], allRuntimes: ["Vanilla"], allValidMods: [], allInvalidMods: [] });
+                return;
+            }
+            const mods = GetAllMods(selectedProfile.uuid);
             const invalidMods = mods.filter(mod => !mod.ok).map(mod => mod.id);
             const validMods = mods.filter(mod => mod.ok);
             const runtimes = validMods.filter(mod => mod.config.meta.type === "runtime");
@@ -219,8 +225,6 @@ export const useAppStore = create<AppStore>((set, get) => {
 
             const launcherConfig: LauncherConfig = {
                 keep_open: state.keepLauncherOpen,
-                mods: state.allProfiles[state.selectedProfile]?.mods ?? [],
-                runtime: state.allProfiles[state.selectedProfile]?.runtime ?? "",
                 selected_profile: state.selectedProfile,
                 ui_theme: state.UITheme,
                 developer_mode: state.developerMode,
@@ -228,6 +232,8 @@ export const useAppStore = create<AppStore>((set, get) => {
                 auto_check_updates: state.autoCheckUpdates,
                 show_console: state.showConsole,
                 confirm_delete: state.confirmDelete,
+                profiles: state.allProfiles.map(p => p.uuid),
+                active_profile: null,
             };
 
             SetLauncherConfig(launcherConfig);
@@ -240,13 +246,34 @@ export const useAppStore = create<AppStore>((set, get) => {
 });
 
 async function hydrateStore(): Promise<void> {
-    const profiles = GetProfiles();
+    MigrateProfiles();
+
     const config = GetLauncherConfig();
+    let profiles = GetProfiles();
+
+    // Reorder profiles to match the UUID ordering stored in launcher_config.json
+    if (config.profiles && config.profiles.length > 0) {
+        const ordered: Profile[] = [];
+        for (const uuid of config.profiles) {
+            const found = profiles.find(p => p.uuid === uuid);
+            if (found) ordered.push(found);
+        }
+        // Append any profiles not present in the saved ordering
+        for (const p of profiles) {
+            if (!ordered.find(op => op.uuid === p.uuid)) ordered.push(p);
+        }
+        profiles = ordered;
+    }
+
+    const selectedProfile = Math.min(
+        config.selected_profile ?? 0,
+        Math.max(0, profiles.length - 1)
+    );
 
     useAppStore.setState({
         allProfiles: profiles,
         keepLauncherOpen: config.keep_open ?? true,
-        selectedProfile: config.selected_profile ?? 0,
+        selectedProfile,
         UITheme: config.ui_theme ?? "Light",
         developerMode: config.developer_mode ?? false,
         trustAllMods: config.trust_all_mods ?? false,

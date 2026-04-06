@@ -15,8 +15,8 @@ export interface PendingDownload {
     name: string;
     type: "mod" | "version" | "file";
     url: string;
-    /** For mods: the profile index to add the mod to */
-    profileIndex?: number;
+    /** For mods: the UUID of the profile to add the mod to */
+    profileUuid?: string;
     /** For versions: the version UUID */
     versionUuid?: string;
 }
