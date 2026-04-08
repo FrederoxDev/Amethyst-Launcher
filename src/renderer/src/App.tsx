@@ -31,12 +31,10 @@ export default function App() {
     const navigate = useNavigate();
     useEffect(() => {
         const currentConsent = useAppStore.getState().analyticsConsent;
-        if (currentConsent !== AnalyticsConsent.Unknown)
-            return;
+        if (currentConsent !== AnalyticsConsent.Unknown) return;
 
         AskAnalyticsConsent().then(consent => {
-            if (!consent || consent === AnalyticsConsent.Unknown)
-                return;
+            if (!consent || consent === AnalyticsConsent.Unknown) return;
             useAppStore.getState().setAnalyticsConsent(consent);
         });
     }, []);
@@ -49,86 +47,83 @@ export default function App() {
                 <Title />
 
                 <div className="app-body">
-                <div className="launcher_background app-background-layer">
-                    <img src={lushCaveImage} className="app-background-image" alt="" />
-                </div>
+                    <div className="launcher_background app-background-layer">
+                        <img src={lushCaveImage} className="app-background-image" alt="" />
+                    </div>
 
-                <div className="contents_container app-contents">
-                    <div className="navbar_container app-navbar-container">
-                        <div className="app-navbar">
-                            <div className="app-nav-links">
-                                <Link to="/" draggable={false}>
+                    <div className="contents_container app-contents">
+                        <div className="navbar_container app-navbar-container">
+                            <div className="app-navbar">
+                                <div className="app-nav-links">
+                                    <Link to="/" draggable={false}>
+                                        <div
+                                            className={`nav-icon ${location.pathname === "/" ? "nav-icon--active" : ""}`}
+                                            data-tooltip="Launcher"
+                                        >
+                                            <img src={craftingIcon} className="app-nav-icon-image pixelated" alt="" />
+                                        </div>
+                                    </Link>
+                                    <Link to="/mod-discovery" draggable={false}>
+                                        <div
+                                            className={`nav-icon ${location.pathname === "/mod-discovery" ? "nav-icon--active" : ""}`}
+                                            data-tooltip="Browse Mods"
+                                        >
+                                            <img src={earthIcon} className="app-nav-icon-image pixelated" alt="" />
+                                        </div>
+                                    </Link>
                                     <div
-                                        className={`nav-icon ${location.pathname === "/" ? "nav-icon--active" : ""}`}
-                                        data-tooltip="Launcher"
+                                        className="nav-icon nav-icon-add"
+                                        data-tooltip="New Instance"
+                                        onClick={async () => {
+                                            const newProfile = await runCreateProfileWizard();
+                                            if (!newProfile) return;
+                                            navigate(newProfile.is_modded ? "/profile-editor" : "/");
+                                        }}
                                     >
-                                        <img
-                                            src={craftingIcon}
-                                            className="app-nav-icon-image pixelated"
-                                            alt=""
-                                        />
+                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                            <path
+                                                d="M10 4V16M4 10H16"
+                                                stroke="#FFFFFF"
+                                                strokeWidth="2.5"
+                                                strokeLinecap="square"
+                                            />
+                                        </svg>
                                     </div>
-                                </Link>
-                                <Link to="/mod-discovery" draggable={false}>
-                                    <div
-                                        className={`nav-icon ${location.pathname === "/mod-discovery" ? "nav-icon--active" : ""}`}
-                                        data-tooltip="Browse Mods"
-                                    >
-                                        <img
-                                            src={earthIcon}
-                                            className="app-nav-icon-image pixelated"
-                                            alt=""
-                                        />
-                                    </div>
-                                </Link>
+                                </div>
+
+                                <DownloadManagerButton />
+
                                 <div
-                                    className="nav-icon nav-icon-add"
-                                    data-tooltip="New Instance"
-                                    onClick={async () => {
-                                        const newProfile = await runCreateProfileWizard();
-                                        if (!newProfile) return;
-                                        navigate(newProfile.is_modded ? "/profile-editor" : "/");
+                                    className="app-settings-button"
+                                    data-tooltip="Settings"
+                                    onClick={() => {
+                                        Popup.useAsync<void>(props => <SettingsPopup {...props} />);
                                     }}
                                 >
-                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                        <path d="M10 4V16M4 10H16" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="square" />
-                                    </svg>
+                                    <img src={settingsIcon} className="app-settings-icon pixelated" alt="" />
                                 </div>
                             </div>
+                        </div>
+                        <div className="view_container app-view-container">
+                            <div className="app-view-content">
+                                <Routes>
+                                    <Route path="/" element={<LauncherPage />} />
+                                    <Route path="/profiles" element={<ProfilePage />} />
+                                    <Route path="/profile-editor" element={<ProfileEditor />} />
+                                    <Route path="/mods" element={<ModsPage />} />
+                                    <Route path="/versions" element={<VersionPage />} />
+                                    <Route path="/mod-discovery" element={<ModDiscovery />} />
+                                </Routes>
 
-                            <DownloadManagerButton />
-
-                            <div className="app-settings-button" data-tooltip="Settings" onClick={() => {
-                                Popup.useAsync<void>(props => <SettingsPopup {...props} />);
-                            }}>
-                                <img
-                                    src={settingsIcon}
-                                    className="app-settings-icon pixelated"
-                                    alt=""
-                                />
+                                <UpdatePage></UpdatePage>
+                                <DropWindow></DropWindow>
                             </div>
+                            <ProgressBarRenderer />
                         </div>
                     </div>
-                    <div className="view_container app-view-container">
-                        <div className="app-view-content">
-                            <Routes>
-                                <Route path="/" element={<LauncherPage />} />
-                                <Route path="/profiles" element={<ProfilePage />} />
-                                <Route path="/profile-editor" element={<ProfileEditor />} />
-                                <Route path="/mods" element={<ModsPage />} />
-                                <Route path="/versions" element={<VersionPage />} />
-                                <Route path="/mod-discovery" element={<ModDiscovery />} />
-                            </Routes>
 
-                            <UpdatePage></UpdatePage>
-                            <DropWindow></DropWindow>
-                        </div>
-                        <ProgressBarRenderer />
-                    </div>
-                </div>
-
-                <PopupRenderer />
-                <LoadingSpinnerRenderer />
+                    <PopupRenderer />
+                    <LoadingSpinnerRenderer />
                 </div>
             </div>
         </>

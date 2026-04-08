@@ -22,9 +22,12 @@ export interface GithubRelease {
     tag_name: string;
     html_url: string;
     published_at: string;
+    prerelease: boolean;
+    target_commitish: string;
     assets: {
         id: number;
         name: string;
+        size: number;
         browser_download_url: string;
     }[];
 }
@@ -33,6 +36,9 @@ export interface ParsedGithubRelease {
     name: string;
     id: number;
     published_at: string;
+    prerelease: boolean;
+    size: number;
+    target_commitish: string;
     download_name: string;
     download_url: string;
 }

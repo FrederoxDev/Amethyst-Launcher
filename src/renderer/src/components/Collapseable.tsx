@@ -23,11 +23,7 @@ export function Collapseable({ title, children, defaultOpen = false }: Collapsea
                 </svg>
                 <span className="minecraft-seven collapseable-title">{title}</span>
             </div>
-            {isOpen && (
-                <div className="collapseable-body">
-                    {children}
-                </div>
-            )}
+            {isOpen && <div className="collapseable-body">{children}</div>}
         </div>
     );
 }

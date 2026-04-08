@@ -41,7 +41,7 @@ export function ModReadme({ githubUrl }: { githubUrl: string }) {
                     </>
                 );
             },
-        [githubUrl],
+        [githubUrl]
     );
 
     useEffect(() => {
@@ -86,77 +86,79 @@ export function ModReadme({ githubUrl }: { githubUrl: string }) {
                     <div className="mod-readme-skeleton-line" style={{ width: "55%" }} />
                 </div>
             ) : (
-            <div className="mod-readme-container">
-                <ReactMarkdown
-                    components={{
-                        h1: ({ node, ...props }) => <h1 className="minecraft-seven mod-md-h1" {...props} />,
-                        h2: ({ node, ...props }) => <h2 className="minecraft-seven mod-md-h2" {...props} />,
-                        h3: ({ node, ...props }) => <h3 className="minecraft-seven mod-md-h3" {...props} />,
-                        h4: ({ node, ...props }) => <h4 className="minecraft-seven mod-md-h4" {...props} />,
-                        h5: ({ node, ...props }) => <h5 className="minecraft-seven mod-md-h5" {...props} />,
-                        p: ({ node, ...props }) => <p className="minecraft-seven mod-md-p" {...props} />,
-                        li: ({ node, ...props }) => <li className="minecraft-seven mod-md-li" {...props} />,
-                        ol: ({ node, ...props }) => <ol className="mod-md-ol" {...props} />,
-                        ul: ({ node, ...props }) => <ul className="mod-md-ul" {...props} />,
-                        code: ({ node, ...props }) => <code className="minecraft-seven mod-md-code" {...props} />,
-                        pre: ({ children }) => {
-                            type CodeProps = { className?: string; children?: React.ReactNode };
-                            const codeEl = (
-                                Array.isArray(children) ? children[0] : children
-                            ) as React.ReactElement<CodeProps>;
-                            const lang = /language-(\w+)/.exec(codeEl?.props?.className ?? "")?.[1];
-                            if (lang) {
-                                return (
-                                    <SyntaxHighlighter
-                                        language={lang}
-                                        style={{ ...vscDarkPlus, italic: { fontStyle: "normal" } }}
-                                        customStyle={{
-                                            margin: "8px 0",
-                                            fontSize: "13px",
-                                            borderRadius: "4px",
-                                            fontStyle: "normal",
-                                        }}
-                                    >
-                                        {String(codeEl.props.children ?? "").replace(/\n$/, "")}
-                                    </SyntaxHighlighter>
-                                );
-                            }
-                            return <pre className="mod-md-pre">{children}</pre>;
-                        },
-                        blockquote: ({ node, ...props }) => <blockquote className="mod-md-blockquote" {...props} />,
-                        table: ({ node, ...props }) => <table className="minecraft-seven mod-md-table" {...props} />,
-                        thead: ({ node, ...props }) => <thead className="mod-md-thead" {...props} />,
-                        tr: ({ node, ...props }) => <tr className="mod-md-tr" {...props} />,
-                        th: ({ node, ...props }) => <th className="minecraft-seven mod-md-th" {...props} />,
-                        td: ({ node, ...props }) => <td className="minecraft-seven mod-md-td" {...props} />,
-                        img: MarkdownImage,
-                        video: props => <ModVideoPlayer {...props} />,
-                        source: ({ src, type }: { src?: string; type?: string }) => (
-                            <source type={type} src={src ? resolveGithubAsset(src, githubUrl) : undefined} />
-                        ),
-                        hr: ({ ...props }) => <hr className="mod-md-hr" {...props} />,
-                        strong: ({ ...props }) => <strong className="minecraft-seven mod-md-strong" {...props} />,
-                        em: ({ ...props }) => <em className="minecraft-seven mod-md-em" {...props} />,
-                        del: ({ ...props }) => <del className="minecraft-seven mod-md-del" {...props} />,
-                        a: ({ node, ...props }) => (
-                            <a
-                                {...props}
-                                className="minecraft-seven mod-md-link"
-                                onClick={e => {
-                                    e.preventDefault();
-                                    if (props.href) {
-                                        shell.openExternal(props.href);
-                                    }
-                                }}
-                            />
-                        ),
-                    }}
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw]}
-                >
-                    {readme}
-                </ReactMarkdown>
-            </div>
+                <div className="mod-readme-container">
+                    <ReactMarkdown
+                        components={{
+                            h1: ({ node, ...props }) => <h1 className="minecraft-seven mod-md-h1" {...props} />,
+                            h2: ({ node, ...props }) => <h2 className="minecraft-seven mod-md-h2" {...props} />,
+                            h3: ({ node, ...props }) => <h3 className="minecraft-seven mod-md-h3" {...props} />,
+                            h4: ({ node, ...props }) => <h4 className="minecraft-seven mod-md-h4" {...props} />,
+                            h5: ({ node, ...props }) => <h5 className="minecraft-seven mod-md-h5" {...props} />,
+                            p: ({ node, ...props }) => <p className="minecraft-seven mod-md-p" {...props} />,
+                            li: ({ node, ...props }) => <li className="minecraft-seven mod-md-li" {...props} />,
+                            ol: ({ node, ...props }) => <ol className="mod-md-ol" {...props} />,
+                            ul: ({ node, ...props }) => <ul className="mod-md-ul" {...props} />,
+                            code: ({ node, ...props }) => <code className="minecraft-seven mod-md-code" {...props} />,
+                            pre: ({ children }) => {
+                                type CodeProps = { className?: string; children?: React.ReactNode };
+                                const codeEl = (
+                                    Array.isArray(children) ? children[0] : children
+                                ) as React.ReactElement<CodeProps>;
+                                const lang = /language-(\w+)/.exec(codeEl?.props?.className ?? "")?.[1];
+                                if (lang) {
+                                    return (
+                                        <SyntaxHighlighter
+                                            language={lang}
+                                            style={{ ...vscDarkPlus, italic: { fontStyle: "normal" } }}
+                                            customStyle={{
+                                                margin: "8px 0",
+                                                fontSize: "13px",
+                                                borderRadius: "4px",
+                                                fontStyle: "normal",
+                                            }}
+                                        >
+                                            {String(codeEl.props.children ?? "").replace(/\n$/, "")}
+                                        </SyntaxHighlighter>
+                                    );
+                                }
+                                return <pre className="mod-md-pre">{children}</pre>;
+                            },
+                            blockquote: ({ node, ...props }) => <blockquote className="mod-md-blockquote" {...props} />,
+                            table: ({ node, ...props }) => (
+                                <table className="minecraft-seven mod-md-table" {...props} />
+                            ),
+                            thead: ({ node, ...props }) => <thead className="mod-md-thead" {...props} />,
+                            tr: ({ node, ...props }) => <tr className="mod-md-tr" {...props} />,
+                            th: ({ node, ...props }) => <th className="minecraft-seven mod-md-th" {...props} />,
+                            td: ({ node, ...props }) => <td className="minecraft-seven mod-md-td" {...props} />,
+                            img: MarkdownImage,
+                            video: props => <ModVideoPlayer {...props} />,
+                            source: ({ src, type }: { src?: string; type?: string }) => (
+                                <source type={type} src={src ? resolveGithubAsset(src, githubUrl) : undefined} />
+                            ),
+                            hr: ({ ...props }) => <hr className="mod-md-hr" {...props} />,
+                            strong: ({ ...props }) => <strong className="minecraft-seven mod-md-strong" {...props} />,
+                            em: ({ ...props }) => <em className="minecraft-seven mod-md-em" {...props} />,
+                            del: ({ ...props }) => <del className="minecraft-seven mod-md-del" {...props} />,
+                            a: ({ node, ...props }) => (
+                                <a
+                                    {...props}
+                                    className="minecraft-seven mod-md-link"
+                                    onClick={e => {
+                                        e.preventDefault();
+                                        if (props.href) {
+                                            shell.openExternal(props.href);
+                                        }
+                                    }}
+                                />
+                            ),
+                        }}
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                    >
+                        {readme}
+                    </ReactMarkdown>
+                </div>
             )}
         </PanelIndent>
     );

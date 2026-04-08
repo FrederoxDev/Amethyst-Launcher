@@ -15,7 +15,15 @@ import { AskConfirmDelete } from "@renderer/components/ConfirmDeletePopup";
 const { shell } = window.require("electron") as typeof import("electron");
 const path = window.require("path") as typeof import("path");
 
-const ProfileCard = ({ profile, versionName, onEdit, onPlay, onDelete, onOpenFolder, canPlay }: {
+const ProfileCard = ({
+    profile,
+    versionName,
+    onEdit,
+    onPlay,
+    onDelete,
+    onOpenFolder,
+    canPlay,
+}: {
     profile: Profile;
     versionName: string;
     onEdit: () => void;
@@ -32,28 +40,66 @@ const ProfileCard = ({ profile, versionName, onEdit, onPlay, onDelete, onOpenFol
                     {versionName} &middot; {profile.runtime}
                 </p>
             </div>
-            <div className="launcher-profile-card-actions" onClick={(e) => { e.stopPropagation(); }}>
+            <div
+                className="launcher-profile-card-actions"
+                onClick={e => {
+                    e.stopPropagation();
+                }}
+            >
                 <div className="launcher-profile-card-play">
-                    <MinecraftButton text="Play" onClick={onPlay} disabled={!canPlay} style={{ "--mc-button-container-h": "36px" }} />
+                    <MinecraftButton
+                        text="Play"
+                        onClick={onPlay}
+                        disabled={!canPlay}
+                        style={{ "--mc-button-container-h": "36px" }}
+                    />
                 </div>
-                <ThreeDotsMenu items={[
-                    {
-                        label: "Edit Profile",
-                        icon: <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M11.293 1.293a1 1 0 0 1 1.414 0l2 2a1 1 0 0 1 0 1.414l-8.5 8.5A1 1 0 0 1 5.5 13.5H3a1 1 0 0 1-1-1V10.5a1 1 0 0 1 .293-.707l8.5-8.5Z" stroke="#FFFFFF" strokeWidth="1.5" fill="none" /></svg>,
-                        onClick: onEdit,
-                    },
-                    {
-                        label: "Open Folder",
-                        icon: <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M1 3C1 2.44772 1.44772 2 2 2H6.17157C6.43679 2 6.69114 2.10536 6.87868 2.29289L7.70711 3.12132C7.89464 3.30886 8.149 3.41421 8.41421 3.41421H14C14.5523 3.41421 15 3.86193 15 4.41421V13C15 13.5523 14.5523 14 14 14H2C1.44772 14 1 13.5523 1 13V3Z" stroke="#FFFFFF" strokeWidth="1.5" /></svg>,
-                        onClick: onOpenFolder,
-                    },
-                    {
-                        label: "Delete Profile",
-                        icon: <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>,
-                        onClick: onDelete,
-                        danger: true,
-                    },
-                ]} />
+                <ThreeDotsMenu
+                    items={[
+                        {
+                            label: "Edit Profile",
+                            icon: (
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                    <path
+                                        d="M11.293 1.293a1 1 0 0 1 1.414 0l2 2a1 1 0 0 1 0 1.414l-8.5 8.5A1 1 0 0 1 5.5 13.5H3a1 1 0 0 1-1-1V10.5a1 1 0 0 1 .293-.707l8.5-8.5Z"
+                                        stroke="#FFFFFF"
+                                        strokeWidth="1.5"
+                                        fill="none"
+                                    />
+                                </svg>
+                            ),
+                            onClick: onEdit,
+                        },
+                        {
+                            label: "Open Folder",
+                            icon: (
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                    <path
+                                        d="M1 3C1 2.44772 1.44772 2 2 2H6.17157C6.43679 2 6.69114 2.10536 6.87868 2.29289L7.70711 3.12132C7.89464 3.30886 8.149 3.41421 8.41421 3.41421H14C14.5523 3.41421 15 3.86193 15 4.41421V13C15 13.5523 14.5523 14 14 14H2C1.44772 14 1 13.5523 1 13V3Z"
+                                        stroke="#FFFFFF"
+                                        strokeWidth="1.5"
+                                    />
+                                </svg>
+                            ),
+                            onClick: onOpenFolder,
+                        },
+                        {
+                            label: "Delete Profile",
+                            icon: (
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                    <path
+                                        d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4"
+                                        stroke="currentColor"
+                                        strokeWidth="1.5"
+                                        strokeLinecap="round"
+                                    />
+                                </svg>
+                            ),
+                            onClick: onDelete,
+                            danger: true,
+                        },
+                    ]}
+                />
             </div>
         </div>
     );
@@ -68,17 +114,19 @@ export function LauncherPage() {
         error,
         setError,
         minecraftIsRunning,
-        versionManager
-    ] = useAppStore(useShallow(state => [
-        state.allProfiles,
-        state.setSelectedProfile,
-        state.setAllProfiles,
-        state.saveData,
-        state.error,
-        state.setError,
-        state.minecraftIsRunning,
-        state.versionManager
-    ]));
+        versionManager,
+    ] = useAppStore(
+        useShallow(state => [
+            state.allProfiles,
+            state.setSelectedProfile,
+            state.setAllProfiles,
+            state.saveData,
+            state.error,
+            state.setError,
+            state.minecraftIsRunning,
+            state.versionManager,
+        ])
+    );
 
     const getVersionName = (profile: Profile): string => {
         if (profile.version_uuid) {
@@ -123,10 +171,13 @@ export function LauncherPage() {
             if (!key) continue;
 
             if (addedUuids.has(key)) {
-                el.animate([
-                    { opacity: 0, transform: "scale(0.9)" },
-                    { opacity: 1, transform: "scale(1)" },
-                ], { duration: 150, easing: "ease-out" });
+                el.animate(
+                    [
+                        { opacity: 0, transform: "scale(0.9)" },
+                        { opacity: 1, transform: "scale(1)" },
+                    ],
+                    { duration: 150, easing: "ease-out" }
+                );
                 continue;
             }
 
@@ -137,10 +188,10 @@ export function LauncherPage() {
             const dy = oldRect.top - newRect.top;
             if (dx === 0 && dy === 0) continue;
 
-            el.animate([
-                { transform: `translate(${dx}px, ${dy}px)` },
-                { transform: "translate(0, 0)" },
-            ], { duration: 200, easing: "cubic-bezier(0.2, 0, 0, 1)" });
+            el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0, 0)" }], {
+                duration: 200,
+                easing: "cubic-bezier(0.2, 0, 0, 1)",
+            });
         }
     }, [allProfiles]);
 
@@ -215,12 +266,16 @@ export function LauncherPage() {
                         onOpenFolder={() => openProfileFolder(profile)}
                     />
                 ))}
-                <div className="launcher-profile-card launcher-create-card" data-uuid="__create__" onClick={async () => {
-                    snapshotPositions();
-                    const newProfile = await runCreateProfileWizard();
-                    if (!newProfile) return;
-                    navigate(newProfile.is_modded ? "/profile-editor" : "/");
-                }}>
+                <div
+                    className="launcher-profile-card launcher-create-card"
+                    data-uuid="__create__"
+                    onClick={async () => {
+                        snapshotPositions();
+                        const newProfile = await runCreateProfileWizard();
+                        if (!newProfile) return;
+                        navigate(newProfile.is_modded ? "/profile-editor" : "/");
+                    }}
+                >
                     <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
                         <path d="M10 4V16M4 10H16" stroke="#9f9f9f" strokeWidth="2.5" strokeLinecap="square" />
                     </svg>

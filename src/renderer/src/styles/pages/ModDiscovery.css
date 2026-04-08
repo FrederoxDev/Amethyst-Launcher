@@ -134,7 +134,7 @@
 }
 
 .mod-readme-container {
-    max-width: 900px;
+    max-width: 800px;
     width: 100%;
     margin: 8px auto;
     padding: 0 16px;
@@ -570,7 +570,7 @@
 
 /* ModReadme skeleton */
 .mod-readme-skeleton {
-    max-width: 900px;
+    max-width: 800px;
     width: 100%;
     margin: 8px auto;
     display: flex;

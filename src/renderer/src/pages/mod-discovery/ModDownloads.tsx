@@ -61,6 +61,9 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                         id: release.id,
                         name: release.name,
                         published_at: release.published_at,
+                        prerelease: release.prerelease,
+                        size: asset.size,
+                        target_commitish: release.tag_name,
                         download_name: asset.name.replace(".zip", ""),
                         download_url: asset.browser_download_url,
                     });
@@ -77,6 +80,26 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
 
         fetchReleases();
     }, [mod.githubUrl]);
+
+    /**
+     * Formats bytes as human-readable text.
+     * @param {number} bytes - The number of bytes to format.
+     * @param {number} decimals - How many decimal places to show (default: 2).
+     * @returns {string} The formatted string.
+     */
+    const formatBytes = (bytes, decimals = 2) => {
+        if (!+bytes) return "0 Bytes";
+
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+
+        // Find the exponent to determine the unit
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+        // Calculate value and append unit
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+    };
 
     const handleInstallClick = async (release: ParsedGithubRelease, isTrusted: boolean) => {
         if (isTrusted || trustAllMods) {
@@ -194,7 +217,11 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                                     >
                                         <p className="minecraft-seven">{profile.name}</p>
                                         <span className="minecraft-seven version-picker-item-tag">
-                                            {fs.existsSync(path.join(GetProfileModsPath(profile.uuid), release.download_name)) ? "Has mod" : profile.runtime}
+                                            {fs.existsSync(
+                                                path.join(GetProfileModsPath(profile.uuid), release.download_name)
+                                            )
+                                                ? "Has mod"
+                                                : profile.runtime}
                                         </span>
                                     </div>
                                 ))}
@@ -289,73 +316,52 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
     return (
         <PanelIndent>
             <div className="mod-release-container">
-            {loading &&
-                Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="version-picker-item mod-downloads-skeleton-item">
-                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                            <div className="mod-card-skeleton-text" style={{ width: "180px", height: "13px" }} />
-                            <div className="mod-card-skeleton-text" style={{ width: "90px", height: "11px" }} />
-                        </div>
-                    </div>
-                ))
-            }
-            {!loading && releases.length === 0 && (
-                <p className="minecraft-seven mod-release-empty">No releases found.</p>
-            )}
-            {!loading &&
-                releases.map(release => {
-                    const isInstalled = allMods.find(m => m.id === release.download_name) !== undefined;
-                    const isInstalling = downloadingMods.includes(release.download_name);
-                    return (
-                        <div key={release.id} className="version-picker-item">
-                            <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-                                <p className="minecraft-seven" style={{ color: "white", fontSize: "13px" }}>
-                                    {release.download_name}
-                                </p>
-                                <p className="minecraft-seven" style={{ color: "#9f9f9f", fontSize: "11px" }}>
-                                    {new Date(release.published_at).toLocaleDateString()}
-                                </p>
+                {loading &&
+                    Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="version-picker-item mod-downloads-skeleton-item">
+                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                <div className="mod-card-skeleton-text" style={{ width: "180px", height: "13px" }} />
+                                <div className="mod-card-skeleton-text" style={{ width: "90px", height: "11px" }} />
                             </div>
-                            <div className="version-picker-item-actions">
-                                {!isInstalled && (
-                                    <div
-                                        className="version-picker-item-btn"
-                                        style={
-                                            isInstalling ? { display: "flex", opacity: 0.5, cursor: "wait" } : undefined
-                                        }
-                                        onClick={e => {
-                                            e.stopPropagation();
-                                            if (isInstalling) return;
-                                            handleInstallClick(release, mod.isAmethystOrgMod ?? false);
-                                        }}
-                                    >
-                                        <svg
-                                            width="14"
-                                            height="14"
-                                            viewBox="0 0 16 16"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="1.5"
-                                            strokeLinecap="round"
-                                        >
-                                            <path d="M8 2v8M4.5 7.5L8 11l3.5-3.5M2 14h12" />
-                                        </svg>
-                                    </div>
-                                )}
-                                {isInstalled && (
-                                    <>
+                        </div>
+                    ))}
+                {!loading && releases.length === 0 && (
+                    <p className="minecraft-seven mod-release-empty">No releases found.</p>
+                )}
+                {!loading &&
+                    releases.map(release => {
+                        const isInstalled = allMods.find(m => m.id === release.download_name) !== undefined;
+                        const isInstalling = downloadingMods.includes(release.download_name);
+                        return (
+                            <div key={release.id} className="version-picker-item">
+                                <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                                    <p className="minecraft-seven" style={{ color: "white", fontSize: "13px" }}>
+                                        {release.download_name}
+                                    </p>
+                                    <p className="minecraft-seven" style={{ color: "#9f9f9f", fontSize: "11px" }}>
+                                        {new Date(release.published_at).toLocaleDateString()} &middot;{" "}
+                                        {formatBytes(release.size)}
+                                        {release.prerelease && (
+                                            <>
+                                                {" "}
+                                                &middot; <span>Pre-release</span>
+                                            </>
+                                        )}
+                                    </p>
+                                </div>
+                                <div className="version-picker-item-actions">
+                                    {!isInstalled && (
                                         <div
                                             className="version-picker-item-btn"
-                                            style={{ display: "flex" }}
-                                            title="Add to profile"
-                                            onClick={async e => {
+                                            style={
+                                                isInstalling
+                                                    ? { display: "flex", opacity: 0.5, cursor: "wait" }
+                                                    : undefined
+                                            }
+                                            onClick={e => {
                                                 e.stopPropagation();
-                                                const installingFor = useAppStore.getState().installingForProfile;
-                                                if (installingFor !== null) {
-                                                    onClose?.();
-                                                } else {
-                                                    await handleInstallClick(release, mod.isAmethystOrgMod ?? false);
-                                                }
+                                                if (isInstalling) return;
+                                                handleInstallClick(release, mod.isAmethystOrgMod ?? false);
                                             }}
                                         >
                                             <svg
@@ -364,45 +370,81 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                                                 viewBox="0 0 16 16"
                                                 fill="none"
                                                 stroke="currentColor"
-                                                strokeWidth="2"
+                                                strokeWidth="1.5"
                                                 strokeLinecap="round"
                                             >
-                                                <path d="M8 3v10M3 8h10" />
+                                                <path d="M8 2v8M4.5 7.5L8 11l3.5-3.5M2 14h12" />
                                             </svg>
                                         </div>
-                                        <div
-                                            className="version-picker-item-btn version-picker-item-btn--danger"
-                                            style={{ display: "flex" }}
-                                            onClick={e => {
-                                                e.stopPropagation();
-                                                const selectedProfile = useAppStore.getState().allProfiles[useAppStore.getState().selectedProfile];
-                                                if (selectedProfile) uninstallMod(release.download_name, selectedProfile.uuid);
-                                                refreshAllMods();
-                                                if (analyticsInstance) {
-                                                    logEvent(analyticsInstance, "mod_uninstall", {
-                                                        mod_name: release.download_name,
-                                                    });
-                                                }
-                                            }}
-                                        >
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                                                <path
-                                                    d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4"
+                                    )}
+                                    {isInstalled && (
+                                        <>
+                                            <div
+                                                className="version-picker-item-btn"
+                                                style={{ display: "flex" }}
+                                                title="Add to profile"
+                                                onClick={async e => {
+                                                    e.stopPropagation();
+                                                    const installingFor = useAppStore.getState().installingForProfile;
+                                                    if (installingFor !== null) {
+                                                        onClose?.();
+                                                    } else {
+                                                        await handleInstallClick(
+                                                            release,
+                                                            mod.isAmethystOrgMod ?? false
+                                                        );
+                                                    }
+                                                }}
+                                            >
+                                                <svg
+                                                    width="14"
+                                                    height="14"
+                                                    viewBox="0 0 16 16"
+                                                    fill="none"
                                                     stroke="currentColor"
-                                                    strokeWidth="1.5"
+                                                    strokeWidth="2"
                                                     strokeLinecap="round"
-                                                />
-                                            </svg>
-                                        </div>
-                                    </>
-                                )}
-                                <span className="minecraft-seven version-picker-item-tag">
-                                    {isInstalled ? "Installed" : ""}
-                                </span>
+                                                >
+                                                    <path d="M8 3v10M3 8h10" />
+                                                </svg>
+                                            </div>
+                                            <div
+                                                className="version-picker-item-btn version-picker-item-btn--danger"
+                                                style={{ display: "flex" }}
+                                                onClick={e => {
+                                                    e.stopPropagation();
+                                                    const selectedProfile =
+                                                        useAppStore.getState().allProfiles[
+                                                            useAppStore.getState().selectedProfile
+                                                        ];
+                                                    if (selectedProfile)
+                                                        uninstallMod(release.download_name, selectedProfile.uuid);
+                                                    refreshAllMods();
+                                                    if (analyticsInstance) {
+                                                        logEvent(analyticsInstance, "mod_uninstall", {
+                                                            mod_name: release.download_name,
+                                                        });
+                                                    }
+                                                }}
+                                            >
+                                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                                    <path
+                                                        d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4"
+                                                        stroke="currentColor"
+                                                        strokeWidth="1.5"
+                                                        strokeLinecap="round"
+                                                    />
+                                                </svg>
+                                            </div>
+                                        </>
+                                    )}
+                                    <span className="minecraft-seven version-picker-item-tag">
+                                        {isInstalled ? "Installed" : ""}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
             </div>
         </PanelIndent>
     );
