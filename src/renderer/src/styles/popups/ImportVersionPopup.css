@@ -1,0 +1,18 @@
+.version-picker-import-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 16px;
+}
+
+.import-version-popup {
+    width: 600px;
+}
+
+.version-picker .text-input-box {
+    height: 32px;
+}
+
+.version-picker .text-input-control {
+    font-size: 14px;
+}

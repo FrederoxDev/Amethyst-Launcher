@@ -5,6 +5,7 @@ import { LoadingWheel } from "@renderer/components/LoadingWheel";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
 import { PopupPanel } from "@renderer/components/PopupPanel";
+import { useAppStore } from "@renderer/states/AppStore";
 
 const { ipcRenderer } = window.require("electron");
 
@@ -37,7 +38,7 @@ export function UpdatePage() {
     useEffect(() => {
         ipcRenderer.invoke("set-auto-download", false);
         ipcRenderer.invoke("set-auto-install-on-app-quit", true);
-        checkForUpdates();
+        if (useAppStore.getState().autoCheckUpdates) checkForUpdates();
 
         ipcRenderer.on("update-available", (_, info) => {
             console.log("Update available:", info);

@@ -14,10 +14,9 @@ export interface LauncherPaths {
     amethystPath: string;
     launcherPath: string;
     versionsPath: string;
-    versionsFilePath: string;
+    installedVersionsFilePath: string;
     cachedVersionsFilePath: string;
-    profilesFilePath: string;
-    modsPath: string;
+    profilesPath: string;
     launcherConfigPath: string;
     toolsPath: string;
 }

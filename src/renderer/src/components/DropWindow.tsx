@@ -1,10 +1,11 @@
 import * as fs from "fs";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useAppStore } from "@renderer/states/AppStore";
 
 import { Extractor } from "@renderer/scripts/backend/Extractor";
 import { CopyRecursive } from "@renderer/scripts/Files";
+import { GetProfileModsPath } from "@renderer/scripts/Profiles";
 
 const path = window.require("path");
 
@@ -12,8 +13,15 @@ export function DropWindow() {
     const [hovered, setHovered] = useState(false);
 
     const setError = useAppStore(state => state.setError);
-    const platform = useAppStore(state => state.platform);
-    const paths = platform.getPaths();
+    const allProfiles = useAppStore(state => state.allProfiles);
+    const selectedProfile = useAppStore(state => state.selectedProfile);
+
+    // Use a ref so the drop handler always reads the latest profile without re-registering listeners
+    const selectedProfileUuidRef = useRef<string | null>(null);
+    useEffect(() => {
+        const profile = allProfiles[selectedProfile];
+        selectedProfileUuidRef.current = profile?.uuid ?? null;
+    }, [allProfiles, selectedProfile]);
 
     useEffect(() => {
         let dragCount = 0;
@@ -48,6 +56,9 @@ export function DropWindow() {
 
             if (!event.dataTransfer) return;
 
+            const profileUuid = selectedProfileUuidRef.current;
+            if (!profileUuid) return;
+
             type ElectronFile = File & { path: string };
             const items = event.dataTransfer.files as unknown as ElectronFile[];
 
@@ -55,9 +66,9 @@ export function DropWindow() {
                 const file_path: string = file.path;
 
                 if (fs.lstatSync(file_path).isDirectory()) {
-                    ImportFolder(file_path);
+                    ImportFolder(file_path, profileUuid);
                 } else if (fs.lstatSync(file_path).isFile()) {
-                    ImportZIP(file_path);
+                    ImportZIP(file_path, profileUuid);
                 } else {
                     console.error("File path does not point to a file or directory!");
                 }
@@ -65,10 +76,11 @@ export function DropWindow() {
         }
 
         // IMPORT ZIP
-        function ImportZIP(zip_path: string) {
+        function ImportZIP(zip_path: string, profileUuid: string) {
             try {
+                const modsPath = GetProfileModsPath(profileUuid);
                 const zip_name = path.basename(zip_path);
-                const extracted_folder_path = path.join(paths.modsPath, zip_name.slice(0, -".zip".length));
+                const extracted_folder_path = path.join(modsPath, zip_name.slice(0, -".zip".length));
                 console.log(extracted_folder_path);
                 Extractor.extractFile(zip_path, extracted_folder_path, [], undefined, success => {
                     if (!success) {
@@ -83,9 +95,9 @@ export function DropWindow() {
         }
 
         // IMPORT FOLDER
-        function ImportFolder(folder_path: string) {
+        function ImportFolder(folder_path: string, profileUuid: string) {
             try {
-                CopyRecursive(folder_path, paths.modsPath);
+                CopyRecursive(folder_path, GetProfileModsPath(profileUuid));
             } catch (error) {
                 setError((error as Error).message);
             }

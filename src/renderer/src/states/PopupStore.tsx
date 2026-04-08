@@ -1,15 +1,14 @@
 import { create } from "zustand";
-import { SetStateAction, StateUtils } from "./StateUtils";
 
 export type NodeCallback<SubmitArgs> = (args: PopupUseArguments<SubmitArgs>) => React.ReactNode;
 export type NodeOrCallback<SubmitArgs> = React.ReactNode | NodeCallback<SubmitArgs> | null;
 export type PopupUseArguments<T> = { submit: (result: T) => void, state: PopupState };
 
 interface PopupState {
-    node: React.ReactNode | null;
-    setNode(node: SetStateAction<React.ReactNode | null>): void;
+    nodes: React.ReactNode[];
+    pushNode(node: React.ReactNode): void;
+    popNode(): void;
 }
-
 
 export class NodeUtils {
     static resolveNode<SubmitArgs>(nodeOrCallback: NodeOrCallback<SubmitArgs>, args: PopupUseArguments<SubmitArgs>): React.ReactNode {
@@ -18,13 +17,10 @@ export class NodeUtils {
 }
 
 export class Popup {
-    private static nodeFactory: (() => React.ReactNode) | null = null;
-    private static busy = false;
     private static state = create<PopupState>((set) => ({
-        node: null,
-        setNode: (node) => set((state) => ({
-            node: StateUtils.resolveSetStateAction(node, state.node)
-        }))
+        nodes: [],
+        pushNode: (node) => set(state => ({ nodes: [...state.nodes, node] })),
+        popNode: () => set(state => ({ nodes: state.nodes.slice(0, -1) })),
     }));
 
     static useState(): PopupState;
@@ -38,25 +34,20 @@ export class Popup {
     }
 
     static isOpen() {
-        return this.busy;
+        return this.state.getState().nodes.length > 0;
     }
 
     static async useAsync<T = void>(node: NodeOrCallback<T>): Promise<T> {
-        if (this.busy) return new Promise<T>(() => {});
-        this.busy = true;
-
         return new Promise<T>((resolve) => {
             const nodeArgs: PopupUseArguments<T> = {
                 submit: (result: T) => {
-                    this.busy = false;
-                    this.state.getState().setNode(null);
+                    this.state.getState().popNode();
                     resolve(result);
                 },
                 state: this.state.getState()
             };
 
-            this.nodeFactory = () => NodeUtils.resolveNode(node, nodeArgs);
-            this.state.getState().setNode(this.nodeFactory());
+            this.state.getState().pushNode(NodeUtils.resolveNode(node, nodeArgs));
         });
     }
 }

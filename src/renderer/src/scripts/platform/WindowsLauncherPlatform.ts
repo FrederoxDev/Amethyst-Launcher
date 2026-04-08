@@ -117,10 +117,9 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             amethystPath: `${appDataPath}\\Amethyst`,
             launcherPath: `${appDataPath}\\Amethyst\\Launcher`,
             versionsPath: `${appDataPath}\\Amethyst\\Launcher\\Versions`,
-            versionsFilePath: `${appDataPath}\\Amethyst\\Launcher\\Versions\\versions.json`,
+            installedVersionsFilePath: `${appDataPath}\\Amethyst\\Launcher\\Versions\\installed_versions.json`,
             cachedVersionsFilePath: `${appDataPath}\\Amethyst\\Launcher\\Versions\\cached_versions.json`,
-            profilesFilePath: `${appDataPath}\\Amethyst\\Launcher\\Profiles\\profiles.json`,
-            modsPath: `${appDataPath}\\Amethyst\\Launcher\\Mods`,
+            profilesPath: `${appDataPath}\\Amethyst\\Launcher\\Profiles`,
             launcherConfigPath: `${appDataPath}\\Amethyst\\Launcher\\launcher_config.json`,
             toolsPath: `${appDataPath}\\Amethyst\\Launcher\\Tools`
         };
@@ -128,10 +127,9 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.amethystPath);
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.launcherPath);
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.versionsPath);
-        PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.versionsFilePath);
+        PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.installedVersionsFilePath);
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.cachedVersionsFilePath);
-        PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.profilesFilePath);
-        PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.modsPath);
+        (window.require("fs") as typeof import("fs")).mkdirSync(WindowsLauncherPlatform.CachedLauncherPaths.profilesPath, { recursive: true });
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.launcherConfigPath);
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.toolsPath);
         return WindowsLauncherPlatform.CachedLauncherPaths;

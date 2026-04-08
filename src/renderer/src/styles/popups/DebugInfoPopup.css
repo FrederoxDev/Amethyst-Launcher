@@ -1,0 +1,71 @@
+.debug-info-popup {
+    width: 700px;
+    max-height: 70vh;
+}
+
+.debug-info-body {
+    gap: 4px;
+}
+
+.debug-info-section-title {
+    font-size: 11px;
+    color: #9f9f9f;
+    padding: 4px 8px 6px 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.debug-info-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.debug-info-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 3px;
+}
+
+.debug-info-row:hover {
+    background-color: #5a5b5c;
+}
+
+.debug-info-row--clickable {
+    cursor: pointer;
+}
+
+.debug-info-row--clickable:active {
+    transform: scale(0.99, 0.95);
+}
+
+.debug-info-key {
+    font-family: "minecraft-seven", monospace;
+    font-size: 12px;
+    color: #9f9f9f;
+    flex-shrink: 0;
+    min-width: 130px;
+}
+
+.debug-info-value {
+    font-family: "minecraft-seven", monospace;
+    font-size: 12px;
+    color: #ffffff;
+    word-break: break-all;
+}
+
+.debug-info-value--path {
+    color: #bcbec0;
+    font-size: 11px;
+}
+
+.debug-info-secret {
+    font-size: 11px;
+    color: #9f9f9f;
+    margin-top: 6px;
+    text-align: center;
+    user-select: none;
+}
+

@@ -6,25 +6,85 @@
 .dropdown-label {
     color: white;
     font-size: 14px;
+    padding-bottom: 2px;
 }
 
-.dropdown-select {
-    border: 3px solid #1E1E1F;
-    background-color: #313233;
+.dropdown-wrapper {
+    position: relative;
     width: 100%;
-    height: 25px;
+}
+
+.dropdown-sizer {
+    height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 0 28px 0 8px;
+    font-size: 14px;
+    font-family: 'Minecraft-Seven', sans-serif;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.dropdown-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    height: 36px;
+    background-color: #313233;
+    border: 3px solid #1e1e1f;
     color: white;
-    font-size: 12px;
+    font-size: 14px;
+    padding: 0 8px;
+    cursor: pointer;
+    box-sizing: border-box;
+    user-select: none;
 }
 
-.dropdown-empty {
-    border: 3px solid #1E1E1F;
+.dropdown-trigger:hover {
+    background-color: #3a3b3c;
+}
+
+.dropdown-arrow {
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+}
+
+.dropdown-arrow--open {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
     background-color: #313233;
-    width: 100%;
-    height: 25px;
+    border: 3px solid #1e1e1f;
+    z-index: 100;
+    padding: 4px;
+    box-sizing: border-box;
 }
 
 .dropdown-option {
+    padding: 6px 10px;
+    cursor: pointer;
     color: white;
-    font-family: sans-serif;
+    font-size: 14px;
+}
+
+.dropdown-option:hover {
+    background-color: #48494a;
+}
+
+.dropdown-option--active {
+    color: #6dbf5a;
+}
+
+.dropdown-empty {
+    border: 3px solid #1e1e1f;
+    background-color: #313233;
+    width: 100%;
+    height: 36px;
 }

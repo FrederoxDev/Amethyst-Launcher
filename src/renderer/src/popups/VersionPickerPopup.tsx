@@ -1,6 +1,7 @@
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { MinecraftToggle } from "@renderer/components/MinecraftToggle";
 import { PopupPanel, usePopupClose } from "@renderer/components/PopupPanel";
+import { AskConfirmDelete } from "@renderer/components/ConfirmDeletePopup";
 import { TextInput } from "@renderer/components/TextInput";
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 import { PathUtils } from "@renderer/scripts/PathUtils";
@@ -176,7 +177,7 @@ export function VersionPickerPopup({ submit: rawSubmit }: PopupUseArguments<Vers
     // Upload sub-view
     if (upload) {
         return (
-            <PopupPanel onExit={() => setUpload(null)}>
+            <PopupPanel onExit={() => setUpload(null)} onConfirm={canImport ? doImport : undefined}>
                 <div className="version-picker import-version-popup" onClick={e => e.stopPropagation()}>
                     <div className="version-picker-header">
                         <p className="minecraft-seven" style={{ fontSize: "16px" }}>Import Version</p>
@@ -243,7 +244,7 @@ export function VersionPickerPopup({ submit: rawSubmit }: PopupUseArguments<Vers
                                                 <path d="M1 3C1 2.44772 1.44772 2 2 2H6.17157C6.43679 2 6.69114 2.10536 6.87868 2.29289L7.70711 3.12132C7.89464 3.30886 8.149 3.41421 8.41421 3.41421H14C14.5523 3.41421 15 3.86193 15 4.41421V13C15 13.5523 14.5523 14 14 14H2C1.44772 14 1 13.5523 1 13V3Z" stroke="#FFFFFF" strokeWidth="1.5" />
                                             </svg>
                                         </div>
-                                        <div className="version-picker-item-btn version-picker-item-btn--danger" onClick={e => { e.stopPropagation(); setHiddenUuids(prev => new Set(prev).add(v.uuid)); versionManager.uninstallVersion(v.uuid); }}>
+                                        <div className="version-picker-item-btn version-picker-item-btn--danger" onClick={async e => { e.stopPropagation(); if (useAppStore.getState().confirmDelete) { const confirmed = await AskConfirmDelete("Delete version?", `Are you sure you want to delete "${v.name}"? You can re-download or re-import it later.`); if (!confirmed) return; } setHiddenUuids(prev => new Set(prev).add(v.uuid)); versionManager.uninstallVersion(v.uuid); }}>
                                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                                                 <path d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                                             </svg>

@@ -1,0 +1,39 @@
+.collapseable {
+    display: flex;
+    flex-direction: column;
+}
+
+.collapseable-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.collapseable-header:hover .collapseable-title {
+    color: #FFFFFF;
+}
+
+.collapseable-header:hover .collapseable-chevron path {
+    stroke: #FFFFFF;
+}
+
+.collapseable-chevron {
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+}
+
+.collapseable-chevron--open {
+    transform: rotate(90deg);
+}
+
+.collapseable-title {
+    font-size: 13px;
+    color: #BCBEC0;
+}
+
+.collapseable-body {
+    padding-bottom: 8px;
+}

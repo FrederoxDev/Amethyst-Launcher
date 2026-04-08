@@ -1,7 +1,7 @@
 const fs = window.require("fs");
 const path = window.require("path");
 
-import { useAppStore } from "@renderer/states/AppStore";
+import { GetProfileModsPath } from "./Profiles";
 import {
     ajv,
     FromValidatedV1_1_0ToConfig,
@@ -12,23 +12,19 @@ import {
 } from "./schema/ModConfigSchema";
 import type { ValidateFunction } from "ajv";
 
-function getPaths() {
-    return useAppStore.getState().platform.getPaths();
-}
-
-export function GetAllMods(): ValidatedMod[] {
-    const paths = getPaths();
-    if (!fs.existsSync(paths.modsPath)) return [];
+export function GetAllMods(profileUuid: string): ValidatedMod[] {
+    const modsPath = GetProfileModsPath(profileUuid);
+    if (!fs.existsSync(modsPath)) return [];
 
     const allFolders = fs
-        .readdirSync(paths.modsPath, { withFileTypes: true })
+        .readdirSync(modsPath, { withFileTypes: true })
         .filter(f => f.isDirectory())
         .map(dir => dir.name);
 
     const result: ValidatedMod[] = [];
 
     allFolders.forEach(modIdentifier => {
-        const validated = ValidateMod(modIdentifier);
+        const validated = ValidateMod(profileUuid, modIdentifier);
         result.push(validated);
     });
 
@@ -52,9 +48,9 @@ const validators: { [version: string]: [ValidateFunction, (data: any) => ModConf
 
 const deprecatedVersions = ["1.0.0"];
 
-export function ValidateMod(id: string): ValidatedMod {
-    const paths = getPaths();
-    const modConfigPath = path.join(paths.modsPath, id, "mod.json");
+export function ValidateMod(profileUuid: string, id: string): ValidatedMod {
+    const modsPath = GetProfileModsPath(profileUuid);
+    const modConfigPath = path.join(modsPath, id, "mod.json");
     let configUnchecked: Record<any, any> = {};
 
     const errors: string[] = [];

@@ -7,9 +7,7 @@ import OpenFolderIconAsset from "@renderer/assets/images/icons/open-folder-icon.
 import InfoIconAsset from "@renderer/assets/images/icons/info-icon.png";
 import { Popup } from "@renderer/states/PopupStore";
 import { PopupPanel } from "@renderer/components/PopupPanel";
-import { MainPanel, MainPanelSection, PanelIndent } from "@renderer/components/MainPanel";
-import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
-import { MinecraftButton } from "@renderer/components/MinecraftButton";
+import { AskConfirmDelete } from "@renderer/components/ConfirmDeletePopup";
 
 const { shell: { openPath } } = window.require("electron") as typeof import("electron");
 
@@ -173,38 +171,15 @@ export function VersionPage() {
                                         });
                                     }}
                                     onDelete={async () => {
-                                        const result = await Popup.useAsync<boolean>(({ submit }) => {
-                                            return (
-                                                <PopupPanel onExit={() => submit(false)}>
-                                                    <div className="app-consent-panel" onClick={e => e.stopPropagation()}>
-                                                        <MainPanel>
-                                                            <MainPanelSection>
-                                                                <p>Are you sure you want to delete this version?</p>
-                                                                <PanelIndent className="app-consent-indent">
-                                                                    <p>You are about to delete "{version.name}"!</p>
-                                                                    <p>You can download (or import) this version later if you want.</p>
-                                                                </PanelIndent>
-                                                                <div className="app-consent-actions">
-                                                                    <MinecraftButton
-                                                                        text="Yeah, do it!"
-                                                                        onClick={() => submit(true)}
-                                                                        style={MinecraftButtonStyle.Warn}
-                                                                    />
-                                                                    <MinecraftButton
-                                                                        text="No, don't do it!"
-                                                                        onClick={() => submit(false)}
-                                                                    />
-                                                                </div>
-                                                            </MainPanelSection>
-                                                        </MainPanel>
-                                                    </div>
-                                                </PopupPanel>
+                                        if (useAppStore.getState().confirmDelete) {
+                                            const confirmed = await AskConfirmDelete(
+                                                "Delete version?",
+                                                `Are you sure you want to delete "${version.name}"? You can re-download or re-import it later.`
                                             );
-                                        });
-                                        if (result) {
-                                            setHiddenUuids(prev => new Set(prev).add(version.uuid));
-                                            versionManager.uninstallVersion(version.uuid);
+                                            if (!confirmed) return;
                                         }
+                                        setHiddenUuids(prev => new Set(prev).add(version.uuid));
+                                        versionManager.uninstallVersion(version.uuid);
                                     }}
                                     key={index}
                                 />

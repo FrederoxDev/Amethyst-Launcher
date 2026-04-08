@@ -3,42 +3,15 @@ import { MainPanel } from "@renderer/components/MainPanel";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { useAppStore } from "@renderer/states/AppStore";
 import { Profile } from "@renderer/scripts/Profiles";
-import { launchProfileByUUID } from "@renderer/scripts/LaunchUtils";
-import { ProgressBar } from "@renderer/states/ProgressBarStore";
-
-const { ipcRenderer } = window.require("electron") as typeof import("electron");
-
-ipcRenderer.on("AMETHYST_PROTOCOL_URL", async (_event, url: string) => {
-    console.log(`[renderer] Protocol URL received: ${url}`);
-
-    try {
-        const parsed = new URL(url);
-        // amethyst-launcher://launchprofile/<uuid>
-        if (parsed.hostname === "launchprofile") {
-            const profileUuid = parsed.pathname.replace(/^\//, "");
-            if (profileUuid) {
-                await launchProfileByUUID(profileUuid);
-            }
-        }
-    } catch (e) {
-        console.error("[renderer] Failed to handle protocol URL:", e);
-        useAppStore.getState().setError((e as Error).message);
-        ProgressBar.reset();
-    }
-});
 
 const ProfileButton = ({ profile, index }: { profile: Profile; index: number }) => {
     const navigate = useNavigate();
     const setSelectedProfile = useAppStore(state => state.setSelectedProfile);
-    const allValidMods = useAppStore(state => state.allValidMods);
 
     const openProfile = (index: number) => {
         setSelectedProfile(index);
         navigate("/profile-editor");
     };
-
-    const unknownMods = profile.mods.filter(mod => !allValidMods.includes(mod));
-    console.log(unknownMods);
 
     return (
         <div className="profile-card" onClick={() => openProfile(index)}>
@@ -47,11 +20,6 @@ const ProfileButton = ({ profile, index }: { profile: Profile; index: number }) 
                 <p className="minecraft-seven profile-card-subtitle">
                     {profile.minecraft_version} ({profile.runtime})
                 </p>
-                {unknownMods.length > 0 && (
-                    <p className="minecraft-seven profile-card-warning">
-                        {unknownMods.length} missing mod{unknownMods.length > 1 ? "s" : ""}!
-                    </p>
-                )}
             </div>
         </div>
     );
@@ -80,8 +48,8 @@ export function ProfilePage() {
                             const defaultProfile: Profile = {
                                 uuid: crypto.randomUUID(),
                                 name: "New Profile",
-                                minecraft_version: versionDatabase.getAllVersions().find(v => v.type === "release")?.version.toString(),
-                                mods: [],
+                                is_modded: false,
+                                minecraft_version: versionDatabase.getAllVersions().find(v => v.type === "release")?.version.toString() ?? null,
                                 runtime: "Vanilla",
                             };
 

@@ -7,19 +7,8 @@ import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { PopupPanel } from "@renderer/components/PopupPanel";
 
 import { GetAllMods, ValidatedMod } from "@renderer/scripts/Mods";
+import { GetProfileModsPath } from "@renderer/scripts/Profiles";
 import { useAppStore } from "@renderer/states/AppStore";
-
-function getPaths() {
-    return useAppStore.getState().platform.getPaths();
-}
-
-const openModsFolder = () => {
-    const paths = getPaths();
-    if (!fs.existsSync(paths.modsPath)) fs.mkdirSync(paths.modsPath, { recursive: true });
-
-    const startGameCmd = `explorer "${paths.modsPath}"`;
-    child.spawn(startGameCmd, { shell: true });
-};
 
 export function ModsPage() {
     /** Page which will display information about each folder in the 'mods' directory. */
@@ -28,10 +17,25 @@ export function ModsPage() {
 
     const [allReports, setAllReports] = useState<ValidatedMod[]>([]);
     const [selectedReport, setSelectedReport] = useState<ValidatedMod | undefined>(undefined);
+    const allProfiles = useAppStore(state => state.allProfiles);
+    const selectedProfile = useAppStore(state => state.selectedProfile);
+
+    const openModsFolder = () => {
+        const profile = allProfiles[selectedProfile];
+        if (!profile) return;
+        const modsPath = GetProfileModsPath(profile.uuid);
+        if (!fs.existsSync(modsPath)) fs.mkdirSync(modsPath, { recursive: true });
+        child.spawn(`explorer "${modsPath}"`, { shell: true });
+    };
 
     useEffect(() => {
-        setAllReports(GetAllMods());
-    }, []);
+        const profile = allProfiles[selectedProfile];
+        if (profile) {
+            setAllReports(GetAllMods(profile.uuid));
+        } else {
+            setAllReports([]);
+        }
+    }, [allProfiles, selectedProfile]);
 
     return (
         <>
