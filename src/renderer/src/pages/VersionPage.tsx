@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { useAppStore } from "@renderer/states/AppStore";
 import { InstalledVersionModel } from "@renderer/scripts/VersionManager";
 
@@ -188,7 +188,7 @@ export function VersionPage() {
                                                                     <MinecraftButton
                                                                         text="Yeah, do it!"
                                                                         onClick={() => submit(true)}
-                                                                        style={MinecraftButtonStyle.Warn}
+                                                                        buttonStyle={MinecraftButtonStyle.Warn}
                                                                     />
                                                                     <MinecraftButton
                                                                         text="No, don't do it!"

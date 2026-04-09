@@ -6,13 +6,9 @@ import { NewInstancePopup, NewInstanceResult } from "@renderer/popups/NewInstanc
 import { VersionPickerPopup, VersionPickerResult } from "@renderer/popups/VersionPickerPopup";
 
 import lushCaveImage from "@renderer/assets/images/art/lush_cave.png";
-import bookshelfIcon from "@renderer/assets/images/icons/bookshelf-icon.png";
-import chestIcon from "@renderer/assets/images/icons/chest-icon.png";
 import craftingIcon from "@renderer/assets/images/icons/crafting-icon.png";
 import earthIcon from "@renderer/assets/images/icons/earth-icon.png";
-import portalIcon from "@renderer/assets/images/icons/portal-icon.png";
 import settingsIcon from "@renderer/assets/images/icons/settings-icon.png";
-import shulkerIcon from "@renderer/assets/images/icons/shulker-icon.png";
 
 import { DropWindow } from "@renderer/components/DropWindow";
 import Title from "@renderer/components/Title";
@@ -37,7 +33,6 @@ function DownloadManagerButton() {
     const downloads = useDownloadStore(state => state.downloads);
     const panelOpen = useDownloadStore(state => state.panelOpen);
     const setPanelOpen = useDownloadStore(state => state.setPanelOpen);
-    const updateDownload = useDownloadStore(state => state.updateDownload);
     const removeDownload = useDownloadStore(state => state.removeDownload);
 
     const btnRef = useRef<HTMLDivElement>(null);

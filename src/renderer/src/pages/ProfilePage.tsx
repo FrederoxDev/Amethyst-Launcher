@@ -80,7 +80,8 @@ export function ProfilePage() {
                             const defaultProfile: Profile = {
                                 uuid: crypto.randomUUID(),
                                 name: "New Profile",
-                                minecraft_version: versionDatabase.getAllVersions().find(v => v.type === "release")?.version.toString(),
+                                is_modded: false,
+                                minecraft_version: versionDatabase.getAllVersions().find(v => v.type === "release")?.version.toString() ?? null,
                                 mods: [],
                                 runtime: "Vanilla",
                             };

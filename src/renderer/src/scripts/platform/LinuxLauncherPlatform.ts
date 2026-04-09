@@ -132,7 +132,7 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
         return null;
     }
 
-    async runProfile(profile: Profile, version: InstalledVersionModel, onStatus?: (message: string) => void): Promise<void> {
+    async runProfile(_profile: Profile, version: InstalledVersionModel, _onStatus?: (message: string) => void): Promise<void> {
         const versionPath = path.join(version.path, "Minecraft.Windows.exe");
         const prefixPath = path.join(this.getPaths().launcherPath, "gamedata", "default");
         fs.mkdirSync(path.join(prefixPath, "dosdevices"), { recursive: true });

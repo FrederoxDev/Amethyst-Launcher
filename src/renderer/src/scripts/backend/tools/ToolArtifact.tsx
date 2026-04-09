@@ -316,7 +316,7 @@ export abstract class ToolArtifact<
      * post-install steps (e.g. setting file permissions on Linux).
      * The default implementation is a no-op.
      */
-    protected async onInstalled(context: ToolInstalledContext) {}
+    protected async onInstalled(_context: ToolInstalledContext) {}
 
     /**
      * Called just before the old installation folder is wiped during an update.

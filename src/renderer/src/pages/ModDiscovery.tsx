@@ -554,7 +554,7 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                                 <MinecraftButton
                                     text="Cancel"
                                     onClick={() => setConfirmingMod(null)}
-                                    style={MinecraftButtonStyle.Warn}
+                                    buttonStyle={MinecraftButtonStyle.Warn}
                                 />
                                 <MinecraftButton
                                     text="Continue"

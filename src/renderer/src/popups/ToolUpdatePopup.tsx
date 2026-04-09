@@ -28,7 +28,7 @@ export default function ToolUpdatePopup({ name, currentVersion, latestVersion, a
                             />
                             <MinecraftButton
                                 text="Don't update!"
-                                style={MinecraftButtonStyle.Warn}
+                                buttonStyle={MinecraftButtonStyle.Warn}
                                 onClick={() => decline()}
                             />
                         </div>

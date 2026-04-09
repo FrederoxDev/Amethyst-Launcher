@@ -144,8 +144,9 @@ function ensureMicrosoftGameConfig(versionPath: string, manifestXml: string): vo
     const titleIdMatch = manifestXml.match(/Protocol\s+Name="ms-xbl-([0-9a-fA-F]+)"/);
     const titleId = titleIdMatch ? titleIdMatch[1].toUpperCase() : (isPreview ? "717D695F" : "35760C07");
 
-    // StoreId for release vs preview
+    // StoreId and MSAAppId for release vs preview
     const storeId = isPreview ? "9P5X4QVLC2XR" : "9NBLGGH2JHXJ";
+    const msaAppId = isPreview ? "00000000403FC600" : "0000000040159362";
 
     const config = `<?xml version="1.0" encoding="utf-8"?>
 <Game configVersion="1">
@@ -155,7 +156,7 @@ function ensureMicrosoftGameConfig(versionPath: string, manifestXml: string): vo
             Version="${version}" />
 
   <TitleId>${titleId}</TitleId>
-  <MSAAppId>00000000403FC600</MSAAppId>
+  <MSAAppId>${msaAppId}</MSAAppId>
   <StoreId>${storeId}</StoreId>
 
   <ShellVisuals DefaultDisplayName="${displayName}"
