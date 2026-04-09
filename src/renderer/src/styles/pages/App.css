@@ -39,9 +39,7 @@
     display: flex;
     flex-direction: row;
     width: 100%;
-    gap: 12px;
     height: calc(100% - 64px);
-    padding: 12px;
 }
 
 .app-navbar-container {
@@ -126,7 +124,7 @@
 }
 
 .app-view-container {
-    width: calc(100% - 80px);
+    width: calc(100% - 68px);
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -136,6 +134,22 @@
     flex: 1;
     min-height: 0;
     position: relative;
+    overflow: hidden;
+}
+
+/* Page transitions */
+.page-transition {
+    width: 100%;
+    height: 100%;
+    transition: opacity 0.08s ease;
+}
+
+.page-enter-active {
+    opacity: 1;
+}
+
+.page-exit-active {
+    opacity: 0;
 }
 
 /* Download Manager */

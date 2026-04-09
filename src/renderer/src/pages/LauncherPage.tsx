@@ -9,9 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { Profile } from "@renderer/scripts/Profiles";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Popup } from "@renderer/states/PopupStore";
-import { VersionPickerPopup, VersionPickerResult } from "@renderer/popups/VersionPickerPopup";
-import { NewInstancePopup, NewInstanceResult } from "@renderer/popups/NewInstancePopup";
+import { createProfileFlow } from "@renderer/scripts/ProfileCreation";
 
 const { shell } = window.require("electron") as typeof import("electron");
 
@@ -99,7 +97,7 @@ const ProfileCard = ({ profile, versionName, onEdit, onPlay, onDelete, onOpenFol
     canPlay: boolean;
 }) => {
     return (
-        <div className="launcher-profile-card" data-uuid={profile.uuid} onClick={onEdit}>
+        <div className="launcher-profile-card" onClick={onEdit}>
             <div className="launcher-profile-card-info">
                 <p className="minecraft-seven launcher-profile-card-name">{profile.name}</p>
                 <p className="minecraft-seven launcher-profile-card-version">
@@ -151,6 +149,16 @@ export function LauncherPage() {
     const gridRef = useRef<HTMLDivElement>(null);
     const positionsRef = useRef<Map<string, DOMRect>>(new Map());
     const prevUuidsRef = useRef<string[]>([]);
+    const [dragUuid, _setDragUuid] = useState<string | null>(null);
+    const dragUuidRef = useRef<string | null>(null);
+    const reorderCooldown = useRef(false);
+    const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
+    const dragSizeRef = useRef({ width: 0, height: 0 });
+
+    const setDragUuid = (uuid: string | null) => {
+        dragUuidRef.current = uuid;
+        _setDragUuid(uuid);
+    };
 
     const snapshotPositions = useCallback(() => {
         if (!gridRef.current) return;
@@ -220,7 +228,33 @@ export function LauncherPage() {
                 return;
             }
         }
+
+        // Fallback: look up by minecraft_version string (e.g. when a remote version was selected and later installed)
+        if (profile.minecraft_version) {
+            const allInstalled = versionManager.getInstalledVersions();
+            const match = allInstalled.find(v => v.version.toString() === profile.minecraft_version);
+            if (match) {
+                shell.openPath(match.path);
+                return;
+            }
+        }
+
         setError("No installed version folder found for this profile.");
+    };
+
+    const handleReorder = (targetUuid: string) => {
+        const currentDragUuid = dragUuidRef.current;
+        if (!currentDragUuid || currentDragUuid === targetUuid || reorderCooldown.current) return;
+        const fromIndex = allProfiles.findIndex(p => p.uuid === currentDragUuid);
+        const toIndex = allProfiles.findIndex(p => p.uuid === targetUuid);
+        if (fromIndex === -1 || toIndex === -1) return;
+        snapshotPositions();
+        const reordered = [...allProfiles];
+        const [moved] = reordered.splice(fromIndex, 1);
+        reordered.splice(toIndex, 0, moved);
+        setAllProfiles(reordered);
+        reorderCooldown.current = true;
+        setTimeout(() => { reorderCooldown.current = false; }, 200);
     };
 
     const launchGame = async (profile: Profile) => {
@@ -256,60 +290,59 @@ export function LauncherPage() {
             )}
 
             {/* Profile Grid */}
-            <div className="launcher-profile-grid" ref={gridRef}>
+            <div className="launcher-profile-grid" ref={gridRef} onDragOver={(e) => { e.preventDefault(); setDragPos({ x: e.clientX, y: e.clientY }); }} onDrop={(e) => e.preventDefault()}>
                 {allProfiles.map((profile, index) => (
-                    <ProfileCard
+                    <div
                         key={profile.uuid}
-                        profile={profile}
-                        versionName={getVersionName(profile)}
-                        canPlay={ProgressBar.canDoAction("launch") && !minecraftIsRunning}
-                        onEdit={() => {
-                            setSelectedProfile(index);
-                            navigate("/profile-editor");
+                        data-uuid={profile.uuid}
+                        className={`launcher-profile-card-wrapper${dragUuid === profile.uuid ? " dragging" : ""}`}
+                        draggable
+                        onDragStart={(e) => {
+                            dragUuidRef.current = profile.uuid;
+                            e.dataTransfer.setData("text/plain", profile.uuid);
+                            e.dataTransfer.effectAllowed = "move";
+                            const empty = document.createElement("img");
+                            empty.src = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+                            e.dataTransfer.setDragImage(empty, 0, 0);
+                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                            dragSizeRef.current = { width: rect.width, height: rect.height };
+                            setDragPos({ x: e.clientX, y: e.clientY });
+                            _setDragUuid(profile.uuid);
                         }}
-                        onPlay={() => launchGame(profile)}
-                        onDelete={() => deleteProfile(index)}
-                        onOpenFolder={() => openVersionFolder(profile)}
-                    />
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = "move";
+                            handleReorder(profile.uuid);
+                        }}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            setDragUuid(null);
+                            saveData();
+                        }}
+                        onDragEnd={() => {
+                            setDragUuid(null);
+                            saveData();
+                        }}
+                    >
+                        <ProfileCard
+                            profile={profile}
+                            versionName={getVersionName(profile)}
+                            canPlay={ProgressBar.canDoAction("launch") && !minecraftIsRunning}
+                            onEdit={() => {
+                                setSelectedProfile(index);
+                                navigate("/profile-editor");
+                            }}
+                            onPlay={() => launchGame(profile)}
+                            onDelete={() => deleteProfile(index)}
+                            onOpenFolder={() => openVersionFolder(profile)}
+                        />
+                    </div>
                 ))}
                 <div className="launcher-profile-card launcher-create-card" data-uuid="__create__" onClick={async () => {
-                    let versionResult = await Popup.useAsync<VersionPickerResult | null>(props => {
-                        return <VersionPickerPopup {...props} />;
-                    });
-                    if (!versionResult) return;
-
-                    while (true) {
-                        const instanceResult = await Popup.useAsync<NewInstanceResult | null>(props => {
-                            return <NewInstancePopup {...props} versionLabel={versionResult!.display_name} />;
-                        });
-                        if (!instanceResult) return;
-                        if (instanceResult.kind === "reselect") {
-                            const newVersion = await Popup.useAsync<VersionPickerResult | null>(props => {
-                                return <VersionPickerPopup {...props} />;
-                            });
-                            if (!newVersion) return;
-                            versionResult = newVersion;
-                            continue;
-                        }
-
-                        snapshotPositions();
-                        const isModded = instanceResult.runtime === "modded";
-                        const newProfile: Profile = {
-                            uuid: crypto.randomUUID(),
-                            name: instanceResult.name,
-                            is_modded: isModded,
-                            minecraft_version: versionResult.minecraft_version,
-                            version_uuid: versionResult.version_uuid,
-                            mods: [],
-                            runtime: "Vanilla",
-                        };
-                        const newProfiles = [...allProfiles, newProfile];
-                        setAllProfiles(newProfiles);
-                        setSelectedProfile(newProfiles.length - 1);
-                        saveData();
-                        navigate(isModded ? "/profile-editor" : "/");
-                        break;
-                    }
+                    snapshotPositions();
+                    const result = await createProfileFlow();
+                    if (!result) return;
+                    navigate(result.profile.is_modded ? "/profile-editor" : "/");
                 }}>
                     <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
                         <path d="M10 4V16M4 10H16" stroke="#9f9f9f" strokeWidth="2.5" strokeLinecap="square" />
@@ -318,14 +351,31 @@ export function LauncherPage() {
                 </div>
             </div>
 
-            <div className="launcher-footer">
-                <div className="launcher-disclaimer">
-                    <p className="minecraft-seven launcher-disclaimer-text">
-                        Not approved by or associated with Mojang or Microsoft
-                    </p>
-                </div>
-
-            </div>
+            {dragUuid && createPortal(
+                (() => {
+                    const dragProfile = allProfiles.find(p => p.uuid === dragUuid);
+                    if (!dragProfile) return null;
+                    return (
+                        <div className="launcher-drag-overlay" style={{
+                            left: dragPos.x - dragSizeRef.current.width / 2,
+                            top: dragPos.y - dragSizeRef.current.height / 2,
+                            width: dragSizeRef.current.width,
+                            height: dragSizeRef.current.height,
+                        }}>
+                            <ProfileCard
+                                profile={dragProfile}
+                                versionName={getVersionName(dragProfile)}
+                                canPlay={false}
+                                onEdit={() => {}}
+                                onPlay={() => {}}
+                                onDelete={() => {}}
+                                onOpenFolder={() => {}}
+                            />
+                        </div>
+                    );
+                })(),
+                document.body
+            )}
         </div>
     );
 }

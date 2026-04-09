@@ -70,6 +70,17 @@ export async function launchProfile(profile: Profile): Promise<void> {
             setMessage(`Downloading ${semVersion.toString()}...`);
             await versionManager.downloadExtractAndInstallVersion(minecraftVersion.uuid);
         }
+
+        // Update the profile's version_uuid now that the version is installed,
+        // so future lookups (open folder, etc.) can find it directly
+        if (!profile.version_uuid) {
+            profile.version_uuid = minecraftVersion.uuid;
+            const allProfiles = state.allProfiles.map(p =>
+                p.uuid === profile.uuid ? { ...p, version_uuid: minecraftVersion.uuid } : p
+            );
+            state.setAllProfiles(allProfiles);
+            state.saveData();
+        }
     }, true);
 
     await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {

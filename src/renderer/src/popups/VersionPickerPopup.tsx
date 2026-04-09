@@ -14,10 +14,19 @@ const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
 const { v4: uuidv4 } = window.require("uuid") as typeof import("uuid");
 
+export interface VersionImportData {
+    name: string;
+    version: string;
+    type: string;
+    uuid: string;
+    file: string;
+}
+
 export interface VersionPickerResult {
     minecraft_version: string;
     version_uuid: string | null;
     display_name: string;
+    importData?: VersionImportData;
 }
 
 interface UploadState {
@@ -151,26 +160,20 @@ export function VersionPickerPopup({ submit: rawSubmit }: PopupUseArguments<Vers
         && upload.version !== ""
         && (() => { try { SemVersion.fromString(upload.version); return true; } catch { return false; } })();
 
-    const doImport = async () => {
+    const doImport = () => {
         if (!upload || !canImport) return;
-
-        versionManager.installVersion({
-            kind: "imported",
-            name: upload.name,
-            version: SemVersion.fromString(upload.version),
-            type: upload.type.toLowerCase() as MinecraftVersionType,
-            uuid: upload.uuid,
-            file: upload.file,
-        }).then(() => {
-            console.log("Version installed successfully!");
-        }).catch(e => {
-            console.error("Failed to install version:", e);
-        });
 
         submit({
             minecraft_version: upload.version,
             version_uuid: upload.uuid,
             display_name: upload.name,
+            importData: {
+                name: upload.name,
+                version: upload.version,
+                type: upload.type,
+                uuid: upload.uuid,
+                file: upload.file,
+            },
         });
     };
 
@@ -209,7 +212,7 @@ export function VersionPickerPopup({ submit: rawSubmit }: PopupUseArguments<Vers
                     <div className="version-picker-divider" />
                     <div className="version-picker-footer">
                         <MinecraftButton text="Back" style={{ "--mc-button-container-w": "100px" }} onClick={() => setUpload(null)} />
-                        <MinecraftButton text="Import" disabled={!canImport} style={{ "--mc-button-container-w": "100px" }} onClick={doImport} />
+                        <MinecraftButton text="Continue" disabled={!canImport} style={{ "--mc-button-container-w": "100px" }} onClick={doImport} />
                     </div>
                 </div>
             </PopupPanel>

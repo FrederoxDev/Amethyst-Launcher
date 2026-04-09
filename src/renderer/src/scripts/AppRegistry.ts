@@ -148,6 +148,18 @@ function ensureMicrosoftGameConfig(versionPath: string, manifestXml: string): vo
     const storeId = isPreview ? "9P5X4QVLC2XR" : "9NBLGGH2JHXJ";
     const msaAppId = isPreview ? "00000000403FC600" : "0000000040159362";
 
+    // Extract resource languages from the manifest
+    const langMatches = manifestXml.match(/Language="([a-z]{2}-[a-z]{2})"/gi) ?? [];
+    const languages = new Set<string>();
+    for (const m of langMatches) {
+        const lang = m.match(/"([^"]+)"/)?.[1];
+        if (lang) languages.add(lang.toLowerCase());
+    }
+    // Fallback if no languages found in manifest
+    if (languages.size === 0) languages.add("en-us");
+
+    const resourceLines = [...languages].map(l => `    <Resource Language="${l}"/>`).join("\n");
+
     const config = `<?xml version="1.0" encoding="utf-8"?>
 <Game configVersion="1">
 
@@ -170,6 +182,10 @@ function ensureMicrosoftGameConfig(versionPath: string, manifestXml: string): vo
       SplashScreenImage="MCSplashScreen.png"
       Square480x480Logo="LargeLogo.png"/>
 
+  <Resources>
+${resourceLines}
+  </Resources>
+
   <ExecutableList>
     <Executable Name="Minecraft.Windows.exe"
                 TargetDeviceFamily="PC"
@@ -181,6 +197,7 @@ function ensureMicrosoftGameConfig(versionPath: string, manifestXml: string): vo
   </ProtocolList>
 
   <AdvancedUserModel>true</AdvancedUserModel>
+
   <MSAFullTrust>true</MSAFullTrust>
 
   <DesktopRegistration>
@@ -188,6 +205,27 @@ function ensureMicrosoftGameConfig(versionPath: string, manifestXml: string): vo
     <DependencyList>
       <KnownDependency Name="VC14" />
     </DependencyList>
+    <FileTypeAssociation Name="minecraftfiles" Executable="Minecraft.Windows.exe">
+      <DisplayName>Minecraft Supported File</DisplayName>
+      <EditFlags OpenIsSafe="true" AlwaysUnsafe="false" />
+      <InfoTip>Import this file into your Local Minecraft Installation</InfoTip>
+      <SupportedFileTypes>
+        <FileType>.mcpack</FileType>
+        <FileType>.mcworld</FileType>
+        <FileType>.mcperf</FileType>
+        <FileType>.mcshortcut</FileType>
+        <FileType>.mcproject</FileType>
+        <FileType>.mctemplate</FileType>
+        <FileType>.mcaddon</FileType>
+        <FileType>.mceditoraddon</FileType>
+      </SupportedFileTypes>
+    </FileTypeAssociation>
+    <CustomInstallActions>
+      <Folder>Installers</Folder>
+      <InstallActionList>
+        <InstallAction Name="GameInput_" File="GameInputRedist.msi" />
+      </InstallActionList>
+    </CustomInstallActions>
   </DesktopRegistration>
 
 </Game>`;
