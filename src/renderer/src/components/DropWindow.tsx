@@ -26,6 +26,9 @@ export function DropWindow() {
         function dragStart(event: DragEvent) {
             event.preventDefault();
 
+            // Ignore internal drags (e.g. profile card reordering) — only show overlay for file drops
+            if (!event.dataTransfer?.types.includes("Files")) return;
+
             if (dragCount === 0) setHovered(true);
 
             dragCount++;
@@ -33,6 +36,8 @@ export function DropWindow() {
 
         function dragEnd(event: DragEvent) {
             event.preventDefault();
+
+            if (!event.dataTransfer?.types.includes("Files")) return;
 
             dragCount--;
 
@@ -46,7 +51,7 @@ export function DropWindow() {
 
             dragCount = 0;
 
-            if (!event.dataTransfer) return;
+            if (!event.dataTransfer || !event.dataTransfer.types.includes("Files")) return;
 
             type ElectronFile = File & { path: string };
             const items = event.dataTransfer.files as unknown as ElectronFile[];

@@ -259,21 +259,12 @@ export class VersionDatabase {
         // (That's lot's of ifs lol)
         console.log(`Checking version database cache validity. Cache exists: ${!!cacheData}, Cache is outdated: ${cacheData?.isOutdated() ?? "N/A"}`);
         if (cacheData?.isOutdated()) {
-            console.log("Cache is outdated, checking remote database version...");
+            console.log("Cache is outdated, fetching remote database...");
             try {
-                // Fetch shenanigans to check if the remote database is actually newer than the cache before we decide to use it,
-                const response = await fetch(VersionDatabase.DATABASE_URL);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch version database from ${VersionDatabase.DATABASE_URL}: ${response.status} ${response.statusText}`);
-                }
-
-                // This actually double fetches but it's so small that who cares xD
-                const data: HistoricalVersionsContract = await response.json() as HistoricalVersionsContract;
-                if (cacheData.fileVersion < data.file_version) {
-                    console.log(`Remote database version (${data.file_version}) is newer than cache version (${cacheData.fileVersion}), updating cache...`);
-                    this.Versions = await fetchRemoteDatabase();
-                    return this.Versions.versions;
-                }
+                this.Versions = await fetchRemoteDatabase();
+                fs.writeFileSync(cachePath, this.Versions.toJSON(), "utf-8");
+                console.log(`Updated version database cache with ${this.Versions.versions.length} versions (file_version: ${this.Versions.fileVersion}).`);
+                return this.Versions.versions;
             }
             catch (e) {
                 console.error("Failed to fetch version database, using cache if available. ", e);

@@ -81,6 +81,19 @@
     transform: scale(0.97, 0.94);
 }
 
+.launcher-profile-card-wrapper {
+    display: flex;
+}
+
+.launcher-profile-card-wrapper > .launcher-profile-card {
+    flex: 1;
+}
+
+.launcher-profile-card-wrapper.dragging {
+    opacity: 0;
+}
+
+
 .launcher-create-card {
     flex-direction: column;
     justify-content: center;
@@ -193,6 +206,7 @@
     position: absolute;
     bottom: 0;
     right: 0;
+    z-index: 5;
 }
 
 .launcher-disclaimer {
@@ -205,5 +219,19 @@
     color: white;
     padding: 0 4px;
     font-size: 13px;
+}
+
+/* Drag overlay */
+.launcher-drag-overlay {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    transform: scale(1.03);
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+    display: flex;
+}
+
+.launcher-drag-overlay > .launcher-profile-card {
+    flex: 1;
 }
 

@@ -13,10 +13,8 @@ import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle"
 import { MinecraftRadialButtonPanel } from "@renderer/components/MinecraftRadialButtonPanel";
 import { PopupPanel, usePopupClose } from "@renderer/components/PopupPanel";
 
-import { NewInstancePopup, NewInstanceResult } from "@renderer/popups/NewInstancePopup";
-import { VersionPickerPopup, VersionPickerResult } from "@renderer/popups/VersionPickerPopup";
+import { createProfileFlow } from "@renderer/scripts/ProfileCreation";
 
-import { Profile } from "@renderer/scripts/Profiles";
 import { useAppStore } from "@renderer/states/AppStore";
 import { Popup } from "@renderer/states/PopupStore";
 
@@ -423,44 +421,9 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
             // Handle "New Profile" — run full creation flow
             targetProfileIndex = profileIndex;
             if (profileIndex === -1) {
-                let versionResult = await Popup.useAsync<VersionPickerResult | null>(props => {
-                    return <VersionPickerPopup {...props} />;
-                });
-                if (!versionResult) return;
-
-                while (true) {
-                    const instanceResult = await Popup.useAsync<NewInstanceResult | null>(props => {
-                        return <NewInstancePopup {...props} versionLabel={versionResult!.display_name} />;
-                    });
-                    if (!instanceResult) return;
-
-                    if (instanceResult.kind === "reselect") {
-                        const newVersion = await Popup.useAsync<VersionPickerResult | null>(props => {
-                            return <VersionPickerPopup {...props} />;
-                        });
-                        if (!newVersion) return;
-                        versionResult = newVersion;
-                        continue;
-                    }
-
-                    const isModded = instanceResult.runtime === "modded";
-                    const state = useAppStore.getState();
-                    const newProfile: Profile = {
-                        uuid: crypto.randomUUID(),
-                        name: instanceResult.name,
-                        is_modded: isModded,
-                        minecraft_version: versionResult.minecraft_version,
-                        version_uuid: versionResult.version_uuid,
-                        mods: [],
-                        runtime: "Vanilla",
-                    };
-                    const newProfiles = [...state.allProfiles, newProfile];
-                    state.setAllProfiles(newProfiles);
-                    state.setSelectedProfile(newProfiles.length - 1);
-                    state.saveData();
-                    targetProfileIndex = newProfiles.length - 1;
-                    break;
-                }
+                const result = await createProfileFlow();
+                if (!result) return;
+                targetProfileIndex = result.index;
             }
         }
 

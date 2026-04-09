@@ -1,9 +1,7 @@
 import { AnalyticsConsent, useAppStore } from "@renderer/states/AppStore";
 import { Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { Profile } from "@renderer/scripts/Profiles";
 import { Popup } from "@renderer/states/PopupStore";
-import { NewInstancePopup, NewInstanceResult } from "@renderer/popups/NewInstancePopup";
-import { VersionPickerPopup, VersionPickerResult } from "@renderer/popups/VersionPickerPopup";
+import { createProfileFlow } from "@renderer/scripts/ProfileCreation";
 
 import lushCaveImage from "@renderer/assets/images/art/lush_cave.png";
 import craftingIcon from "@renderer/assets/images/icons/crafting-icon.png";
@@ -129,10 +127,42 @@ function DownloadManagerButton() {
     );
 }
 
+function AnimatedRoutes() {
+    const location = useLocation();
+    const [displayLocation, setDisplayLocation] = useState(location);
+    const [transitionClass, setTransitionClass] = useState("page-enter-active");
+
+    useEffect(() => {
+        if (location.pathname !== displayLocation.pathname) {
+            setTransitionClass("page-exit-active");
+            const timer = setTimeout(() => {
+                setDisplayLocation(location);
+                setTransitionClass("page-enter-active");
+            }, 80);
+            return () => clearTimeout(timer);
+        }
+    }, [location, displayLocation]);
+
+    return (
+        <div className={`page-transition ${transitionClass}`}>
+            <Routes location={displayLocation}>
+                <Route path="/" element={<LauncherPage />} />
+                <Route path="/profiles" element={<ProfilePage />} />
+                <Route path="/profile-editor" element={<ProfileEditor />} />
+                <Route path="/mods" element={<ModsPage />} />
+                <Route path="/versions" element={<VersionPage />} />
+                <Route path="/mod-discovery" element={<ModDiscovery />} />
+            </Routes>
+        </div>
+    );
+}
+
 export default function App() {
     const location = useLocation();
     const navigate = useNavigate();
     useEffect(() => {
+        useAppStore.getState().versionManager.cleanupStaleLocks();
+
         const currentConsent = useAppStore.getState().analyticsConsent;
         if (currentConsent !== AnalyticsConsent.Unknown)
             return;
@@ -184,46 +214,9 @@ export default function App() {
                                 <div
                                     className="nav-icon nav-icon-add"
                                     onClick={async () => {
-                                        let versionResult = await Popup.useAsync<VersionPickerResult | null>(props => {
-                                            return <VersionPickerPopup {...props} />;
-                                        });
-
-                                        if (!versionResult) return;
-
-                                        while (true) {
-                                            const instanceResult = await Popup.useAsync<NewInstanceResult | null>(props => {
-                                                return <NewInstancePopup {...props} versionLabel={versionResult!.display_name} />;
-                                            });
-
-                                            if (!instanceResult) return;
-
-                                            if (instanceResult.kind === "reselect") {
-                                                const newVersion = await Popup.useAsync<VersionPickerResult | null>(props => {
-                                                    return <VersionPickerPopup {...props} />;
-                                                });
-                                                if (!newVersion) return;
-                                                versionResult = newVersion;
-                                                continue;
-                                            }
-
-                                            const isModded = instanceResult.runtime === "modded";
-                                            const state = useAppStore.getState();
-                                            const newProfile: Profile = {
-                                                uuid: crypto.randomUUID(),
-                                                name: instanceResult.name,
-                                                is_modded: isModded,
-                                                minecraft_version: versionResult.minecraft_version,
-                                                version_uuid: versionResult.version_uuid,
-                                                mods: [],
-                                                runtime: "Vanilla",
-                                            };
-                                            const newProfiles = [...state.allProfiles, newProfile];
-                                            state.setAllProfiles(newProfiles);
-                                            state.setSelectedProfile(newProfiles.length - 1);
-                                            state.saveData();
-                                            navigate(isModded ? "/profile-editor" : "/");
-                                            break;
-                                        }
+                                        const result = await createProfileFlow();
+                                        if (!result) return;
+                                        navigate(result.profile.is_modded ? "/profile-editor" : "/");
                                     }}
                                 >
                                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -247,17 +240,16 @@ export default function App() {
                     </div>
                     <div className="view_container app-view-container">
                         <div className="app-view-content">
-                            <Routes>
-                                <Route path="/" element={<LauncherPage />} />
-                                <Route path="/profiles" element={<ProfilePage />} />
-                                <Route path="/profile-editor" element={<ProfileEditor />} />
-                                <Route path="/mods" element={<ModsPage />} />
-                                <Route path="/versions" element={<VersionPage />} />
-                                <Route path="/mod-discovery" element={<ModDiscovery />} />
-                            </Routes>
-
+                            <AnimatedRoutes />
                             <UpdatePage></UpdatePage>
                             <DropWindow></DropWindow>
+                            <div className="launcher-footer">
+                                <div className="launcher-disclaimer">
+                                    <p className="minecraft-seven launcher-disclaimer-text">
+                                        Not approved by or associated with Mojang or Microsoft
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                         <ProgressBarRenderer />
                     </div>

@@ -194,6 +194,39 @@ export class VersionManager {
 
     constructor() {}
 
+    /**
+     * Cleans up stale .lock files and their associated .msixvc files left behind
+     * by a previous launcher session that didn't exit cleanly.
+     */
+    cleanupStaleLocks(): void {
+        const versionsPath = getPaths().versionsPath;
+        if (!fs.existsSync(versionsPath)) return;
+
+        const fileLocker = FileLocker.get();
+        const entries = fs.readdirSync(versionsPath);
+
+        for (const entry of entries) {
+            if (!entry.endsWith(".lock")) continue;
+
+            const lockPath = path.join(versionsPath, entry);
+            // The lock file path without .lock is what FileLocker.isLocked checks against
+            const basePath = lockPath.replace(/\.lock$/, "");
+
+            // If the lock belongs to the current session, leave it alone
+            if (fileLocker.isLocked(basePath)) continue;
+
+            // Stale lock from a previous session — clean up
+            console.log(`[VersionManager] Removing stale lock: ${entry}`);
+            fs.rmSync(lockPath, { force: true });
+
+            // Also remove the associated .msixvc file if it exists (incomplete download/copy)
+            if (fs.existsSync(basePath) && fs.statSync(basePath).isFile()) {
+                console.log(`[VersionManager] Removing incomplete file: ${path.basename(basePath)}`);
+                fs.rmSync(basePath, { force: true });
+            }
+        }
+    }
+
     subscribe<E extends VersionManagerEvent>(event: E, callback: VersionManagerEventCallbacks[E]): () => void {
         if (!this.subscribers[event]) 
             this.subscribers[event] = [];
