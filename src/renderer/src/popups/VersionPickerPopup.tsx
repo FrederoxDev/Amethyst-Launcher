@@ -82,18 +82,19 @@ export function VersionPickerPopup({ submit: rawSubmit }: PopupUseArguments<Vers
     const [previewAnim, setPreviewAnim] = useState<"idle" | "entering" | "exiting">("idle");
 
     useEffect(() => {
-        if (showPreviews) {
-            setPreviewsVisible(true);
-            requestAnimationFrame(() => setPreviewAnim("entering"));
-        } else if (previewsVisible) {
+        if (!showPreviews && previewsVisible) {
             setPreviewAnim("exiting");
             const timer = setTimeout(() => {
                 setPreviewsVisible(false);
                 setPreviewAnim("idle");
             }, 150);
             return () => clearTimeout(timer);
+        } else if (showPreviews) {
+            setPreviewsVisible(true);
+            requestAnimationFrame(() => setPreviewAnim("entering"));
         }
-    }, [showPreviews]);
+        return undefined;
+    }, [showPreviews, previewsVisible]);
 
     const selectInstalled = (uuid: string) => {
         const installed = installedVersions.find(v => v.uuid === uuid);

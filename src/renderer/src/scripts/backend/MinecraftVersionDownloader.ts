@@ -1,6 +1,6 @@
 import { Downloader } from "@renderer/scripts/backend/Downloader";
 import { ActionComplete, DownloadProgress } from "@renderer/scripts/backend/Progress";
-import { MinecraftVersion } from "@renderer/scripts/VersionDatabase";
+import { MinecraftVersionData } from "@renderer/scripts/VersionDatabase";
 
 class Protocol {
     static DEFAULT_URL = "https://fe3.delivery.mp.microsoft.com/ClientWebService/client.asmx";
@@ -239,9 +239,7 @@ export async function download(
 }
 
 export async function downloadVersion(
-    version: MinecraftVersion,
-    destination: string,
-    onProgress: DownloadProgress = () => {},
+    version: MinecraftVersionData,
     onComplete: ActionComplete = () => {}
 ) {
     if (version.urls.length === 0) {

@@ -54,7 +54,7 @@ export default function AnalyticsConsentPanel({ accept, decline }: { accept: () 
                             <MinecraftButton
                                 text="Decline"
                                 onClick={() => decline()}
-                                style={MinecraftButtonStyle.Warn}
+                                buttonStyle={MinecraftButtonStyle.Warn}
                             />
                         </div>
                     </MainPanelSection>

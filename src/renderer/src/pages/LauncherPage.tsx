@@ -119,7 +119,7 @@ const ProfileCard = ({ profile, versionName, onEdit, onPlay, onDelete, onOpenFol
 export function LauncherPage() {
     const [
         allProfiles,
-        selectedProfile,
+        _selectedProfile,
         setSelectedProfile,
         setAllProfiles,
         saveData,

@@ -100,12 +100,12 @@ export function UpdatePage() {
                                 <div className="update-popup-actions">
                                     <MinecraftButton
                                         text="Download"
-                                        style={MinecraftButtonStyle.Confirm}
+                                        buttonStyle={MinecraftButtonStyle.Confirm}
                                         onClick={downloadUpdate}
                                     />
                                     <MinecraftButton
                                         text="Ignore"
-                                        style={MinecraftButtonStyle.Warn}
+                                        buttonStyle={MinecraftButtonStyle.Warn}
                                         onClick={ignoreUpdate}
                                     />
                                 </div>

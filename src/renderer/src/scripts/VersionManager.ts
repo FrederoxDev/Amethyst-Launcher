@@ -2,7 +2,6 @@ import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 import { MinecraftVersionData, MinecraftVersionType, VersionDatabase } from "@renderer/scripts/VersionDatabase";
 import { useAppStore } from "@renderer/states/AppStore";
 import { PathUtils } from "./PathUtils";
-import { XVDTool } from "./backend/tools/XVDTool";
 import { CIK_KEYS } from "./backend/Decryption";
 import { Downloader } from "./backend/Downloader";
 import { IJSONModel } from "./contracts/IJSONModel";
@@ -401,15 +400,13 @@ export class VersionManager {
         const extractedVersionPath = path.join(versionsPath, versionFileName);
 
         // Start the extraction process, this involves decrypting the MSIXVC file and then extracting it to the target folder
-        return await this.extractVersionByPath(versionFilePath, extractedVersionPath, version.version, version.type);
+        return await this.extractVersionByPath(versionFilePath, extractedVersionPath, version.version);
     }
 
     async extractVersionByPath(
-        versionFilePath: string, 
-        targetOutputPath: string, 
-        version: SemVersion, 
-        type: MinecraftVersionType,
-        shouldAskUpdate: boolean = true
+        versionFilePath: string,
+        targetOutputPath: string,
+        version: SemVersion
     ): Promise<boolean> {
         const versionFileName = path.basename(versionFilePath);
 
@@ -547,7 +544,7 @@ export class VersionManager {
 
             // After copying the file, we will attempt to decrypt and/or extract it using the same process as for downloaded versions
             try {
-                await this.extractVersionByPath(copyTargetPath, extractedVersionPath, version.version, version.type);
+                await this.extractVersionByPath(copyTargetPath, extractedVersionPath, version.version);
             } finally {
                 await fs.promises.unlink(copyTargetPath);
             }
