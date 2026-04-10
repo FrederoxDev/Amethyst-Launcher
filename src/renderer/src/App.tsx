@@ -3,7 +3,7 @@ import { Link, Route, Routes, useLocation, useNavigate } from "react-router-dom"
 import { Popup } from "@renderer/states/PopupStore";
 import { createProfileFlow } from "@renderer/scripts/ProfileCreation";
 
-import lushCaveImage from "@renderer/assets/images/art/lush_cave.png";
+import lushCaveImage from "@renderer/assets/images/art/lush_cave.jpg";
 import craftingIcon from "@renderer/assets/images/icons/crafting-icon.png";
 import earthIcon from "@renderer/assets/images/icons/earth-icon.png";
 import settingsIcon from "@renderer/assets/images/icons/settings-icon.png";
@@ -12,20 +12,21 @@ import { DropWindow } from "@renderer/components/DropWindow";
 import Title from "@renderer/components/Title";
 
 import { LauncherPage } from "@renderer/pages/LauncherPage";
-import { ModDiscovery } from "@renderer/pages/ModDiscovery";
-import { ModsPage } from "@renderer/pages/ModsPage";
-import { ProfileEditor } from "@renderer/pages/ProfileEditor";
-import { ProfilePage } from "@renderer/pages/ProfilePage";
 import { SettingsPopup } from "@renderer/popups/SettingsPopup";
 import { UpdatePage } from "@renderer/pages/UpdatePage";
-import { VersionPage } from "@renderer/pages/VersionPage";
 import PopupRenderer from "./components/PopupRenderer";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import LoadingSpinnerRenderer from "./components/LoadingSpinnerRenderer";
 import ProgressBarRenderer from "./components/ProgressBarRenderer";
 import { useDownloadStore } from "@renderer/states/DownloadStore";
 import { AskAnalyticsConsent } from "./components/AnalyticsConsentPanel";
+
+const ModDiscovery = lazy(() => import("@renderer/pages/ModDiscovery").then(m => ({ default: m.ModDiscovery })));
+const ModsPage = lazy(() => import("@renderer/pages/ModsPage").then(m => ({ default: m.ModsPage })));
+const ProfileEditor = lazy(() => import("@renderer/pages/ProfileEditor").then(m => ({ default: m.ProfileEditor })));
+const ProfilePage = lazy(() => import("@renderer/pages/ProfilePage").then(m => ({ default: m.ProfilePage })));
+const VersionPage = lazy(() => import("@renderer/pages/VersionPage").then(m => ({ default: m.VersionPage })));
 
 function DownloadManagerButton() {
     const downloads = useDownloadStore(state => state.downloads);
@@ -141,18 +142,21 @@ function AnimatedRoutes() {
             }, 80);
             return () => clearTimeout(timer);
         }
+        return undefined;
     }, [location, displayLocation]);
 
     return (
         <div className={`page-transition ${transitionClass}`}>
-            <Routes location={displayLocation}>
-                <Route path="/" element={<LauncherPage />} />
-                <Route path="/profiles" element={<ProfilePage />} />
-                <Route path="/profile-editor" element={<ProfileEditor />} />
-                <Route path="/mods" element={<ModsPage />} />
-                <Route path="/versions" element={<VersionPage />} />
-                <Route path="/mod-discovery" element={<ModDiscovery />} />
-            </Routes>
+            <Suspense>
+                <Routes location={displayLocation}>
+                    <Route path="/" element={<LauncherPage />} />
+                    <Route path="/profiles" element={<ProfilePage />} />
+                    <Route path="/profile-editor" element={<ProfileEditor />} />
+                    <Route path="/mods" element={<ModsPage />} />
+                    <Route path="/versions" element={<VersionPage />} />
+                    <Route path="/mod-discovery" element={<ModDiscovery />} />
+                </Routes>
+            </Suspense>
         </div>
     );
 }
@@ -161,7 +165,7 @@ export default function App() {
     const location = useLocation();
     const navigate = useNavigate();
     useEffect(() => {
-        useAppStore.getState().versionManager.cleanupStaleLocks();
+        setTimeout(() => useAppStore.getState().versionManager.cleanupStaleLocks(), 0);
 
         const currentConsent = useAppStore.getState().analyticsConsent;
         if (currentConsent !== AnalyticsConsent.Unknown)

@@ -1,7 +1,5 @@
-import { Analytics, getAnalytics } from "firebase/analytics";
+import type { Analytics } from "firebase/analytics";
 import { create } from "zustand";
-
-import { firebaseApp } from "@renderer/firebase/Firebase";
 
 import { GetLauncherConfig, LauncherConfig, SetLauncherConfig } from "@renderer/scripts/Launcher";
 import { GetAllMods, ValidatedMod } from "@renderer/scripts/Mods";
@@ -81,8 +79,12 @@ function getInitialAnalyticsConsent(): AnalyticsConsent {
     return AnalyticsConsent.Unknown;
 }
 
-function getAnalyticsInstanceForConsent(consent: AnalyticsConsent): Analytics | null {
+async function getAnalyticsInstanceForConsent(consent: AnalyticsConsent): Promise<Analytics | null> {
     if (consent !== AnalyticsConsent.Accepted) return null;
+    const [{ getAnalytics }, { firebaseApp }] = await Promise.all([
+        import("firebase/analytics"),
+        import("@renderer/firebase/Firebase"),
+    ]);
     return getAnalytics(firebaseApp);
 }
 
@@ -111,7 +113,7 @@ export const useAppStore = create<AppStore>((set, get) => {
         developerMode: false,
         error: "",
         analyticsConsent: initialConsent,
-        analyticsInstance: getAnalyticsInstanceForConsent(initialConsent),
+        analyticsInstance: null,
         minecraftIsRunning: false,
         downloadingMods: [],
         installingForProfile: null,
@@ -142,9 +144,12 @@ export const useAppStore = create<AppStore>((set, get) => {
                     localStorage.setItem("analyticsConsent", nextConsent);
                 }
 
+                getAnalyticsInstanceForConsent(nextConsent).then(instance => {
+                    set({ analyticsInstance: instance });
+                });
+
                 return {
                     analyticsConsent: nextConsent,
-                    analyticsInstance: getAnalyticsInstanceForConsent(nextConsent),
                 };
             }),
 
@@ -193,6 +198,13 @@ export const useAppStore = create<AppStore>((set, get) => {
     };
 });
 
+// Lazily init analytics if user already consented in a previous session
+if (getInitialAnalyticsConsent() === AnalyticsConsent.Accepted) {
+    getAnalyticsInstanceForConsent(AnalyticsConsent.Accepted).then(instance => {
+        useAppStore.setState({ analyticsInstance: instance });
+    });
+}
+
 async function hydrateStore(): Promise<void> {
     const profiles = GetProfiles();
     const config = GetLauncherConfig();
@@ -215,11 +227,13 @@ export function InitializeAppState(): void {
     ipcRenderer.on("APP_STATE_INIT", async () => {
         await hydrateStore();
         resumePendingDownloads();
+
+        // Defer non-critical work until after the UI is interactive
+        checkIfMinecraftIsRunning();
+        startMinecraftWatcher();
     });
 
     ipcRenderer.send("APP_STATE_INIT_REQUEST");
-    checkIfMinecraftIsRunning();
-    startMinecraftWatcher();
 }
 
 InitializeAppState();

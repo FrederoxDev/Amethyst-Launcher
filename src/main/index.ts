@@ -62,7 +62,7 @@ ipcMain.on("TITLE_BAR_ACTION", (_, args) => {
             mainWindow!.minimize();
             break;
         case "CLOSE":
-            mainWindow!.close();
+            mainWindow!.destroy();
             break;
         default:
             break;
@@ -139,10 +139,14 @@ if (hasSingleInstanceLock === false) {
 }
 // No window is open so create new
 else {
+    app.on("window-all-closed", () => {
+        app.exit(0);
+    });
+
     app.on("ready", () => {
         mainWindow = createWindow();
 
-        mainWindow.webContents.once("did-finish-load", () => {
+        mainWindow.once("ready-to-show", () => {
             mainWindow!.show();
             // Handle the case where the app was cold-started via a protocol URL.
             const url = extractProtocolUrl(process.argv);

@@ -4,7 +4,7 @@ import { PopupPanel, usePopupClose } from "@renderer/components/PopupPanel";
 import { TextInput } from "@renderer/components/TextInput";
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 import { PathUtils } from "@renderer/scripts/PathUtils";
-import { MinecraftVersionData, MinecraftVersionType } from "@renderer/scripts/VersionDatabase";
+import { MinecraftVersionData } from "@renderer/scripts/VersionDatabase";
 import { useAppStore } from "@renderer/states/AppStore";
 import { PopupUseArguments } from "@renderer/states/PopupStore";
 import { useEffect, useMemo, useReducer, useState } from "react";

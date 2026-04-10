@@ -7,7 +7,6 @@ import { InstalledVersionModel } from "../VersionManager";
 const os = window.require("os") as typeof import("os");
 const child = window.require("child_process") as typeof import("child_process");
 const path = window.require("path") as typeof import("path");
-const { ipcRenderer } = window.require("electron");
 
 type RegeditModule = typeof import("regedit-rs");
 
@@ -111,7 +110,7 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
     getPaths(): LauncherPaths {
         if (WindowsLauncherPlatform.CachedLauncherPaths)
             return WindowsLauncherPlatform.CachedLauncherPaths;
-        const appDataPath: string = ipcRenderer.sendSync("get-appdata-path-sync");
+        const appDataPath: string = process.env.APPDATA ?? path.join(os.homedir(), "AppData", "Roaming");
 
         WindowsLauncherPlatform.CachedLauncherPaths = {
             amethystPath: `${appDataPath}\\Amethyst`,

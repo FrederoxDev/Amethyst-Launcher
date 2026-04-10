@@ -7,7 +7,6 @@ import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 import { PathUtils } from "@renderer/scripts/PathUtils";
 import { MinecraftVersionData, MinecraftVersionType } from "@renderer/scripts/VersionDatabase";
 import { PopupUseArguments } from "@renderer/states/PopupStore";
-import { FileInput } from "lucide-react";
 
 const { ipcRenderer } = window.require("electron") as typeof import("electron");
 import { useState, useEffect, useMemo } from "react";
@@ -178,7 +177,7 @@ export function ImportVersionPopup({
                                             alignItems: "center"
                                         }}
                                     >
-                                        <FileInput size={22} color="white" />
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="M12 12v6" /><path d="m15 15-3-3-3 3" /></svg>
                                     </div>
                                 </div>
                                 <p style={{ fontSize: "12px", color: versionFile ? "#9f9f9f" : "red" }}>{versionFile || "No version file selected"}</p>

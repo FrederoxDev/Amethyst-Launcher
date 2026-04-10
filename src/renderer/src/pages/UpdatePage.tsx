@@ -39,24 +39,24 @@ export function UpdatePage() {
         ipcRenderer.invoke("set-auto-install-on-app-quit", true);
         checkForUpdates();
 
-        ipcRenderer.on("update-available", (_, info) => {
+        const onUpdateAvailable = (_, info) => {
             console.log("Update available:", info);
             setUpdateInfo(info);
             setUpdateAvailable(true);
             setPopupClosed(false);
-        });
+        };
 
-        ipcRenderer.on("update-cancelled", (_, info) => {
+        const onUpdateCancelled = (_, info) => {
             console.log("Download cancelled:", info);
             throw new Error(`Launcher Update cancelled`);
-        });
+        };
 
-        ipcRenderer.on("download-progress", (_, info) => {
+        const onDownloadProgress = (_, info) => {
             console.log("Download progress:", info);
             setDownloadPercentage(info.percent);
-        });
+        };
 
-        ipcRenderer.on("update-downloaded", (_, info) => {
+        const onUpdateDownloaded = (_, info) => {
             console.log("Update downloaded:", info);
             console.log("restart now?");
 
@@ -64,7 +64,19 @@ export function UpdatePage() {
             setUpdateAvailable(false);
             setPopupClosed(true);
             setDownloadActive(false);
-        });
+        };
+
+        ipcRenderer.on("update-available", onUpdateAvailable);
+        ipcRenderer.on("update-cancelled", onUpdateCancelled);
+        ipcRenderer.on("download-progress", onDownloadProgress);
+        ipcRenderer.on("update-downloaded", onUpdateDownloaded);
+
+        return () => {
+            ipcRenderer.removeListener("update-available", onUpdateAvailable);
+            ipcRenderer.removeListener("update-cancelled", onUpdateCancelled);
+            ipcRenderer.removeListener("download-progress", onDownloadProgress);
+            ipcRenderer.removeListener("update-downloaded", onUpdateDownloaded);
+        };
     }, [setUpdateAvailable, setPopupClosed, setDownloadActive, setDownloadPercentage, checkForUpdates]);
 
     useEffect(() => {
