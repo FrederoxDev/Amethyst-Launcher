@@ -1,4 +1,3 @@
-import React from "react";
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 import { MinecraftVersionType } from "@renderer/scripts/VersionDatabase";
 import { useAppStore } from "@renderer/states/AppStore";

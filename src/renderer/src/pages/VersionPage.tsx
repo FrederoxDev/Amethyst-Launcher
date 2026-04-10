@@ -16,7 +16,6 @@ const { shell: { openPath } } = window.require("electron") as typeof import("ele
 import "@renderer/styles/pages/SettingsPage.css"
 import "@renderer/styles/pages/LauncherPage.css"
 
-import { PlusIcon } from "lucide-react";
 import { ImportVersionPopup, ImportVersionPopupData } from "@renderer/popups/ImportVersionPopup";
 import { useDownloadStore } from "@renderer/states/DownloadStore";
 
@@ -131,7 +130,7 @@ export function VersionPage() {
                                 });
                             }}
                         >
-                            <PlusIcon size={24} color="white" />
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
                         </div>
                     </div>
                 </div>
