@@ -1,5 +1,5 @@
 import { ILauncherPlatform, LauncherPaths, ProcessInfo, ShortcutOptions } from "@renderer/scripts/platform/LauncherPlatform";
-import { EnsureVersionFiles, IsRegistered, LaunchMinecraft, RegisterVersion, UnregisterCurrent } from "../AppRegistry";
+import { EnsureVersionFiles, IsRegistered, LaunchMinecraft, RegisterVersion, SyncProxyDllForProfile, UnregisterCurrent } from "../AppRegistry";
 import { PathUtils } from "../PathUtils";
 import { Profile } from "../Profiles";
 import { InstalledVersionModel } from "../VersionManager";
@@ -136,11 +136,8 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         return WindowsLauncherPlatform.CachedLauncherPaths;
     }
 
-    async runProfile(_profile: Profile, version: InstalledVersionModel, onStatus?: (message: string) => void): Promise<void> {
+    async runProfile(profile: Profile, version: InstalledVersionModel, onStatus?: (message: string) => void): Promise<void> {
         const status = onStatus ?? (() => {});
-
-        status("Ensuring version files...");
-        await EnsureVersionFiles(version, status);
 
         if (!IsRegistered(version)) {
             status("Unregistering old version...");
@@ -151,6 +148,11 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             console.log("[WindowsPlatform] Registering version:", version.name);
             await RegisterVersion(version);
         }
+
+        status("Ensuring version files...");
+        await EnsureVersionFiles(version, status);
+
+        SyncProxyDllForProfile(profile, version, status);
 
         status("Launching Minecraft...");
         console.log("[WindowsPlatform] Launching Minecraft...");

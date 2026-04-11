@@ -126,6 +126,49 @@
     width: 80px;
 }
 
+.launcher-profile-card-play-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.launcher-profile-card-play-tooltip {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    transform: translateY(4px);
+    opacity: 0;
+    pointer-events: none;
+    background-color: #313233;
+    border: 2px solid #1E1E1F;
+    color: #F3C642;
+    font-size: 13px;
+    line-height: 1.3;
+    padding: 8px 10px;
+    min-width: 220px;
+    max-width: 280px;
+    white-space: normal;
+    z-index: 20;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
+}
+
+.launcher-profile-card-play-tooltip::after {
+    content: "";
+    position: absolute;
+    right: 22px;
+    bottom: 100%;
+    border-width: 0 5px 6px 5px;
+    border-style: solid;
+    border-color: transparent transparent #1E1E1F transparent;
+}
+
+.launcher-profile-card-play-wrap:hover .launcher-profile-card-play-tooltip,
+.launcher-profile-card-play-wrap:focus-within .launcher-profile-card-play-tooltip {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 .launcher-profile-card-menu {
     position: relative;
 }
@@ -193,6 +236,62 @@
     color: #FFFFFF;
     font-size: 15px;
     margin: 0;
+}
+
+.launcher-profile-card-name-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.launcher-profile-card-warning-inline {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    cursor: help;
+}
+
+.launcher-profile-card-warning-tooltip {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 8px);
+    transform: translateX(-50%) translateY(4px);
+    opacity: 0;
+    pointer-events: none;
+    background-color: #313233;
+    border: 2px solid #1E1E1F;
+    color: #F3C642;
+    font-size: 13px;
+    line-height: 1.3;
+    padding: 8px 10px;
+    min-width: 180px;
+    max-width: 280px;
+    white-space: normal;
+    z-index: 20;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
+}
+
+.launcher-profile-card-warning-tooltip::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    transform: translateX(-50%);
+    border-width: 0 5px 6px 5px;
+    border-style: solid;
+    border-color: transparent transparent #1E1E1F transparent;
+}
+
+.launcher-profile-card-warning-inline:hover .launcher-profile-card-warning-tooltip,
+.launcher-profile-card-warning-inline:focus-within .launcher-profile-card-warning-tooltip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
 }
 
 .launcher-profile-card-version {

@@ -22,6 +22,8 @@ import ProgressBarRenderer from "./components/ProgressBarRenderer";
 import { useDownloadStore } from "@renderer/states/DownloadStore";
 import { AskAnalyticsConsent } from "./components/AnalyticsConsentPanel";
 
+const fs = window.require("fs") as typeof import("fs");
+
 const ModDiscovery = lazy(() => import("@renderer/pages/ModDiscovery").then(m => ({ default: m.ModDiscovery })));
 const ModsPage = lazy(() => import("@renderer/pages/ModsPage").then(m => ({ default: m.ModsPage })));
 const ProfileEditor = lazy(() => import("@renderer/pages/ProfileEditor").then(m => ({ default: m.ProfileEditor })));
@@ -164,6 +166,7 @@ function AnimatedRoutes() {
 export default function App() {
     const location = useLocation();
     const navigate = useNavigate();
+
     useEffect(() => {
         setTimeout(() => useAppStore.getState().versionManager.cleanupStaleLocks(), 0);
 
@@ -176,6 +179,53 @@ export default function App() {
                 return;
             useAppStore.getState().setAnalyticsConsent(consent);
         });
+    }, []);
+
+    useEffect(() => {
+        const state = useAppStore.getState();
+        const modsPath = state.platform.getPaths().modsPath;
+
+        try {
+            if (!fs.existsSync(modsPath)) {
+                fs.mkdirSync(modsPath, { recursive: true });
+            }
+        } catch (e) {
+            console.error("Failed to initialize mods folder watcher:", e);
+            return;
+        }
+
+        let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+        const scheduleRefresh = () => {
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
+
+            debounceTimer = setTimeout(() => {
+                useAppStore.getState().refreshAllMods();
+                debounceTimer = null;
+            }, 200);
+        };
+
+        let watcher: import("fs").FSWatcher | null = null;
+        try {
+            watcher = fs.watch(modsPath, { persistent: false }, () => {
+                scheduleRefresh();
+            });
+        } catch (e) {
+            console.error("Failed to watch mods folder:", e);
+            return;
+        }
+
+        // Keep the store aligned with disk state on startup.
+        scheduleRefresh();
+
+        return () => {
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
+
+            watcher?.close();
+        };
     }, []);
 
     return (

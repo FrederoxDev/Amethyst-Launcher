@@ -3,7 +3,6 @@ import { PathUtils } from "../PathUtils";
 import { Profile } from "../Profiles";
 import { LauncherTools } from "../backend/tools/LauncherTools";
 import { InstalledVersionModel } from "../VersionManager";
-import { checkIfMinecraftIsRunning } from "../MinecraftWatcher";
 
 const fs = window.require("fs") as typeof import("fs");
 const os = window.require("os") as typeof import("os");
@@ -140,6 +139,5 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
         await LauncherTools.UMULauncher.runGame(versionPath, {
             "WINEPREFIX": prefixPath
         });
-        checkIfMinecraftIsRunning();
     }
 }

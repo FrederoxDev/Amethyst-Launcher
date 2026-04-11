@@ -81,22 +81,32 @@ void DestroyConsole()
 
 void HideConsole()
 {
-    HWND consoleWindow = GetConsoleWindow();
-    ShowWindow(consoleWindow, SW_HIDE);
+    // HWND consoleWindow = GetConsoleWindow();
+    // ShowWindow(consoleWindow, SW_HIDE);
 }
 
-fs::path GetComMojangPath()
+fs::path GetLegacyComMojangPath()
 {
     char appdata[MAX_PATH];
     GetEnvironmentVariableA("APPDATA", appdata, MAX_PATH);
     return fs::path(appdata) / "Minecraft Bedrock" / "games" / "com.mojang";
 }
 
+fs::path GetLauncherRootPath()
+{
+    char appdata[MAX_PATH];
+    GetEnvironmentVariableA("APPDATA", appdata, MAX_PATH);
+    return fs::path(appdata) / "Amethyst" / "Launcher";
+}
+
 void Proxy()
 {
     InitializeConsole();
 
-    fs::path launcherConfigPath = GetComMojangPath() / "amethyst" / "launcher_config.json";
+    fs::path launcherConfigPath = GetLauncherRootPath() / "launcher_config.json";
+    if (!fs::exists(launcherConfigPath)) {
+        launcherConfigPath = GetLegacyComMojangPath() / "amethyst" / "launcher_config.json";
+    }
 
     std::ifstream launcherFile = std::ifstream(launcherConfigPath);
     if (!launcherFile.is_open()) {
@@ -108,21 +118,76 @@ void Proxy()
     try {
         launcherFile >> launcherConfig;
     } catch (const std::exception& e) {
-        std::cerr << red << "[Amethyst-Loader] Failed to parse amethyst/launcher_config.json: " << e.what() << "\n" << reset;
+        std::cerr << red << "[Amethyst-Loader] Failed to parse launcher_config.json: " << e.what() << "\n" << reset;
         return;
     }
 
     std::string runtimeName;
 
-    if (launcherConfig.contains("runtime")) {
+    auto resolveRuntimeFromProfiles = [&]() -> std::string {
+        fs::path profilesPath = GetLauncherRootPath() / "Profiles" / "profiles.json";
+        if (!fs::exists(profilesPath)) {
+            profilesPath = GetLegacyComMojangPath() / "amethyst" / "profiles" / "profiles.json";
+        }
+
+        std::ifstream profilesFile = std::ifstream(profilesPath);
+        if (!profilesFile.is_open()) {
+            return "";
+        }
+
+        nlohmann::json profiles;
+        try {
+            profilesFile >> profiles;
+        }
+        catch (...) {
+            return "";
+        }
+
+        if (!profiles.is_array()) {
+            return "";
+        }
+
+        if (launcherConfig.contains("selected_profile_uuid") && launcherConfig["selected_profile_uuid"].is_string()) {
+            std::string selectedUuid = launcherConfig["selected_profile_uuid"];
+            for (const auto& profile : profiles) {
+                if (!profile.is_object()) continue;
+                if (profile.contains("uuid") && profile["uuid"].is_string() && profile["uuid"] == selectedUuid) {
+                    if (profile.contains("runtime") && profile["runtime"].is_string()) {
+                        return profile["runtime"];
+                    }
+                    return "";
+                }
+            }
+        }
+
+        if (launcherConfig.contains("selected_profile") && launcherConfig["selected_profile"].is_number_integer()) {
+            int selectedProfile = launcherConfig["selected_profile"];
+            if (selectedProfile >= 0 && selectedProfile < static_cast<int>(profiles.size())) {
+                const auto& profile = profiles[selectedProfile];
+                if (profile.is_object() && profile.contains("runtime") && profile["runtime"].is_string()) {
+                    return profile["runtime"];
+                }
+            }
+        }
+
+        return "";
+    };
+
+    runtimeName = resolveRuntimeFromProfiles();
+
+    // Legacy fallback for older launcher_config format.
+    if (runtimeName.empty() && launcherConfig.contains("runtime") && launcherConfig["runtime"].is_string()) {
         runtimeName = launcherConfig["runtime"];
-    } else {
-        std::cerr << red << "Key 'runtime' not found in the JSON file." << std::endl << reset;
+    }
+
+    if (runtimeName.empty()) {
+        std::cerr << red << "Could not resolve runtime from selected profile in launcher configuration." << std::endl << reset;
         return;
     }
 
     // Handle vanilla profiles
     if (runtimeName == "Vanilla") {
+        std::println("[  proxy] [AmethystProxy] Detected vanilla runtime, no runtime DLL will be injected.");
         HideConsole();
         return;
     }
@@ -136,11 +201,20 @@ void Proxy()
         std::cerr << red << std::format("{} is not a valid runtime name, no versioning found!", runtimeName) << std::endl << reset;
     }
 
-    fs::path runtimeDll = GetComMojangPath() / "amethyst" / "mods" / runtimeName / "win-client" / (dllName + ".dll");
+    fs::path runtimeDll = GetLauncherRootPath() / "Mods" / runtimeName / "win-client" / (dllName + ".dll");
 
     if (!fs::exists(runtimeDll)) {
         fs::path modernPath = runtimeDll;
-        runtimeDll = GetComMojangPath() / "amethyst" / "mods" / runtimeName / (dllName + ".dll");
+        runtimeDll = GetLauncherRootPath() / "Mods" / runtimeName / (dllName + ".dll");
+
+        if (!fs::exists(runtimeDll)) {
+            // Legacy path fallback for older installations
+            runtimeDll = GetLegacyComMojangPath() / "amethyst" / "mods" / runtimeName / "win-client" / (dllName + ".dll");
+        }
+
+        if (!fs::exists(runtimeDll)) {
+            runtimeDll = GetLegacyComMojangPath() / "amethyst" / "mods" / runtimeName / (dllName + ".dll");
+        }
 
         if (!fs::exists(runtimeDll)) {
             std::println("{}[  proxy] [AmethystProxy] Runtime DLL not found in '{}' or legacy path'{}'{}", red, modernPath.string(), runtimeDll.string(), reset);

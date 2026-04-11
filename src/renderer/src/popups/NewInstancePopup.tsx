@@ -23,7 +23,7 @@ export function NewInstancePopup({ submit: rawSubmit, versionLabel }: NewInstanc
     const canCreate = name.trim() !== "" && PathUtils.isValidFileName(name);
 
     return (
-        <PopupPanel onExit={() => submit(null)}>
+        <PopupPanel>
             <div className="version-picker new-instance-popup" onClick={e => e.stopPropagation()}>
                 <div className="version-picker-header">
                     <p className="minecraft-seven" style={{ fontSize: "16px" }}>New Instance</p>

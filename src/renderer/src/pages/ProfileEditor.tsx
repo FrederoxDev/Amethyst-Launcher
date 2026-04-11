@@ -23,6 +23,7 @@ function AddContentPopup({ submit: rawSubmit }: PopupUseArguments<string | "brow
     const animateClose = usePopupClose();
     const submit = (val: string | "browse" | null) => animateClose(() => rawSubmit(val));
     const mods = useAppStore(state => state.allValidMods);
+    const setError = useAppStore(state => state.setError);
     const activeMods = useAppStore(state => state.allProfiles)[useAppStore(state => state.selectedProfile)]?.mods ?? [];
     const modsPath = useMemo(() => useAppStore.getState().platform.getPaths().modsPath, []);
     const availableMods = useMemo(() => mods.filter(m => !activeMods.includes(m)), [mods, activeMods]);
@@ -88,7 +89,25 @@ function AddContentPopup({ submit: rawSubmit }: PopupUseArguments<string | "brow
                 <div className="version-picker-divider" />
                 <div className="version-picker-footer" style={{ justifyContent: "flex-start", gap: 8 }}>
                     <MinecraftButton text="Browse Mods" style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "140px" }} onClick={() => submit("browse")} />
-                    <MinecraftButton text="Open Mods Folder" colorPallete={GRAY_MINECRAFT_BUTTON} style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "160px" }} onClick={() => shell.openPath(modsPath)} />
+                    <MinecraftButton text="Open Mods Folder" colorPallete={GRAY_MINECRAFT_BUTTON} style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "160px" }} onClick={async () => {
+                        try {
+                            if (!fs.existsSync(modsPath)) {
+                                fs.mkdirSync(modsPath, { recursive: true });
+                            }
+
+                            const openError = await shell.openPath(modsPath);
+                            if (openError) {
+                                const message = `Failed to open mods folder: ${openError}`;
+                                console.error(message);
+                                setError(message);
+                            }
+                        }
+                        catch (e) {
+                            const message = `Failed to open mods folder: ${(e as Error).message}`;
+                            console.error(message);
+                            setError(message);
+                        }
+                    }} />
                 </div>
             </div>
         </PopupPanel>
@@ -115,6 +134,7 @@ export function ProfileEditor() {
     const saveData = useAppStore(state => state.saveData);
     const allInvalidMods = useAppStore(state => state.allInvalidMods);
     const downloadingMods = useAppStore(state => state.downloadingMods);
+    const allMods = useAppStore(state => state.allMods);
     const versionManager = useAppStore(state => state.versionManager);
     const navigate = useNavigate();
 
@@ -239,7 +259,14 @@ export function ProfileEditor() {
 
     const onPlay = async () => {
         const profile = allProfiles[selectedProfile];
-        if (profile) await doLaunchProfile(profile);
+        if (!profile) return;
+
+        try {
+            await doLaunchProfile(profile);
+        }
+        catch (e) {
+            useAppStore.getState().setError((e as Error).message);
+        }
     };
 
     // Close menu on outside click
@@ -271,6 +298,8 @@ export function ProfileEditor() {
     }, [loadProfile]);
 
     const openAddContent = async () => {
+        useAppStore.getState().refreshAllMods();
+
         const result = await Popup.useAsync<string | "browse" | null>(props => {
             return <AddContentPopup {...props} />;
         });
@@ -306,18 +335,48 @@ export function ProfileEditor() {
     }, [profileVersionUuid, profileMinecraftVersion, installedVersions]);
 
     const allModsList = useMemo(() => {
-        return profileActiveMods.map(name => ({
+        const runtimeSet = new Set(
+            allMods
+                .filter(mod => mod.ok && mod.config.meta.type === "runtime")
+                .map(mod => mod.id)
+        );
+
+        const modsWithMeta = profileActiveMods.map(name => ({
             name,
             exists: allValidMods.includes(name),
             isDownloading: downloadingMods.includes(name),
         }));
-    }, [profileActiveMods, allValidMods, downloadingMods]);
+
+        const runtimeMods = modsWithMeta.filter(mod => runtimeSet.has(mod.name));
+        const nonRuntimeMods = modsWithMeta.filter(mod => !runtimeSet.has(mod.name));
+
+        return [...runtimeMods, ...nonRuntimeMods];
+    }, [profileActiveMods, allValidMods, downloadingMods, allMods]);
 
     const filteredModsList = useMemo(() => {
         if (!modSearch) return allModsList;
         const q = modSearch.toLowerCase();
         return allModsList.filter(mod => mod.name.toLowerCase().includes(q));
     }, [allModsList, modSearch]);
+
+    const runtimeWarning = useMemo(() => {
+        const currentProfile = allProfiles[selectedProfile];
+        const isModdedProfile = (currentProfile?.is_modded ?? false) || profileActiveMods.length > 0 || profileRuntime.toLowerCase() !== "vanilla";
+        if (!isModdedProfile) {
+            return null;
+        }
+
+        const runtimeMods = allMods.filter(mod => mod.ok && profileActiveMods.includes(mod.id) && mod.config.meta.type === "runtime");
+        if (runtimeMods.length === 0) {
+            return "Modded Profiles must have a Runtime Mod";
+        }
+
+        if (runtimeMods.length > 1) {
+            return `Modded Profiles can only have one Runtime Mod. Found: ${runtimeMods.map(mod => `'${mod.id}'`).join(", ")}`;
+        }
+
+        return null;
+    }, [allProfiles, selectedProfile, profileActiveMods, profileRuntime, allMods]);
 
     return (
         <div className="profile-editor-page">
@@ -359,8 +418,13 @@ export function ProfileEditor() {
                     </div>
                     <div className="profile-editor-header-right">
                         <div className="profile-editor-name-actions">
-                            <div className="launcher-profile-card-play">
-                                <MinecraftButton text="Play" onClick={onPlay} style={{ "--mc-button-container-h": "36px" }} />
+                            <div className="profile-editor-play-wrap">
+                                <div className="launcher-profile-card-play">
+                                    <MinecraftButton text="Play" onClick={onPlay} disabled={!!runtimeWarning} style={{ "--mc-button-container-h": "36px" }} />
+                                </div>
+                                {runtimeWarning && (
+                                    <div className="profile-editor-play-warning-tooltip minecraft-seven">{runtimeWarning}</div>
+                                )}
                             </div>
                             <div className="launcher-profile-card-menu" onClick={e => e.stopPropagation()}>
                                 <div className="launcher-profile-card-dots" ref={dotsRef} onClick={() => setShowMenu(!showMenu)}>
