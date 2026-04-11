@@ -2,7 +2,6 @@ import { PathUtils } from "@renderer/scripts/PathUtils";
 import { GithubRelease } from "../github/GithubRelease";
 import { GithubAsset } from "../github/GithubAsset";
 import { CheckAction, DefaultCheckOptions, ToolArtifact, ToolCheckResult, ToolInstalledContext } from "./ToolArtifact";
-import { checkIfMinecraftIsRunning } from "@renderer/scripts/MinecraftWatcher";
 import { LauncherTools } from "./LauncherTools";
 
 const path = window.require("path") as typeof import("path");
@@ -161,7 +160,6 @@ export class UMULauncher extends ToolArtifact {
 
         exec_proc.on("close", (code) => {
             console.log(`[${this.name}] Game process exited with code ${code}.`);
-            checkIfMinecraftIsRunning();
         });
 
         exec_proc.unref();

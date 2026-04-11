@@ -6,6 +6,10 @@
   "author": "FrederoxDev, theaddonn, OmniacDev, raonygamer",
   "homepage": "https://electron-vite.org",
   "scripts": {
+    "sync-proxy-dll": "node scripts/sync-proxy-dll.mjs",
+    "predev": "npm run sync-proxy-dll",
+    "prestart": "npm run sync-proxy-dll",
+    "prebuild": "npm run sync-proxy-dll",
     "format": "prettier --write .",
     "lint": "eslint --cache .",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
@@ -73,6 +77,12 @@
     },
     "files": [
       "out/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "proxy/build/windows/x64/release/dxgi.dll",
+        "to": "proxy/dxgi.dll"
+      }
     ],
     "win": {
       "target": "nsis",

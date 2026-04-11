@@ -20,15 +20,30 @@ export async function launchProfileByUUID(profileUuid: string): Promise<void> {
  */
 export async function launchProfile(profile: Profile): Promise<void> {
     const state = useAppStore.getState();
-    const { allValidMods, versionManager, platform } = state;
+    const { allMods, allValidMods, versionManager, platform } = state;
 
-    if (!ProgressBar.canDoAction("launch") || state.minecraftIsRunning) return;
+    if (!ProgressBar.canDoAction("launch")) return;
 
     const profileInvalidMods = profile.mods.filter(mod => !allValidMods.includes(mod));
     if (profileInvalidMods.length > 0) {
         throw new Error(
             `Profile has ${profileInvalidMods.length} missing mod${profileInvalidMods.length > 1 ? "s" : ""}, edit profile to launch! Missing mods: ${profileInvalidMods.map(mod => `'${mod}'`).join(", ")}`
         );
+    }
+
+    const profileValidMods = allMods.filter(mod => mod.ok && profile.mods.includes(mod.id));
+    const isModdedProfile = profile.is_modded || profile.mods.length > 0 || profile.runtime.toLowerCase() !== "vanilla";
+
+    if (isModdedProfile) {
+        const runtimeMods = profileValidMods.filter(mod => mod.ok && mod.config?.meta?.type === "runtime");
+
+        if (runtimeMods.length === 0) {
+            throw new Error("Modded Profiles must have a Runtime Mod");
+        }
+
+        if (runtimeMods.length > 1) {
+            throw new Error(`Modded Profiles can only have one Runtime Mod. Found: ${runtimeMods.map(mod => `'${mod.id}'`).join(", ")}`);
+        }
     }
 
     if (!profile.minecraft_version && !profile.version_uuid) {

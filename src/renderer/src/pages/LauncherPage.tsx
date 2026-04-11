@@ -87,26 +87,46 @@ const ProfileCardMenu = ({ onEdit, onDelete, onOpenFolder }: {
     );
 };
 
-const ProfileCard = ({ profile, versionName, onEdit, onPlay, onDelete, onOpenFolder, canPlay }: {
+const ProfileCard = ({ profile, versionName, runtimeWarning, onEdit, onPlay, onDelete, onOpenFolder, canPlay }: {
     profile: Profile;
     versionName: string;
+    runtimeWarning: string | null;
     onEdit: () => void;
     onPlay: () => void;
     onDelete: () => void;
     onOpenFolder: () => void;
     canPlay: boolean;
 }) => {
+    const isModdedProfile = profile.is_modded || profile.mods.length > 0 || profile.runtime.toLowerCase() !== "vanilla";
+    const profileModeLabel = isModdedProfile ? "Modded" : "Vanilla";
+
     return (
         <div className="launcher-profile-card" onClick={onEdit}>
             <div className="launcher-profile-card-info">
-                <p className="minecraft-seven launcher-profile-card-name">{profile.name}</p>
+                <div className="launcher-profile-card-name-row">
+                    <p className="minecraft-seven launcher-profile-card-name">{profile.name}</p>
+                    {runtimeWarning && (
+                        <div className="launcher-profile-card-warning-inline" role="img" aria-label={runtimeWarning}>
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                <path d="M7.137 2.5a1 1 0 0 1 1.726 0l5.196 9A1 1 0 0 1 13.196 13H2.804a1 1 0 0 1-.863-1.5l5.196-9Z" fill="#F3C642" stroke="#9A7A1A" strokeWidth="1" />
+                                <path d="M8 6v3.2M8 11.5h.01" stroke="#1E1E1F" strokeWidth="1.4" strokeLinecap="round" />
+                            </svg>
+                            <div className="launcher-profile-card-warning-tooltip minecraft-seven">{runtimeWarning}</div>
+                        </div>
+                    )}
+                </div>
                 <p className="minecraft-seven launcher-profile-card-version">
-                    {versionName} &middot; {profile.runtime}
+                    {versionName} &middot; {profileModeLabel}
                 </p>
             </div>
             <div className="launcher-profile-card-actions" onClick={(e) => { e.stopPropagation(); }}>
-                <div className="launcher-profile-card-play">
-                    <MinecraftButton text="Play" onClick={onPlay} disabled={!canPlay} style={{ "--mc-button-container-h": "36px" }} />
+                <div className="launcher-profile-card-play-wrap">
+                    <div className="launcher-profile-card-play">
+                        <MinecraftButton text="Play" onClick={onPlay} disabled={!canPlay} style={{ "--mc-button-container-h": "36px" }} />
+                    </div>
+                    {runtimeWarning && (
+                        <div className="launcher-profile-card-play-tooltip minecraft-seven">{runtimeWarning}</div>
+                    )}
                 </div>
                 <ProfileCardMenu onEdit={onEdit} onDelete={onDelete} onOpenFolder={onOpenFolder} />
             </div>
@@ -123,7 +143,7 @@ export function LauncherPage() {
         saveData,
         error,
         setError,
-        minecraftIsRunning,
+        allMods,
         versionManager
     ] = useAppStore(useShallow(state => [
         state.allProfiles,
@@ -133,7 +153,7 @@ export function LauncherPage() {
         state.saveData,
         state.error,
         state.setError,
-        state.minecraftIsRunning,
+        state.allMods,
         state.versionManager
     ]));
 
@@ -267,6 +287,25 @@ export function LauncherPage() {
         }
     };
 
+    const getRuntimeWarning = (profile: Profile): string | null => {
+        const isModdedProfile = profile.is_modded || profile.mods.length > 0 || profile.runtime.toLowerCase() !== "vanilla";
+        if (!isModdedProfile) {
+            return null;
+        }
+
+        const runtimeMods = allMods.filter(mod => mod.ok && profile.mods.includes(mod.id) && mod.config.meta.type === "runtime");
+
+        if (runtimeMods.length === 0) {
+            return "Modded Profiles must have a Runtime Mod";
+        }
+
+        if (runtimeMods.length > 1) {
+            return "Modded Profiles can only have one Runtime Mod";
+        }
+
+        return null;
+    };
+
     return (
         <div className="launcher-page">
             {error !== "" && (
@@ -291,8 +330,10 @@ export function LauncherPage() {
 
             {/* Profile Grid */}
             <div className="launcher-profile-grid" ref={gridRef} onDragOver={(e) => { e.preventDefault(); setDragPos({ x: e.clientX, y: e.clientY }); }} onDrop={(e) => e.preventDefault()}>
-                {allProfiles.map((profile, index) => (
-                    <div
+                {allProfiles.map((profile, index) => {
+                    const runtimeWarning = getRuntimeWarning(profile);
+
+                    return <div
                         key={profile.uuid}
                         data-uuid={profile.uuid}
                         className={`launcher-profile-card-wrapper${dragUuid === profile.uuid ? " dragging" : ""}`}
@@ -327,7 +368,8 @@ export function LauncherPage() {
                         <ProfileCard
                             profile={profile}
                             versionName={getVersionName(profile)}
-                            canPlay={ProgressBar.canDoAction("launch") && !minecraftIsRunning}
+                            runtimeWarning={runtimeWarning}
+                            canPlay={ProgressBar.canDoAction("launch") && !runtimeWarning}
                             onEdit={() => {
                                 setSelectedProfile(index);
                                 navigate("/profile-editor");
@@ -336,8 +378,8 @@ export function LauncherPage() {
                             onDelete={() => deleteProfile(index)}
                             onOpenFolder={() => openVersionFolder(profile)}
                         />
-                    </div>
-                ))}
+                    </div>;
+                })}
                 <div className="launcher-profile-card launcher-create-card" data-uuid="__create__" onClick={async () => {
                     snapshotPositions();
                     const result = await createProfileFlow();
@@ -365,6 +407,7 @@ export function LauncherPage() {
                             <ProfileCard
                                 profile={dragProfile}
                                 versionName={getVersionName(dragProfile)}
+                                runtimeWarning={getRuntimeWarning(dragProfile)}
                                 canPlay={false}
                                 onEdit={() => {}}
                                 onPlay={() => {}}

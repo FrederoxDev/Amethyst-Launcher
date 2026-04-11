@@ -1,4 +1,5 @@
 import { InstalledVersionModel } from "./VersionManager";
+import { Profile } from "./Profiles";
 
 const child = window.require("child_process") as typeof import("child_process");
 const fs = window.require("fs") as typeof import("fs");
@@ -272,6 +273,57 @@ export async function EnsureVersionFiles(version: InstalledVersionModel, onStatu
     await installGameInputRedist(version.path);
 }
 
+function isModdedProfile(profile: Profile): boolean {
+    return profile.is_modded || profile.mods.length > 0 || profile.runtime.toLowerCase() !== "vanilla";
+}
+
+function findProxyDllPath(): string | null {
+    const cwd = process.cwd();
+    const resourcesPath = process.resourcesPath;
+
+    const candidates = [
+        path.join(cwd, "proxy", "build", "windows", "x64", "release", "dxgi.dll"),
+        path.join(cwd, "resources", "proxy", "dxgi.dll"),
+        path.join(resourcesPath, "proxy", "dxgi.dll"),
+        path.join(resourcesPath, "dxgi.dll"),
+    ];
+
+    for (const candidate of candidates) {
+        if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+            return candidate;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Ensures `dxgi.dll` is present for modded profiles and absent for vanilla profiles.
+ */
+export function SyncProxyDllForProfile(profile: Profile, version: InstalledVersionModel, onStatus?: (message: string) => void): void {
+    const status = onStatus ?? (() => {});
+    const targetPath = path.join(version.path, "dxgi.dll");
+    const shouldHaveProxy = isModdedProfile(profile);
+
+    if (!shouldHaveProxy) {
+        if (fs.existsSync(targetPath)) {
+            status("Removing proxy DLL for vanilla profile...");
+            fs.rmSync(targetPath, { force: true });
+            console.log("[AppRegistry] Removed dxgi.dll for vanilla profile");
+        }
+        return;
+    }
+
+    const sourcePath = findProxyDllPath();
+    if (!sourcePath) {
+        throw new Error("Failed to locate proxy dxgi.dll for modded profile launch.");
+    }
+
+    status("Syncing proxy DLL for modded profile...");
+    fs.copyFileSync(sourcePath, targetPath);
+    console.log("[AppRegistry] Synced dxgi.dll:", sourcePath, "->", targetPath);
+}
+
 export async function RegisterVersion(version: InstalledVersionModel): Promise<void> {
     // Always unregister first — the store version and loose registrations conflict
     console.log("[AppRegistry] Unregistering any existing Minecraft package...");
@@ -294,6 +346,28 @@ export async function RegisterVersion(version: InstalledVersionModel): Promise<v
 
 export function LaunchMinecraft(version: InstalledVersionModel): void {
     const exe = path.join(version.path, "Minecraft.Windows.exe");
-    console.log("[AppRegistry] Launching", exe);
+    const packageId = GetPackageID();
+    const protocol = version.type === "preview" ? "minecraft-preview:/" : "minecraft:/";
+
+    // Prefer protocol activation first. This matches observed behavior from the shell/UI path.
+    // Using `start` avoids malformed AppsFolder shell resolution opening Documents.
+    try {
+        console.log("[AppRegistry] Launching via protocol:", protocol);
+        child.spawn("cmd.exe", ["/c", "start", "", protocol], { detached: true, stdio: "ignore" }).unref();
+        return;
+    } catch (e) {
+        console.warn("[AppRegistry] Protocol launch failed, falling back:", e);
+    }
+
+    // Prefer package activation so launch context matches Start menu / Windows app UI.
+    // This keeps behavior consistent with modern GDK activation semantics.
+    if (packageId) {
+        console.log("[AppRegistry] Launching via AppsFolder activation:", packageId);
+        child.spawn("explorer.exe", [`shell:AppsFolder\\${packageId}`], { detached: true, stdio: "ignore" }).unref();
+        return;
+    }
+
+    // Fallback for edge cases where package metadata isn't available.
+    console.log("[AppRegistry] Package ID unavailable, launching executable directly:", exe);
     child.spawn(exe, [], { detached: true, stdio: "ignore" }).unref();
 }

@@ -12,6 +12,7 @@ export function DropWindow() {
     const [hovered, setHovered] = useState(false);
 
     const setError = useAppStore(state => state.setError);
+    const refreshAllMods = useAppStore(state => state.refreshAllMods);
     const platform = useAppStore(state => state.platform);
     const paths = platform.getPaths();
 
@@ -81,6 +82,7 @@ export function DropWindow() {
                     }
 
                     console.log("Successfully extracted Mod ZIP!");
+                    refreshAllMods();
                 }).then();
             } catch (error) {
                 setError((error as Error).message);
@@ -91,6 +93,7 @@ export function DropWindow() {
         function ImportFolder(folder_path: string) {
             try {
                 CopyRecursive(folder_path, paths.modsPath);
+                refreshAllMods();
             } catch (error) {
                 setError((error as Error).message);
             }
@@ -108,7 +111,7 @@ export function DropWindow() {
             window.removeEventListener("dragleave", dragEnd);
             window.removeEventListener("drop", drop);
         };
-    }, [setError]);
+    }, [setError, refreshAllMods]);
 
     return (
         <div

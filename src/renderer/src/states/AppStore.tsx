@@ -10,7 +10,6 @@ import { LinuxLauncherPlatform } from "@renderer/scripts/platform/LinuxLauncherP
 import { VersionManager } from "@renderer/scripts/VersionManager";
 import { FileLocker } from "@renderer/scripts/FileLocker";
 import { StateSetter, StateUtils } from "./StateUtils";
-import { checkIfMinecraftIsRunning, startMinecraftWatcher } from "@renderer/scripts/MinecraftWatcher";
 import { resumePendingDownloads } from "@renderer/scripts/DownloadRecovery";
 
 const { ipcRenderer } = window.require("electron");
@@ -54,9 +53,6 @@ interface AppStore {
     setAnalyticsConsent: StateSetter<AnalyticsConsent>;
 
     analyticsInstance: Analytics | null;
-
-    minecraftIsRunning: boolean;
-    setMinecraftIsRunning: StateSetter<boolean>;
 
     downloadingMods: string[];
     setDownloadingMods: StateSetter<string[]>;
@@ -114,7 +110,6 @@ export const useAppStore = create<AppStore>((set, get) => {
         error: "",
         analyticsConsent: initialConsent,
         analyticsInstance: null,
-        minecraftIsRunning: false,
         downloadingMods: [],
         installingForProfile: null,
 
@@ -153,8 +148,6 @@ export const useAppStore = create<AppStore>((set, get) => {
                 };
             }),
 
-        setMinecraftIsRunning: value =>
-            set(state => ({ minecraftIsRunning: StateUtils.resolveSetStateAction(value, state.minecraftIsRunning) })),
         setDownloadingMods: value =>
             set(state => ({ downloadingMods: StateUtils.resolveSetStateAction(value, state.downloadingMods) })),
         setInstallingForProfile: value =>
@@ -178,13 +171,40 @@ export const useAppStore = create<AppStore>((set, get) => {
         saveData: () => {
             const state = get();
 
-            SetProfiles(state.allProfiles);
+            const runtimeIds = new Set(
+                state.allMods
+                    .filter(mod => mod.ok && mod.config.meta.type === "runtime")
+                    .map(mod => mod.id)
+            );
 
+            const normalizedProfiles = state.allProfiles.map(profile => {
+                const runtimeMods = profile.mods.filter(modId => runtimeIds.has(modId));
+                const normalizedRuntime = runtimeMods.length > 0 ? runtimeMods[0] : "Vanilla";
+                const normalizedIsModded = profile.is_modded || profile.mods.length > 0 || normalizedRuntime !== "Vanilla";
+
+                return {
+                    ...profile,
+                    runtime: normalizedRuntime,
+                    is_modded: normalizedIsModded,
+                };
+            });
+
+            const changed = normalizedProfiles.some((profile, index) => {
+                const original = state.allProfiles[index];
+                return profile.runtime !== original.runtime || profile.is_modded !== original.is_modded;
+            });
+
+            if (changed) {
+                set({ allProfiles: normalizedProfiles });
+            }
+
+            SetProfiles(normalizedProfiles);
+
+            const selectedProfileObject = normalizedProfiles[state.selectedProfile] ?? null;
             const launcherConfig: LauncherConfig = {
                 keep_open: state.keepLauncherOpen,
-                mods: state.allProfiles[state.selectedProfile]?.mods ?? [],
-                runtime: state.allProfiles[state.selectedProfile]?.runtime ?? "",
                 selected_profile: state.selectedProfile,
+                selected_profile_uuid: selectedProfileObject?.uuid ?? null,
                 ui_theme: state.UITheme,
                 developer_mode: state.developerMode,
             };
@@ -209,10 +229,24 @@ async function hydrateStore(): Promise<void> {
     const profiles = GetProfiles();
     const config = GetLauncherConfig();
 
+    let selectedProfile = config.selected_profile ?? 0;
+    if (config.selected_profile_uuid) {
+        const selectedByUuid = profiles.findIndex(p => p.uuid === config.selected_profile_uuid);
+        if (selectedByUuid !== -1) {
+            selectedProfile = selectedByUuid;
+        }
+    }
+
+    if (profiles.length > 0) {
+        selectedProfile = Math.min(Math.max(selectedProfile, 0), profiles.length - 1);
+    } else {
+        selectedProfile = 0;
+    }
+
     useAppStore.setState({
         allProfiles: profiles,
         keepLauncherOpen: config.keep_open ?? true,
-        selectedProfile: config.selected_profile ?? 0,
+        selectedProfile,
         UITheme: config.ui_theme ?? "Light"
     });
 
@@ -229,8 +263,6 @@ export function InitializeAppState(): void {
         resumePendingDownloads();
 
         // Defer non-critical work until after the UI is interactive
-        checkIfMinecraftIsRunning();
-        startMinecraftWatcher();
     });
 
     ipcRenderer.send("APP_STATE_INIT_REQUEST");
