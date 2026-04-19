@@ -97,7 +97,8 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
             profilesFilePath: `${home}/.amethyst/launcher/profiles/profiles.json`,
             modsPath: `${home}/.amethyst/launcher/Mods`,
             launcherConfigPath: `${home}/.amethyst/launcher/launcher_config.json`,
-            toolsPath: `${home}/.amethyst/launcher/tools`
+            toolsPath: `${home}/.amethyst/launcher/tools`,
+            profileDataPath: `${home}/.amethyst/launcher/profile_data`
         };
 
         PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.amethystPath);
