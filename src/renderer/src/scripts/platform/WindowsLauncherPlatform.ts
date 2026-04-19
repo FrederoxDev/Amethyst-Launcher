@@ -3,6 +3,7 @@ import { EnsureVersionFiles, IsRegistered, LaunchMinecraft, RegisterVersion, Syn
 import { PathUtils } from "../PathUtils";
 import { Profile } from "../Profiles";
 import { InstalledVersionModel } from "../VersionManager";
+import { ensureProfileJunction, inspectRoamingState, resolveProfileDataPath, resolveRoamingPath } from "../ProfileDataLinker";
 
 const os = window.require("os") as typeof import("os");
 const child = window.require("child_process") as typeof import("child_process");
@@ -121,7 +122,8 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             profilesFilePath: `${appDataPath}\\Amethyst\\Launcher\\Profiles\\profiles.json`,
             modsPath: `${appDataPath}\\Amethyst\\Launcher\\Mods`,
             launcherConfigPath: `${appDataPath}\\Amethyst\\Launcher\\launcher_config.json`,
-            toolsPath: `${appDataPath}\\Amethyst\\Launcher\\Tools`
+            toolsPath: `${appDataPath}\\Amethyst\\Launcher\\Tools`,
+            profileDataPath: `${appDataPath}\\Amethyst\\Launcher\\ProfileData`
         };
 
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.amethystPath);
@@ -133,11 +135,26 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.modsPath);
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.launcherConfigPath);
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.toolsPath);
+        PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.profileDataPath);
         return WindowsLauncherPlatform.CachedLauncherPaths;
     }
 
     async runProfile(profile: Profile, version: InstalledVersionModel, onStatus?: (message: string) => void): Promise<void> {
         const status = onStatus ?? (() => {});
+
+        status("Checking if Minecraft is already running...");
+        const running = await this.isProcessRunning("Minecraft.Windows.exe");
+        if (running) {
+            const roamingPath = resolveRoamingPath(version.type);
+            const state = inspectRoamingState(roamingPath);
+            const wantedTarget = path.resolve(resolveProfileDataPath(profile)).toLowerCase();
+            const currentTarget = state.kind === "junction" ? state.target.toLowerCase() : null;
+
+            if (currentTarget && currentTarget === wantedTarget) {
+                throw new Error("Minecraft is already running.");
+            }
+            throw new Error("Close Minecraft before switching profiles.");
+        }
 
         if (!IsRegistered(version)) {
             status("Unregistering old version...");
@@ -151,6 +168,8 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
 
         status("Ensuring version files...");
         await EnsureVersionFiles(version, status);
+
+        await ensureProfileJunction(profile, version.type, status);
 
         SyncProxyDllForProfile(profile, version, status);
 

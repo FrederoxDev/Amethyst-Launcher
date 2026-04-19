@@ -10,13 +10,13 @@ import { Profile } from "@renderer/scripts/Profiles";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { createProfileFlow } from "@renderer/scripts/ProfileCreation";
+import { confirmProfileDeletion, finalizeProfileDeletion, openDataFolder, openInstallFolder } from "@renderer/scripts/ProfileActions";
 
-const { shell } = window.require("electron") as typeof import("electron");
-
-const ProfileCardMenu = ({ onEdit, onDelete, onOpenFolder }: {
+const ProfileCardMenu = ({ onEdit, onDelete, onOpenInstallFolder, onOpenDataFolder }: {
     onEdit: () => void;
     onDelete: () => void;
-    onOpenFolder: () => void;
+    onOpenInstallFolder: () => void;
+    onOpenDataFolder: () => void;
 }) => {
     const [open, setOpen] = useState(false);
     const dotsRef = useRef<HTMLDivElement>(null);
@@ -68,11 +68,17 @@ const ProfileCardMenu = ({ onEdit, onDelete, onOpenFolder }: {
                         </svg>
                         <p className="minecraft-seven">Edit Profile</p>
                     </div>
-                    <div className="launcher-profile-card-dropdown-item" onClick={() => { onOpenFolder(); setOpen(false); }}>
+                    <div className="launcher-profile-card-dropdown-item" onClick={() => { onOpenDataFolder(); setOpen(false); }}>
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                             <path d="M1 3C1 2.44772 1.44772 2 2 2H6.17157C6.43679 2 6.69114 2.10536 6.87868 2.29289L7.70711 3.12132C7.89464 3.30886 8.149 3.41421 8.41421 3.41421H14C14.5523 3.41421 15 3.86193 15 4.41421V13C15 13.5523 14.5523 14 14 14H2C1.44772 14 1 13.5523 1 13V3Z" stroke="#FFFFFF" strokeWidth="1.5" />
                         </svg>
-                        <p className="minecraft-seven">Open Folder</p>
+                        <p className="minecraft-seven">Open Data Folder</p>
+                    </div>
+                    <div className="launcher-profile-card-dropdown-item" onClick={() => { onOpenInstallFolder(); setOpen(false); }}>
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                            <path d="M1 3C1 2.44772 1.44772 2 2 2H6.17157C6.43679 2 6.69114 2.10536 6.87868 2.29289L7.70711 3.12132C7.89464 3.30886 8.149 3.41421 8.41421 3.41421H14C14.5523 3.41421 15 3.86193 15 4.41421V13C15 13.5523 14.5523 14 14 14H2C1.44772 14 1 13.5523 1 13V3Z" stroke="#FFFFFF" strokeWidth="1.5" />
+                        </svg>
+                        <p className="minecraft-seven">Open Install Folder</p>
                     </div>
                     <div className="launcher-profile-card-dropdown-item launcher-profile-card-dropdown-item--danger" onClick={() => { onDelete(); setOpen(false); }}>
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -87,14 +93,15 @@ const ProfileCardMenu = ({ onEdit, onDelete, onOpenFolder }: {
     );
 };
 
-const ProfileCard = ({ profile, versionName, runtimeWarning, onEdit, onPlay, onDelete, onOpenFolder, canPlay }: {
+const ProfileCard = ({ profile, versionName, runtimeWarning, onEdit, onPlay, onDelete, onOpenInstallFolder, onOpenDataFolder, canPlay }: {
     profile: Profile;
     versionName: string;
     runtimeWarning: string | null;
     onEdit: () => void;
     onPlay: () => void;
     onDelete: () => void;
-    onOpenFolder: () => void;
+    onOpenInstallFolder: () => void;
+    onOpenDataFolder: () => void;
     canPlay: boolean;
 }) => {
     const isModdedProfile = profile.is_modded || profile.mods.length > 0 || profile.runtime.toLowerCase() !== "vanilla";
@@ -128,7 +135,7 @@ const ProfileCard = ({ profile, versionName, runtimeWarning, onEdit, onPlay, onD
                         <div className="launcher-profile-card-play-tooltip minecraft-seven">{runtimeWarning}</div>
                     )}
                 </div>
-                <ProfileCardMenu onEdit={onEdit} onDelete={onDelete} onOpenFolder={onOpenFolder} />
+                <ProfileCardMenu onEdit={onEdit} onDelete={onDelete} onOpenInstallFolder={onOpenInstallFolder} onOpenDataFolder={onOpenDataFolder} />
             </div>
         </div>
     );
@@ -232,34 +239,12 @@ export function LauncherPage() {
         }
     }, [allProfiles]);
 
-    const deleteProfile = (index: number) => {
+    const deleteProfile = async (index: number) => {
+        const profile = allProfiles[index];
+        if (!profile) return;
+        if (!await confirmProfileDeletion(profile)) return;
         snapshotPositions();
-        const newProfiles = [...allProfiles];
-        newProfiles.splice(index, 1);
-        setAllProfiles(newProfiles);
-        saveData();
-    };
-
-    const openVersionFolder = (profile: Profile) => {
-        if (profile.version_uuid) {
-            const installed = versionManager.getInstalledVersionByUUID(profile.version_uuid);
-            if (installed) {
-                shell.openPath(installed.path);
-                return;
-            }
-        }
-
-        // Fallback: look up by minecraft_version string (e.g. when a remote version was selected and later installed)
-        if (profile.minecraft_version) {
-            const allInstalled = versionManager.getInstalledVersions();
-            const match = allInstalled.find(v => v.version.toString() === profile.minecraft_version);
-            if (match) {
-                shell.openPath(match.path);
-                return;
-            }
-        }
-
-        setError("No installed version folder found for this profile.");
+        await finalizeProfileDeletion(profile);
     };
 
     const handleReorder = (targetUuid: string) => {
@@ -376,7 +361,8 @@ export function LauncherPage() {
                             }}
                             onPlay={() => launchGame(profile)}
                             onDelete={() => deleteProfile(index)}
-                            onOpenFolder={() => openVersionFolder(profile)}
+                            onOpenInstallFolder={() => openInstallFolder(profile)}
+                            onOpenDataFolder={() => openDataFolder(profile)}
                         />
                     </div>;
                 })}
@@ -412,7 +398,8 @@ export function LauncherPage() {
                                 onEdit={() => {}}
                                 onPlay={() => {}}
                                 onDelete={() => {}}
-                                onOpenFolder={() => {}}
+                                onOpenInstallFolder={() => {}}
+                                onOpenDataFolder={() => {}}
                             />
                         </div>
                     );

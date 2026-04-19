@@ -226,16 +226,14 @@ void Proxy()
         }
     }
 
-    // std::println("[  proxy] [AmethystProxy] Loading runtime DLL from path: {}", runtimeDll.string());
     std::println("[  proxy] [AmethystProxy] Using 'AmethystProxy@{}'", PROXY_VERSION);
     std::println("[  proxy] [AmethystProxy] McThreadID: {}, McThreadHandle: {}", dMcThreadID, hMcThreadHandle);
-
-    // Load ntdll.dll and use it to suspend minecraft to allow the runtime to take control.
-    LoadNtdll();
-    SuspendMinecraftThread();
-
     std::println("[  proxy] [AmethystProxy] Injecting runtime '{}'", runtimeName);
 
+    // Load the runtime before suspending Minecraft. Suspending first can deadlock
+    // if the MC main thread is holding the loader lock (common during startup) —
+    // our LoadLibraryW would then block forever waiting for a lock held by a
+    // suspended thread.
     std::wstring widePath = runtimeDll.wstring();
     HMODULE runtimeHandle = InjectIntoMinecraft(widePath);
 
@@ -249,6 +247,11 @@ void Proxy()
         std::println("{}[  proxy] [AmethystProxy] The proxy expects function 'void Init(DWORD dMcThreadID, HANDLE hMcThreadHandle)' to be exported and was unable to find it.{}", red, reset);
         return ShutdownWait();
     }
+
+    // Now suspend MC so the runtime can patch before MC resumes. The runtime
+    // is responsible for resuming the thread via hMcThreadHandle.
+    LoadNtdll();
+    SuspendMinecraftThread();
 
     RuntimeInit = (RuntimeInitPtr)_RuntimeInit;
     RuntimeInit(dMcThreadID, hMcThreadHandle);

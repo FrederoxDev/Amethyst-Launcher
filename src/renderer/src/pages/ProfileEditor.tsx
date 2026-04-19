@@ -9,6 +9,7 @@ import { Popup, PopupUseArguments } from "@renderer/states/PopupStore";
 import { useAppStore } from "@renderer/states/AppStore";
 import { VersionPickerPopup, VersionPickerResult } from "@renderer/popups/VersionPickerPopup";
 import { launchProfile as doLaunchProfile } from "@renderer/scripts/LaunchUtils";
+import { confirmProfileDeletion, finalizeProfileDeletion, openDataFolder, openInstallFolder } from "@renderer/scripts/ProfileActions";
 
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
@@ -129,7 +130,6 @@ export function ProfileEditor() {
     const [, forceUpdate] = useReducer(x => x + 1, 0);
     const allValidMods = useAppStore(state => state.allValidMods);
     const allProfiles = useAppStore(state => state.allProfiles);
-    const setAllProfiles = useAppStore(state => state.setAllProfiles);
     const selectedProfile = useAppStore(state => state.selectedProfile);
     const saveData = useAppStore(state => state.saveData);
     const allInvalidMods = useAppStore(state => state.allInvalidMods);
@@ -245,15 +245,15 @@ export function ProfileEditor() {
 
     const deleteProfile = async () => {
         const profile = allProfiles[selectedProfile];
-        if (profile) {
-            const orphaned = getOrphanedMods(profile.mods, selectedProfile);
-            const proceed = await promptDeleteOrphanedMods(orphaned);
-            if (!proceed) return;
-        }
-        allProfiles.splice(selectedProfile, 1);
-        setAllProfiles(allProfiles);
-        saveData();
-        useAppStore.getState().refreshAllMods();
+        if (!profile) return;
+
+        if (!await confirmProfileDeletion(profile)) return;
+
+        const orphaned = getOrphanedMods(profile.mods, selectedProfile);
+        const proceed = await promptDeleteOrphanedMods(orphaned);
+        if (!proceed) return;
+
+        await finalizeProfileDeletion(profile);
         navigate("/");
     };
 
@@ -441,6 +441,26 @@ export function ProfileEditor() {
                                         style={{ top: dropdownPos.top, right: dropdownPos.right }}
                                         onClick={e => e.stopPropagation()}
                                     >
+                                        <div className="launcher-profile-card-dropdown-item" onClick={() => {
+                                            const profile = allProfiles[selectedProfile];
+                                            if (profile) openDataFolder(profile);
+                                            setShowMenu(false);
+                                        }}>
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                                <path d="M1 3C1 2.44772 1.44772 2 2 2H6.17157C6.43679 2 6.69114 2.10536 6.87868 2.29289L7.70711 3.12132C7.89464 3.30886 8.149 3.41421 8.41421 3.41421H14C14.5523 3.41421 15 3.86193 15 4.41421V13C15 13.5523 14.5523 14 14 14H2C1.44772 14 1 13.5523 1 13V3Z" stroke="#FFFFFF" strokeWidth="1.5" />
+                                            </svg>
+                                            <p className="minecraft-seven">Open Data Folder</p>
+                                        </div>
+                                        <div className="launcher-profile-card-dropdown-item" onClick={() => {
+                                            const profile = allProfiles[selectedProfile];
+                                            if (profile) openInstallFolder(profile);
+                                            setShowMenu(false);
+                                        }}>
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                                <path d="M1 3C1 2.44772 1.44772 2 2 2H6.17157C6.43679 2 6.69114 2.10536 6.87868 2.29289L7.70711 3.12132C7.89464 3.30886 8.149 3.41421 8.41421 3.41421H14C14.5523 3.41421 15 3.86193 15 4.41421V13C15 13.5523 14.5523 14 14 14H2C1.44772 14 1 13.5523 1 13V3Z" stroke="#FFFFFF" strokeWidth="1.5" />
+                                            </svg>
+                                            <p className="minecraft-seven">Open Install Folder</p>
+                                        </div>
                                         <div className="launcher-profile-card-dropdown-item launcher-profile-card-dropdown-item--danger" onClick={() => { deleteProfile(); setShowMenu(false); }}>
                                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                                                 <path d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />

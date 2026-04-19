@@ -20,6 +20,7 @@ export interface LauncherPaths {
     modsPath: string;
     launcherConfigPath: string;
     toolsPath: string;
+    profileDataPath: string;
 }
 
 export interface ProcessInfo {
