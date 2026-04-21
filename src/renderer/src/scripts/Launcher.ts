@@ -9,7 +9,6 @@ function getPaths() {
 
 export interface LauncherConfig {
     keep_open: boolean;
-    selected_profile: number;
     selected_profile_uuid?: string | null;
     ui_theme: string;
     developer_mode: boolean;
@@ -29,7 +28,6 @@ export function GetLauncherConfig(): LauncherConfig {
     return {
         keep_open: true,
         ui_theme: "System",
-        selected_profile: 0,
         selected_profile_uuid: null,
         developer_mode: false,
         ...data,

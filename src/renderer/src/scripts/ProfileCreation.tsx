@@ -68,7 +68,7 @@ export async function createProfileFlow(): Promise<CreateProfileResult | null> {
         };
         const newProfiles = [...state.allProfiles, newProfile];
         state.setAllProfiles(newProfiles);
-        state.setSelectedProfile(newProfiles.length - 1);
+        state.setEditingProfile(newProfiles.length - 1);
         state.saveData();
 
         return { profile: newProfile, index: newProfiles.length - 1 };

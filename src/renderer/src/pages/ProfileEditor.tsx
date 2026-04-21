@@ -10,6 +10,7 @@ import { useAppStore } from "@renderer/states/AppStore";
 import { VersionPickerPopup, VersionPickerResult } from "@renderer/popups/VersionPickerPopup";
 import { launchProfile as doLaunchProfile } from "@renderer/scripts/LaunchUtils";
 import { confirmProfileDeletion, finalizeProfileDeletion, openDataFolder, openInstallFolder } from "@renderer/scripts/ProfileActions";
+import { MOD_DISCOVERY_ENABLED } from "@renderer/scripts/FeatureFlags";
 
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
@@ -25,7 +26,7 @@ function AddContentPopup({ submit: rawSubmit }: PopupUseArguments<string | "brow
     const submit = (val: string | "browse" | null) => animateClose(() => rawSubmit(val));
     const mods = useAppStore(state => state.allValidMods);
     const setError = useAppStore(state => state.setError);
-    const activeMods = useAppStore(state => state.allProfiles)[useAppStore(state => state.selectedProfile)]?.mods ?? [];
+    const activeMods = useAppStore(state => state.allProfiles)[useAppStore(state => state.editingProfile)]?.mods ?? [];
     const modsPath = useMemo(() => useAppStore.getState().platform.getPaths().modsPath, []);
     const availableMods = useMemo(() => mods.filter(m => !activeMods.includes(m)), [mods, activeMods]);
     const [search, setSearch] = useState("");
@@ -89,7 +90,7 @@ function AddContentPopup({ submit: rawSubmit }: PopupUseArguments<string | "brow
                 </div>
                 <div className="version-picker-divider" />
                 <div className="version-picker-footer" style={{ justifyContent: "flex-start", gap: 8 }}>
-                    <MinecraftButton text="Browse Mods" style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "140px" }} onClick={() => submit("browse")} />
+                    {MOD_DISCOVERY_ENABLED && <MinecraftButton text="Browse Mods" style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "140px" }} onClick={() => submit("browse")} />}
                     <MinecraftButton text="Open Mods Folder" colorPallete={GRAY_MINECRAFT_BUTTON} style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "160px" }} onClick={async () => {
                         try {
                             if (!fs.existsSync(modsPath)) {
@@ -130,7 +131,7 @@ export function ProfileEditor() {
     const [, forceUpdate] = useReducer(x => x + 1, 0);
     const allValidMods = useAppStore(state => state.allValidMods);
     const allProfiles = useAppStore(state => state.allProfiles);
-    const selectedProfile = useAppStore(state => state.selectedProfile);
+    const selectedProfile = useAppStore(state => state.editingProfile);
     const saveData = useAppStore(state => state.saveData);
     const allInvalidMods = useAppStore(state => state.allInvalidMods);
     const downloadingMods = useAppStore(state => state.downloadingMods);

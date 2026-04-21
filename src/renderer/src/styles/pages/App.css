@@ -153,6 +153,22 @@
 }
 
 /* Download Manager */
+.app-logs-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 46px;
+    height: 46px;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.1s;
+}
+
+.app-logs-button:hover,
+.app-logs-button--active {
+    opacity: 1;
+}
+
 .download-manager-btn {
     position: relative;
     display: flex;

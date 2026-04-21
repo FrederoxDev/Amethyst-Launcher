@@ -1,4 +1,3 @@
-import { logEvent } from "firebase/analytics";
 import { collection, doc, getDocs, increment, updateDoc } from "firebase/firestore";
 const fs = window.require("fs") as typeof import("fs");
 const os = window.require("os") as typeof import("os");
@@ -313,7 +312,6 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
     const cached = releasesCache.get(mod.githubUrl);
     const [releases, setReleases] = useState<ParsedGithubRelease[]>(cached ?? []);
     const [loading, setLoading] = useState(!cached);
-    const analyticsInstance = useAppStore(state => state.analyticsInstance);
     const allMods = useAppStore(state => state.allMods);
     const refreshAllMods = useAppStore(state => state.refreshAllMods);
     const downloadingMods = useAppStore(state => state.downloadingMods);
@@ -492,10 +490,6 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
             console.log(`Incrementing download count for mod ${mod.id}`);
             const modDocRef = doc(db, "mods", mod.id);
             await updateDoc(modDocRef, { downloads: increment(1) });
-
-            if (analyticsInstance) {
-                logEvent(analyticsInstance, "mod_install", { mod_name: release.download_name });
-            }
         });
     };
 
@@ -603,11 +597,6 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                                                 e.stopPropagation();
                                                 uninstallMod(release.download_name);
                                                 refreshAllMods();
-                                                if (analyticsInstance) {
-                                                    logEvent(analyticsInstance, "mod_uninstall", {
-                                                        mod_name: release.download_name,
-                                                    });
-                                                }
                                             }}
                                         >
                                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
