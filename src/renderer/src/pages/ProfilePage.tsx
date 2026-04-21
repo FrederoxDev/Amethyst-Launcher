@@ -29,11 +29,11 @@ ipcRenderer.on("AMETHYST_PROTOCOL_URL", async (_event, url: string) => {
 
 const ProfileButton = ({ profile, index }: { profile: Profile; index: number }) => {
     const navigate = useNavigate();
-    const setSelectedProfile = useAppStore(state => state.setSelectedProfile);
+    const setEditingProfile = useAppStore(state => state.setEditingProfile);
     const allValidMods = useAppStore(state => state.allValidMods);
 
     const openProfile = (index: number) => {
-        setSelectedProfile(index);
+        setEditingProfile(index);
         navigate("/profile-editor");
     };
 
@@ -61,7 +61,7 @@ export function ProfilePage() {
     const navigate = useNavigate();
     const allProfiles = useAppStore(state => state.allProfiles);
     const setAllProfiles = useAppStore(state => state.setAllProfiles);
-    const setSelectedProfile = useAppStore(state => state.setSelectedProfile);
+    const setEditingProfile = useAppStore(state => state.setEditingProfile);
     const versionDatabase = useAppStore(state => state.versionManager.database);
 
     return (
@@ -88,7 +88,7 @@ export function ProfilePage() {
 
                             const newProfiles = [...allProfiles, defaultProfile];
                             setAllProfiles(newProfiles);
-                            setSelectedProfile(newProfiles.length - 1);
+                            setEditingProfile(newProfiles.length - 1);
                             navigate("/profile-editor");
                         }}
                     />

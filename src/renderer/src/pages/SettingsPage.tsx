@@ -4,8 +4,7 @@ import { MinecraftRadialButtonPanel } from "@renderer/components/MinecraftRadial
 import { MinecraftToggle } from "@renderer/components/MinecraftToggle";
 import { ReadOnlyTextBox } from "@renderer/components/ReadOnlyTextBox";
 
-import { AnalyticsConsent, useAppStore } from "@renderer/states/AppStore";
-import { AskAnalyticsConsent } from "@renderer/components/AnalyticsConsentPanel";
+import { useAppStore } from "@renderer/states/AppStore";
 
 const fs = window.require("fs") as typeof import("fs");
 
@@ -18,8 +17,6 @@ export function GeneralSettingsTab() {
     const selectedProfile = useAppStore(state => state.selectedProfile);
     const UITheme = useAppStore(state => state.UITheme);
     const setUITheme = useAppStore(state => state.setUITheme);
-    const analyticsConsent = useAppStore(state => state.analyticsConsent);
-    const setAnalyticsConsent = useAppStore(state => state.setAnalyticsConsent);
     const platform = useAppStore(state => state.platform);
     const paths = platform.getPaths();
     const [ 
@@ -45,32 +42,6 @@ export function GeneralSettingsTab() {
     return (
         <div className="settings-page settings-scroll-hidden">
             <div className="settings-section">
-                <div className="settings-row">
-                    <div>
-                        <p className="minecraft-seven settings-title">Analytics Consent</p>
-                        <p className="minecraft-seven settings-subtitle">
-                            Send anonymous usage data to help improve the launcher.
-                        </p>
-                    </div>
-                    <div className="settings-toggle-wrap">
-                        <MinecraftToggle
-                            isChecked={analyticsConsent === AnalyticsConsent.Accepted}
-                            setIsChecked={isChecked => {
-                                if (!isChecked) {
-                                    setAnalyticsConsent(AnalyticsConsent.Declined);
-                                    return;
-                                }
-
-                                console.log("Asking user for analytics consent...");
-                                AskAnalyticsConsent().then(consent => {
-                                    if (!consent || consent === AnalyticsConsent.Unknown)
-                                        return;
-                                    setAnalyticsConsent(consent);
-                                });
-                            }}
-                        />
-                    </div>
-                </div>
                 <div className="settings-row">
                     <div>
                         <p className="minecraft-seven settings-title">Keep launcher open</p>

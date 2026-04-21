@@ -160,16 +160,6 @@ void Proxy()
             }
         }
 
-        if (launcherConfig.contains("selected_profile") && launcherConfig["selected_profile"].is_number_integer()) {
-            int selectedProfile = launcherConfig["selected_profile"];
-            if (selectedProfile >= 0 && selectedProfile < static_cast<int>(profiles.size())) {
-                const auto& profile = profiles[selectedProfile];
-                if (profile.is_object() && profile.contains("runtime") && profile["runtime"].is_string()) {
-                    return profile["runtime"];
-                }
-            }
-        }
-
         return "";
     };
 

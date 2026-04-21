@@ -93,7 +93,7 @@ const ProfileCardMenu = ({ onEdit, onDelete, onOpenInstallFolder, onOpenDataFold
     );
 };
 
-const ProfileCard = ({ profile, versionName, runtimeWarning, onEdit, onPlay, onDelete, onOpenInstallFolder, onOpenDataFolder, canPlay }: {
+const ProfileCard = ({ profile, versionName, runtimeWarning, onEdit, onPlay, onDelete, onOpenInstallFolder, onOpenDataFolder, canPlay, isSelected }: {
     profile: Profile;
     versionName: string;
     runtimeWarning: string | null;
@@ -103,12 +103,13 @@ const ProfileCard = ({ profile, versionName, runtimeWarning, onEdit, onPlay, onD
     onOpenInstallFolder: () => void;
     onOpenDataFolder: () => void;
     canPlay: boolean;
+    isSelected?: boolean;
 }) => {
     const isModdedProfile = profile.is_modded || profile.mods.length > 0 || profile.runtime.toLowerCase() !== "vanilla";
     const profileModeLabel = isModdedProfile ? "Modded" : "Vanilla";
 
     return (
-        <div className="launcher-profile-card" onClick={onEdit}>
+        <div className={`launcher-profile-card${isSelected ? " selected" : ""}`} onClick={onEdit}>
             <div className="launcher-profile-card-info">
                 <div className="launcher-profile-card-name-row">
                     <p className="minecraft-seven launcher-profile-card-name">{profile.name}</p>
@@ -144,8 +145,9 @@ const ProfileCard = ({ profile, versionName, runtimeWarning, onEdit, onPlay, onD
 export function LauncherPage() {
     const [
         allProfiles,
-        _selectedProfile,
+        selectedProfile,
         setSelectedProfile,
+        setEditingProfile,
         setAllProfiles,
         saveData,
         error,
@@ -156,6 +158,7 @@ export function LauncherPage() {
         state.allProfiles,
         state.selectedProfile,
         state.setSelectedProfile,
+        state.setEditingProfile,
         state.setAllProfiles,
         state.saveData,
         state.error,
@@ -257,6 +260,13 @@ export function LauncherPage() {
         const reordered = [...allProfiles];
         const [moved] = reordered.splice(fromIndex, 1);
         reordered.splice(toIndex, 0, moved);
+        const selectedUuid = allProfiles[selectedProfile]?.uuid;
+        if (selectedUuid) {
+            const newSelectedIndex = reordered.findIndex(p => p.uuid === selectedUuid);
+            if (newSelectedIndex !== -1 && newSelectedIndex !== selectedProfile) {
+                setSelectedProfile(newSelectedIndex);
+            }
+        }
         setAllProfiles(reordered);
         reorderCooldown.current = true;
         setTimeout(() => { reorderCooldown.current = false; }, 200);
@@ -354,12 +364,13 @@ export function LauncherPage() {
                             profile={profile}
                             versionName={getVersionName(profile)}
                             runtimeWarning={runtimeWarning}
+                            isSelected={selectedProfile === index}
                             canPlay={ProgressBar.canDoAction("launch") && !runtimeWarning}
                             onEdit={() => {
-                                setSelectedProfile(index);
+                                setEditingProfile(index);
                                 navigate("/profile-editor");
                             }}
-                            onPlay={() => launchGame(profile)}
+                            onPlay={() => { setSelectedProfile(index); launchGame(profile); }}
                             onDelete={() => deleteProfile(index)}
                             onOpenInstallFolder={() => openInstallFolder(profile)}
                             onOpenDataFolder={() => openDataFolder(profile)}
@@ -394,6 +405,7 @@ export function LauncherPage() {
                                 profile={dragProfile}
                                 versionName={getVersionName(dragProfile)}
                                 runtimeWarning={getRuntimeWarning(dragProfile)}
+                                isSelected={allProfiles[selectedProfile]?.uuid === dragProfile.uuid}
                                 canPlay={false}
                                 onEdit={() => {}}
                                 onPlay={() => {}}

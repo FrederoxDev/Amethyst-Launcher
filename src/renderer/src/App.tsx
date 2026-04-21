@@ -1,4 +1,4 @@
-import { AnalyticsConsent, useAppStore } from "@renderer/states/AppStore";
+import { useAppStore } from "@renderer/states/AppStore";
 import { Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Popup } from "@renderer/states/PopupStore";
 import { createProfileFlow } from "@renderer/scripts/ProfileCreation";
@@ -20,7 +20,7 @@ import { createPortal } from "react-dom";
 import LoadingSpinnerRenderer from "./components/LoadingSpinnerRenderer";
 import ProgressBarRenderer from "./components/ProgressBarRenderer";
 import { useDownloadStore } from "@renderer/states/DownloadStore";
-import { AskAnalyticsConsent } from "./components/AnalyticsConsentPanel";
+import { MOD_DISCOVERY_ENABLED } from "@renderer/scripts/FeatureFlags";
 
 const fs = window.require("fs") as typeof import("fs");
 
@@ -29,6 +29,7 @@ const ModsPage = lazy(() => import("@renderer/pages/ModsPage").then(m => ({ defa
 const ProfileEditor = lazy(() => import("@renderer/pages/ProfileEditor").then(m => ({ default: m.ProfileEditor })));
 const ProfilePage = lazy(() => import("@renderer/pages/ProfilePage").then(m => ({ default: m.ProfilePage })));
 const VersionPage = lazy(() => import("@renderer/pages/VersionPage").then(m => ({ default: m.VersionPage })));
+const LogsPage = lazy(() => import("@renderer/pages/LogsPage").then(m => ({ default: m.LogsPage })));
 
 function DownloadManagerButton() {
     const downloads = useDownloadStore(state => state.downloads);
@@ -156,7 +157,8 @@ function AnimatedRoutes() {
                     <Route path="/profile-editor" element={<ProfileEditor />} />
                     <Route path="/mods" element={<ModsPage />} />
                     <Route path="/versions" element={<VersionPage />} />
-                    <Route path="/mod-discovery" element={<ModDiscovery />} />
+                    {MOD_DISCOVERY_ENABLED && <Route path="/mod-discovery" element={<ModDiscovery />} />}
+                    <Route path="/logs" element={<LogsPage />} />
                 </Routes>
             </Suspense>
         </div>
@@ -169,16 +171,6 @@ export default function App() {
 
     useEffect(() => {
         setTimeout(() => useAppStore.getState().versionManager.cleanupStaleLocks(), 0);
-
-        const currentConsent = useAppStore.getState().analyticsConsent;
-        if (currentConsent !== AnalyticsConsent.Unknown)
-            return;
-
-        AskAnalyticsConsent().then(consent => {
-            if (!consent || consent === AnalyticsConsent.Unknown)
-                return;
-            useAppStore.getState().setAnalyticsConsent(consent);
-        });
     }, []);
 
     useEffect(() => {
@@ -254,17 +246,19 @@ export default function App() {
                                         />
                                     </div>
                                 </Link>
-                                <Link to="/mod-discovery" draggable={false}>
-                                    <div
-                                        className={`nav-icon ${location.pathname === "/mod-discovery" ? "nav-icon--active" : ""}`}
-                                    >
-                                        <img
-                                            src={earthIcon}
-                                            className="app-nav-icon-image pixelated"
-                                            alt=""
-                                        />
-                                    </div>
-                                </Link>
+                                {MOD_DISCOVERY_ENABLED && (
+                                    <Link to="/mod-discovery" draggable={false}>
+                                        <div
+                                            className={`nav-icon ${location.pathname === "/mod-discovery" ? "nav-icon--active" : ""}`}
+                                        >
+                                            <img
+                                                src={earthIcon}
+                                                className="app-nav-icon-image pixelated"
+                                                alt=""
+                                            />
+                                        </div>
+                                    </Link>
+                                )}
                                 <div
                                     className="nav-icon nav-icon-add"
                                     onClick={async () => {
@@ -278,6 +272,16 @@ export default function App() {
                                     </svg>
                                 </div>
                             </div>
+
+                            <Link to="/logs" draggable={false}>
+                                <div className={`app-logs-button${location.pathname === "/logs" ? " app-logs-button--active" : ""}`}>
+                                    <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
+                                        <path d="M4 2h8l4 4v12H4V2z" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+                                        <path d="M12 2v4h4" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+                                        <path d="M6.5 10h7M6.5 13h7M6.5 16h5" stroke="#FFFFFF" strokeWidth="1.2" strokeLinecap="square" />
+                                    </svg>
+                                </div>
+                            </Link>
 
                             <DownloadManagerButton />
 

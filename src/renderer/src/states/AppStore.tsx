@@ -1,4 +1,3 @@
-import type { Analytics } from "firebase/analytics";
 import { create } from "zustand";
 
 import { GetLauncherConfig, LauncherConfig, SetLauncherConfig } from "@renderer/scripts/Launcher";
@@ -13,12 +12,6 @@ import { StateSetter, StateUtils } from "./StateUtils";
 import { resumePendingDownloads } from "@renderer/scripts/DownloadRecovery";
 
 const { ipcRenderer } = window.require("electron");
-
-export enum AnalyticsConsent {
-    Unknown = "Unknown",
-    Accepted = "Accepted",
-    Declined = "Declined",
-}
 
 interface AppStore {
     allMods: ValidatedMod[];
@@ -37,6 +30,9 @@ interface AppStore {
     selectedProfile: number;
     setSelectedProfile: StateSetter<number>;
 
+    editingProfile: number;
+    setEditingProfile: StateSetter<number>;
+
     UITheme: string;
     setUITheme: StateSetter<string>;
 
@@ -48,11 +44,6 @@ interface AppStore {
 
     error: string;
     setError: StateSetter<string>;
-
-    analyticsConsent: AnalyticsConsent;
-    setAnalyticsConsent: StateSetter<AnalyticsConsent>;
-
-    analyticsInstance: Analytics | null;
 
     downloadingMods: string[];
     setDownloadingMods: StateSetter<string[]>;
@@ -68,25 +59,7 @@ interface AppStore {
     fileLocker: FileLocker;
 }
 
-function getInitialAnalyticsConsent(): AnalyticsConsent {
-    const stored = localStorage.getItem("analyticsConsent");
-    if (stored === AnalyticsConsent.Accepted) return AnalyticsConsent.Accepted;
-    if (stored === AnalyticsConsent.Declined) return AnalyticsConsent.Declined;
-    return AnalyticsConsent.Unknown;
-}
-
-async function getAnalyticsInstanceForConsent(consent: AnalyticsConsent): Promise<Analytics | null> {
-    if (consent !== AnalyticsConsent.Accepted) return null;
-    const [{ getAnalytics }, { firebaseApp }] = await Promise.all([
-        import("firebase/analytics"),
-        import("@renderer/firebase/Firebase"),
-    ]);
-    return getAnalytics(firebaseApp);
-}
-
 export const useAppStore = create<AppStore>((set, get) => {
-    const initialConsent = getInitialAnalyticsConsent();
-
     let platformInstance: ILauncherPlatform;
     if (process.platform === "win32") {
         platformInstance = new WindowsLauncherPlatform();
@@ -104,12 +77,11 @@ export const useAppStore = create<AppStore>((set, get) => {
         allMinecraftVersions: [],
         allProfiles: [],
         selectedProfile: 0,
+        editingProfile: 0,
         UITheme: "System",
         keepLauncherOpen: true,
         developerMode: false,
         error: "",
-        analyticsConsent: initialConsent,
-        analyticsInstance: null,
         downloadingMods: [],
         installingForProfile: null,
 
@@ -119,34 +91,25 @@ export const useAppStore = create<AppStore>((set, get) => {
         setAllProfiles: value => set(state => ({ allProfiles: StateUtils.resolveSetStateAction(value, state.allProfiles) })),
         setSelectedProfile: value =>
             set(state => ({ selectedProfile: StateUtils.resolveSetStateAction(value, state.selectedProfile) })),
-        setUITheme: value =>
+        setEditingProfile: value =>
+            set(state => ({ editingProfile: StateUtils.resolveSetStateAction(value, state.editingProfile) })),
+        setUITheme: value => {
             set(state => {
                 const nextTheme = StateUtils.resolveSetStateAction(value, state.UITheme);
                 ipcRenderer.send("WINDOW_UI_THEME", nextTheme);
                 return { UITheme: nextTheme };
-            }),
-        setKeepLauncherOpen: value =>
-            set(state => ({ keepLauncherOpen: StateUtils.resolveSetStateAction(value, state.keepLauncherOpen) })),
-        setDeveloperMode: value =>
-            set(state => ({ developerMode: StateUtils.resolveSetStateAction(value, state.developerMode) })),
+            });
+            get().saveData();
+        },
+        setKeepLauncherOpen: value => {
+            set(state => ({ keepLauncherOpen: StateUtils.resolveSetStateAction(value, state.keepLauncherOpen) }));
+            get().saveData();
+        },
+        setDeveloperMode: value => {
+            set(state => ({ developerMode: StateUtils.resolveSetStateAction(value, state.developerMode) }));
+            get().saveData();
+        },
         setError: value => set(state => ({ error: StateUtils.resolveSetStateAction(value, state.error) })),
-
-        setAnalyticsConsent: value =>
-            set(state => {
-                const nextConsent = StateUtils.resolveSetStateAction(value, state.analyticsConsent);
-
-                if (nextConsent !== AnalyticsConsent.Unknown) {
-                    localStorage.setItem("analyticsConsent", nextConsent);
-                }
-
-                getAnalyticsInstanceForConsent(nextConsent).then(instance => {
-                    set({ analyticsInstance: instance });
-                });
-
-                return {
-                    analyticsConsent: nextConsent,
-                };
-            }),
 
         setDownloadingMods: value =>
             set(state => ({ downloadingMods: StateUtils.resolveSetStateAction(value, state.downloadingMods) })),
@@ -203,7 +166,6 @@ export const useAppStore = create<AppStore>((set, get) => {
             const selectedProfileObject = normalizedProfiles[state.selectedProfile] ?? null;
             const launcherConfig: LauncherConfig = {
                 keep_open: state.keepLauncherOpen,
-                selected_profile: state.selectedProfile,
                 selected_profile_uuid: selectedProfileObject?.uuid ?? null,
                 ui_theme: state.UITheme,
                 developer_mode: state.developerMode,
@@ -218,18 +180,11 @@ export const useAppStore = create<AppStore>((set, get) => {
     };
 });
 
-// Lazily init analytics if user already consented in a previous session
-if (getInitialAnalyticsConsent() === AnalyticsConsent.Accepted) {
-    getAnalyticsInstanceForConsent(AnalyticsConsent.Accepted).then(instance => {
-        useAppStore.setState({ analyticsInstance: instance });
-    });
-}
-
 async function hydrateStore(): Promise<void> {
     const profiles = GetProfiles();
     const config = GetLauncherConfig();
 
-    let selectedProfile = config.selected_profile ?? 0;
+    let selectedProfile = 0;
     if (config.selected_profile_uuid) {
         const selectedByUuid = profiles.findIndex(p => p.uuid === config.selected_profile_uuid);
         if (selectedByUuid !== -1) {
@@ -246,6 +201,7 @@ async function hydrateStore(): Promise<void> {
     useAppStore.setState({
         allProfiles: profiles,
         keepLauncherOpen: config.keep_open ?? true,
+        developerMode: config.developer_mode ?? false,
         selectedProfile,
         UITheme: config.ui_theme ?? "Light"
     });
