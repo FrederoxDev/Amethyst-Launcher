@@ -40,7 +40,7 @@ jobs:
       - name: Build the app
         run: |
           $env:CI="false"
-          npm run build
+          npm run build:win
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
