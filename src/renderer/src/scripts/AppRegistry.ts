@@ -277,24 +277,13 @@ function isModdedProfile(profile: Profile): boolean {
     return profile.is_modded || profile.mods.length > 0 || profile.runtime.toLowerCase() !== "vanilla";
 }
 
-function findProxyDllPath(): string | null {
-    const cwd = process.cwd();
-    const resourcesPath = process.resourcesPath;
-
-    const candidates = [
-        path.join(cwd, "proxy", "build", "windows", "x64", "release", "dxgi.dll"),
-        path.join(cwd, "resources", "proxy", "dxgi.dll"),
-        path.join(resourcesPath, "proxy", "dxgi.dll"),
-        path.join(resourcesPath, "dxgi.dll"),
-    ];
-
-    for (const candidate of candidates) {
-        if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
-            return candidate;
-        }
-    }
-
-    return null;
+function getProxyDllPath(): string {
+    // Dev: predev/prestart/prebuild runs scripts/sync-proxy-dll.mjs, which
+    // copies the built DLL into `<repo>/resources/proxy/dxgi.dll`.
+    // Prod: electron-builder extraResources puts it at `<install>/resources/proxy/dxgi.dll`,
+    // which is `process.resourcesPath`.
+    const base = import.meta.env.DEV ? path.join(process.cwd(), "resources") : process.resourcesPath;
+    return path.join(base, "proxy", "dxgi.dll");
 }
 
 /**
@@ -314,9 +303,9 @@ export function SyncProxyDllForProfile(profile: Profile, version: InstalledVersi
         return;
     }
 
-    const sourcePath = findProxyDllPath();
-    if (!sourcePath) {
-        throw new Error("Failed to locate proxy dxgi.dll for modded profile launch.");
+    const sourcePath = getProxyDllPath();
+    if (!fs.existsSync(sourcePath)) {
+        throw new Error(`Failed to locate proxy dxgi.dll for modded profile launch at: ${sourcePath}`);
     }
 
     status("Syncing proxy DLL for modded profile...");
