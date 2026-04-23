@@ -1,6 +1,6 @@
 {
   "name": "amethyst-launcher",
-  "version": "2.8.15",
+  "version": "2.8.16",
   "description": "Amethyst Launcher",
   "main": "./out/main/index.js",
   "author": "FrederoxDev, theaddonn, OmniacDev, raonygamer",
