@@ -145,8 +145,8 @@ const ProfileCard = ({ profile, versionName, runtimeWarning, onEdit, onPlay, onD
 export function LauncherPage() {
     const [
         allProfiles,
-        selectedProfile,
-        setSelectedProfile,
+        selectedProfileUuid,
+        setSelectedProfileUuid,
         setEditingProfile,
         setAllProfiles,
         saveData,
@@ -156,8 +156,8 @@ export function LauncherPage() {
         versionManager
     ] = useAppStore(useShallow(state => [
         state.allProfiles,
-        state.selectedProfile,
-        state.setSelectedProfile,
+        state.selectedProfileUuid,
+        state.setSelectedProfileUuid,
         state.setEditingProfile,
         state.setAllProfiles,
         state.saveData,
@@ -260,13 +260,6 @@ export function LauncherPage() {
         const reordered = [...allProfiles];
         const [moved] = reordered.splice(fromIndex, 1);
         reordered.splice(toIndex, 0, moved);
-        const selectedUuid = allProfiles[selectedProfile]?.uuid;
-        if (selectedUuid) {
-            const newSelectedIndex = reordered.findIndex(p => p.uuid === selectedUuid);
-            if (newSelectedIndex !== -1 && newSelectedIndex !== selectedProfile) {
-                setSelectedProfile(newSelectedIndex);
-            }
-        }
         setAllProfiles(reordered);
         reorderCooldown.current = true;
         setTimeout(() => { reorderCooldown.current = false; }, 200);
@@ -364,13 +357,13 @@ export function LauncherPage() {
                             profile={profile}
                             versionName={getVersionName(profile)}
                             runtimeWarning={runtimeWarning}
-                            isSelected={selectedProfile === index}
+                            isSelected={selectedProfileUuid === profile.uuid}
                             canPlay={ProgressBar.canDoAction("launch") && !runtimeWarning}
                             onEdit={() => {
                                 setEditingProfile(index);
                                 navigate("/profile-editor");
                             }}
-                            onPlay={() => { setSelectedProfile(index); launchGame(profile); }}
+                            onPlay={() => { setSelectedProfileUuid(profile.uuid); launchGame(profile); }}
                             onDelete={() => deleteProfile(index)}
                             onOpenInstallFolder={() => openInstallFolder(profile)}
                             onOpenDataFolder={() => openDataFolder(profile)}
@@ -405,7 +398,7 @@ export function LauncherPage() {
                                 profile={dragProfile}
                                 versionName={getVersionName(dragProfile)}
                                 runtimeWarning={getRuntimeWarning(dragProfile)}
-                                isSelected={allProfiles[selectedProfile]?.uuid === dragProfile.uuid}
+                                isSelected={selectedProfileUuid === dragProfile.uuid}
                                 canPlay={false}
                                 onEdit={() => {}}
                                 onPlay={() => {}}

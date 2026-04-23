@@ -434,7 +434,7 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
             );
             state.setAllProfiles(updatedProfiles);
         }
-        state.setSelectedProfile(targetProfileIndex);
+        if (profile) state.setSelectedProfileUuid(profile.uuid);
         state.setDownloadingMods([...state.downloadingMods, release.download_name]);
         state.saveData();
         setConfirmingMod(null);

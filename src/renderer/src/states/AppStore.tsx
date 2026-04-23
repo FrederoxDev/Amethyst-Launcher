@@ -27,8 +27,8 @@ interface AppStore {
     allProfiles: Profile[];
     setAllProfiles: StateSetter<Profile[]>;
 
-    selectedProfile: number;
-    setSelectedProfile: StateSetter<number>;
+    selectedProfileUuid: string | null;
+    setSelectedProfileUuid: StateSetter<string | null>;
 
     editingProfile: number;
     setEditingProfile: StateSetter<number>;
@@ -76,7 +76,7 @@ export const useAppStore = create<AppStore>((set, get) => {
         allRuntimes: [],
         allMinecraftVersions: [],
         allProfiles: [],
-        selectedProfile: 0,
+        selectedProfileUuid: null,
         editingProfile: 0,
         UITheme: "System",
         keepLauncherOpen: true,
@@ -89,8 +89,8 @@ export const useAppStore = create<AppStore>((set, get) => {
             set(state => ({ allValidMods: StateUtils.resolveSetStateAction(value, state.allValidMods) })),
         setAllRuntimes: value => set(state => ({ allRuntimes: StateUtils.resolveSetStateAction(value, state.allRuntimes) })),
         setAllProfiles: value => set(state => ({ allProfiles: StateUtils.resolveSetStateAction(value, state.allProfiles) })),
-        setSelectedProfile: value =>
-            set(state => ({ selectedProfile: StateUtils.resolveSetStateAction(value, state.selectedProfile) })),
+        setSelectedProfileUuid: value =>
+            set(state => ({ selectedProfileUuid: StateUtils.resolveSetStateAction(value, state.selectedProfileUuid) })),
         setEditingProfile: value =>
             set(state => ({ editingProfile: StateUtils.resolveSetStateAction(value, state.editingProfile) })),
         setUITheme: value => {
@@ -163,10 +163,9 @@ export const useAppStore = create<AppStore>((set, get) => {
 
             SetProfiles(normalizedProfiles);
 
-            const selectedProfileObject = normalizedProfiles[state.selectedProfile] ?? null;
             const launcherConfig: LauncherConfig = {
                 keep_open: state.keepLauncherOpen,
-                selected_profile_uuid: selectedProfileObject?.uuid ?? null,
+                selected_profile_uuid: state.selectedProfileUuid,
                 ui_theme: state.UITheme,
                 developer_mode: state.developerMode,
             };
@@ -184,25 +183,18 @@ async function hydrateStore(): Promise<void> {
     const profiles = GetProfiles();
     const config = GetLauncherConfig();
 
-    let selectedProfile = 0;
-    if (config.selected_profile_uuid) {
-        const selectedByUuid = profiles.findIndex(p => p.uuid === config.selected_profile_uuid);
-        if (selectedByUuid !== -1) {
-            selectedProfile = selectedByUuid;
-        }
-    }
-
-    if (profiles.length > 0) {
-        selectedProfile = Math.min(Math.max(selectedProfile, 0), profiles.length - 1);
-    } else {
-        selectedProfile = 0;
+    let selectedProfileUuid: string | null = null;
+    if (config.selected_profile_uuid && profiles.some(p => p.uuid === config.selected_profile_uuid)) {
+        selectedProfileUuid = config.selected_profile_uuid;
+    } else if (profiles.length > 0) {
+        selectedProfileUuid = profiles[0].uuid;
     }
 
     useAppStore.setState({
         allProfiles: profiles,
         keepLauncherOpen: config.keep_open ?? true,
         developerMode: config.developer_mode ?? false,
-        selectedProfile,
+        selectedProfileUuid,
         UITheme: config.ui_theme ?? "Light"
     });
 

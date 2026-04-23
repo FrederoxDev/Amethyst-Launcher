@@ -14,7 +14,7 @@ export function GeneralSettingsTab() {
     const developerMode = useAppStore(state => state.developerMode);
     const setDeveloperMode = useAppStore(state => state.setDeveloperMode);
     const allProfiles = useAppStore(state => state.allProfiles);
-    const selectedProfile = useAppStore(state => state.selectedProfile);
+    const selectedProfileUuid = useAppStore(state => state.selectedProfileUuid);
     const UITheme = useAppStore(state => state.UITheme);
     const setUITheme = useAppStore(state => state.setUITheme);
     const platform = useAppStore(state => state.platform);
@@ -37,7 +37,7 @@ export function GeneralSettingsTab() {
     useEffect(() => {
         const timer = setTimeout(updateCfgText, 0);
         return () => clearTimeout(timer);
-    }, [allProfiles, selectedProfile, keepLauncherOpen, developerMode, UITheme]);
+    }, [allProfiles, selectedProfileUuid, keepLauncherOpen, developerMode, UITheme]);
     
     return (
         <div className="settings-page settings-scroll-hidden">

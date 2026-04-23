@@ -80,7 +80,7 @@
     ],
     "extraResources": [
       {
-        "from": "proxy/build/windows/x64/release/dxgi.dll",
+        "from": "resources/proxy/dxgi.dll",
         "to": "proxy/dxgi.dll"
       }
     ],

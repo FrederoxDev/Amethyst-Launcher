@@ -3,7 +3,7 @@ import path from "node:path";
 
 const root = process.cwd();
 const source = path.join(root, "proxy", "build", "windows", "x64", "release", "dxgi.dll");
-const targetDir = path.join(root, "src", "renderer", "src", "assets", "proxy");
+const targetDir = path.join(root, "resources", "proxy");
 const target = path.join(targetDir, "dxgi.dll");
 
 if (!fs.existsSync(source)) {
