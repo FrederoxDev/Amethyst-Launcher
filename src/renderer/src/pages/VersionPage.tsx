@@ -7,9 +7,7 @@ import OpenFolderIconAsset from "@renderer/assets/images/icons/open-folder-icon.
 import InfoIconAsset from "@renderer/assets/images/icons/info-icon.png";
 import { Popup } from "@renderer/states/PopupStore";
 import { PopupPanel } from "@renderer/components/PopupPanel";
-import { MainPanel, MainPanelSection, PanelIndent } from "@renderer/components/MainPanel";
-import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
-import { MinecraftButton } from "@renderer/components/MinecraftButton";
+import { confirmAction } from "@renderer/popups/ConfirmPopup";
 
 const { shell: { openPath } } = window.require("electron") as typeof import("electron");
 
@@ -141,66 +139,24 @@ export function VersionPage() {
                                 <VersionButton
                                     version={version}
                                     onInspect={async (version) => {
-                                        await Popup.useAsync(({ submit }) => {
-                                            console.log(`Inspecting version ${version.version.toString()} at path: ${version.path}`);
-                                            return (
-                                                <PopupPanel>
-                                                    <div className="version-popup">
-                                                        <div className="version-popup-header">
-                                                            <p className="minecraft-seven version-popup-title">
-                                                                {version.version.toString()}
-                                                            </p>
-                                                            <div
-                                                                className="version-popup-close"
-                                                                onClick={() => submit()}
-                                                            >
-                                                                <svg width="12" height="12" viewBox="0 0 12 12">
-                                                                    <polygon
-                                                                        className="fill-[#FFFFFF]"
-                                                                        fillRule="evenodd"
-                                                                        points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"
-                                                                    />
-                                                                </svg>
-                                                            </div>
-                                                        </div>
-                                                        <div className="version-popup-body">
-                                                            <p className="minecraft-seven version-popup-path">{version.path}</p>
-                                                        </div>
-                                                    </div>
-                                                </PopupPanel>
-                                            );
-                                        });
+                                        await Popup.useAsync<void>(({ submit }) => (
+                                            <PopupPanel
+                                                title={version.version.toString()}
+                                                onClose={() => submit()}
+                                                size="lg"
+                                            >
+                                                <p className="minecraft-seven" style={{ fontSize: "12px", wordBreak: "break-all" }}>{version.path}</p>
+                                            </PopupPanel>
+                                        ));
                                     }}
                                     onDelete={async () => {
-                                        const result = await Popup.useAsync<boolean>(({ submit }) => {
-                                            return (
-                                                <PopupPanel onExit={() => submit(false)}>
-                                                    <div className="app-consent-panel" onClick={e => e.stopPropagation()}>
-                                                        <MainPanel>
-                                                            <MainPanelSection>
-                                                                <p>Are you sure you want to delete this version?</p>
-                                                                <PanelIndent className="app-consent-indent">
-                                                                    <p>You are about to delete "{version.name}"!</p>
-                                                                    <p>You can download (or import) this version later if you want.</p>
-                                                                </PanelIndent>
-                                                                <div className="app-consent-actions">
-                                                                    <MinecraftButton
-                                                                        text="Yeah, do it!"
-                                                                        onClick={() => submit(true)}
-                                                                        buttonStyle={MinecraftButtonStyle.Warn}
-                                                                    />
-                                                                    <MinecraftButton
-                                                                        text="No, don't do it!"
-                                                                        onClick={() => submit(false)}
-                                                                    />
-                                                                </div>
-                                                            </MainPanelSection>
-                                                        </MainPanel>
-                                                    </div>
-                                                </PopupPanel>
-                                            );
+                                        const ok = await confirmAction({
+                                            title: "Delete version?",
+                                            message: `You are about to delete "${version.name}". You can download (or import) this version again later.`,
+                                            confirmText: "Yeah, do it!",
+                                            cancelText: "No, don't do it!",
                                         });
-                                        if (result) {
+                                        if (ok) {
                                             setHiddenUuids(prev => new Set(prev).add(version.uuid));
                                             versionManager.uninstallVersion(version.uuid);
                                         }

@@ -2,7 +2,8 @@ import { create } from "zustand";
 
 import { GetLauncherConfig, LauncherConfig, SetLauncherConfig } from "@renderer/scripts/Launcher";
 import { GetAllMods, ValidatedMod } from "@renderer/scripts/Mods";
-import { GetProfiles, Profile, SetProfiles } from "@renderer/scripts/Profiles";
+import { GetProfiles, getProfileType, Profile, SetProfiles } from "@renderer/scripts/Profiles";
+import { MinecraftVersionType } from "@renderer/scripts/VersionDatabase";
 import { ILauncherPlatform } from "@renderer/scripts/platform/LauncherPlatform";
 import { WindowsLauncherPlatform } from "@renderer/scripts/platform/WindowsLauncherPlatform";
 import { LinuxLauncherPlatform } from "@renderer/scripts/platform/LinuxLauncherPlatform";
@@ -27,8 +28,12 @@ interface AppStore {
     allProfiles: Profile[];
     setAllProfiles: StateSetter<Profile[]>;
 
-    selectedProfileUuid: string | null;
-    setSelectedProfileUuid: StateSetter<string | null>;
+    selectedProfileUuids: { release: string | null; preview: string | null };
+    setSelectedProfileUuid: (type: MinecraftVersionType, uuid: string | null) => void;
+
+    /** UUID of the most recently launched profile. Persisted as `selected_profile_uuid` for the proxy DLL. */
+    launchedProfileUuid: string | null;
+    setLaunchedProfileUuid: StateSetter<string | null>;
 
     editingProfile: number;
     setEditingProfile: StateSetter<number>;
@@ -76,7 +81,8 @@ export const useAppStore = create<AppStore>((set, get) => {
         allRuntimes: [],
         allMinecraftVersions: [],
         allProfiles: [],
-        selectedProfileUuid: null,
+        selectedProfileUuids: { release: null, preview: null },
+        launchedProfileUuid: null,
         editingProfile: 0,
         UITheme: "System",
         keepLauncherOpen: true,
@@ -89,8 +95,10 @@ export const useAppStore = create<AppStore>((set, get) => {
             set(state => ({ allValidMods: StateUtils.resolveSetStateAction(value, state.allValidMods) })),
         setAllRuntimes: value => set(state => ({ allRuntimes: StateUtils.resolveSetStateAction(value, state.allRuntimes) })),
         setAllProfiles: value => set(state => ({ allProfiles: StateUtils.resolveSetStateAction(value, state.allProfiles) })),
-        setSelectedProfileUuid: value =>
-            set(state => ({ selectedProfileUuid: StateUtils.resolveSetStateAction(value, state.selectedProfileUuid) })),
+        setSelectedProfileUuid: (type, uuid) =>
+            set(state => ({ selectedProfileUuids: { ...state.selectedProfileUuids, [type]: uuid } })),
+        setLaunchedProfileUuid: value =>
+            set(state => ({ launchedProfileUuid: StateUtils.resolveSetStateAction(value, state.launchedProfileUuid) })),
         setEditingProfile: value =>
             set(state => ({ editingProfile: StateUtils.resolveSetStateAction(value, state.editingProfile) })),
         setUITheme: value => {
@@ -165,7 +173,9 @@ export const useAppStore = create<AppStore>((set, get) => {
 
             const launcherConfig: LauncherConfig = {
                 keep_open: state.keepLauncherOpen,
-                selected_profile_uuid: state.selectedProfileUuid,
+                selected_release_profile_uuid: state.selectedProfileUuids.release,
+                selected_preview_profile_uuid: state.selectedProfileUuids.preview,
+                selected_profile_uuid: state.launchedProfileUuid,
                 ui_theme: state.UITheme,
                 developer_mode: state.developerMode,
             };
@@ -182,19 +192,27 @@ export const useAppStore = create<AppStore>((set, get) => {
 async function hydrateStore(): Promise<void> {
     const profiles = GetProfiles();
     const config = GetLauncherConfig();
+    const versionManager = useAppStore.getState().versionManager;
 
-    let selectedProfileUuid: string | null = null;
-    if (config.selected_profile_uuid && profiles.some(p => p.uuid === config.selected_profile_uuid)) {
-        selectedProfileUuid = config.selected_profile_uuid;
-    } else if (profiles.length > 0) {
-        selectedProfileUuid = profiles[0].uuid;
-    }
+    const resolveSlot = (saved: string | null | undefined, type: MinecraftVersionType): string | null => {
+        if (saved && profiles.some(p => p.uuid === saved && getProfileType(p, versionManager) === type)) {
+            return saved;
+        }
+        const firstOfType = profiles.find(p => getProfileType(p, versionManager) === type);
+        return firstOfType ? firstOfType.uuid : null;
+    };
+
+    const selectedProfileUuids = {
+        release: resolveSlot(config.selected_release_profile_uuid, "release"),
+        preview: resolveSlot(config.selected_preview_profile_uuid, "preview"),
+    };
 
     useAppStore.setState({
         allProfiles: profiles,
         keepLauncherOpen: config.keep_open ?? true,
         developerMode: config.developer_mode ?? false,
-        selectedProfileUuid,
+        selectedProfileUuids,
+        launchedProfileUuid: config.selected_profile_uuid ?? null,
         UITheme: config.ui_theme ?? "Light"
     });
 

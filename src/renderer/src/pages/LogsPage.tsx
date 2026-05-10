@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { MinecraftButton, GRAY_MINECRAFT_BUTTON } from "@renderer/components/MinecraftButton";
 import { useAppStore } from "@renderer/states/AppStore";
@@ -13,8 +13,10 @@ interface LogFile {
     path: string;
     size: number;
     mtimeMs: number;
-    content: string;
 }
+
+const LINE_HEIGHT = 18;
+const OVERSCAN_LINES = 12;
 
 function formatSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
@@ -27,22 +29,22 @@ function formatTime(ms: number): string {
     return d.toLocaleString();
 }
 
-function highlightSegment(text: string, query: string, keyPrefix: string, counter: { n: number }): React.ReactNode {
-    if (!query) return text;
+function highlightSegment(text: string, lowerQuery: string, keyPrefix: string): React.ReactNode {
+    if (!lowerQuery) return text;
     const lower = text.toLowerCase();
-    const q = query.toLowerCase();
     const parts: React.ReactNode[] = [];
     let i = 0;
+    let segIdx = 0;
     while (i < text.length) {
-        const idx = lower.indexOf(q, i);
+        const idx = lower.indexOf(lowerQuery, i);
         if (idx === -1) {
+            if (i === 0) return text;
             parts.push(text.slice(i));
             break;
         }
         if (idx > i) parts.push(text.slice(i, idx));
-        parts.push(<mark key={`${keyPrefix}-${counter.n}`} className="logs-viewer-highlight">{text.slice(idx, idx + q.length)}</mark>);
-        counter.n++;
-        i = idx + q.length;
+        parts.push(<mark key={`${keyPrefix}-${segIdx++}`} className="logs-viewer-highlight">{text.slice(idx, idx + lowerQuery.length)}</mark>);
+        i = idx + lowerQuery.length;
     }
     return parts;
 }
@@ -76,40 +78,91 @@ function levelClass(level: string): string {
     }
 }
 
-function renderParsedLine(p: ParsedLine, lineIdx: number, query: string, counter: { n: number }): React.ReactNode {
+function renderParsedLine(p: ParsedLine, lineIdx: number, lowerQuery: string): React.ReactNode {
     if (!p.thread || !p.mod) {
-        return <div key={lineIdx} className="logs-line">{highlightSegment(p.raw || " ", query, `l${lineIdx}`, counter)}</div>;
+        return <div key={lineIdx} className="logs-line">{highlightSegment(p.raw || " ", lowerQuery, `l${lineIdx}`)}</div>;
     }
     const cls = levelClass(p.level);
     const showLevelTag = p.level !== "INFO";
     return (
         <div key={lineIdx} className="logs-line">
-            <span className="logs-line-meta">{highlightSegment(p.thread, query, `l${lineIdx}t`, counter)}</span>
+            <span className="logs-line-meta">{highlightSegment(p.thread, lowerQuery, `l${lineIdx}t`)}</span>
             {" "}
-            <span className="logs-line-meta">{highlightSegment(p.mod, query, `l${lineIdx}m`, counter)}</span>
+            <span className="logs-line-meta">{highlightSegment(p.mod, lowerQuery, `l${lineIdx}m`)}</span>
             {showLevelTag && " "}
-            {showLevelTag && <span className={cls}>{highlightSegment(`[${p.level}]`, query, `l${lineIdx}e`, counter)}</span>}
-            {p.rest && <span className={showLevelTag ? cls : undefined}>{highlightSegment(p.rest, query, `l${lineIdx}r`, counter)}</span>}
+            {showLevelTag && <span className={cls}>{highlightSegment(`[${p.level}]`, lowerQuery, `l${lineIdx}e`)}</span>}
+            {p.rest && <span className={showLevelTag ? cls : undefined}>{highlightSegment(p.rest, lowerQuery, `l${lineIdx}r`)}</span>}
         </div>
     );
 }
 
-function renderLog(
-    parsedLines: ParsedLine[],
-    query: string,
-    threadFilter: Set<string>,
-    modFilter: Set<string>,
-    levelFilter: Set<string>,
-): { nodes: React.ReactNode; matchCount: number } {
-    const counter = { n: 0 };
-    const filtered = parsedLines.filter(p => {
-        if (threadFilter.size > 0 && (!p.thread || !threadFilter.has(p.thread))) return false;
-        if (modFilter.size > 0 && (!p.mod || !modFilter.has(p.mod))) return false;
-        if (levelFilter.size > 0 && !levelFilter.has(p.level)) return false;
-        return true;
-    });
-    const nodes = filtered.map((p, idx) => renderParsedLine(p, idx, query, counter));
-    return { nodes, matchCount: counter.n };
+function countMatches(lines: ParsedLine[], lowerQuery: string): number {
+    if (!lowerQuery) return 0;
+    let n = 0;
+    for (let i = 0; i < lines.length; i++) {
+        const s = lines[i].raw.toLowerCase();
+        let j = 0;
+        while (true) {
+            const idx = s.indexOf(lowerQuery, j);
+            if (idx === -1) break;
+            n++;
+            j = idx + lowerQuery.length;
+        }
+    }
+    return n;
+}
+
+interface VirtualLogViewProps {
+    lines: ParsedLine[];
+    query: string;
+}
+
+function VirtualLogView({ lines, query }: VirtualLogViewProps) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [scrollTop, setScrollTop] = useState(0);
+    const [viewportH, setViewportH] = useState(400);
+    const lowerQuery = query.toLowerCase();
+
+    useLayoutEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        setViewportH(el.clientHeight);
+        const onScroll = () => setScrollTop(el.scrollTop);
+        el.addEventListener("scroll", onScroll, { passive: true });
+        const ro = new ResizeObserver(() => setViewportH(el.clientHeight));
+        ro.observe(el);
+        return () => {
+            el.removeEventListener("scroll", onScroll);
+            ro.disconnect();
+        };
+    }, []);
+
+    // reset scroll position when the underlying line set changes
+    useLayoutEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        el.scrollTop = 0;
+        setScrollTop(0);
+    }, [lines]);
+
+    const totalH = lines.length * LINE_HEIGHT;
+    const start = Math.max(0, Math.floor(scrollTop / LINE_HEIGHT) - OVERSCAN_LINES);
+    const end = Math.min(lines.length, Math.ceil((scrollTop + viewportH) / LINE_HEIGHT) + OVERSCAN_LINES);
+
+    const visible: React.ReactNode[] = [];
+    for (let i = start; i < end; i++) {
+        visible.push(renderParsedLine(lines[i], i, lowerQuery));
+    }
+
+    return (
+        <div ref={containerRef} className="logs-viewer-content scrollbar">
+            <div style={{ height: totalH, position: "relative" }}>
+                <div style={{ position: "absolute", top: start * LINE_HEIGHT, left: 0, right: 0 }}>
+                    {visible}
+                </div>
+            </div>
+        </div>
+    );
 }
 
 interface CheckboxFilterProps {
@@ -257,11 +310,7 @@ export function LogsPage() {
                 try {
                     const stat = fs.statSync(full);
                     if (!stat.isFile()) continue;
-                    let content = "";
-                    try {
-                        content = fs.readFileSync(full, "utf-8");
-                    } catch { /* binary or unreadable — search by name only */ }
-                    loaded.push({ name, path: full, size: stat.size, mtimeMs: stat.mtimeMs, content });
+                    loaded.push({ name, path: full, size: stat.size, mtimeMs: stat.mtimeMs });
                 } catch { /* ignore individual file errors */ }
             }
             loaded.sort((a, b) => b.mtimeMs - a.mtimeMs);
@@ -325,7 +374,7 @@ export function LogsPage() {
     const filteredFiles = useMemo(() => {
         if (!fileQuery) return files;
         const q = fileQuery.toLowerCase();
-        return files.filter(f => f.name.toLowerCase().includes(q) || f.content.toLowerCase().includes(q));
+        return files.filter(f => f.name.toLowerCase().includes(q));
     }, [files, fileQuery]);
 
     const parsedLines = useMemo(() => content.split("\n").map(parseLine), [content]);
@@ -350,10 +399,22 @@ export function LogsPage() {
 
     useEffect(() => { setThreadFilter(new Set()); setModFilter(new Set()); setLevelFilter(new Set()); }, [selected]);
 
-    const effectiveContentQuery = contentQuery || fileQuery;
-    const { nodes: renderedContent, matchCount } = useMemo(
-        () => renderLog(parsedLines, effectiveContentQuery, threadFilter, modFilter, levelFilter),
-        [parsedLines, effectiveContentQuery, threadFilter, modFilter, levelFilter]
+    const filteredLines = useMemo(() => {
+        if (threadFilter.size === 0 && modFilter.size === 0 && levelFilter.size === 0) {
+            return parsedLines;
+        }
+        return parsedLines.filter(p => {
+            if (threadFilter.size > 0 && (!p.thread || !threadFilter.has(p.thread))) return false;
+            if (modFilter.size > 0 && (!p.mod || !modFilter.has(p.mod))) return false;
+            if (levelFilter.size > 0 && !levelFilter.has(p.level)) return false;
+            return true;
+        });
+    }, [parsedLines, threadFilter, modFilter, levelFilter]);
+
+    const lowerContentQuery = contentQuery.toLowerCase();
+    const matchCount = useMemo(
+        () => countMatches(filteredLines, lowerContentQuery),
+        [filteredLines, lowerContentQuery]
     );
 
     return (
@@ -375,7 +436,7 @@ export function LogsPage() {
                     <input
                         type="text"
                         className="minecraft-seven logs-search"
-                        placeholder="Search name or contents..."
+                        placeholder="Search file name..."
                         spellCheck={false}
                         value={fileQuery}
                         onChange={e => setFileQuery(e.target.value)}
@@ -422,7 +483,7 @@ export function LogsPage() {
                                         value={contentQuery}
                                         onChange={e => setContentQuery(e.target.value)}
                                     />
-                                    {effectiveContentQuery && (
+                                    {contentQuery && (
                                         <span className="minecraft-seven logs-viewer-match-count">
                                             {matchCount} {matchCount === 1 ? "match" : "matches"}
                                         </span>
@@ -438,7 +499,7 @@ export function LogsPage() {
                                     <span className="minecraft-seven logs-viewer-filter-clear" onClick={() => { setThreadFilter(new Set()); setModFilter(new Set()); setLevelFilter(new Set()); }}>Clear</span>
                                 )}
                             </div>
-                            <div className="logs-viewer-content scrollbar">{renderedContent}</div>
+                            <VirtualLogView lines={filteredLines} query={contentQuery} />
                         </>
                     ) : (
                         <p className="minecraft-seven logs-empty">Select a log to view.</p>

@@ -23,48 +23,42 @@ export function NewInstancePopup({ submit: rawSubmit, versionLabel }: NewInstanc
     const canCreate = name.trim() !== "" && PathUtils.isValidFileName(name);
 
     return (
-        <PopupPanel>
-            <div className="version-picker new-instance-popup" onClick={e => e.stopPropagation()}>
-                <div className="version-picker-header">
-                    <p className="minecraft-seven" style={{ fontSize: "16px" }}>New Instance</p>
-                    <div className="version-popup-close" onClick={() => submit(null)}>
-                        <svg width="20" height="20" viewBox="0 0 12 12">
-                            <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
-                                points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
-                        </svg>
-                    </div>
+        <PopupPanel
+            title="New Instance"
+            onClose={() => submit(null)}
+            size="md"
+            footer={
+                <MinecraftButton
+                    text="Create"
+                    disabled={!canCreate}
+                    style={{ "--mc-button-container-w": "100px" }}
+                    onClick={() => submit({ kind: "create", name: name.trim(), runtime })}
+                />
+            }
+        >
+            <TextInput
+                label="Instance Name"
+                text={name}
+                setText={setName}
+                placeholder="Enter a name for your instance..."
+                style={{ width: "100%" }}
+            />
+            <div style={{ display: "flex", flexDirection: "column" }}>
+                <p className="minecraft-seven text-input-label">Version</p>
+                <div className="new-instance-version-field" onClick={() => submit({ kind: "reselect" })}>
+                    <span className="minecraft-seven">{versionLabel}</span>
                 </div>
-                <div className="version-picker-divider" />
-                <div className="version-picker-import-body">
-                    <TextInput
-                        label="Instance Name"
-                        text={name}
-                        setText={setName}
-                        placeholder="Enter a name for your instance..."
-                        style={{ width: "100%" }}
-                    />
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                        <p className="minecraft-seven text-input-label">Version</p>
-                        <div className="new-instance-version-field" onClick={() => submit({ kind: "reselect" })}>
-                            <span className="minecraft-seven">{versionLabel}</span>
-                        </div>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                        <p className="minecraft-seven text-input-label">Runtime</p>
-                        <MinecraftRadialButtonPanel
-                            elements={[
-                                { text: "Vanilla", value: "vanilla" },
-                                { text: "Modded", value: "modded" },
-                            ]}
-                            default_selected_value={runtime}
-                            onChange={value => setRuntime(value as RuntimeType)}
-                        />
-                    </div>
-                </div>
-                <div className="version-picker-divider" />
-                <div className="version-picker-footer">
-                    <MinecraftButton text="Create" disabled={!canCreate} style={{ "--mc-button-container-w": "100px" }} onClick={() => submit({ kind: "create", name: name.trim(), runtime })} />
-                </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+                <p className="minecraft-seven text-input-label">Runtime</p>
+                <MinecraftRadialButtonPanel
+                    elements={[
+                        { text: "Vanilla", value: "vanilla" },
+                        { text: "Modded", value: "modded" },
+                    ]}
+                    default_selected_value={runtime}
+                    onChange={value => setRuntime(value as RuntimeType)}
+                />
             </div>
         </PopupPanel>
     );

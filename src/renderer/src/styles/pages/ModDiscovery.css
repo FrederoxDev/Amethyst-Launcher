@@ -250,32 +250,6 @@
     text-decoration: underline;
 }
 
-.mod-confirm-popup {
-    width: 30%;
-    height: 18%;
-    animation: popup-scale-in 0.1s ease-out;
-}
-
-.mod-confirm-content {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-}
-
-.mod-confirm-warning {
-    color: #BCBEC0;
-}
-
-.mod-confirm-actions {
-    margin-top: auto;
-    display: flex;
-    gap: 8px;
-}
-
-.mod-confirm-actions > * {
-    flex: 1;
-}
-
 .mod-release-empty {
     color: #BCBEC0;
     font-size: 14px;
@@ -352,9 +326,9 @@
 }
 
 .mod-details-popup {
-    width: 80vw;
-    height: 85vh;
-    max-height: 85vh;
+    width: min(1100px, calc(100vw - 32px));
+    height: min(900px, calc(100vh - 32px));
+    max-height: calc(100vh - 32px);
 }
 
 .mod-card-skeleton {

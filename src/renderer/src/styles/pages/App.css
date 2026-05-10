@@ -1,12 +1,3 @@
-.app-consent-panel {
-    width: 50%;
-    height: 50%;
-}
-
-.app-consent-indent {
-    padding: 1rem;
-}
-
 .app-consent-link {
     color: #60a5fa;
     text-decoration: underline;
@@ -14,12 +5,6 @@
 
 .app-root {
     position: relative;
-}
-
-.app-consent-actions {
-    display: flex;
-    justify-content: space-around;
-    gap: 8px;
 }
 
 .app-background-layer {

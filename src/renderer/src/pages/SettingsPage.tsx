@@ -14,7 +14,7 @@ export function GeneralSettingsTab() {
     const developerMode = useAppStore(state => state.developerMode);
     const setDeveloperMode = useAppStore(state => state.setDeveloperMode);
     const allProfiles = useAppStore(state => state.allProfiles);
-    const selectedProfileUuid = useAppStore(state => state.selectedProfileUuid);
+    const selectedProfileUuids = useAppStore(state => state.selectedProfileUuids);
     const UITheme = useAppStore(state => state.UITheme);
     const setUITheme = useAppStore(state => state.setUITheme);
     const platform = useAppStore(state => state.platform);
@@ -37,7 +37,7 @@ export function GeneralSettingsTab() {
     useEffect(() => {
         const timer = setTimeout(updateCfgText, 0);
         return () => clearTimeout(timer);
-    }, [allProfiles, selectedProfileUuid, keepLauncherOpen, developerMode, UITheme]);
+    }, [allProfiles, selectedProfileUuids, keepLauncherOpen, developerMode, UITheme]);
     
     return (
         <div className="settings-page settings-scroll-hidden">
@@ -66,7 +66,7 @@ export function GeneralSettingsTab() {
                 </div>
             </div>
 
-            <div className="version-picker-divider" />
+            <div className="popup-divider" />
 
             <div className="settings-regular">
                 <p className="minecraft-seven settings-title">UI Theme</p>

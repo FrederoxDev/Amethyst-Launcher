@@ -50,8 +50,13 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
     }
 
     isProcessRunning(executableName: string): Promise<ProcessInfo | null> {
+        // Fast path: tasklist (~50ms). It happily reports zombie/tombstoned
+        // processes — entries that have fully exited but still appear in the
+        // process table because some external handle keeps the EPROCESS object
+        // alive (debuggers, leaked handles, etc.). A zombie has ThreadCount=0
+        // and is not actually running, so we follow up with a WMI verification
+        // when tasklist returns a hit.
         return new Promise((resolve) => {
-            // Use tasklist instead of PowerShell — much faster (~50ms vs ~2000ms).
             const proc = child.spawn(
                 "tasklist",
                 ["/FI", `IMAGENAME eq ${executableName}`, "/FO", "CSV", "/NH"],
@@ -68,13 +73,52 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
                         resolve(null);
                         return;
                     }
-                    // CSV format: "name","pid","session","session#","mem"
                     const match = line.split("\n")[0]?.match(/^"[^"]+","(\d+)"/);
                     const pid = match ? parseInt(match[1], 10) : -1;
-                    resolve({ pid, cwd: "", executableName });
+                    if (pid <= 0) {
+                        resolve(null);
+                        return;
+                    }
+                    this.isLiveProcess(pid).then((alive) => {
+                        resolve(alive ? { pid, cwd: "", executableName } : null);
+                    });
                 } catch {
                     resolve(null);
                 }
+            });
+        });
+    }
+
+    /**
+     * Confirms a PID corresponds to a process that is actually running by
+     * querying its thread count via WMI. A tombstoned process held alive only
+     * by an external handle reports ThreadCount=0 and should be ignored.
+     */
+    private isLiveProcess(pid: number): Promise<boolean> {
+        return new Promise((resolve) => {
+            const proc = child.spawn(
+                "powershell",
+                [
+                    "-NoProfile",
+                    "-NonInteractive",
+                    "-Command",
+                    `(Get-CimInstance Win32_Process -Filter "ProcessId=${pid}" -Property ThreadCount).ThreadCount`,
+                ],
+                { encoding: "utf-8" } as any
+            );
+
+            let stdout = "";
+            proc.stdout?.on("data", (data: string | Buffer) => { stdout += data.toString(); });
+            // Fail-open: if WMI is unavailable, assume the tasklist hit is real
+            // rather than letting the user launch over a possibly-running MC.
+            proc.on("error", () => resolve(true));
+            proc.on("close", () => {
+                const threadCount = parseInt(stdout.trim(), 10);
+                if (Number.isNaN(threadCount)) {
+                    resolve(true);
+                    return;
+                }
+                resolve(threadCount > 0);
             });
         });
     }

@@ -177,118 +177,101 @@ export function VersionPickerPopup({ submit: rawSubmit }: PopupUseArguments<Vers
         });
     };
 
-    // Upload sub-view
     if (upload) {
         return (
-            <PopupPanel>
-                <div className="version-picker import-version-popup" onClick={e => e.stopPropagation()}>
-                    <div className="version-picker-header">
-                        <p className="minecraft-seven" style={{ fontSize: "16px" }}>Import Version</p>
-                        <div className="version-popup-close" onClick={() => setUpload(null)}>
-                            <svg width="20" height="20" viewBox="0 0 12 12">
-                                <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
-                                    points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
-                            </svg>
-                        </div>
-                    </div>
-                    <div className="version-picker-divider" />
-                    <div className="version-picker-import-body">
-                        <TextInput
-                            label="Version Name"
-                            text={upload.name}
-                            setText={(v) => setUpload({ ...upload, name: typeof v === "function" ? v(upload.name) : v })}
-                            style={{ width: "100%" }}
-                        />
-                        <TextInput
-                            label="Version"
-                            text={upload.version}
-                            setText={(v) => setUpload({ ...upload, version: typeof v === "function" ? v(upload.version) : v })}
-                            style={{ width: "100%" }}
-                        />
-                        <p className="minecraft-seven" style={{ fontSize: "11px", color: "#9f9f9f", wordBreak: "break-all" }}>
-                            File: {upload.file}
-                        </p>
-                    </div>
-                    <div className="version-picker-divider" />
-                    <div className="version-picker-footer">
+            <PopupPanel
+                title="Import Version"
+                onClose={() => setUpload(null)}
+                size="lg"
+                footerAlign="between"
+                footer={
+                    <>
                         <MinecraftButton text="Back" style={{ "--mc-button-container-w": "100px" }} onClick={() => setUpload(null)} />
                         <MinecraftButton text="Continue" disabled={!canImport} style={{ "--mc-button-container-w": "100px" }} onClick={doImport} />
-                    </div>
-                </div>
+                    </>
+                }
+            >
+                <TextInput
+                    label="Version Name"
+                    text={upload.name}
+                    setText={(v) => setUpload({ ...upload, name: typeof v === "function" ? v(upload.name) : v })}
+                    style={{ width: "100%" }}
+                />
+                <TextInput
+                    label="Version"
+                    text={upload.version}
+                    setText={(v) => setUpload({ ...upload, version: typeof v === "function" ? v(upload.version) : v })}
+                    style={{ width: "100%" }}
+                />
+                <p className="minecraft-seven" style={{ fontSize: "11px", color: "#9f9f9f", wordBreak: "break-all" }}>
+                    File: {upload.file}
+                </p>
             </PopupPanel>
         );
     }
 
-    // Main version picker view
     return (
-        <PopupPanel onExit={() => submit(null)}>
-            <div className="version-picker" onClick={e => e.stopPropagation()}>
-                <div className="version-picker-header">
-                    <p className="minecraft-seven" style={{ fontSize: "16px" }}>Select Version</p>
-                    <div className="version-popup-close" onClick={() => submit(null)}>
-                        <svg width="20" height="20" viewBox="0 0 12 12">
-                            <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
-                                points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
-                        </svg>
-                    </div>
-                </div>
-                <div className="version-picker-divider" />
-                <div className="version-picker-list scrollbar">
-                    {installedVersions.length > 0 && (
-                        <>
-                            <p className="minecraft-seven version-picker-section-title">Installed</p>
-                            {installedVersions.map(v => (
-                                <div key={v.uuid} className="version-picker-item" onClick={() => selectInstalled(v.uuid)}>
-                                    <p className="minecraft-seven">{v.name}</p>
-                                    <div className="version-picker-item-actions">
-                                        <span className="minecraft-seven version-picker-item-tag">{v.type === "preview" ? "Preview" : "Stable"}</span>
-                                        <div className="version-picker-item-btn" onClick={e => { e.stopPropagation(); shell.openPath(v.path); }}>
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                                                <path d="M1 3C1 2.44772 1.44772 2 2 2H6.17157C6.43679 2 6.69114 2.10536 6.87868 2.29289L7.70711 3.12132C7.89464 3.30886 8.149 3.41421 8.41421 3.41421H14C14.5523 3.41421 15 3.86193 15 4.41421V13C15 13.5523 14.5523 14 14 14H2C1.44772 14 1 13.5523 1 13V3Z" stroke="#FFFFFF" strokeWidth="1.5" />
-                                            </svg>
-                                        </div>
-                                        <div className="version-picker-item-btn version-picker-item-btn--danger" onClick={e => { e.stopPropagation(); setHiddenUuids(prev => new Set(prev).add(v.uuid)); versionManager.uninstallVersion(v.uuid); }}>
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                                                <path d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </>
-                    )}
-
-                    <p className="minecraft-seven version-picker-section-title">Versions</p>
-                    {fetching ? (
-                        Array.from({ length: 8 }).map((_, i) => (
-                            <div key={i} className="version-picker-item version-picker-skeleton">
-                                <div className="version-picker-skeleton-text" style={{ width: `${100 + (i % 3) * 30}px` }} />
-                                <div className="version-picker-skeleton-tag" />
-                            </div>
-                        ))
-                    ) : (
-                        allVersionsSorted.map(v => {
-                            const isPreview = v.type === "preview";
-                            if (isPreview && !previewsVisible) return null;
-                            const animClass = isPreview ? (previewAnim === "entering" ? " preview-enter" : previewAnim === "exiting" ? " preview-exit" : "") : "";
-                            return (
-                                <div key={v.uuid} className={`version-picker-item${isPreview ? " version-picker-preview-item" : ""}${animClass}`} onClick={() => selectRemote(v)}>
-                                    <p className="minecraft-seven">{v.version.toString()}</p>
-                                    <span className="minecraft-seven version-picker-item-tag">{isPreview ? "Preview" : "Stable"}</span>
-                                </div>
-                            );
-                        })
-                    )}
-                </div>
-                <div className="version-picker-divider" />
-                <div className="version-picker-footer">
+        <PopupPanel
+            title="Select Version"
+            onClose={() => submit(null)}
+            size="xl"
+            bodyClassName="version-picker-list scrollbar"
+            footerAlign="between"
+            footer={
+                <>
                     <div className="version-picker-toggle">
                         <MinecraftToggle isChecked={showPreviews} setIsChecked={setShowPreviews} />
                         <span className="minecraft-seven">Show Previews</span>
                     </div>
                     <MinecraftButton text="Import .msixvc" style={{ "--mc-button-container-w": "140px" }} onClick={openFilePicker} />
-                </div>
-            </div>
+                </>
+            }
+        >
+            {installedVersions.length > 0 && (
+                <>
+                    <p className="minecraft-seven version-picker-section-title">Installed</p>
+                    {installedVersions.map(v => (
+                        <div key={v.uuid} className="version-picker-item" onClick={() => selectInstalled(v.uuid)}>
+                            <p className="minecraft-seven">{v.name}</p>
+                            <div className="version-picker-item-actions">
+                                <span className="minecraft-seven version-picker-item-tag">{v.type === "preview" ? "Preview" : "Stable"}</span>
+                                <div className="version-picker-item-btn" onClick={e => { e.stopPropagation(); shell.openPath(v.path); }}>
+                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                        <path d="M1 3C1 2.44772 1.44772 2 2 2H6.17157C6.43679 2 6.69114 2.10536 6.87868 2.29289L7.70711 3.12132C7.89464 3.30886 8.149 3.41421 8.41421 3.41421H14C14.5523 3.41421 15 3.86193 15 4.41421V13C15 13.5523 14.5523 14 14 14H2C1.44772 14 1 13.5523 1 13V3Z" stroke="#FFFFFF" strokeWidth="1.5" />
+                                    </svg>
+                                </div>
+                                <div className="version-picker-item-btn version-picker-item-btn--danger" onClick={e => { e.stopPropagation(); setHiddenUuids(prev => new Set(prev).add(v.uuid)); versionManager.uninstallVersion(v.uuid); }}>
+                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                        <path d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </>
+            )}
+
+            <p className="minecraft-seven version-picker-section-title">Versions</p>
+            {fetching ? (
+                Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="version-picker-item version-picker-skeleton">
+                        <div className="version-picker-skeleton-text" style={{ width: `${100 + (i % 3) * 30}px` }} />
+                        <div className="version-picker-skeleton-tag" />
+                    </div>
+                ))
+            ) : (
+                allVersionsSorted.map(v => {
+                    const isPreview = v.type === "preview";
+                    if (isPreview && !previewsVisible) return null;
+                    const animClass = isPreview ? (previewAnim === "entering" ? " preview-enter" : previewAnim === "exiting" ? " preview-exit" : "") : "";
+                    return (
+                        <div key={v.uuid} className={`version-picker-item${isPreview ? " version-picker-preview-item" : ""}${animClass}`} onClick={() => selectRemote(v)}>
+                            <p className="minecraft-seven">{v.version.toString()}</p>
+                            <span className="minecraft-seven version-picker-item-tag">{isPreview ? "Preview" : "Stable"}</span>
+                        </div>
+                    );
+                })
+            )}
         </PopupPanel>
     );
 }
