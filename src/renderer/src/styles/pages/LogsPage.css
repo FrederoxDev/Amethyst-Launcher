@@ -317,8 +317,7 @@
     color: #dddddd;
     font-family: 'Courier New', monospace;
     font-size: 13px;
-    line-height: 1.4;
-    white-space: pre;
+    line-height: 18px;
     overflow: auto;
 }
 
@@ -327,8 +326,10 @@
 }
 
 .logs-line {
-    white-space: pre-wrap;
-    word-break: break-word;
+    white-space: pre;
+    height: 18px;
+    line-height: 18px;
+    overflow: hidden;
 }
 
 .logs-line-meta {

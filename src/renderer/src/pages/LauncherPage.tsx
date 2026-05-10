@@ -6,7 +6,7 @@ import { useShallow } from "zustand/shallow";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { launchProfile } from "@renderer/scripts/LaunchUtils";
 import { useNavigate } from "react-router-dom";
-import { Profile } from "@renderer/scripts/Profiles";
+import { getProfileType, Profile } from "@renderer/scripts/Profiles";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { createProfileFlow } from "@renderer/scripts/ProfileCreation";
@@ -145,7 +145,7 @@ const ProfileCard = ({ profile, versionName, runtimeWarning, onEdit, onPlay, onD
 export function LauncherPage() {
     const [
         allProfiles,
-        selectedProfileUuid,
+        selectedProfileUuids,
         setSelectedProfileUuid,
         setEditingProfile,
         setAllProfiles,
@@ -156,7 +156,7 @@ export function LauncherPage() {
         versionManager
     ] = useAppStore(useShallow(state => [
         state.allProfiles,
-        state.selectedProfileUuid,
+        state.selectedProfileUuids,
         state.setSelectedProfileUuid,
         state.setEditingProfile,
         state.setAllProfiles,
@@ -166,6 +166,11 @@ export function LauncherPage() {
         state.allMods,
         state.versionManager
     ]));
+
+    const isProfileSelected = (profile: Profile): boolean => {
+        const type = getProfileType(profile, versionManager);
+        return selectedProfileUuids[type] === profile.uuid;
+    };
 
     const getVersionName = (profile: Profile): string => {
         if (profile.version_uuid) {
@@ -357,13 +362,13 @@ export function LauncherPage() {
                             profile={profile}
                             versionName={getVersionName(profile)}
                             runtimeWarning={runtimeWarning}
-                            isSelected={selectedProfileUuid === profile.uuid}
+                            isSelected={isProfileSelected(profile)}
                             canPlay={ProgressBar.canDoAction("launch") && !runtimeWarning}
                             onEdit={() => {
                                 setEditingProfile(index);
                                 navigate("/profile-editor");
                             }}
-                            onPlay={() => { setSelectedProfileUuid(profile.uuid); launchGame(profile); }}
+                            onPlay={() => { setSelectedProfileUuid(getProfileType(profile, versionManager), profile.uuid); launchGame(profile); }}
                             onDelete={() => deleteProfile(index)}
                             onOpenInstallFolder={() => openInstallFolder(profile)}
                             onOpenDataFolder={() => openDataFolder(profile)}
@@ -398,7 +403,7 @@ export function LauncherPage() {
                                 profile={dragProfile}
                                 versionName={getVersionName(dragProfile)}
                                 runtimeWarning={getRuntimeWarning(dragProfile)}
-                                isSelected={selectedProfileUuid === dragProfile.uuid}
+                                isSelected={isProfileSelected(dragProfile)}
                                 canPlay={false}
                                 onEdit={() => {}}
                                 onPlay={() => {}}

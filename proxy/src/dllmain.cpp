@@ -20,11 +20,17 @@ DWORD dMcThreadID = NULL;
 HANDLE hMcThreadHandle = NULL;
 
 NtSuspendThreadPtr NtSuspendThread = NULL; // NtSuspendThread function pointer
+NtResumeThreadPtr NtResumeThread = NULL;   // NtResumeThread function pointer
 RuntimeInitPtr RuntimeInit = NULL; // Amethyst Init function pointer
 
 void SuspendMinecraftThread()
 {
 	NtSuspendThread(hMcThreadHandle, NULL);
+}
+
+void ResumeMinecraftThread()
+{
+    NtResumeThread(hMcThreadHandle, NULL);
 }
 
 void LoadNtdll() {
@@ -42,7 +48,15 @@ void LoadNtdll() {
         return;
     }
 
+    FARPROC _NtResumeThread = GetProcAddress(ntdllHandle, "NtResumeThread");
+    if (_NtResumeThread == 0) {
+        std::println("[  proxy] [AmethystProxy] Could not find ProcAddress of NtResumeThread in ntdll.dll");
+        ShutdownWait();
+        return;
+    }
+
     NtSuspendThread = (NtSuspendThreadPtr)_NtSuspendThread;
+    NtResumeThread = (NtResumeThreadPtr)_NtResumeThread;
 }
 
 HMODULE InjectIntoMinecraft(std::wstring& path)
@@ -103,6 +117,14 @@ void Proxy()
 {
     InitializeConsole();
 
+    // Resolve ntdll exports and freeze the MC main thread BEFORE doing any
+    // file I/O. This collapses the race window where MC could run past a
+    // hook target while we read config files. It is safe to suspend here:
+    // we will not call LoadLibraryW until after we resume MC again, so we
+    // cannot deadlock on the loader lock.
+    LoadNtdll();
+    SuspendMinecraftThread();
+
     fs::path launcherConfigPath = GetLauncherRootPath() / "launcher_config.json";
     if (!fs::exists(launcherConfigPath)) {
         launcherConfigPath = GetLegacyComMojangPath() / "amethyst" / "launcher_config.json";
@@ -111,6 +133,7 @@ void Proxy()
     std::ifstream launcherFile = std::ifstream(launcherConfigPath);
     if (!launcherFile.is_open()) {
         std::cerr << red << "[Amethyst-Loader] Could not open " << launcherConfigPath << "\n" << reset;
+        ResumeMinecraftThread();
         return;
     }
 
@@ -119,6 +142,7 @@ void Proxy()
         launcherFile >> launcherConfig;
     } catch (const std::exception& e) {
         std::cerr << red << "[Amethyst-Loader] Failed to parse launcher_config.json: " << e.what() << "\n" << reset;
+        ResumeMinecraftThread();
         return;
     }
 
@@ -172,6 +196,7 @@ void Proxy()
 
     if (runtimeName.empty()) {
         std::cerr << red << "Could not resolve runtime from selected profile in launcher configuration." << std::endl << reset;
+        ResumeMinecraftThread();
         return;
     }
 
@@ -179,6 +204,7 @@ void Proxy()
     if (runtimeName == "Vanilla") {
         std::println("[  proxy] [AmethystProxy] Detected vanilla runtime, no runtime DLL will be injected.");
         HideConsole();
+        ResumeMinecraftThread();
         return;
     }
 
@@ -208,6 +234,7 @@ void Proxy()
 
         if (!fs::exists(runtimeDll)) {
             std::println("{}[  proxy] [AmethystProxy] Runtime DLL not found in '{}' or legacy path'{}'{}", red, modernPath.string(), runtimeDll.string(), reset);
+            ResumeMinecraftThread();
             ShutdownWait();
             return;
         }
@@ -220,29 +247,30 @@ void Proxy()
     std::println("[  proxy] [AmethystProxy] McThreadID: {}, McThreadHandle: {}", dMcThreadID, hMcThreadHandle);
     std::println("[  proxy] [AmethystProxy] Injecting runtime '{}'", runtimeName);
 
-    // Load the runtime before suspending Minecraft. Suspending first can deadlock
-    // if the MC main thread is holding the loader lock (common during startup) —
-    // our LoadLibraryW would then block forever waiting for a lock held by a
-    // suspended thread.
+    // Briefly resume MC so we can call LoadLibraryW without deadlocking on
+    // the loader lock — if MC were suspended while holding it, our load
+    // would block forever. This is the only window where MC runs free, and
+    // it is kept as small as possible.
     std::wstring widePath = runtimeDll.wstring();
+    ResumeMinecraftThread();
     HMODULE runtimeHandle = InjectIntoMinecraft(widePath);
+    SuspendMinecraftThread();
 
     if (runtimeHandle == NULL) {
         std::println("{}[  proxy] [AmethystProxy] Could not get handle to injected runtime {}{}", red, runtimeName, reset);
+        ResumeMinecraftThread();
         return ShutdownWait();
     }
 
     FARPROC _RuntimeInit = GetProcAddress(runtimeHandle, "Init");
     if (_RuntimeInit == NULL) {
         std::println("{}[  proxy] [AmethystProxy] The proxy expects function 'void Init(DWORD dMcThreadID, HANDLE hMcThreadHandle)' to be exported and was unable to find it.{}", red, reset);
+        ResumeMinecraftThread();
         return ShutdownWait();
     }
 
-    // Now suspend MC so the runtime can patch before MC resumes. The runtime
-    // is responsible for resuming the thread via hMcThreadHandle.
-    LoadNtdll();
-    SuspendMinecraftThread();
-
+    // MC is still suspended here. The runtime is responsible for resuming
+    // the thread via hMcThreadHandle once it has finished patching.
     RuntimeInit = (RuntimeInitPtr)_RuntimeInit;
     RuntimeInit(dMcThreadID, hMcThreadHandle);
 }

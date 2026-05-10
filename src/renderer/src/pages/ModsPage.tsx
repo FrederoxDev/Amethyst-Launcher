@@ -77,60 +77,31 @@ export function ModsPage() {
                 </div>
             </MainPanel>
             {selectedReport && (
-                <PopupPanel onExit={() => setSelectedReport(undefined)}>
-                    <div className="mods-popup">
-                        <div className="mods-popup-section">
-                            <div className="mods-popup-header-row">
-                                <p className="minecraft-seven mods-popup-title">
-                                    {selectedReport.id}
-                                </p>
-                                <div
-                                    className="mods-popup-close"
-                                    onClick={() => setSelectedReport(undefined)}
-                                >
-                                    <svg width="12" height="12" viewBox="0 0 12 12">
-                                        <polygon
-                                            className="fill-[#FFFFFF]"
-                                            fillRule="evenodd"
-                                            points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"
-                                        />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                        {selectedReport.errors.length > 0 ? (
-                            <div className="mods-popup-section">
-                                <p className="minecraft-seven mods-popup-subtitle">Errors:</p>
-                                <ul>
-                                    {selectedReport.errors.map(err => (
-                                        <li className="minecraft-seven mods-popup-error-item" key={err}>
-                                            - {err}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ) : (
-                            <div className="mods-popup-section">
-                                <p className="minecraft-seven mods-popup-subtitle">No errors detected!</p>
-                            </div>
-                        )}
-                        {selectedReport.warnings.length > 0 ? (
-                            <div className="mods-popup-section">
-                                <p className="minecraft-seven mods-popup-subtitle">Warnings:</p>
-                                <ul>
-                                    {selectedReport.warnings.map(err => (
-                                        <li className="minecraft-seven mods-popup-warning-item" key={err}>
-                                            - {err}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ) : (
-                            <div className="mods-popup-section">
-                                <p className="minecraft-seven mods-popup-subtitle">No errors detected!</p>
-                            </div>
-                        )}
-                    </div>
+                <PopupPanel
+                    title={selectedReport.id}
+                    onClose={() => setSelectedReport(undefined)}
+                    size="lg"
+                >
+                    <p className="minecraft-seven mods-popup-subtitle">
+                        {selectedReport.errors.length > 0 ? "Errors:" : "No errors detected!"}
+                    </p>
+                    {selectedReport.errors.length > 0 && (
+                        <ul>
+                            {selectedReport.errors.map(err => (
+                                <li className="minecraft-seven mods-popup-error-item" key={err}>- {err}</li>
+                            ))}
+                        </ul>
+                    )}
+                    <p className="minecraft-seven mods-popup-subtitle">
+                        {selectedReport.warnings.length > 0 ? "Warnings:" : "No warnings detected!"}
+                    </p>
+                    {selectedReport.warnings.length > 0 && (
+                        <ul>
+                            {selectedReport.warnings.map(err => (
+                                <li className="minecraft-seven mods-popup-warning-item" key={err}>- {err}</li>
+                            ))}
+                        </ul>
+                    )}
                 </PopupPanel>
             )}
         </>

@@ -69,40 +69,6 @@
     height: fit-content;
 }
 
-.mods-popup {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    border: 3px solid #1E1E1F;
-}
-
-.mods-popup-section {
-    width: 500px;
-    border-top: 3px solid #5a5b5c;
-    border-bottom: 3px solid #333334;
-    background-color: #48494a;
-    padding: 8px;
-}
-
-.mods-popup-header-row {
-    display: flex;
-}
-
-.mods-popup-title {
-    color: white;
-    font-size: 14px;
-    max-width: 400px;
-}
-
-.mods-popup-close {
-    padding: 4px;
-    justify-content: center;
-    align-items: center;
-    margin-left: auto;
-    cursor: pointer;
-}
-
 .mods-popup-subtitle {
     color: white;
     font-size: 12px;

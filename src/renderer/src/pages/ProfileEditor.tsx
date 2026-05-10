@@ -37,59 +37,14 @@ function AddContentPopup({ submit: rawSubmit }: PopupUseArguments<string | "brow
     }, [availableMods, search]);
 
     return (
-        <PopupPanel onExit={() => submit(null)}>
-            <div className="version-picker" onClick={e => e.stopPropagation()}>
-                <div className="version-picker-header">
-                    <p className="minecraft-seven" style={{ fontSize: "16px" }}>Add Content</p>
-                    <div className="version-popup-close" onClick={() => submit(null)}>
-                        <svg width="20" height="20" viewBox="0 0 12 12">
-                            <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
-                                points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
-                        </svg>
-                    </div>
-                </div>
-                <div className="version-picker-divider" />
-                <div style={{ padding: "8px" }}>
-                    <div className="mod-search-box">
-                        <svg className="mod-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f6f6f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="11" cy="11" r="8" />
-                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                        </svg>
-                        <input
-                            type="text"
-                            className="minecraft-seven mod-search-input"
-                            spellCheck={false}
-                            placeholder="Search local mods..."
-                            value={search}
-                            onInput={e => setSearch(e.currentTarget.value)}
-                        />
-                    </div>
-                </div>
-                <div className="version-picker-list scrollbar">
-                    {filtered.length === 0 && (
-                        <p className="minecraft-seven" style={{ color: "#9f9f9f", padding: "12px", textAlign: "center" }}>
-                            {search ? "No mods match your search." : "No local mods available."}
-                        </p>
-                    )}
-                    {filtered.map(mod => {
-                        const iconPath = getModIconPath(modsPath, mod);
-                        return (
-                            <div key={mod} className="version-picker-item" style={{ justifyContent: "flex-start", gap: 10, padding: "4px 6px" }} onClick={() => submit(mod)}>
-                                <div className="profile-editor-mod-icon">
-                                    {iconPath
-                                        ? <img src={`file://${iconPath}`} width="36" height="36" className="pixelated" style={{ borderRadius: 3 }} alt="" />
-                                        : <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                            <rect x="2" y="2" width="12" height="12" rx="2" stroke="#6f6f6f" strokeWidth="1.5" />
-                                            <path d="M5 8h6M8 5v6" stroke="#6f6f6f" strokeWidth="1.5" strokeLinecap="round" />
-                                        </svg>}
-                                </div>
-                                <p className="minecraft-seven">{mod}</p>
-                            </div>
-                        );
-                    })}
-                </div>
-                <div className="version-picker-divider" />
-                <div className="version-picker-footer" style={{ justifyContent: "flex-start", gap: 8 }}>
+        <PopupPanel
+            title="Add Content"
+            onClose={() => submit(null)}
+            size="md"
+            bodyClassName="popup-body--flush"
+            footerAlign="start"
+            footer={
+                <>
                     {MOD_DISCOVERY_ENABLED && <MinecraftButton text="Browse Mods" style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "140px" }} onClick={() => submit("browse")} />}
                     <MinecraftButton text="Open Mods Folder" colorPallete={GRAY_MINECRAFT_BUTTON} style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "160px" }} onClick={async () => {
                         try {
@@ -110,7 +65,47 @@ function AddContentPopup({ submit: rawSubmit }: PopupUseArguments<string | "brow
                             setError(message);
                         }
                     }} />
+                </>
+            }
+        >
+            <div style={{ padding: "8px", flexShrink: 0 }}>
+                <div className="mod-search-box">
+                    <svg className="mod-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f6f6f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    <input
+                        type="text"
+                        className="minecraft-seven mod-search-input"
+                        spellCheck={false}
+                        placeholder="Search local mods..."
+                        value={search}
+                        onInput={e => setSearch(e.currentTarget.value)}
+                    />
                 </div>
+            </div>
+            <div className="version-picker-list scrollbar">
+                {filtered.length === 0 && (
+                    <p className="minecraft-seven" style={{ color: "#9f9f9f", padding: "12px", textAlign: "center" }}>
+                        {search ? "No mods match your search." : "No local mods available."}
+                    </p>
+                )}
+                {filtered.map(mod => {
+                    const iconPath = getModIconPath(modsPath, mod);
+                    return (
+                        <div key={mod} className="version-picker-item" style={{ justifyContent: "flex-start", gap: 10, padding: "4px 6px" }} onClick={() => submit(mod)}>
+                            <div className="profile-editor-mod-icon">
+                                {iconPath
+                                    ? <img src={`file://${iconPath}`} width="36" height="36" className="pixelated" style={{ borderRadius: 3 }} alt="" />
+                                    : <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <rect x="2" y="2" width="12" height="12" rx="2" stroke="#6f6f6f" strokeWidth="1.5" />
+                                        <path d="M5 8h6M8 5v6" stroke="#6f6f6f" strokeWidth="1.5" strokeLinecap="round" />
+                                    </svg>}
+                            </div>
+                            <p className="minecraft-seven">{mod}</p>
+                        </div>
+                    );
+                })}
             </div>
         </PopupPanel>
     );
@@ -193,34 +188,26 @@ export function ProfileEditor() {
         if (orphanedMods.length === 0) return true;
 
         const result = await Popup.useAsync<"delete" | "keep" | null>(({ submit }) => (
-            <PopupPanel onExit={() => submit(null)}>
-                <div className="version-picker" style={{ width: 380 }} onClick={e => e.stopPropagation()}>
-                    <div className="version-picker-header">
-                        <p className="minecraft-seven" style={{ fontSize: "16px" }}>Delete Mods?</p>
-                        <div className="version-popup-close" onClick={() => submit(null)}>
-                            <svg width="20" height="20" viewBox="0 0 12 12">
-                                <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
-                                    points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
-                            </svg>
-                        </div>
-                    </div>
-                    <div className="version-picker-divider" />
-                    <div style={{ padding: "12px 16px" }}>
-                        <p className="minecraft-seven" style={{ color: "#9f9f9f", fontSize: "12px", marginBottom: 8 }}>
-                            {orphanedMods.length === 1
-                                ? "This mod is not used by any other profile:"
-                                : "These mods are not used by any other profile:"}
-                        </p>
-                        {orphanedMods.map(name => (
-                            <p key={name} className="minecraft-seven" style={{ color: "white", fontSize: "13px", padding: "2px 0" }}>{name}</p>
-                        ))}
-                    </div>
-                    <div className="version-picker-divider" />
-                    <div className="version-picker-footer" style={{ justifyContent: "flex-start", gap: 8 }}>
+            <PopupPanel
+                title="Delete Mods?"
+                onClose={() => submit(null)}
+                size="sm"
+                footerAlign="start"
+                footer={
+                    <>
                         <MinecraftButton text="Delete from Disk" style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "160px" }} onClick={() => submit("delete")} />
                         <MinecraftButton text="Keep Files" colorPallete={GRAY_MINECRAFT_BUTTON} style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "120px" }} onClick={() => submit("keep")} />
-                    </div>
-                </div>
+                    </>
+                }
+            >
+                <p className="minecraft-seven" style={{ color: "#9f9f9f", fontSize: "12px" }}>
+                    {orphanedMods.length === 1
+                        ? "This mod is not used by any other profile:"
+                        : "These mods are not used by any other profile:"}
+                </p>
+                {orphanedMods.map(name => (
+                    <p key={name} className="minecraft-seven" style={{ color: "white", fontSize: "13px", padding: "2px 0" }}>{name}</p>
+                ))}
             </PopupPanel>
         ));
 

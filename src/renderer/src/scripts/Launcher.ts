@@ -9,6 +9,13 @@ function getPaths() {
 
 export interface LauncherConfig {
     keep_open: boolean;
+    selected_release_profile_uuid?: string | null;
+    selected_preview_profile_uuid?: string | null;
+    /**
+     * UUID of the most recently launched profile. Written right before launch so
+     * the proxy DLL can pick the correct runtime. Not the source of UI selection
+     * highlighting — that's selected_release/preview_profile_uuid.
+     */
     selected_profile_uuid?: string | null;
     ui_theme: string;
     developer_mode: boolean;
@@ -28,6 +35,8 @@ export function GetLauncherConfig(): LauncherConfig {
     return {
         keep_open: true,
         ui_theme: "System",
+        selected_release_profile_uuid: null,
+        selected_preview_profile_uuid: null,
         selected_profile_uuid: null,
         developer_mode: false,
         ...data,

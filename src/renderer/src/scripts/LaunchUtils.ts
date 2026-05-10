@@ -57,6 +57,11 @@ export async function launchProfile(profile: Profile): Promise<void> {
             throw new Error(`Installed version with UUID ${profile.version_uuid} not found! It may have been deleted.`);
         }
 
+        // The proxy DLL reads the launching profile's UUID from launcher_config.json
+        // to pick the runtime — must be on disk before Minecraft starts.
+        state.setLaunchedProfileUuid(profile.uuid);
+        state.saveData();
+
         await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
             setStatus("launching");
             setProgress(0.5);
@@ -97,6 +102,10 @@ export async function launchProfile(profile: Profile): Promise<void> {
             state.saveData();
         }
     }, true);
+
+    // Persist the launching profile UUID for the proxy DLL before Minecraft starts.
+    state.setLaunchedProfileUuid(profile.uuid);
+    state.saveData();
 
     await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
         setStatus("launching");

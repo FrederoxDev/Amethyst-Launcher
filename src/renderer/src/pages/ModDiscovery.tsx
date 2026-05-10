@@ -378,38 +378,26 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
             const profileIndex = await Popup.useAsync<number | null>(({ submit }) => {
                 const profiles = useAppStore.getState().allProfiles;
                 return (
-                    <PopupPanel onExit={() => submit(null)}>
-                        <div className="version-picker" style={{ height: "47vh" }} onClick={e => e.stopPropagation()}>
-                            <div className="version-picker-header">
-                                <p className="minecraft-seven" style={{ fontSize: "16px" }}>Add to Profile</p>
-                                <div className="version-popup-close" onClick={() => submit(null)}>
-                                    <svg width="20" height="20" viewBox="0 0 12 12">
-                                        <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
-                                            points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
-                                    </svg>
-                                </div>
+                    <PopupPanel
+                        title="Add to Profile"
+                        onClose={() => submit(null)}
+                        size="md"
+                        bodyClassName="version-picker-list scrollbar"
+                        footer={<MinecraftButton text="New Profile" style={{ "--mc-button-container-w": "140px" }} onClick={() => submit(-1)} />}
+                    >
+                        {profiles.length === 0 && (
+                            <p className="minecraft-seven" style={{ color: "#9f9f9f", padding: "12px", textAlign: "center" }}>
+                                No profiles yet. Create one below.
+                            </p>
+                        )}
+                        {profiles.map((profile, index) => (
+                            <div key={profile.uuid} className="version-picker-item" onClick={() => submit(index)}>
+                                <p className="minecraft-seven">{profile.name}</p>
+                                <span className="minecraft-seven version-picker-item-tag">
+                                    {profile.mods.includes(release.download_name) ? "Has mod" : profile.runtime}
+                                </span>
                             </div>
-                            <div className="version-picker-divider" />
-                            <div className="version-picker-list scrollbar" style={{ flex: 1 }}>
-                                {profiles.length === 0 && (
-                                    <p className="minecraft-seven" style={{ color: "#9f9f9f", padding: "12px", textAlign: "center" }}>
-                                        No profiles yet. Create one below.
-                                    </p>
-                                )}
-                                {profiles.map((profile, index) => (
-                                    <div key={profile.uuid} className="version-picker-item" onClick={() => submit(index)}>
-                                        <p className="minecraft-seven">{profile.name}</p>
-                                        <span className="minecraft-seven version-picker-item-tag">
-                                            {profile.mods.includes(release.download_name) ? "Has mod" : profile.runtime}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="version-picker-divider" />
-                            <div className="version-picker-footer">
-                                <MinecraftButton text="New Profile" style={{ "--mc-button-container-w": "140px" }} onClick={() => submit(-1)} />
-                            </div>
-                        </div>
+                        ))}
                     </PopupPanel>
                 );
             });
@@ -434,7 +422,6 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
             );
             state.setAllProfiles(updatedProfiles);
         }
-        if (profile) state.setSelectedProfileUuid(profile.uuid);
         state.setDownloadingMods([...state.downloadingMods, release.download_name]);
         state.saveData();
         setConfirmingMod(null);
@@ -496,34 +483,36 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
     return (
         <PanelIndent>
             {confirmingMod && (
-                <PopupPanel onExit={() => setConfirmingMod(null)}>
-                    <div className="mod-confirm-popup" onClick={e => e.stopPropagation()}>
-                        <MainPanelSection className="mod-confirm-content">
-                            <p>{confirmingMod.download_name}</p>
-                            <p className="mod-confirm-warning">
-                                This mod is not officially published or reviewed by the Amethyst team. The code has not
-                                been checked for security or stability issues, and may behave unexpectedly. Only install
-                                if you trust the source.
-                            </p>
-
-                            {/* Spacer pushes buttons to bottom */}
-                            <div className="mod-confirm-actions">
-                                <MinecraftButton
-                                    text="Cancel"
-                                    onClick={() => setConfirmingMod(null)}
-                                    buttonStyle={MinecraftButtonStyle.Warn}
-                                />
-                                <MinecraftButton
-                                    text="Continue"
-                                    onClick={() => {
-                                        if (confirmingMod) installMod(confirmingMod);
-                                        setConfirmingMod(null);
-                                        onClose?.();
-                                    }}
-                                />
-                            </div>
-                        </MainPanelSection>
-                    </div>
+                <PopupPanel
+                    title={confirmingMod.download_name}
+                    onClose={() => setConfirmingMod(null)}
+                    size="md"
+                    footerAlign="between"
+                    footer={
+                        <>
+                            <MinecraftButton
+                                text="Cancel"
+                                onClick={() => setConfirmingMod(null)}
+                                buttonStyle={MinecraftButtonStyle.Warn}
+                                style={{ flex: 1, minWidth: 0 }}
+                            />
+                            <MinecraftButton
+                                text="Continue"
+                                onClick={() => {
+                                    if (confirmingMod) installMod(confirmingMod);
+                                    setConfirmingMod(null);
+                                    onClose?.();
+                                }}
+                                style={{ flex: 1, minWidth: 0 }}
+                            />
+                        </>
+                    }
+                >
+                    <p className="minecraft-seven" style={{ fontSize: "12px", lineHeight: 1.5, color: "#BCBEC0" }}>
+                        This mod is not officially published or reviewed by the Amethyst team. The code has not
+                        been checked for security or stability issues, and may behave unexpectedly. Only install
+                        if you trust the source.
+                    </p>
                 </PopupPanel>
             )}
 
@@ -672,10 +661,12 @@ function ModDetailsPopup({ mod, onClose }: { mod: ModDiscoveryData; onClose: () 
     const close = () => animateClose(onClose);
 
     return (
-        <PopupPanel onExit={close}>
-            <div className="version-picker mod-details-popup" onClick={e => e.stopPropagation()}>
-                <ModDetails mod={mod} onClose={close} />
-            </div>
+        <PopupPanel
+            onClose={close}
+            boxClassName="mod-details-popup"
+            bodyClassName="popup-body--flush"
+        >
+            <ModDetails mod={mod} onClose={close} />
         </PopupPanel>
     );
 }

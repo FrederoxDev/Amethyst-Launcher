@@ -1,5 +1,7 @@
 import { useAppStore } from "@renderer/states/AppStore";
 import { PathUtils } from "./PathUtils";
+import { MinecraftVersionType } from "./VersionDatabase";
+import { VersionManager } from "./VersionManager";
 
 const fs = window.require("fs");
 
@@ -16,6 +18,19 @@ export interface Profile {
     minecraft_version: string | null;
     /** UUID of the installed version, used for imported versions that may not exist in the remote database. */
     version_uuid?: string | null;
+}
+
+/**
+ * Determines whether a profile targets a release or preview build.
+ * Resolved via the installed version pointed to by version_uuid; falls back
+ * to "release" when the type can't be determined.
+ */
+export function getProfileType(profile: Profile, versionManager: VersionManager): MinecraftVersionType {
+    if (profile.version_uuid) {
+        const installed = versionManager.getInstalledVersionByUUID(profile.version_uuid);
+        if (installed) return installed.type;
+    }
+    return "release";
 }
 
 export function GetProfiles(): Profile[] {
