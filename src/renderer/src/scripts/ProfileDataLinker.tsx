@@ -1,8 +1,6 @@
 import { useAppStore } from "@renderer/states/AppStore";
-import { Popup } from "@renderer/states/PopupStore";
 import { Profile } from "./Profiles";
 import { MinecraftVersionType } from "./VersionDatabase";
-import ProfileDataMigratePopup, { MigrateChoice } from "@renderer/popups/ProfileDataMigratePopup";
 
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
@@ -70,7 +68,7 @@ export function inspectRoamingState(roamingPath: string): RoamingState {
     return { kind: "file" };
 }
 
-function ensureParentExists(p: string) {
+export function ensureParentExists(p: string) {
     fs.mkdirSync(path.dirname(p), { recursive: true });
 }
 
@@ -90,14 +88,15 @@ interface DirSummary {
     dirs: Set<string>;
 }
 
-function summarizeTree(root: string): DirSummary {
+async function summarizeTree(root: string): Promise<DirSummary> {
     const files = new Map<string, number>();
     const dirs = new Set<string>();
     const stack: string[] = [root];
 
     while (stack.length > 0) {
         const current = stack.pop()!;
-        const entries = fs.readdirSync(current, { withFileTypes: true });
+        const entries = await fs.promises.readdir(current, { withFileTypes: true });
+        const fileStats: Promise<void>[] = [];
         for (const entry of entries) {
             const full = path.join(current, entry.name);
             const rel = path.relative(root, full);
@@ -105,18 +104,21 @@ function summarizeTree(root: string): DirSummary {
                 dirs.add(rel);
                 stack.push(full);
             } else if (entry.isFile()) {
-                const st = fs.statSync(full);
-                files.set(rel, st.size);
+                fileStats.push(
+                    fs.promises.stat(full).then(st => {
+                        files.set(rel, st.size);
+                    })
+                );
             }
         }
+        if (fileStats.length > 0) await Promise.all(fileStats);
     }
 
     return { files, dirs };
 }
 
-function verifyCopy(src: string, dest: string): void {
-    const srcSummary = summarizeTree(src);
-    const destSummary = summarizeTree(dest);
+async function verifyCopy(src: string, dest: string): Promise<void> {
+    const [srcSummary, destSummary] = await Promise.all([summarizeTree(src), summarizeTree(dest)]);
 
     const missingDirs: string[] = [];
     for (const dir of srcSummary.dirs) {
@@ -150,9 +152,9 @@ function verifyCopy(src: string, dest: string): void {
  * refuses — typically because OneDrive, Windows Search, or a shell window
  * holds a transient handle on the source.
  */
-function moveDirectory(src: string, dest: string) {
+export async function moveDirectory(src: string, dest: string): Promise<void> {
     try {
-        fs.renameSync(src, dest);
+        await fs.promises.rename(src, dest);
         return;
     } catch (e: any) {
         const code = e?.code;
@@ -162,22 +164,28 @@ function moveDirectory(src: string, dest: string) {
         console.warn(`[ProfileDataLinker] rename failed with ${code}, falling back to copy+verify+delete.`);
     }
 
-    fs.mkdirSync(dest, { recursive: true });
-    fs.cpSync(src, dest, { recursive: true, preserveTimestamps: true, errorOnExist: false });
-    verifyCopy(src, dest);
-    fs.rmSync(src, { recursive: true, force: true });
+    await fs.promises.mkdir(dest, { recursive: true });
+    await fs.promises.cp(src, dest, { recursive: true, preserveTimestamps: true, errorOnExist: false });
+    await verifyCopy(src, dest);
+    await fs.promises.rm(src, { recursive: true, force: true });
 }
 
 const INIT_MARKER = ".initialized";
 
 /** True if any profile junction has ever been successfully set up. */
-function isProfileDataInitialized(profileDataRoot: string): boolean {
+export function isProfileDataInitialized(profileDataRoot: string): boolean {
     return fs.existsSync(path.join(profileDataRoot, INIT_MARKER));
 }
 
-function markProfileDataInitialized(profileDataRoot: string) {
+export function markProfileDataInitialized(profileDataRoot: string) {
     fs.mkdirSync(profileDataRoot, { recursive: true });
-    fs.writeFileSync(path.join(profileDataRoot, INIT_MARKER), new Date().toISOString(), "utf-8");
+    // Write atomically: write to .tmp, then rename. A mid-write crash would
+    // otherwise leave a truncated marker that fools `isProfileDataInitialized`
+    // (which only checks existence) and permanently skip onboarding.
+    const finalPath = path.join(profileDataRoot, INIT_MARKER);
+    const tmpPath = `${finalPath}.tmp`;
+    fs.writeFileSync(tmpPath, new Date().toISOString(), "utf-8");
+    fs.renameSync(tmpPath, finalPath);
 }
 
 /** Recursively try to remove empty directories up to (but not including) `stopAt`. */
@@ -264,81 +272,15 @@ export async function ensureProfileJunction(
                 return;
             }
 
-            // Non-empty real directory. Only valid on the very first setup.
-            if (isProfileDataInitialized(profileDataRoot)) {
-                throw new Error(
-                    `"${roamingPath}" contains data but per-profile storage is already set up. ` +
-                    `This is unexpected — refusing to touch it. Move or remove the folder manually to continue.`
-                );
-            }
-
-            // First-time migration — must confirm with the user.
-            status("Waiting for migration confirmation...");
-            const choice = await Popup.useAsync<MigrateChoice>(({ submit }) => (
-                <ProfileDataMigratePopup
-                    profileName={profile.name}
-                    roamingPath={roamingPath}
-                    onChoose={submit}
-                />
-            ));
-
-            if (choice === "cancel") {
-                throw new Error("Launch cancelled — existing Minecraft data was not migrated.");
-            }
-
-            if (choice === "migrate") {
-                status("Migrating existing data into profile...");
-                ensureParentExists(targetPath);
-                // targetPath must not exist before move; isProfileDataInitialized was false so this is clean state.
-                let moved = false;
-                try {
-                    moveDirectory(roamingPath, targetPath);
-                    moved = true;
-                    createJunction(roamingPath, targetPath);
-                } catch (e) {
-                    if (moved) {
-                        // Data is at targetPath but junction failed. Try to restore.
-                        try {
-                            moveDirectory(targetPath, roamingPath);
-                        } catch (restoreErr) {
-                            throw new Error(
-                                `Your Minecraft data was moved to "${targetPath}" but creating the junction at "${roamingPath}" failed, and restoring the original location also failed. ` +
-                                `Your data is safe — to recover, move "${targetPath}" back to "${roamingPath}" manually. Original error: ${e}. Restore error: ${restoreErr}`
-                            );
-                        }
-                    }
-                    removeEmptyDirsUpTo(targetPath, profileDataRoot);
-                    throw e;
-                }
-                markProfileDataInitialized(profileDataRoot);
-                return;
-            }
-
-            // "fresh": back up the existing folder, start empty.
-            const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-            const backupPath = `${roamingPath}.backup-${stamp}`;
-            status("Backing up existing data...");
-            let backedUp = false;
-            try {
-                moveDirectory(roamingPath, backupPath);
-                backedUp = true;
-                createJunction(roamingPath, targetPath);
-            } catch (e) {
-                if (backedUp) {
-                    try {
-                        moveDirectory(backupPath, roamingPath);
-                    } catch (restoreErr) {
-                        throw new Error(
-                            `Your Minecraft data was moved to "${backupPath}" but creating the junction at "${roamingPath}" failed, and restoring the original location also failed. ` +
-                            `Your data is safe — to recover, move "${backupPath}" back to "${roamingPath}" manually. Original error: ${e}. Restore error: ${restoreErr}`
-                        );
-                    }
-                }
-                removeEmptyDirsUpTo(targetPath, profileDataRoot);
-                throw e;
-            }
-            markProfileDataInitialized(profileDataRoot);
-            return;
+            // Non-empty real directory. Onboarding runs on first launcher open and
+            // converts any pre-existing data into a profile (or deletes it), so by
+            // the time we get to launch we should never see this. If we do, it's
+            // either a corrupted setup or the user manually placed data here —
+            // either way, refuse to touch it.
+            throw new Error(
+                `"${roamingPath}" contains data that isn't associated with any profile. ` +
+                `Move or remove the folder manually, then restart the launcher.`
+            );
         }
     }
 }

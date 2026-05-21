@@ -6,6 +6,7 @@ import { MinecraftButton, GRAY_MINECRAFT_BUTTON } from "@renderer/components/Min
 import { PopupPanel, usePopupClose } from "@renderer/components/PopupPanel";
 import { TextInput } from "@renderer/components/TextInput";
 import { Popup, PopupUseArguments } from "@renderer/states/PopupStore";
+import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { useAppStore } from "@renderer/states/AppStore";
 import { VersionPickerPopup, VersionPickerResult } from "@renderer/popups/VersionPickerPopup";
 import { launchProfile as doLaunchProfile } from "@renderer/scripts/LaunchUtils";
@@ -119,6 +120,10 @@ export function ProfileEditor() {
     const [profileVersionUuid, setProfileVersionUuid] = useState<string | null>(null);
     const [modSearch, setModSearch] = useState("");
 
+    // Subscribe to ProgressBar so the Play button greys out reactively when
+    // long-running ops (launch, import, delete, uninstall) are in progress.
+    const canLaunch = ProgressBar.useCanDoAction("launch");
+
     const [showMenu, setShowMenu] = useState(false);
     const dotsRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -213,12 +218,10 @@ export function ProfileEditor() {
 
         if (result === null) return false; // cancelled
         if (result === "delete") {
-            for (const modName of orphanedMods) {
+            await Promise.all(orphanedMods.map(modName => {
                 const modPath = path.join(modsPath, modName);
-                if (fs.existsSync(modPath)) {
-                    fs.rmSync(modPath, { recursive: true, force: true });
-                }
-            }
+                return fs.promises.rm(modPath, { recursive: true, force: true });
+            }));
         }
         return true;
     };
@@ -408,7 +411,7 @@ export function ProfileEditor() {
                         <div className="profile-editor-name-actions">
                             <div className="profile-editor-play-wrap">
                                 <div className="launcher-profile-card-play">
-                                    <MinecraftButton text="Play" onClick={onPlay} disabled={!!runtimeWarning} style={{ "--mc-button-container-h": "36px" }} />
+                                    <MinecraftButton text="Play" onClick={onPlay} disabled={!!runtimeWarning || !canLaunch} style={{ "--mc-button-container-h": "36px" }} />
                                 </div>
                                 {runtimeWarning && (
                                     <div className="profile-editor-play-warning-tooltip minecraft-seven">{runtimeWarning}</div>

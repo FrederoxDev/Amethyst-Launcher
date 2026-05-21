@@ -7,6 +7,7 @@ import OpenFolderIconAsset from "@renderer/assets/images/icons/open-folder-icon.
 import InfoIconAsset from "@renderer/assets/images/icons/info-icon.png";
 import { Popup } from "@renderer/states/PopupStore";
 import { PopupPanel } from "@renderer/components/PopupPanel";
+import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { confirmAction } from "@renderer/popups/ConfirmPopup";
 
 const { shell: { openPath } } = window.require("electron") as typeof import("electron");
@@ -19,14 +20,16 @@ import { useDownloadStore } from "@renderer/states/DownloadStore";
 
 type VersionButtonProps = {
     version: InstalledVersionModel;
+    canDelete: boolean;
     onInspect: (version: InstalledVersionModel) => void;
     onDelete: (version: InstalledVersionModel) => void;
 };
 
-const VersionButton = ({ 
-    version, 
-    onInspect, 
-    onDelete 
+const VersionButton = ({
+    version,
+    canDelete,
+    onInspect,
+    onDelete
 }: VersionButtonProps) => {
     return (
         <div className="version-card">
@@ -38,7 +41,8 @@ const VersionButton = ({
                 <div className="version-card-actions">
                     <div
                         className="version-icon-action version-icon-action-delete"
-                        onClick={() => onDelete(version)}
+                        style={canDelete ? undefined : { opacity: 0.4, cursor: "not-allowed", pointerEvents: "none" }}
+                        onClick={() => { if (canDelete) onDelete(version); }}
                     >
                         <img src={DeleteIconAsset} alt="" />
                     </div>
@@ -70,6 +74,10 @@ export function VersionPage() {
     const [, forceUpdate] = useReducer(x => x + 1, 0);
     const [hiddenUuids, setHiddenUuids] = useState<Set<string>>(new Set());
 
+    // Subscribe to ProgressBar so import/uninstall buttons disable reactively
+    // when another version op (install, delete, uninstall) is in progress.
+    const canManageVersions = ProgressBar.useCanDoAction("download");
+
     useEffect(() => {
         const unsubscribeInstalled = versionManager.subscribe("version_installed", () => {
             forceUpdate();
@@ -91,9 +99,11 @@ export function VersionPage() {
                 <div className="version-page-header">
                     <p className="minecraft-seven version-page-title">Version Manager</p>
                     <div className="version-header-actions">
-                        <div 
+                        <div
                             className="version-icon-action version-icon-action-neutral"
+                            style={canManageVersions ? undefined : { opacity: 0.4, cursor: "not-allowed", pointerEvents: "none" }}
                             onClick={async () => {
+                                if (!canManageVersions) return;
                                 const result = await Popup.useAsync<ImportVersionPopupData | null>(props => {
                                     return <ImportVersionPopup {...props} />;
                                 });
@@ -138,6 +148,7 @@ export function VersionPage() {
                             return (
                                 <VersionButton
                                     version={version}
+                                    canDelete={canManageVersions}
                                     onInspect={async (version) => {
                                         await Popup.useAsync<void>(({ submit }) => (
                                             <PopupPanel

@@ -4,16 +4,17 @@ export type TextInputProps = {
     setText: React.Dispatch<React.SetStateAction<string>>;
     placeholder?: string;
     style?: React.CSSProperties;
+    autoFocus?: boolean;
 };
 
-export function TextInput({ label, text, setText, placeholder, style }: TextInputProps) {
+export function TextInput({ label, text, setText, placeholder, style, autoFocus }: TextInputProps) {
     return (
         <div style={{
                 display: "flex",
                 flexDirection: "column",
                 ...style
             }}>
-            <p className="minecraft-seven text-input-label">{label}</p>
+            {label && <p className="minecraft-seven text-input-label">{label}</p>}
             <div className="text-input-box">
                 <input
                     type="text"
@@ -21,6 +22,7 @@ export function TextInput({ label, text, setText, placeholder, style }: TextInpu
                     spellCheck={false}
                     placeholder={placeholder}
                     value={text}
+                    autoFocus={autoFocus}
                     onInput={event => {
                         setText(event.currentTarget.value);
                     }}

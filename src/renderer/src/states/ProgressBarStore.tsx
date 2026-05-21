@@ -3,6 +3,7 @@ import { SetStateAction, StateUtils } from "./StateUtils";
 import { create } from "zustand";
 
 interface ProgressBarState {
+    busy: boolean;
     currentStatus: AppStatusType;
     message: string;
     progress: number;
@@ -12,6 +13,8 @@ interface ProgressBarState {
     setMessage(message: SetStateAction<string>): void;
     setProgress(progress: SetStateAction<number>): void;
     setShow(show: SetStateAction<boolean>): void;
+    /** Apply multiple field updates in a single zustand `set()` so subscribers see one consistent change. */
+    update(partial: Partial<Pick<ProgressBarState, "busy" | "currentStatus" | "message" | "progress" | "show">>): void;
     reset(): void;
 };
 
@@ -36,35 +39,47 @@ export const FULL_PROGRESS_RESET_OPTIONS: ProgressResetOptions = {
     show: true
 }
 
+export class ProgressBusyError extends Error {
+    constructor() {
+        super("Another launcher operation is already in progress. Wait for it to finish and try again.");
+        this.name = "ProgressBusyError";
+    }
+}
+
 export class ProgressBar {
     private static state = create<ProgressBarState>((set) => ({
+        busy: false,
         currentStatus: "idle",
         message: "",
         progress: 0,
         show: false,
 
         setStatus(status) {
-            set((state) => ({ 
-                currentStatus: StateUtils.resolveSetStateAction(status, state.currentStatus) 
+            set((state) => ({
+                currentStatus: StateUtils.resolveSetStateAction(status, state.currentStatus)
             }));
         },
         setMessage(message) {
-            set((state) => ({ 
-                message: StateUtils.resolveSetStateAction(message, state.message) 
+            set((state) => ({
+                message: StateUtils.resolveSetStateAction(message, state.message)
             }));
         },
         setProgress(progress) {
-            set((state) => ({ 
-                progress: StateUtils.resolveSetStateAction(progress, state.progress) 
+            set((state) => ({
+                progress: StateUtils.resolveSetStateAction(progress, state.progress)
             }));
         },
         setShow(show) {
-            set((state) => ({ 
-                show: StateUtils.resolveSetStateAction(show, state.show) 
+            set((state) => ({
+                show: StateUtils.resolveSetStateAction(show, state.show)
             }));
+        },
+        update(partial) {
+            set(partial);
         },
         reset() {
             set({
+                busy: false,
                 currentStatus: "idle",
                 message: "",
                 progress: 0,
@@ -84,39 +99,45 @@ export class ProgressBar {
     }
 
     static use(callback: (state: ProgressBarState) => void, showProgressBar: boolean = true, resetOptions: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS): void {
+        if (this.getState().busy) {
+            throw new ProgressBusyError();
+        }
+
         const state = this.getState();
-        state.setShow(showProgressBar);
-        state.setProgress(0);
-        state.setMessage("");
+        state.update({ busy: true, show: showProgressBar, progress: 0, message: "" });
 
         try {
             callback(state);
         } finally {
-            if (resetOptions) {
-                if (resetOptions.status) state.setStatus("idle");
-                if (resetOptions.message) state.setMessage("");
-                if (resetOptions.progress) state.setProgress(0);
-                if (resetOptions.show) state.setShow(false);
-            }
+            this.applyReset(resetOptions);
         }
     }
 
     static async useAsync(callback: (state: ProgressBarState) => Promise<void>, showProgressBar: boolean = true, resetOptions: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS): Promise<void> {
+        if (this.getState().busy) {
+            throw new ProgressBusyError();
+        }
+
         const state = this.getState();
-        state.setShow(showProgressBar);
-        state.setProgress(0);
-        state.setMessage("");
-    
+        state.update({ busy: true, show: showProgressBar, progress: 0, message: "" });
+
         try {
             await callback(state);
         } finally {
-            if (resetOptions) {
-                if (resetOptions.status) state.setStatus("idle");
-                if (resetOptions.message) state.setMessage("");
-                if (resetOptions.progress) state.setProgress(0);
-                if (resetOptions.show) state.setShow(false);
-            }
+            this.applyReset(resetOptions);
         }
+    }
+
+    private static applyReset(resetOptions: ProgressResetOptions): void {
+        const state = this.getState();
+        const updates: Partial<Pick<ProgressBarState, "busy" | "currentStatus" | "message" | "progress" | "show">> = {
+            busy: false,
+        };
+        if (resetOptions.status) updates.currentStatus = "idle";
+        if (resetOptions.message) updates.message = "";
+        if (resetOptions.progress) updates.progress = 0;
+        if (resetOptions.show) updates.show = false;
+        state.update(updates);
     }
 
     static reset(): void {
@@ -124,13 +145,27 @@ export class ProgressBar {
     }
 
     static isBusy(): boolean {
-        const state = this.getState();
-        return state.currentStatus !== "idle";
+        return this.getState().busy;
+    }
+
+    /** React hook variant of {@link isBusy} — subscribes so callers re-render when busy flips. */
+    static useIsBusy(): boolean {
+        return this.useState(s => s.busy);
     }
 
     static canDoAction(actionType: ActionType): boolean {
         const state = this.getState();
         const blockedActions = BLOCKED_ACTIONS[state.currentStatus] || [];
+        return !blockedActions.includes(actionType);
+    }
+
+    /**
+     * React hook variant of {@link canDoAction} — subscribes to status changes
+     * so the calling component re-renders when the answer flips.
+     */
+    static useCanDoAction(actionType: ActionType): boolean {
+        const status = this.useState(s => s.currentStatus);
+        const blockedActions = BLOCKED_ACTIONS[status] || [];
         return !blockedActions.includes(actionType);
     }
 }

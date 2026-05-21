@@ -1,5 +1,6 @@
 import { confirmAction } from "@renderer/popups/ConfirmPopup";
 import { useAppStore } from "@renderer/states/AppStore";
+import { FULL_PROGRESS_RESET_OPTIONS, ProgressBar } from "@renderer/states/ProgressBarStore";
 import { Profile } from "./Profiles";
 import { inspectRoamingState, resolveProfileDataPath, resolveRoamingPath } from "./ProfileDataLinker";
 import { UnregisterCurrent } from "./AppRegistry";
@@ -58,40 +59,44 @@ export async function finalizeProfileDeletion(profile: Profile): Promise<void> {
     const store = useAppStore.getState();
     const profileDataDir = resolveProfileDataPath(profile);
 
-    let removedActiveJunction = false;
-    for (const type of ["release", "preview"] as const) {
-        const roaming = resolveRoamingPath(type);
-        const state = inspectRoamingState(roaming);
-        if (state.kind !== "junction") continue;
-        const normalized = path.resolve(profileDataDir).toLowerCase();
-        if (state.target.toLowerCase() === normalized) {
-            try {
-                fs.unlinkSync(roaming);
-                removedActiveJunction = true;
-            } catch (e) {
-                console.error(`[ProfileActions] Failed to remove junction at ${roaming}:`, e);
+    await ProgressBar.useAsync(async (progress) => {
+        progress.setStatus("deleting");
+        progress.setMessage(`Deleting profile "${profile.name}"...`);
+
+        let removedActiveJunction = false;
+        for (const type of ["release", "preview"] as const) {
+            const roaming = resolveRoamingPath(type);
+            const state = inspectRoamingState(roaming);
+            if (state.kind !== "junction") continue;
+            const normalized = path.resolve(profileDataDir).toLowerCase();
+            if (state.target.toLowerCase() === normalized) {
+                try {
+                    fs.unlinkSync(roaming);
+                    removedActiveJunction = true;
+                } catch (e) {
+                    console.error(`[ProfileActions] Failed to remove junction at ${roaming}:`, e);
+                }
             }
         }
-    }
 
-    if (removedActiveJunction) {
+        if (removedActiveJunction) {
+            try {
+                await UnregisterCurrent();
+            } catch (e) {
+                console.warn("[ProfileActions] Failed to unregister Minecraft:", e);
+            }
+        }
+
+        progress.setMessage(`Deleting profile data for "${profile.name}"...`);
         try {
-            await UnregisterCurrent();
+            await fs.promises.rm(profileDataDir, { recursive: true, force: true });
         } catch (e) {
-            console.warn("[ProfileActions] Failed to unregister Minecraft:", e);
+            console.error(`[ProfileActions] Failed to delete profile data folder ${profileDataDir}:`, e);
         }
-    }
 
-    try {
-        if (fs.existsSync(profileDataDir)) {
-            fs.rmSync(profileDataDir, { recursive: true, force: true });
-        }
-    } catch (e) {
-        console.error(`[ProfileActions] Failed to delete profile data folder ${profileDataDir}:`, e);
-    }
-
-    const newProfiles = store.allProfiles.filter(p => p.uuid !== profile.uuid);
-    store.setAllProfiles(newProfiles);
-    store.saveData();
-    store.refreshAllMods();
+        const newProfiles = store.allProfiles.filter(p => p.uuid !== profile.uuid);
+        store.setAllProfiles(newProfiles);
+        store.saveData();
+        store.refreshAllMods();
+    }, true, FULL_PROGRESS_RESET_OPTIONS);
 }

@@ -167,6 +167,10 @@ export function LauncherPage() {
         state.versionManager
     ]));
 
+    // Subscribe to ProgressBar status so play-button gating updates reactively
+    // when long-running ops (launch, import, delete, uninstall) start/finish.
+    const canLaunch = ProgressBar.useCanDoAction("launch");
+
     const isProfileSelected = (profile: Profile): boolean => {
         const type = getProfileType(profile, versionManager);
         return selectedProfileUuids[type] === profile.uuid;
@@ -363,7 +367,7 @@ export function LauncherPage() {
                             versionName={getVersionName(profile)}
                             runtimeWarning={runtimeWarning}
                             isSelected={isProfileSelected(profile)}
-                            canPlay={ProgressBar.canDoAction("launch") && !runtimeWarning}
+                            canPlay={canLaunch && !runtimeWarning}
                             onEdit={() => {
                                 setEditingProfile(index);
                                 navigate("/profile-editor");

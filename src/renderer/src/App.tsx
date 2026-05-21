@@ -2,6 +2,7 @@ import { useAppStore } from "@renderer/states/AppStore";
 import { Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Popup } from "@renderer/states/PopupStore";
 import { createProfileFlow } from "@renderer/scripts/ProfileCreation";
+import { runFirstLaunchOnboarding } from "@renderer/scripts/OnboardingFlow";
 
 import lushCaveImage from "@renderer/assets/images/art/lush_cave.jpg";
 import craftingIcon from "@renderer/assets/images/icons/crafting-icon.png";
@@ -168,9 +169,22 @@ function AnimatedRoutes() {
 export default function App() {
     const location = useLocation();
     const navigate = useNavigate();
+    const onboardingStarted = useRef(false);
 
     useEffect(() => {
         setTimeout(() => useAppStore.getState().versionManager.cleanupStaleLocks(), 0);
+    }, []);
+
+    useEffect(() => {
+        // Guard against React StrictMode double-mount in dev (and any future
+        // remount). Once we've kicked off onboarding, never kick it off again
+        // from this tree.
+        if (onboardingStarted.current) return;
+        onboardingStarted.current = true;
+        runFirstLaunchOnboarding().catch(e => {
+            console.error("[App] First-launch onboarding failed:", e);
+            useAppStore.getState().setError(`Onboarding failed: ${(e as Error).message ?? e}`);
+        });
     }, []);
 
     useEffect(() => {

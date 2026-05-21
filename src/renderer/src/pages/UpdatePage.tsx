@@ -88,7 +88,7 @@ export function UpdatePage() {
     return (
         <>
             {!popupClosed && updateAvailable && (
-                <PopupPanel>
+                <PopupPanel boxStyle={{ width: "fit-content" }}>
                     <div className="update-popup">
                         {!downloadActive && (
                             <div className="update-popup-body">
