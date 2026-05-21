@@ -5,6 +5,7 @@ import { useAppStore } from "@renderer/states/AppStore";
 
 import { Extractor } from "@renderer/scripts/backend/Extractor";
 import { CopyRecursive } from "@renderer/scripts/Files";
+import { FULL_PROGRESS_RESET_OPTIONS, ProgressBar } from "@renderer/states/ProgressBarStore";
 
 const path = window.require("path");
 
@@ -54,20 +55,37 @@ export function DropWindow() {
 
             if (!event.dataTransfer || !event.dataTransfer.types.includes("Files")) return;
 
+            // Reject drops while the launcher is busy with another operation
+            // (onboarding, launch prep, version install/uninstall, profile delete).
+            // Allowing a drop would race ProgressBar.useAsync and clobber state.
+            if (ProgressBar.isBusy()) {
+                setError("Wait for the current operation to finish before importing.");
+                return;
+            }
+
             type ElectronFile = File & { path: string };
             const items = event.dataTransfer.files as unknown as ElectronFile[];
 
-            for (const file of items) {
-                const file_path: string = file.path;
-
-                if (fs.lstatSync(file_path).isDirectory()) {
-                    ImportFolder(file_path);
-                } else if (fs.lstatSync(file_path).isFile()) {
-                    ImportZIP(file_path);
-                } else {
-                    console.error("File path does not point to a file or directory!");
+            // Serialize folder imports so they queue cleanly through ProgressBar.
+            // ZIP imports go through Extractor (no ProgressBar contention) so they
+            // can fire in parallel.
+            (async () => {
+                for (const file of items) {
+                    const file_path: string = file.path;
+                    try {
+                        const st = fs.lstatSync(file_path);
+                        if (st.isDirectory()) {
+                            await ImportFolder(file_path);
+                        } else if (st.isFile()) {
+                            ImportZIP(file_path);
+                        } else {
+                            console.error("File path does not point to a file or directory!");
+                        }
+                    } catch (e) {
+                        setError((e as Error).message);
+                    }
                 }
-            }
+            })();
         }
 
         // IMPORT ZIP
@@ -90,9 +108,12 @@ export function DropWindow() {
         }
 
         // IMPORT FOLDER
-        function ImportFolder(folder_path: string) {
+        async function ImportFolder(folder_path: string) {
             try {
-                CopyRecursive(folder_path, paths.modsPath);
+                await ProgressBar.useAsync(async (state) => {
+                    state.setMessage(`Importing ${path.basename(folder_path)}...`);
+                    await CopyRecursive(folder_path, paths.modsPath);
+                }, true, FULL_PROGRESS_RESET_OPTIONS);
                 refreshAllMods();
             } catch (error) {
                 setError((error as Error).message);

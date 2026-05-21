@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { MinecraftButton, GRAY_MINECRAFT_BUTTON } from "@renderer/components/MinecraftButton";
 import { useAppStore } from "@renderer/states/AppStore";
 import { confirmAction } from "@renderer/popups/ConfirmPopup";
+import { FULL_PROGRESS_RESET_OPTIONS, ProgressBar } from "@renderer/states/ProgressBarStore";
 
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
@@ -268,7 +269,7 @@ export function LogsPage() {
         });
         if (!ok) return;
         try {
-            fs.unlinkSync(file.path);
+            await fs.promises.unlink(file.path);
             if (selected === file.path) {
                 setSelected(null);
                 setContent("");
@@ -297,22 +298,28 @@ export function LogsPage() {
         setContextMenu(null);
     };
 
-    const refresh = () => {
+    const refresh = async () => {
         try {
-            if (!fs.existsSync(logsDir)) {
-                setFiles([]);
-                return;
+            let entries: string[];
+            try {
+                entries = await fs.promises.readdir(logsDir);
+            } catch (e: any) {
+                if (e?.code === "ENOENT") {
+                    setFiles([]);
+                    return;
+                }
+                throw e;
             }
-            const entries = fs.readdirSync(logsDir);
-            const loaded: LogFile[] = [];
-            for (const name of entries) {
+            const loaded = (await Promise.all(entries.map(async name => {
                 const full = path.join(logsDir, name);
                 try {
-                    const stat = fs.statSync(full);
-                    if (!stat.isFile()) continue;
-                    loaded.push({ name, path: full, size: stat.size, mtimeMs: stat.mtimeMs });
-                } catch { /* ignore individual file errors */ }
-            }
+                    const stat = await fs.promises.stat(full);
+                    if (!stat.isFile()) return null;
+                    return { name, path: full, size: stat.size, mtimeMs: stat.mtimeMs } as LogFile;
+                } catch {
+                    return null;
+                }
+            }))).filter((f): f is LogFile => f !== null);
             loaded.sort((a, b) => b.mtimeMs - a.mtimeMs);
             setFiles(loaded);
             setError("");
@@ -330,11 +337,11 @@ export function LogsPage() {
             setContent("");
             return;
         }
-        try {
-            setContent(fs.readFileSync(selected, "utf-8"));
-        } catch (e) {
-            setContent(`Failed to read file: ${(e as Error).message}`);
-        }
+        let cancelled = false;
+        fs.promises.readFile(selected, "utf-8")
+            .then(text => { if (!cancelled) setContent(text); })
+            .catch(e => { if (!cancelled) setContent(`Failed to read file: ${(e as Error).message}`); });
+        return () => { cancelled = true; };
     }, [selected]);
 
     const deleteAllLogs = async () => {
@@ -346,12 +353,13 @@ export function LogsPage() {
         });
         if (!ok) return;
         try {
-            for (const f of files) {
-                try { fs.unlinkSync(f.path); } catch { /* ignore per-file */ }
-            }
+            await ProgressBar.useAsync(async (state) => {
+                state.setMessage(`Clearing ${files.length} log file(s)...`);
+                await Promise.all(files.map(f => fs.promises.unlink(f.path).catch(() => { /* ignore per-file */ })));
+            }, true, FULL_PROGRESS_RESET_OPTIONS);
             setSelected(null);
             setContent("");
-            refresh();
+            await refresh();
         } catch (e) {
             setError((e as Error).message);
         }

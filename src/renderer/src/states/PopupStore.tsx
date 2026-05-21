@@ -42,7 +42,10 @@ export class Popup {
     }
 
     static async useAsync<T = void>(node: NodeOrCallback<T>): Promise<T> {
-        if (this.busy) return new Promise<T>(() => {});
+        if (this.busy) {
+            console.warn("[Popup.useAsync] called while another popup is already open — rejecting. Sequence your popups or check Popup.isOpen() first.");
+            return Promise.reject(new Error("Another popup is already open."));
+        }
         this.busy = true;
 
         return new Promise<T>((resolve) => {

@@ -198,12 +198,17 @@ export class VersionManager {
      * Cleans up stale .lock files and their associated .msixvc files left behind
      * by a previous launcher session that didn't exit cleanly.
      */
-    cleanupStaleLocks(): void {
+    async cleanupStaleLocks(): Promise<void> {
         const versionsPath = getPaths().versionsPath;
-        if (!fs.existsSync(versionsPath)) return;
+        let entries: string[];
+        try {
+            entries = await fs.promises.readdir(versionsPath);
+        } catch (e: any) {
+            if (e?.code === "ENOENT") return;
+            throw e;
+        }
 
         const fileLocker = FileLocker.get();
-        const entries = fs.readdirSync(versionsPath);
 
         for (const entry of entries) {
             if (!entry.endsWith(".lock")) continue;
@@ -217,12 +222,17 @@ export class VersionManager {
 
             // Stale lock from a previous session — clean up
             console.log(`[VersionManager] Removing stale lock: ${entry}`);
-            fs.rmSync(lockPath, { force: true });
+            await fs.promises.rm(lockPath, { force: true });
 
             // Also remove the associated .msixvc file if it exists (incomplete download/copy)
-            if (fs.existsSync(basePath) && fs.statSync(basePath).isFile()) {
-                console.log(`[VersionManager] Removing incomplete file: ${path.basename(basePath)}`);
-                fs.rmSync(basePath, { force: true });
+            try {
+                const st = await fs.promises.stat(basePath);
+                if (st.isFile()) {
+                    console.log(`[VersionManager] Removing incomplete file: ${path.basename(basePath)}`);
+                    await fs.promises.rm(basePath, { force: true });
+                }
+            } catch (e: any) {
+                if (e?.code !== "ENOENT") throw e;
             }
         }
     }
@@ -613,18 +623,34 @@ export class VersionManager {
             throw new Error(`Version with UUID: '${uuid}' is not installed!`);
         }
 
-        // Remove the version folder, we will also log a warning if the folder doesn't exist, but we will still proceed to remove the version from the installed versions list, since the end result is the same (the version is uninstalled)
-        if (fs.existsSync(installedVersion.path) && fs.statSync(installedVersion.path).isDirectory()) {
-            fs.rmSync(installedVersion.path, { recursive: true, force: true });
-        } else {
-            console.warn(`Trying to uninstall version with UUID: '${uuid}' but the version folder doesn't exist at path: ${installedVersion.path}`);
-        }
+        await ProgressBar.useAsync(async (state) => {
+            state.setStatus("deleting");
+            state.setMessage(`Uninstalling Minecraft ${installedVersion.version.toString()}...`);
 
-        // Remove the version from the installed versions list and save it to file
-        const updatedVersions = this.installedVersions.versions.filter(v => v.uuid !== uuid);
-        this.installedVersions.versions = updatedVersions;
-        this.installedVersions.saveToFile(InstalledVersionListModel.getDefaultFilePath());
-        this.notify("version_uninstalled", uuid);
+            // Remove the version folder. If the folder doesn't exist we still proceed to remove the version
+            // from the installed list, since the end result is the same.
+            try {
+                const st = await fs.promises.stat(installedVersion.path);
+                if (st.isDirectory()) {
+                    await fs.promises.rm(installedVersion.path, { recursive: true, force: true });
+                } else {
+                    console.warn(`Trying to uninstall version with UUID: '${uuid}' but path is not a directory: ${installedVersion.path}`);
+                }
+            } catch (e: any) {
+                if (e?.code === "ENOENT") {
+                    console.warn(`Trying to uninstall version with UUID: '${uuid}' but the version folder doesn't exist at path: ${installedVersion.path}`);
+                } else {
+                    throw e;
+                }
+            }
+
+            // Remove the version from the installed versions list and save it to file
+            const updatedVersions = this.installedVersions.versions.filter(v => v.uuid !== uuid);
+            this.installedVersions.versions = updatedVersions;
+            this.installedVersions.saveToFile(InstalledVersionListModel.getDefaultFilePath());
+            this.notify("version_uninstalled", uuid);
+        }, true, FULL_PROGRESS_RESET_OPTIONS);
+
         return true;
     }
 
@@ -642,14 +668,14 @@ export class VersionManager {
             const lockPath = path.join(paths.versionsPath, `Minecraft-${version.version.toString()}.lock`);
             console.log("Cleaning up version shenanigans, removing files: ", msixvcPath, lockPath);
             if (cleanMsixvc)
-                fs.rmSync(msixvcPath, { force: true });
-            fs.rmSync(lockPath, { force: true });
+                await fs.promises.rm(msixvcPath, { force: true });
+            await fs.promises.rm(lockPath, { force: true });
         };
 
-        // Before we start the download, we want to clean up any leftover files from previous download and extraction attempts for this version, 
-        // this doesn't include the .msixvc file, since maybe it was downloaded successfully but the process failed during extraction, 
+        // Before we start the download, we want to clean up any leftover files from previous download and extraction attempts for this version,
+        // this doesn't include the .msixvc file, since maybe it was downloaded successfully but the process failed during extraction,
         // in that case we want to keep the .msixvc file to avoid having to download it again
-        cleanupVersionShenanigans(false);
+        await cleanupVersionShenanigans(false);
         
         // Now we can start the download, extraction and installation process for the version, 
         // we will perform these steps sequentially and if any of them fails, we will throw an error and stop the process, 

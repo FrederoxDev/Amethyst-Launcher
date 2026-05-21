@@ -7,7 +7,9 @@
 }
 
 .update-popup-body {
-    width: 500px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
 }
 
 .update-popup-section {
@@ -20,13 +22,17 @@
 
 .update-popup-actions {
     display: flex;
-    justify-content: space-around;
     gap: 8px;
     width: 100%;
     border-top: 3px solid #5a5b5c;
     border-bottom: 3px solid #333334;
     background-color: #48494a;
     padding: 8px;
+}
+
+.update-popup-actions > * {
+    flex: 1 1 0;
+    min-width: 0;
 }
 
 .update-popup-heading {
@@ -37,4 +43,5 @@
 .update-popup-meta {
     color: #BCBEC0;
     font-size: 12px;
+    word-break: break-all;
 }

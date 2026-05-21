@@ -297,14 +297,18 @@ async function ImportZIP(zip_path: string): Promise<void> {
     }
 }
 
-function uninstallMod(modName: string): void {
+async function uninstallMod(modName: string): Promise<void> {
     const paths = getPaths();
     const modPath = path.join(paths.modsPath, modName);
-    if (fs.existsSync(modPath)) {
-        fs.rmSync(modPath, { recursive: true, force: true });
+    try {
+        await fs.promises.rm(modPath, { recursive: true, force: true });
         console.log(`Uninstalled mod: ${modName}`);
-    } else {
-        console.log(`Mod not found: ${modName}`);
+    } catch (e: any) {
+        if (e?.code === "ENOENT") {
+            console.log(`Mod not found: ${modName}`);
+        } else {
+            throw e;
+        }
     }
 }
 
@@ -582,9 +586,9 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                                         <div
                                             className="version-picker-item-btn version-picker-item-btn--danger"
                                             style={{ display: "flex" }}
-                                            onClick={e => {
+                                            onClick={async e => {
                                                 e.stopPropagation();
-                                                uninstallMod(release.download_name);
+                                                await uninstallMod(release.download_name);
                                                 refreshAllMods();
                                             }}
                                         >

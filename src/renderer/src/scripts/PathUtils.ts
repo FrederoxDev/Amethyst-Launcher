@@ -10,12 +10,6 @@ export class PathUtils {
         return in_path;
     }
 
-    static DeletePath(in_path: string): void {
-        if (fs.existsSync(in_path)) {
-            fs.rmSync(in_path, { recursive: true });
-        }
-    }
-
     static async chmodRecursive(dirPath: string, mode: number) {
         const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
         
