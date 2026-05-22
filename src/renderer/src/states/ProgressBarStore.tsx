@@ -99,8 +99,12 @@ export class ProgressBar {
     }
 
     static use(callback: (state: ProgressBarState) => void, showProgressBar: boolean = true, resetOptions: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS): void {
+        // Re-entrant: a nested use() (e.g. XVDTool.decryptFile called from extractVersionByPath)
+        // inherits the outer call's lifecycle instead of throwing. The outer call owns
+        // busy/show; the inner one just runs and any state it sets persists.
         if (this.getState().busy) {
-            throw new ProgressBusyError();
+            callback(this.getState());
+            return;
         }
 
         const state = this.getState();
@@ -114,8 +118,10 @@ export class ProgressBar {
     }
 
     static async useAsync(callback: (state: ProgressBarState) => Promise<void>, showProgressBar: boolean = true, resetOptions: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS): Promise<void> {
+        // Re-entrant: see use() above.
         if (this.getState().busy) {
-            throw new ProgressBusyError();
+            await callback(this.getState());
+            return;
         }
 
         const state = this.getState();
