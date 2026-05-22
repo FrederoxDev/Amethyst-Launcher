@@ -415,15 +415,17 @@ export class VersionManager {
 
             useDownloadStore.getState().updateDownload(dlId, { status: "done", progress: 1 });
             removePendingDownload(dlId);
+            console.log(`Finished download at ${performance.now()} ms, total time: ${((new Date().getTime() - nowTime.getTime()) / 1000).toFixed(2)} seconds`);
         } catch (e) {
             useDownloadStore.getState().updateDownload(dlId, { status: "error" });
             removePendingDownload(dlId);
             throw e;
+        } finally {
+            // Always release the lock — leaking it makes subsequent attempts throw
+            // "currently being installed by another process".
+            this.unlockVersion(versionFileNameWithExt);
         }
 
-        // Unlock the version after the download is complete
-        console.log(`Finished download at ${performance.now()} ms, total time: ${((new Date().getTime() - nowTime.getTime()) / 1000).toFixed(2)} seconds`);
-        this.unlockVersion(versionFileNameWithExt);
         return true;
     }
 
