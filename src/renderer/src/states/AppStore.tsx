@@ -1,42 +1,44 @@
 import { create } from "zustand";
 
-import { GetLauncherConfig, LauncherConfig, SetLauncherConfig } from "@renderer/scripts/Launcher";
+import { LauncherConfig, readLauncherConfig, writeLauncherConfig } from "@renderer/scripts/Launcher";
 import { GetAllMods, ValidatedMod } from "@renderer/scripts/Mods";
-import { GetProfiles, getProfileType, Profile, SetProfiles } from "@renderer/scripts/Profiles";
-import { MinecraftVersionType } from "@renderer/scripts/VersionDatabase";
+import { ProfileStore } from "@renderer/scripts/ProfileStore";
+import { Profile } from "@renderer/scripts/domain/Profile";
 import { ILauncherPlatform } from "@renderer/scripts/platform/LauncherPlatform";
 import { WindowsLauncherPlatform } from "@renderer/scripts/platform/WindowsLauncherPlatform";
 import { LinuxLauncherPlatform } from "@renderer/scripts/platform/LinuxLauncherPlatform";
-import { VersionManager } from "@renderer/scripts/VersionManager";
+import { InstalledVersion } from "@renderer/scripts/versions/InstalledVersion";
+import { VersionService } from "@renderer/scripts/versions/VersionService";
 import { FileLocker } from "@renderer/scripts/FileLocker";
 import { StateSetter, StateUtils } from "./StateUtils";
 import { resumePendingDownloads } from "@renderer/scripts/DownloadRecovery";
 
-const { ipcRenderer } = window.require("electron");
+const { ipcRenderer } = window.require("electron") as typeof import("electron");
+
+function createPlatform(): ILauncherPlatform {
+    if (process.platform === "win32") return new WindowsLauncherPlatform();
+    if (process.platform === "linux") return new LinuxLauncherPlatform();
+    throw new Error(`Unsupported platform: ${process.platform}`);
+}
 
 interface AppStore {
     allMods: ValidatedMod[];
-
     allValidMods: string[];
-    setAllValidMods: StateSetter<string[]>;
-
     allInvalidMods: string[];
-
     allRuntimes: string[];
-    setAllRuntimes: StateSetter<string[]>;
 
-    allProfiles: Profile[];
-    setAllProfiles: StateSetter<Profile[]>;
+    profiles: Profile[];
+    setProfiles: StateSetter<Profile[]>;
 
-    selectedProfileUuids: { release: string | null; preview: string | null };
-    setSelectedProfileUuid: (type: MinecraftVersionType, uuid: string | null) => void;
+    /** Snapshot of installed versions; refreshed on install/uninstall, never read from disk during render. */
+    installedVersions: readonly InstalledVersion[];
+    refreshInstalledVersions: () => void;
 
-    /** UUID of the most recently launched profile. Persisted as `selected_profile_uuid` for the proxy DLL. */
-    launchedProfileUuid: string | null;
-    setLaunchedProfileUuid: StateSetter<string | null>;
+    lastLaunchedProfileUuid: string | null;
+    setLastLaunchedProfileUuid: (uuid: string | null) => void;
 
-    editingProfile: number;
-    setEditingProfile: StateSetter<number>;
+    editingProfileIndex: number;
+    setEditingProfileIndex: StateSetter<number>;
 
     UITheme: string;
     setUITheme: StateSetter<string>;
@@ -60,30 +62,25 @@ interface AppStore {
     refreshAllMods: () => void;
 
     platform: ILauncherPlatform;
-    versionManager: VersionManager;
+    versions: VersionService;
+    profileStore: ProfileStore;
     fileLocker: FileLocker;
 }
 
 export const useAppStore = create<AppStore>((set, get) => {
-    let platformInstance: ILauncherPlatform;
-    if (process.platform === "win32") {
-        platformInstance = new WindowsLauncherPlatform();
-    } else if (process.platform === "linux") {
-        platformInstance = new LinuxLauncherPlatform();
-    } else {
-        throw new Error(`Unsupported platform: ${process.platform}`);
-    }
+    const platform = createPlatform();
+    const paths = platform.getPaths();
+    const versions = new VersionService(paths);
 
     return {
         allMods: [],
         allValidMods: [],
         allInvalidMods: [],
         allRuntimes: [],
-        allMinecraftVersions: [],
-        allProfiles: [],
-        selectedProfileUuids: { release: null, preview: null },
-        launchedProfileUuid: null,
-        editingProfile: 0,
+        profiles: [],
+        installedVersions: [],
+        lastLaunchedProfileUuid: null,
+        editingProfileIndex: 0,
         UITheme: "System",
         keepLauncherOpen: true,
         developerMode: false,
@@ -91,51 +88,53 @@ export const useAppStore = create<AppStore>((set, get) => {
         downloadingMods: [],
         installingForProfile: null,
 
-        setAllValidMods: value =>
-            set(state => ({ allValidMods: StateUtils.resolveSetStateAction(value, state.allValidMods) })),
-        setAllRuntimes: value => set(state => ({ allRuntimes: StateUtils.resolveSetStateAction(value, state.allRuntimes) })),
-        setAllProfiles: value => set(state => ({ allProfiles: StateUtils.resolveSetStateAction(value, state.allProfiles) })),
-        setSelectedProfileUuid: (type, uuid) =>
-            set(state => ({ selectedProfileUuids: { ...state.selectedProfileUuids, [type]: uuid } })),
-        setLaunchedProfileUuid: value =>
-            set(state => ({ launchedProfileUuid: StateUtils.resolveSetStateAction(value, state.launchedProfileUuid) })),
-        setEditingProfile: value =>
-            set(state => ({ editingProfile: StateUtils.resolveSetStateAction(value, state.editingProfile) })),
+        setProfiles: value => set(state => ({ profiles: StateUtils.resolveSetStateAction(value, state.profiles) })),
+
+        refreshInstalledVersions: () => set({ installedVersions: [...versions.library.list()] }),
+
+        setLastLaunchedProfileUuid: uuid => {
+            set({ lastLaunchedProfileUuid: uuid });
+            get().saveData();
+        },
+
+        setEditingProfileIndex: value =>
+            set(state => ({ editingProfileIndex: StateUtils.resolveSetStateAction(value, state.editingProfileIndex) })),
+
         setUITheme: value => {
             set(state => {
-                const nextTheme = StateUtils.resolveSetStateAction(value, state.UITheme);
-                ipcRenderer.send("WINDOW_UI_THEME", nextTheme);
-                return { UITheme: nextTheme };
+                const next = StateUtils.resolveSetStateAction(value, state.UITheme);
+                ipcRenderer.send("WINDOW_UI_THEME", next);
+                return { UITheme: next };
             });
             get().saveData();
         },
+
         setKeepLauncherOpen: value => {
             set(state => ({ keepLauncherOpen: StateUtils.resolveSetStateAction(value, state.keepLauncherOpen) }));
             get().saveData();
         },
+
         setDeveloperMode: value => {
             set(state => ({ developerMode: StateUtils.resolveSetStateAction(value, state.developerMode) }));
             get().saveData();
         },
+
         setError: value => set(state => ({ error: StateUtils.resolveSetStateAction(value, state.error) })),
 
         setDownloadingMods: value =>
             set(state => ({ downloadingMods: StateUtils.resolveSetStateAction(value, state.downloadingMods) })),
+
         setInstallingForProfile: value =>
             set(state => ({ installingForProfile: StateUtils.resolveSetStateAction(value, state.installingForProfile) })),
 
         refreshAllMods: () => {
             const mods = GetAllMods();
-            const invalidMods = mods.filter(mod => !mod.ok).map(mod => mod.id);
-            const validMods = mods.filter(mod => mod.ok);
-            const runtimes = validMods.filter(mod => mod.config.meta.type === "runtime");
-            const modIds = validMods.map(mod => mod.id);
-
+            const valid = mods.filter(mod => mod.ok);
             set({
                 allMods: mods,
-                allRuntimes: ["Vanilla", ...runtimes.map(runtime => runtime.id)],
-                allValidMods: modIds,
-                allInvalidMods: invalidMods,
+                allRuntimes: ["Vanilla", ...valid.filter(m => m.config.meta.type === "runtime").map(m => m.id)],
+                allValidMods: valid.map(m => m.id),
+                allInvalidMods: mods.filter(m => !m.ok).map(m => m.id),
             });
         },
 
@@ -143,94 +142,75 @@ export const useAppStore = create<AppStore>((set, get) => {
             const state = get();
 
             const runtimeIds = new Set(
-                state.allMods
-                    .filter(mod => mod.ok && mod.config.meta.type === "runtime")
-                    .map(mod => mod.id)
+                state.allMods.filter(m => m.ok && m.config.meta.type === "runtime").map(m => m.id)
             );
 
-            const normalizedProfiles = state.allProfiles.map(profile => {
-                const runtimeMods = profile.mods.filter(modId => runtimeIds.has(modId));
-                const normalizedRuntime = runtimeMods.length > 0 ? runtimeMods[0] : "Vanilla";
-                const normalizedIsModded = profile.is_modded || profile.mods.length > 0 || normalizedRuntime !== "Vanilla";
-
-                return {
-                    ...profile,
-                    runtime: normalizedRuntime,
-                    is_modded: normalizedIsModded,
-                };
+            const normalized = state.profiles.map(profile => {
+                const runtimeMod = profile.mods.find(id => runtimeIds.has(id));
+                return { ...profile, runtime: runtimeMod ?? "Vanilla" };
             });
 
-            const changed = normalizedProfiles.some((profile, index) => {
-                const original = state.allProfiles[index];
-                return profile.runtime !== original.runtime || profile.is_modded !== original.is_modded;
-            });
-
-            if (changed) {
-                set({ allProfiles: normalizedProfiles });
+            if (normalized.some((p, i) => p.runtime !== state.profiles[i].runtime)) {
+                set({ profiles: normalized });
             }
 
-            SetProfiles(normalizedProfiles);
+            state.profileStore.save(normalized);
 
-            const launcherConfig: LauncherConfig = {
+            const config: LauncherConfig = {
                 keep_open: state.keepLauncherOpen,
-                selected_release_profile_uuid: state.selectedProfileUuids.release,
-                selected_preview_profile_uuid: state.selectedProfileUuids.preview,
-                selected_profile_uuid: state.launchedProfileUuid,
                 ui_theme: state.UITheme,
                 developer_mode: state.developerMode,
+                last_launched_profile_uuid: state.lastLaunchedProfileUuid,
             };
-
-            SetLauncherConfig(launcherConfig);
+            writeLauncherConfig(paths.launcherConfigPath, config);
         },
 
-        platform: platformInstance,
-        versionManager: new VersionManager(),
+        platform,
+        versions,
+        profileStore: new ProfileStore(paths.profilesFilePath),
         fileLocker: FileLocker.create(),
     };
 });
 
-async function hydrateStore(): Promise<void> {
-    const profiles = GetProfiles();
-    const config = GetLauncherConfig();
-    const versionManager = useAppStore.getState().versionManager;
+async function hydrate(): Promise<void> {
+    const { platform, versions, profileStore, refreshAllMods, refreshInstalledVersions } = useAppStore.getState();
 
-    const resolveSlot = (saved: string | null | undefined, type: MinecraftVersionType): string | null => {
-        if (saved && profiles.some(p => p.uuid === saved && getProfileType(p, versionManager) === type)) {
-            return saved;
-        }
-        const firstOfType = profiles.find(p => getProfileType(p, versionManager) === type);
-        return firstOfType ? firstOfType.uuid : null;
-    };
+    versions.library.load();
+    versions.library.prune();
+    refreshInstalledVersions();
 
-    const selectedProfileUuids = {
-        release: resolveSlot(config.selected_release_profile_uuid, "release"),
-        preview: resolveSlot(config.selected_preview_profile_uuid, "preview"),
-    };
+    const profiles = profileStore.load();
+    const config = readLauncherConfig(platform.getPaths().launcherConfigPath);
 
     useAppStore.setState({
-        allProfiles: profiles,
-        keepLauncherOpen: config.keep_open ?? true,
-        developerMode: config.developer_mode ?? false,
-        selectedProfileUuids,
-        launchedProfileUuid: config.selected_profile_uuid ?? null,
-        UITheme: config.ui_theme ?? "Light"
+        profiles,
+        keepLauncherOpen: config.keep_open,
+        developerMode: config.developer_mode,
+        UITheme: config.ui_theme,
+        lastLaunchedProfileUuid: config.last_launched_profile_uuid,
     });
 
+    versions.subscribe("installed", refreshInstalledVersions);
+    versions.subscribe("uninstalled", refreshInstalledVersions);
+
     ipcRenderer.send("WINDOW_UI_THEME", useAppStore.getState().UITheme);
-    useAppStore.getState().refreshAllMods();
+    refreshAllMods();
 }
 
 export function InitializeAppState(): void {
-    // Remove any previous listener so reloads don't stack handlers
     ipcRenderer.removeAllListeners("APP_STATE_INIT");
-
     ipcRenderer.on("APP_STATE_INIT", async () => {
-        await hydrateStore();
+        // Bad on-disk state now throws instead of being papered over, so it has to
+        // reach the user here rather than dying as an unhandled rejection.
+        try {
+            await hydrate();
+        } catch (e) {
+            console.error("[AppStore] Startup failed:", e);
+            useAppStore.setState({ error: `Startup failed: ${(e as Error).message ?? e}` });
+            return;
+        }
         resumePendingDownloads();
-
-        // Defer non-critical work until after the UI is interactive
     });
-
     ipcRenderer.send("APP_STATE_INIT_REQUEST");
 }
 

@@ -103,16 +103,11 @@ async function resumeModDownload(pending: PendingDownload) {
 }
 
 async function resumeVersionDownload(pending: PendingDownload) {
-    if (!pending.versionUuid) {
-        removePendingDownload(pending.id);
-        return;
-    }
+    removePendingDownload(pending.id);
+    if (!pending.versionUuid) return;
 
-    // Use the version manager's existing flow which handles locking, extraction, and installation
-    const versionManager = useAppStore.getState().versionManager;
-    removePendingDownload(pending.id); // Remove old pending entry — downloadVersion will create a new one
     try {
-        await versionManager.downloadExtractAndInstallVersion(pending.versionUuid);
+        await useAppStore.getState().versions.resolveOrInstall(pending.versionUuid);
     } catch (e) {
         console.error(`Recovery version download failed for ${pending.name}:`, e);
     }

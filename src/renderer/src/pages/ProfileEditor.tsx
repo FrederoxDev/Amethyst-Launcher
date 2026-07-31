@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 
@@ -8,9 +8,16 @@ import { TextInput } from "@renderer/components/TextInput";
 import { Popup, PopupUseArguments } from "@renderer/states/PopupStore";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { useAppStore } from "@renderer/states/AppStore";
-import { VersionPickerPopup, VersionPickerResult } from "@renderer/popups/VersionPickerPopup";
-import { launchProfile as doLaunchProfile } from "@renderer/scripts/LaunchUtils";
-import { confirmProfileDeletion, finalizeProfileDeletion, openDataFolder, openInstallFolder } from "@renderer/scripts/ProfileActions";
+import { VersionChoice, VersionPickerPopup } from "@renderer/popups/VersionPickerPopup";
+import { launchProfile as doLaunchProfile } from "@renderer/scripts/flows/Launch";
+import {
+    confirmProfileDeletion,
+    deleteProfile as removeProfile,
+    openDataFolder,
+    openInstallFolder,
+} from "@renderer/scripts/flows/ProfileActions";
+import { startPendingImport } from "@renderer/scripts/flows/VersionChoice";
+import { Channel, channelLabel } from "@renderer/scripts/domain/Channel";
 import { MOD_DISCOVERY_ENABLED } from "@renderer/scripts/FeatureFlags";
 
 const fs = window.require("fs") as typeof import("fs");
@@ -27,7 +34,7 @@ function AddContentPopup({ submit: rawSubmit }: PopupUseArguments<string | "brow
     const submit = (val: string | "browse" | null) => animateClose(() => rawSubmit(val));
     const mods = useAppStore(state => state.allValidMods);
     const setError = useAppStore(state => state.setError);
-    const activeMods = useAppStore(state => state.allProfiles)[useAppStore(state => state.editingProfile)]?.mods ?? [];
+    const activeMods = useAppStore(state => state.profiles)[useAppStore(state => state.editingProfileIndex)]?.mods ?? [];
     const modsPath = useMemo(() => useAppStore.getState().platform.getPaths().modsPath, []);
     const availableMods = useMemo(() => mods.filter(m => !activeMods.includes(m)), [mods, activeMods]);
     const [search, setSearch] = useState("");
@@ -116,8 +123,9 @@ export function ProfileEditor() {
     const [profileName, setProfileName] = useState("");
     const [profileActiveMods, setProfileActiveMods] = useState<string[]>([]);
     const [profileRuntime, setProfileRuntime] = useState<string>("");
-    const [profileMinecraftVersion, setProfileMinecraftVersion] = useState<string>("");
-    const [profileVersionUuid, setProfileVersionUuid] = useState<string | null>(null);
+    const [profileVersionLabel, setProfileVersionLabel] = useState<string>("");
+    const [profileVersionUuid, setProfileVersionUuid] = useState<string>("");
+    const [profileChannel, setProfileChannel] = useState<Channel>("release");
     const [modSearch, setModSearch] = useState("");
 
     // Subscribe to ProgressBar so the Play button greys out reactively when
@@ -128,15 +136,14 @@ export function ProfileEditor() {
     const dotsRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
-    const [, forceUpdate] = useReducer(x => x + 1, 0);
     const allValidMods = useAppStore(state => state.allValidMods);
-    const allProfiles = useAppStore(state => state.allProfiles);
-    const selectedProfile = useAppStore(state => state.editingProfile);
+    const allProfiles = useAppStore(state => state.profiles);
+    const selectedProfile = useAppStore(state => state.editingProfileIndex);
     const saveData = useAppStore(state => state.saveData);
     const allInvalidMods = useAppStore(state => state.allInvalidMods);
     const downloadingMods = useAppStore(state => state.downloadingMods);
     const allMods = useAppStore(state => state.allMods);
-    const versionManager = useAppStore(state => state.versionManager);
+    const installedVersions = useAppStore(state => state.installedVersions);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -144,12 +151,6 @@ export function ProfileEditor() {
             navigate("/profiles");
         }
     }, [allProfiles, navigate]);
-
-    useEffect(() => {
-        const unsubInstall = versionManager.subscribe("version_installed", () => forceUpdate());
-        const unsubUninstall = versionManager.subscribe("version_uninstalled", () => forceUpdate());
-        return () => { unsubInstall(); unsubUninstall(); };
-    }, []);
 
     const platform = useAppStore(state => state.platform);
     const modsPath = useMemo(() => platform.getPaths().modsPath, [platform]);
@@ -161,8 +162,9 @@ export function ProfileEditor() {
         setProfileName(profile?.name ?? "New Profile");
         setProfileRuntime(profile?.runtime ?? "Vanilla");
         setProfileActiveMods(profile?.mods ?? []);
-        setProfileMinecraftVersion(profile?.minecraft_version ?? "1.21.0.3");
-        setProfileVersionUuid(profile?.version_uuid ?? null);
+        setProfileVersionLabel(profile?.versionLabel ?? "");
+        setProfileVersionUuid(profile?.versionUuid ?? "");
+        setProfileChannel(profile?.channel ?? "release");
         profileLoaded.current = true;
     }, [allProfiles, selectedProfile]);
 
@@ -174,10 +176,11 @@ export function ProfileEditor() {
         profile.name = profileName;
         profile.runtime = profileActiveMods.length > 0 ? profileRuntime : "Vanilla";
         profile.mods = profileActiveMods;
-        profile.minecraft_version = profileMinecraftVersion;
-        profile.version_uuid = profileVersionUuid;
+        profile.versionLabel = profileVersionLabel;
+        profile.versionUuid = profileVersionUuid;
+        profile.channel = profileChannel;
         saveData();
-    }, [profileName, profileRuntime, profileActiveMods, profileMinecraftVersion, profileVersionUuid]);
+    }, [profileName, profileRuntime, profileActiveMods, profileVersionLabel, profileVersionUuid, profileChannel]);
 
     const getOrphanedMods = (modNames: string[], excludeProfileIndex: number) => {
         return modNames.filter(modName => {
@@ -244,7 +247,7 @@ export function ProfileEditor() {
         const proceed = await promptDeleteOrphanedMods(orphaned);
         if (!proceed) return;
 
-        await finalizeProfileDeletion(profile);
+        await removeProfile(profile);
         navigate("/");
     };
 
@@ -307,23 +310,18 @@ export function ProfileEditor() {
     };
 
     const openVersionPicker = async () => {
-        const result = await Popup.useAsync<VersionPickerResult | null>(props => {
-            return <VersionPickerPopup {...props} />;
-        });
-        if (!result) return;
-        setProfileMinecraftVersion(result.minecraft_version);
-        setProfileVersionUuid(result.version_uuid);
+        const choice = await Popup.useAsync<VersionChoice | null>(props => <VersionPickerPopup {...props} />);
+        if (!choice) return;
+        startPendingImport(choice);
+        setProfileVersionLabel(choice.label);
+        setProfileVersionUuid(choice.versionUuid);
+        setProfileChannel(choice.channel);
     };
 
-    const installedVersions = useMemo(() => versionManager.getInstalledVersions(), [versionManager]);
-
     const versionDisplayName = useMemo(() => {
-        if (profileVersionUuid) {
-            const installed = installedVersions.find(v => v.uuid === profileVersionUuid);
-            return installed?.name ?? profileMinecraftVersion;
-        }
-        return profileMinecraftVersion || "Select version...";
-    }, [profileVersionUuid, profileMinecraftVersion, installedVersions]);
+        const installed = installedVersions.find(v => v.uuid === profileVersionUuid);
+        return installed?.label ?? profileVersionLabel ?? "Select version...";
+    }, [profileVersionUuid, profileVersionLabel, installedVersions]);
 
     const allModsList = useMemo(() => {
         const runtimeSet = new Set(
@@ -351,9 +349,8 @@ export function ProfileEditor() {
     }, [allModsList, modSearch]);
 
     const runtimeWarning = useMemo(() => {
-        const currentProfile = allProfiles[selectedProfile];
-        const isModdedProfile = (currentProfile?.is_modded ?? false) || profileActiveMods.length > 0 || profileRuntime.toLowerCase() !== "vanilla";
-        if (!isModdedProfile) {
+        const moddedNow = profileActiveMods.length > 0 || profileRuntime.toLowerCase() !== "vanilla";
+        if (!moddedNow) {
             return null;
         }
 
@@ -385,7 +382,12 @@ export function ProfileEditor() {
                             <div className="profile-editor-field">
                                 <p className="minecraft-seven text-input-label" style={{ paddingBottom: 2 }}>Minecraft Version</p>
                                 <div className="profile-editor-version-btn" onClick={openVersionPicker}>
-                                    <p className="minecraft-seven">{versionDisplayName}</p>
+                                    <p className="minecraft-seven">
+                                        {versionDisplayName}
+                                        <span className="minecraft-seven version-picker-item-tag" style={{ marginLeft: 8 }}>
+                                            {channelLabel(profileChannel)}
+                                        </span>
+                                    </p>
                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                                         <path d="M3 5L6 8L9 5" stroke="#9f9f9f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>

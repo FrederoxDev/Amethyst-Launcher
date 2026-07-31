@@ -1,8 +1,9 @@
 import { useAppStore } from "@renderer/states/AppStore";
 import { Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Popup } from "@renderer/states/PopupStore";
-import { createProfileFlow } from "@renderer/scripts/ProfileCreation";
-import { runFirstLaunchOnboarding } from "@renderer/scripts/OnboardingFlow";
+import { createProfileFlow } from "@renderer/scripts/flows/CreateProfile";
+import { adoptAllForeignGameData } from "@renderer/scripts/flows/AdoptGameData";
+import { isModded } from "@renderer/scripts/domain/Profile";
 
 import lushCaveImage from "@renderer/assets/images/art/lush_cave.jpg";
 import craftingIcon from "@renderer/assets/images/icons/crafting-icon.png";
@@ -172,7 +173,7 @@ export default function App() {
     const onboardingStarted = useRef(false);
 
     useEffect(() => {
-        setTimeout(() => useAppStore.getState().versionManager.cleanupStaleLocks(), 0);
+        setTimeout(() => useAppStore.getState().versions.cleanupStaleLocks(), 0);
     }, []);
 
     useEffect(() => {
@@ -181,9 +182,9 @@ export default function App() {
         // from this tree.
         if (onboardingStarted.current) return;
         onboardingStarted.current = true;
-        runFirstLaunchOnboarding().catch(e => {
-            console.error("[App] First-launch onboarding failed:", e);
-            useAppStore.getState().setError(`Onboarding failed: ${(e as Error).message ?? e}`);
+        adoptAllForeignGameData().catch(e => {
+            console.error("[App] Could not resolve existing game data:", e);
+            useAppStore.getState().setError(`Could not resolve existing game data: ${(e as Error).message ?? e}`);
         });
     }, []);
 
@@ -278,7 +279,7 @@ export default function App() {
                                     onClick={async () => {
                                         const result = await createProfileFlow();
                                         if (!result) return;
-                                        navigate(result.profile.is_modded ? "/profile-editor" : "/");
+                                        navigate(isModded(result.profile) ? "/profile-editor" : "/");
                                     }}
                                 >
                                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">

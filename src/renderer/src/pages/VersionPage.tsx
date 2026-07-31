@@ -1,97 +1,107 @@
-import { useEffect, useReducer, useState } from "react";
 import { useAppStore } from "@renderer/states/AppStore";
-import { InstalledVersionModel } from "@renderer/scripts/VersionManager";
-
-import DeleteIconAsset from "@renderer/assets/images/icons/delete-icon.png";
-import OpenFolderIconAsset from "@renderer/assets/images/icons/open-folder-icon.png";
-import InfoIconAsset from "@renderer/assets/images/icons/info-icon.png";
+import { channelLabel } from "@renderer/scripts/domain/Channel";
+import { InstalledVersion } from "@renderer/scripts/versions/InstalledVersion";
 import { Popup } from "@renderer/states/PopupStore";
 import { PopupPanel } from "@renderer/components/PopupPanel";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { confirmAction } from "@renderer/popups/ConfirmPopup";
+import { ImportVersionPopup } from "@renderer/popups/ImportVersionPopup";
+import { ImportRequest } from "@renderer/scripts/versions/VersionService";
+
+import DeleteIconAsset from "@renderer/assets/images/icons/delete-icon.png";
+import OpenFolderIconAsset from "@renderer/assets/images/icons/open-folder-icon.png";
+import InfoIconAsset from "@renderer/assets/images/icons/info-icon.png";
+
+import "@renderer/styles/pages/SettingsPage.css";
+import "@renderer/styles/pages/LauncherPage.css";
 
 const { shell: { openPath } } = window.require("electron") as typeof import("electron");
 
-import "@renderer/styles/pages/SettingsPage.css"
-import "@renderer/styles/pages/LauncherPage.css"
-
-import { ImportVersionPopup, ImportVersionPopupData } from "@renderer/popups/ImportVersionPopup";
-import { useDownloadStore } from "@renderer/states/DownloadStore";
-
-type VersionButtonProps = {
-    version: InstalledVersionModel;
+const VersionCard = ({ version, canDelete, onInspect, onDelete }: {
+    version: InstalledVersion;
     canDelete: boolean;
-    onInspect: (version: InstalledVersionModel) => void;
-    onDelete: (version: InstalledVersionModel) => void;
-};
-
-const VersionButton = ({
-    version,
-    canDelete,
-    onInspect,
-    onDelete
-}: VersionButtonProps) => {
-    return (
-        <div className="version-card">
-            <div className="version-card-inner">
-                <div className="version-card-info">
-                    <p className="minecraft-seven version-card-name">{version.name}</p>
-                    <p className="minecraft-seven version-card-path">{version.path}</p>
+    onInspect: (version: InstalledVersion) => void;
+    onDelete: (version: InstalledVersion) => void;
+}) => (
+    <div className="version-card">
+        <div className="version-card-inner">
+            <div className="version-card-info">
+                <p className="minecraft-seven version-card-name">
+                    {version.label}
+                    <span className="minecraft-seven version-picker-item-tag" style={{ marginLeft: 8 }}>
+                        {channelLabel(version.channel)}
+                    </span>
+                </p>
+                <p className="minecraft-seven version-card-path">{version.path}</p>
+            </div>
+            <div className="version-card-actions">
+                <div
+                    className="version-icon-action version-icon-action-delete"
+                    style={canDelete ? undefined : { opacity: 0.4, cursor: "not-allowed", pointerEvents: "none" }}
+                    onClick={() => { if (canDelete) onDelete(version); }}
+                >
+                    <img src={DeleteIconAsset} alt="" />
                 </div>
-                <div className="version-card-actions">
-                    <div
-                        className="version-icon-action version-icon-action-delete"
-                        style={canDelete ? undefined : { opacity: 0.4, cursor: "not-allowed", pointerEvents: "none" }}
-                        onClick={() => { if (canDelete) onDelete(version); }}
-                    >
-                        <img src={DeleteIconAsset} alt="" />
-                    </div>
-
-                    <div
-                        className="version-icon-action version-icon-action-neutral"
-                        onClick={() => {
-                            console.log(`Opening folder for version ${version.version.toString()} at path: ${version.path}`);
-                            openPath(version.path);
-                        }}
-                    >
-                        <img src={OpenFolderIconAsset} alt="" />
-                    </div>
-
-                    <div
-                        className="version-icon-action version-icon-action-neutral"
-                        onClick={() => onInspect(version)}
-                    >
-                        <img src={InfoIconAsset} alt="" />
-                    </div>
+                <div className="version-icon-action version-icon-action-neutral" onClick={() => openPath(version.path)}>
+                    <img src={OpenFolderIconAsset} alt="" />
+                </div>
+                <div className="version-icon-action version-icon-action-neutral" onClick={() => onInspect(version)}>
+                    <img src={InfoIconAsset} alt="" />
                 </div>
             </div>
         </div>
-    );
-};
+    </div>
+);
 
 export function VersionPage() {
-    const versionManager = useAppStore(state => state.versionManager);
-    const [, forceUpdate] = useReducer(x => x + 1, 0);
-    const [hiddenUuids, setHiddenUuids] = useState<Set<string>>(new Set());
+    const versions = useAppStore(state => state.versions);
+    const installedVersions = useAppStore(state => state.installedVersions);
+    const setError = useAppStore(state => state.setError);
+    const canManage = ProgressBar.useCanDoAction("download");
 
-    // Subscribe to ProgressBar so import/uninstall buttons disable reactively
-    // when another version op (install, delete, uninstall) is in progress.
-    const canManageVersions = ProgressBar.useCanDoAction("download");
+    const startImport = async () => {
+        if (!canManage) return;
 
-    useEffect(() => {
-        const unsubscribeInstalled = versionManager.subscribe("version_installed", () => {
-            forceUpdate();
+        const request = await Popup.useAsync<ImportRequest | null>(props => <ImportVersionPopup {...props} />);
+        if (!request) return;
+
+        try {
+            await versions.importMsixvc(request);
+        } catch (e) {
+            setError(`Could not import ${request.label}: ${(e as Error).message ?? e}`);
+        }
+    };
+
+    const inspect = async (version: InstalledVersion) => {
+        await Popup.useAsync<void>(({ submit }) => (
+            <PopupPanel title={version.label} onClose={() => submit()} size="lg">
+                <p className="minecraft-seven" style={{ fontSize: "12px", wordBreak: "break-all" }}>
+                    {version.path}
+                </p>
+                <p className="minecraft-seven" style={{ fontSize: "12px", color: "#9f9f9f" }}>
+                    {channelLabel(version.channel)} · {version.version.toString()}
+                    {version.packageFamily ? ` · ${version.packageFamily}` : ""}
+                    {version.imported ? " · imported" : ""}
+                </p>
+            </PopupPanel>
+        ));
+    };
+
+    const remove = async (version: InstalledVersion) => {
+        const ok = await confirmAction({
+            title: "Delete version?",
+            message: `You are about to delete "${version.label}". You can download or import it again later.`,
+            confirmText: "Yeah, do it!",
+            cancelText: "No, don't do it!",
         });
+        if (!ok) return;
 
-        const unsubscribeUninstalled = versionManager.subscribe("version_uninstalled", () => {
-            forceUpdate();
-        });
-
-        return () => {
-            unsubscribeInstalled();
-            unsubscribeUninstalled();
-        };
-    }, []);
+        try {
+            await versions.uninstall(version.uuid);
+        } catch (e) {
+            setError(`Could not delete ${version.label}: ${(e as Error).message ?? e}`);
+        }
+    };
 
     return (
         <div className="version-page-root">
@@ -101,82 +111,28 @@ export function VersionPage() {
                     <div className="version-header-actions">
                         <div
                             className="version-icon-action version-icon-action-neutral"
-                            style={canManageVersions ? undefined : { opacity: 0.4, cursor: "not-allowed", pointerEvents: "none" }}
-                            onClick={async () => {
-                                if (!canManageVersions) return;
-                                const result = await Popup.useAsync<ImportVersionPopupData | null>(props => {
-                                    return <ImportVersionPopup {...props} />;
-                                });
-
-                                if (!result)
-                                    return;
-
-                                const dlId = `version-import-${result.uuid}-${Date.now()}`;
-                                const dlStore = useDownloadStore.getState();
-                                dlStore.addDownload({
-                                    id: dlId,
-                                    name: result.name,
-                                    type: "version",
-                                    progress: 0,
-                                    status: "extracting",
-                                    abortController: null,
-                                });
-
-                                versionManager.installVersion({
-                                    kind: "imported",
-                                    name: result.name,
-                                    version: result.version,
-                                    type: result.type,
-                                    uuid: result.uuid,
-                                    file: result.file
-                                }).then(() => {
-                                    console.log("Version installed successfully!");
-                                    useDownloadStore.getState().updateDownload(dlId, { status: "done", progress: 1 });
-                                }).catch(e => {
-                                    console.error("Failed to install version:", e);
-                                    useDownloadStore.getState().updateDownload(dlId, { status: "error", progress: 0 });
-                                });
-                            }}
+                            style={canManage ? undefined : { opacity: 0.4, cursor: "not-allowed", pointerEvents: "none" }}
+                            onClick={startImport}
                         >
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
                         </div>
                     </div>
                 </div>
                 <div className="version-page-list scrollbar">
-                    {
-                        versionManager.getInstalledVersions().filter(v => !hiddenUuids.has(v.uuid)).map((version, index) => {
-                            return (
-                                <VersionButton
-                                    version={version}
-                                    canDelete={canManageVersions}
-                                    onInspect={async (version) => {
-                                        await Popup.useAsync<void>(({ submit }) => (
-                                            <PopupPanel
-                                                title={version.version.toString()}
-                                                onClose={() => submit()}
-                                                size="lg"
-                                            >
-                                                <p className="minecraft-seven" style={{ fontSize: "12px", wordBreak: "break-all" }}>{version.path}</p>
-                                            </PopupPanel>
-                                        ));
-                                    }}
-                                    onDelete={async () => {
-                                        const ok = await confirmAction({
-                                            title: "Delete version?",
-                                            message: `You are about to delete "${version.name}". You can download (or import) this version again later.`,
-                                            confirmText: "Yeah, do it!",
-                                            cancelText: "No, don't do it!",
-                                        });
-                                        if (ok) {
-                                            setHiddenUuids(prev => new Set(prev).add(version.uuid));
-                                            versionManager.uninstallVersion(version.uuid);
-                                        }
-                                    }}
-                                    key={index}
-                                />
-                            )
-                        })
-                    }
+                    {installedVersions.length === 0 && (
+                        <p className="minecraft-seven" style={{ color: "#9f9f9f", padding: 12, textAlign: "center" }}>
+                            No versions installed yet.
+                        </p>
+                    )}
+                    {installedVersions.map(version => (
+                        <VersionCard
+                            key={version.uuid}
+                            version={version}
+                            canDelete={canManage}
+                            onInspect={inspect}
+                            onDelete={remove}
+                        />
+                    ))}
                 </div>
             </div>
         </div>

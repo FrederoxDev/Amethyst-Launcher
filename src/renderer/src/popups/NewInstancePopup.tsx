@@ -1,24 +1,27 @@
+import { useState } from "react";
+
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { MinecraftRadialButtonPanel } from "@renderer/components/MinecraftRadialButtonPanel";
 import { PopupPanel, usePopupClose } from "@renderer/components/PopupPanel";
 import { TextInput } from "@renderer/components/TextInput";
-import { PopupUseArguments } from "@renderer/states/PopupStore";
-import { useState } from "react";
 import { PathUtils } from "@renderer/scripts/PathUtils";
+import { Channel, channelLabel } from "@renderer/scripts/domain/Channel";
+import { PopupUseArguments } from "@renderer/states/PopupStore";
 
-export type RuntimeType = "vanilla" | "modded";
-export type NewInstanceResult = { kind: "create"; name: string; runtime: RuntimeType } | { kind: "reselect" };
+export type RuntimeChoice = "vanilla" | "modded";
+export type NewInstanceResult = { kind: "create"; name: string; runtime: RuntimeChoice } | { kind: "reselect" };
 
-interface NewInstancePopupProps extends PopupUseArguments<NewInstanceResult | null> {
+interface Props extends PopupUseArguments<NewInstanceResult | null> {
     versionLabel: string;
+    channel: Channel;
 }
 
-export function NewInstancePopup({ submit: rawSubmit, versionLabel }: NewInstancePopupProps) {
+export function NewInstancePopup({ submit: rawSubmit, versionLabel, channel }: Props) {
     const animateClose = usePopupClose();
     const submit = (result: NewInstanceResult | null) => animateClose(() => rawSubmit(result));
 
     const [name, setName] = useState("");
-    const [runtime, setRuntime] = useState<RuntimeType>("vanilla");
+    const [runtime, setRuntime] = useState<RuntimeChoice>("vanilla");
 
     const canCreate = name.trim() !== "" && PathUtils.isValidFileName(name);
 
@@ -45,8 +48,17 @@ export function NewInstancePopup({ submit: rawSubmit, versionLabel }: NewInstanc
             />
             <div style={{ display: "flex", flexDirection: "column" }}>
                 <p className="minecraft-seven text-input-label">Version</p>
-                <div className="new-instance-version-field" onClick={() => submit({ kind: "reselect" })}>
-                    <span className="minecraft-seven">{versionLabel}</span>
+                <div
+                    className="new-instance-version-field"
+                    style={{ justifyContent: "space-between", paddingRight: 4, gap: 8 }}
+                    onClick={() => submit({ kind: "reselect" })}
+                >
+                    <span className="minecraft-seven" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {versionLabel}
+                    </span>
+                    <span className="minecraft-seven version-picker-item-tag" style={{ flexShrink: 0 }}>
+                        {channelLabel(channel)}
+                    </span>
                 </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column" }}>
@@ -57,7 +69,7 @@ export function NewInstancePopup({ submit: rawSubmit, versionLabel }: NewInstanc
                         { text: "Modded", value: "modded" },
                     ]}
                     default_selected_value={runtime}
-                    onChange={value => setRuntime(value as RuntimeType)}
+                    onChange={value => setRuntime(value as RuntimeChoice)}
                 />
             </div>
         </PopupPanel>

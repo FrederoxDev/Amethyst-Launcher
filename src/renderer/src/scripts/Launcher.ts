@@ -1,50 +1,44 @@
-import { useAppStore } from "@renderer/states/AppStore";
-
-const path = window.require("path");
-const fs = window.require("fs");
-
-function getPaths() {
-    return useAppStore.getState().platform.getPaths();
-}
+const fs = window.require("fs") as typeof import("fs");
+const path = window.require("path") as typeof import("path");
 
 export interface LauncherConfig {
     keep_open: boolean;
-    selected_release_profile_uuid?: string | null;
-    selected_preview_profile_uuid?: string | null;
-    /**
-     * UUID of the most recently launched profile. Written right before launch so
-     * the proxy DLL can pick the correct runtime. Not the source of UI selection
-     * highlighting — that's selected_release/preview_profile_uuid.
-     */
-    selected_profile_uuid?: string | null;
     ui_theme: string;
     developer_mode: boolean;
+    last_launched_profile_uuid: string | null;
 }
 
-export function GetLauncherConfig(): LauncherConfig {
-    const paths = getPaths();
-    let data: Partial<LauncherConfig> = {};
+const DEFAULTS: LauncherConfig = {
+    keep_open: true,
+    ui_theme: "System",
+    developer_mode: false,
+    last_launched_profile_uuid: null,
+};
 
-    try {
-        const jsonData = fs.readFileSync(paths.launcherConfigPath, "utf-8");
-        data = JSON.parse(jsonData);
-    } catch {
-        console.error(`Failed to read/parse the launcherConfig file`);
+/** No config yet is a real state; an unreadable or malformed one is not. */
+export function readLauncherConfig(filePath: string): LauncherConfig {
+    if (!fs.existsSync(filePath)) return { ...DEFAULTS };
+
+    const raw: unknown = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    if (typeof raw !== "object" || raw === null) throw new Error(`${filePath}: expected an object`);
+    const o = raw as Record<string, unknown>;
+
+    if (typeof o.keep_open !== "boolean") throw new Error(`${filePath}: "keep_open" must be a boolean`);
+    if (typeof o.ui_theme !== "string") throw new Error(`${filePath}: "ui_theme" must be a string`);
+    if (typeof o.developer_mode !== "boolean") throw new Error(`${filePath}: "developer_mode" must be a boolean`);
+    if (o.last_launched_profile_uuid !== null && typeof o.last_launched_profile_uuid !== "string") {
+        throw new Error(`${filePath}: "last_launched_profile_uuid" must be a string or null`);
     }
 
     return {
-        keep_open: true,
-        ui_theme: "System",
-        selected_release_profile_uuid: null,
-        selected_preview_profile_uuid: null,
-        selected_profile_uuid: null,
-        developer_mode: false,
-        ...data,
+        keep_open: o.keep_open,
+        ui_theme: o.ui_theme,
+        developer_mode: o.developer_mode,
+        last_launched_profile_uuid: o.last_launched_profile_uuid,
     };
 }
 
-export function SetLauncherConfig(config: LauncherConfig) {
-    const paths = getPaths();
-    fs.mkdirSync(path.dirname(paths.launcherConfigPath), { recursive: true });
-    fs.writeFileSync(paths.launcherConfigPath, JSON.stringify(config, undefined, 4));
+export function writeLauncherConfig(filePath: string, config: LauncherConfig): void {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, JSON.stringify(config, undefined, 4), "utf-8");
 }
