@@ -4,13 +4,20 @@ import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { useAppStore } from "@renderer/states/AppStore";
 import { useShallow } from "zustand/shallow";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
-import { launchProfile } from "@renderer/scripts/LaunchUtils";
+import { launchProfile } from "@renderer/scripts/flows/Launch";
 import { useNavigate } from "react-router-dom";
-import { getProfileType, Profile } from "@renderer/scripts/Profiles";
+import { channelLabel } from "@renderer/scripts/domain/Channel";
+import { Profile, isModded } from "@renderer/scripts/domain/Profile";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { createProfileFlow } from "@renderer/scripts/ProfileCreation";
-import { confirmProfileDeletion, finalizeProfileDeletion, openDataFolder, openInstallFolder } from "@renderer/scripts/ProfileActions";
+import { createProfileFlow } from "@renderer/scripts/flows/CreateProfile";
+import {
+    confirmProfileDeletion,
+    deleteProfile as removeProfile,
+    displayVersion,
+    openDataFolder,
+    openInstallFolder,
+} from "@renderer/scripts/flows/ProfileActions";
 
 const ProfileCardMenu = ({ onEdit, onDelete, onOpenInstallFolder, onOpenDataFolder }: {
     onEdit: () => void;
@@ -105,8 +112,7 @@ const ProfileCard = ({ profile, versionName, runtimeWarning, onEdit, onPlay, onD
     canPlay: boolean;
     isSelected?: boolean;
 }) => {
-    const isModdedProfile = profile.is_modded || profile.mods.length > 0 || profile.runtime.toLowerCase() !== "vanilla";
-    const profileModeLabel = isModdedProfile ? "Modded" : "Vanilla";
+    const profileModeLabel = isModded(profile) ? "Modded" : "Vanilla";
 
     return (
         <div className={`launcher-profile-card${isSelected ? " selected" : ""}`} onClick={onEdit}>
@@ -124,7 +130,7 @@ const ProfileCard = ({ profile, versionName, runtimeWarning, onEdit, onPlay, onD
                     )}
                 </div>
                 <p className="minecraft-seven launcher-profile-card-version">
-                    {versionName} &middot; {profileModeLabel}
+                    {versionName} &middot; {channelLabel(profile.channel)} &middot; {profileModeLabel}
                 </p>
             </div>
             <div className="launcher-profile-card-actions" onClick={(e) => { e.stopPropagation(); }}>
@@ -145,44 +151,27 @@ const ProfileCard = ({ profile, versionName, runtimeWarning, onEdit, onPlay, onD
 export function LauncherPage() {
     const [
         allProfiles,
-        selectedProfileUuids,
-        setSelectedProfileUuid,
+        lastLaunchedProfileUuid,
         setEditingProfile,
         setAllProfiles,
         saveData,
         error,
         setError,
         allMods,
-        versionManager
     ] = useAppStore(useShallow(state => [
-        state.allProfiles,
-        state.selectedProfileUuids,
-        state.setSelectedProfileUuid,
-        state.setEditingProfile,
-        state.setAllProfiles,
+        state.profiles,
+        state.lastLaunchedProfileUuid,
+        state.setEditingProfileIndex,
+        state.setProfiles,
         state.saveData,
         state.error,
         state.setError,
         state.allMods,
-        state.versionManager
     ]));
 
     // Subscribe to ProgressBar status so play-button gating updates reactively
     // when long-running ops (launch, import, delete, uninstall) start/finish.
     const canLaunch = ProgressBar.useCanDoAction("launch");
-
-    const isProfileSelected = (profile: Profile): boolean => {
-        const type = getProfileType(profile, versionManager);
-        return selectedProfileUuids[type] === profile.uuid;
-    };
-
-    const getVersionName = (profile: Profile): string => {
-        if (profile.version_uuid) {
-            const installed = versionManager.getInstalledVersionByUUID(profile.version_uuid);
-            if (installed) return installed.name;
-        }
-        return profile.minecraft_version ?? "No version";
-    };
 
     const navigate = useNavigate();
     const gridRef = useRef<HTMLDivElement>(null);
@@ -256,7 +245,7 @@ export function LauncherPage() {
         if (!profile) return;
         if (!await confirmProfileDeletion(profile)) return;
         snapshotPositions();
-        await finalizeProfileDeletion(profile);
+        await removeProfile(profile);
     };
 
     const handleReorder = (targetUuid: string) => {
@@ -285,8 +274,7 @@ export function LauncherPage() {
     };
 
     const getRuntimeWarning = (profile: Profile): string | null => {
-        const isModdedProfile = profile.is_modded || profile.mods.length > 0 || profile.runtime.toLowerCase() !== "vanilla";
-        if (!isModdedProfile) {
+        if (!isModded(profile)) {
             return null;
         }
 
@@ -364,15 +352,15 @@ export function LauncherPage() {
                     >
                         <ProfileCard
                             profile={profile}
-                            versionName={getVersionName(profile)}
+                            versionName={displayVersion(profile)}
                             runtimeWarning={runtimeWarning}
-                            isSelected={isProfileSelected(profile)}
+                            isSelected={lastLaunchedProfileUuid === profile.uuid}
                             canPlay={canLaunch && !runtimeWarning}
                             onEdit={() => {
                                 setEditingProfile(index);
                                 navigate("/profile-editor");
                             }}
-                            onPlay={() => { setSelectedProfileUuid(getProfileType(profile, versionManager), profile.uuid); launchGame(profile); }}
+                            onPlay={() => launchGame(profile)}
                             onDelete={() => deleteProfile(index)}
                             onOpenInstallFolder={() => openInstallFolder(profile)}
                             onOpenDataFolder={() => openDataFolder(profile)}
@@ -383,7 +371,7 @@ export function LauncherPage() {
                     snapshotPositions();
                     const result = await createProfileFlow();
                     if (!result) return;
-                    navigate(result.profile.is_modded ? "/profile-editor" : "/");
+                    navigate(isModded(result.profile) ? "/profile-editor" : "/");
                 }}>
                     <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
                         <path d="M10 4V16M4 10H16" stroke="#9f9f9f" strokeWidth="2.5" strokeLinecap="square" />
@@ -405,9 +393,9 @@ export function LauncherPage() {
                         }}>
                             <ProfileCard
                                 profile={dragProfile}
-                                versionName={getVersionName(dragProfile)}
+                                versionName={displayVersion(dragProfile)}
                                 runtimeWarning={getRuntimeWarning(dragProfile)}
-                                isSelected={isProfileSelected(dragProfile)}
+                                isSelected={lastLaunchedProfileUuid === dragProfile.uuid}
                                 canPlay={false}
                                 onEdit={() => {}}
                                 onPlay={() => {}}

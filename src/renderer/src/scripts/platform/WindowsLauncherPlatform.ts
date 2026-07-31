@@ -1,258 +1,225 @@
-import { ILauncherPlatform, LauncherPaths, ProcessInfo, ShortcutOptions } from "@renderer/scripts/platform/LauncherPlatform";
-import { EnsureVersionFiles, IsRegistered, LaunchMinecraft, RegisterVersion, SyncProxyDllForProfile, UnregisterCurrent } from "../AppRegistry";
-import { PathUtils } from "../PathUtils";
-import { Profile } from "../Profiles";
-import { InstalledVersionModel } from "../VersionManager";
-import { ensureProfileJunction, inspectRoamingState, resolveProfileDataPath, resolveRoamingPath } from "../ProfileDataLinker";
+import { Channel, CHANNELS } from "@renderer/scripts/domain/Channel";
+import { Profile, isModded } from "@renderer/scripts/domain/Profile";
+import { moveDirectory } from "@renderer/scripts/Directories";
+import { PathUtils } from "@renderer/scripts/PathUtils";
+import { SESSION_SCHEMA, writeSession } from "@renderer/scripts/session/Session";
+import { InstalledVersion } from "@renderer/scripts/versions/InstalledVersion";
+import { ILauncherPlatform, LauncherPaths, LaunchRequest, ProcessInfo } from "./LauncherPlatform";
+import * as Machine from "./windows/Machine";
 
 const os = window.require("os") as typeof import("os");
+const fs = window.require("fs") as typeof import("fs");
 const child = window.require("child_process") as typeof import("child_process");
 const path = window.require("path") as typeof import("path");
 
-type RegeditModule = typeof import("regedit-rs");
+const GAME_EXECUTABLE = "Minecraft.Windows.exe";
 
 export class WindowsLauncherPlatform implements ILauncherPlatform {
-    private static CachedRegedit: RegeditModule | null;
-    private static CachedWindowsShortcuts: typeof import("windows-shortcuts") | null;
-    private static StartMenuFolder = `${os.homedir()}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs`;
-    private static CachedLauncherPaths: LauncherPaths | null = null;
-
-    constructor() {
-        WindowsLauncherPlatform.getRegeditModule();
-        WindowsLauncherPlatform.getWindowsShortcutsModule();
-    }
-
-    async runCommand(command: string, stdout?: (data: string) => void): Promise<number> {
-        return new Promise<number>((resolve, reject) => {
-            const [cmd, ...args] = command.split(" ");
-            const exec_proc = child.spawn(cmd, args, { shell: true });
-
-            if (stdout) {
-                exec_proc.stdout?.on("data", (data) => stdout(data.toString()));
-            }
-
-            exec_proc.stderr?.on("data", (data) => {
-                console.error(`[Command Error] ${data}`);
-            });
-
-            exec_proc.on("close", (exit_code) => {
-                if (exit_code !== 0) {
-                    reject(new Error(`Command failed with exit code ${exit_code}.`));
-                    return;
-                }
-                resolve(exit_code ?? 0);
-            });
-        });
-    }
+    private static cachedPaths: LauncherPaths | null = null;
 
     getPlatformFullName(): string {
         return `Windows ${os.release()} (${os.arch()})`;
     }
 
-    isProcessRunning(executableName: string): Promise<ProcessInfo | null> {
-        // Fast path: tasklist (~50ms). It happily reports zombie/tombstoned
-        // processes — entries that have fully exited but still appear in the
-        // process table because some external handle keeps the EPROCESS object
-        // alive (debuggers, leaked handles, etc.). A zombie has ThreadCount=0
-        // and is not actually running, so we follow up with a WMI verification
-        // when tasklist returns a hit.
-        return new Promise((resolve) => {
-            const proc = child.spawn(
-                "tasklist",
-                ["/FI", `IMAGENAME eq ${executableName}`, "/FO", "CSV", "/NH"],
-                { encoding: "utf-8" } as any
-            );
-
-            let stdout = "";
-            proc.stdout?.on("data", (data: string | Buffer) => { stdout += data.toString(); });
-            proc.on("error", () => resolve(null));
-            proc.on("close", () => {
-                try {
-                    const line = stdout.trim();
-                    if (!line || line.includes("No tasks")) {
-                        resolve(null);
-                        return;
-                    }
-                    const match = line.split("\n")[0]?.match(/^"[^"]+","(\d+)"/);
-                    const pid = match ? parseInt(match[1], 10) : -1;
-                    if (pid <= 0) {
-                        resolve(null);
-                        return;
-                    }
-                    this.isLiveProcess(pid).then((alive) => {
-                        resolve(alive ? { pid, cwd: "", executableName } : null);
-                    });
-                } catch {
-                    resolve(null);
-                }
-            });
-        });
-    }
-
-    /**
-     * Confirms a PID corresponds to a process that is actually running by
-     * querying its thread count via WMI. A tombstoned process held alive only
-     * by an external handle reports ThreadCount=0 and should be ignored.
-     */
-    private isLiveProcess(pid: number): Promise<boolean> {
-        return new Promise((resolve) => {
-            const proc = child.spawn(
-                "powershell",
-                [
-                    "-NoProfile",
-                    "-NonInteractive",
-                    "-Command",
-                    `(Get-CimInstance Win32_Process -Filter "ProcessId=${pid}" -Property ThreadCount).ThreadCount`,
-                ],
-                { encoding: "utf-8" } as any
-            );
-
-            let stdout = "";
-            proc.stdout?.on("data", (data: string | Buffer) => { stdout += data.toString(); });
-            // Fail-open: if WMI is unavailable, assume the tasklist hit is real
-            // rather than letting the user launch over a possibly-running MC.
-            proc.on("error", () => resolve(true));
-            proc.on("close", () => {
-                const threadCount = parseInt(stdout.trim(), 10);
-                if (Number.isNaN(threadCount)) {
-                    resolve(true);
-                    return;
-                }
-                resolve(threadCount > 0);
-            });
-        });
-    }
-
-    createShortcut(options: ShortcutOptions): Promise<void> {
-        const windowsShortcuts = WindowsLauncherPlatform.getWindowsShortcutsModule();
-        const isProtocolUrl = options.target.startsWith("amethyst-launcher://");
-        // For protocol URLs Windows needs the target to go through explorer.exe
-        // since .lnk files cannot directly invoke custom URI schemes.
-        const target = isProtocolUrl
-            ? `${process.env.WINDIR ?? "C:\\Windows"}\\explorer.exe`
-            : options.target;
-        const args = isProtocolUrl
-            ? options.target
-            : options.args;
-        return new Promise<void>((resolve, reject) => {
-            const shortcutPath = path.join(WindowsLauncherPlatform.StartMenuFolder, `${options.name}.lnk`);
-            windowsShortcuts.create(shortcutPath, {
-                target,
-                args,
-                desc: options.description,
-                icon: options.icon,
-                workingDir: options.workingDir
-            }, (err) => {
-                if (err) {
-                    reject(new Error(`Failed to create shortcut: ${err}`));
-                } else {
-                    resolve();
-                }
+    async runCommand(command: string, stdout?: (data: string) => void): Promise<number> {
+        return new Promise((resolve, reject) => {
+            const [cmd, ...args] = command.split(" ");
+            const proc = child.spawn(cmd, args, { shell: true });
+            if (stdout) proc.stdout?.on("data", data => stdout(data.toString()));
+            proc.stderr?.on("data", data => console.error(`[Command] ${data}`));
+            proc.on("close", code => {
+                if (code !== 0) reject(new Error(`Command failed with exit code ${code}.`));
+                else resolve(0);
             });
         });
     }
 
     getPaths(): LauncherPaths {
-        if (WindowsLauncherPlatform.CachedLauncherPaths)
-            return WindowsLauncherPlatform.CachedLauncherPaths;
-        const appDataPath: string = process.env.APPDATA ?? path.join(os.homedir(), "AppData", "Roaming");
+        if (WindowsLauncherPlatform.cachedPaths) return WindowsLauncherPlatform.cachedPaths;
 
-        WindowsLauncherPlatform.CachedLauncherPaths = {
-            amethystPath: `${appDataPath}\\Amethyst`,
-            launcherPath: `${appDataPath}\\Amethyst\\Launcher`,
-            versionsPath: `${appDataPath}\\Amethyst\\Launcher\\Versions`,
-            versionsFilePath: `${appDataPath}\\Amethyst\\Launcher\\Versions\\versions.json`,
-            cachedVersionsFilePath: `${appDataPath}\\Amethyst\\Launcher\\Versions\\cached_versions.json`,
-            profilesFilePath: `${appDataPath}\\Amethyst\\Launcher\\Profiles\\profiles.json`,
-            modsPath: `${appDataPath}\\Amethyst\\Launcher\\Mods`,
-            launcherConfigPath: `${appDataPath}\\Amethyst\\Launcher\\launcher_config.json`,
-            toolsPath: `${appDataPath}\\Amethyst\\Launcher\\Tools`,
-            profileDataPath: `${appDataPath}\\Amethyst\\Launcher\\ProfileData`
+        const appData = process.env.APPDATA ?? path.join(os.homedir(), "AppData", "Roaming");
+        const launcher = path.join(appData, "Amethyst", "Launcher");
+
+        const paths: LauncherPaths = {
+            amethystPath: path.join(appData, "Amethyst"),
+            launcherPath: launcher,
+            versionsPath: path.join(launcher, "Versions"),
+            versionsFilePath: path.join(launcher, "Versions", "versions.json"),
+            cachedVersionsFilePath: path.join(launcher, "Versions", "cached_versions.json"),
+            profilesFilePath: path.join(launcher, "Profiles", "profiles.json"),
+            modsPath: path.join(launcher, "Mods"),
+            launcherConfigPath: path.join(launcher, "launcher_config.json"),
+            toolsPath: path.join(launcher, "Tools"),
+            profileDataPath: path.join(launcher, "ProfileData"),
         };
 
-        PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.amethystPath);
-        PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.launcherPath);
-        PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.versionsPath);
-        PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.versionsFilePath);
-        PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.cachedVersionsFilePath);
-        PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.profilesFilePath);
-        PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.modsPath);
-        PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.launcherConfigPath);
-        PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.toolsPath);
-        PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.profileDataPath);
-        return WindowsLauncherPlatform.CachedLauncherPaths;
+        for (const p of Object.values(paths)) PathUtils.ValidatePath(p);
+        WindowsLauncherPlatform.cachedPaths = paths;
+        return paths;
     }
 
-    async runProfile(profile: Profile, version: InstalledVersionModel, onStatus?: (message: string) => void): Promise<void> {
-        const status = onStatus ?? (() => {});
+    listProcesses(executableName: string): Promise<ProcessInfo[]> {
+        // tasklist reports tombstoned processes (fully exited, kept alive by a leaked
+        // handle), so each hit is confirmed against WMI, which also yields the image path.
+        return new Promise(resolve => {
+            const proc = child.spawn(
+                "tasklist",
+                ["/FI", `IMAGENAME eq ${executableName}`, "/FO", "CSV", "/NH"],
+                { encoding: "utf-8" } as never
+            );
 
-        status("Checking if Minecraft is already running...");
-        const running = await this.isProcessRunning("Minecraft.Windows.exe");
-        if (running) {
-            const roamingPath = resolveRoamingPath(version.type);
-            const state = inspectRoamingState(roamingPath);
-            const wantedTarget = path.resolve(resolveProfileDataPath(profile)).toLowerCase();
-            const currentTarget = state.kind === "junction" ? state.target.toLowerCase() : null;
+            let out = "";
+            proc.stdout?.on("data", (data: string | Buffer) => { out += data.toString(); });
+            proc.on("error", () => resolve([]));
+            proc.on("close", () => {
+                const text = out.trim();
+                if (!text || text.includes("No tasks")) return resolve([]);
 
-            if (currentTarget && currentTarget === wantedTarget) {
-                throw new Error("Minecraft is already running.");
+                const pids = text.split("\n")
+                    .map(line => parseInt(line.match(/^"[^"]+","(\d+)"/)?.[1] ?? "-1", 10))
+                    .filter(pid => pid > 0);
+
+                Promise.all(pids.map(pid => this.inspectProcess(pid)))
+                    .then(found => resolve(found.filter((p): p is ProcessInfo => p !== null)));
+            });
+        });
+    }
+
+    private inspectProcess(pid: number): Promise<ProcessInfo | null> {
+        return new Promise(resolve => {
+            const proc = child.spawn("powershell", [
+                "-NoProfile", "-NonInteractive", "-Command",
+                `$p = Get-CimInstance Win32_Process -Filter "ProcessId=${pid}" -Property ThreadCount,ExecutablePath; ` +
+                `"$($p.ThreadCount)\`t$($p.ExecutablePath)"`,
+            ], { encoding: "utf-8" } as never);
+
+            let out = "";
+            proc.stdout?.on("data", (data: string | Buffer) => { out += data.toString(); });
+            // Fail closed: if WMI is unavailable, treat the process as real but unidentified.
+            proc.on("error", () => resolve({ pid, executablePath: "" }));
+            proc.on("close", () => {
+                const [threadText, executablePath = ""] = out.trim().split("\t");
+                const threads = parseInt(threadText, 10);
+                const alive = Number.isNaN(threads) ? true : threads > 0;
+                resolve(alive ? { pid, executablePath: executablePath.trim() } : null);
+            });
+        });
+    }
+
+    profileDataDir(profileUuid: string): string {
+        return path.join(this.getPaths().profileDataPath, profileUuid);
+    }
+
+    foreignGameData(channel: Channel): string | null {
+        return Machine.foreignDataPath(channel);
+    }
+
+    async adoptGameData(channel: Channel, profileUuid: string): Promise<void> {
+        const source = Machine.foreignDataPath(channel);
+        if (!source) throw new Error(`No unowned ${channel} game data to adopt.`);
+
+        const target = this.profileDataDir(profileUuid);
+        fs.mkdirSync(path.dirname(target), { recursive: true });
+        await moveDirectory(source, target);
+    }
+
+    liveProfileFor(channel: Channel): string | null {
+        const target = Machine.currentDataTarget(channel);
+        if (!target) return null;
+
+        const root = path.resolve(this.getPaths().profileDataPath).toLowerCase();
+        const resolved = path.resolve(target);
+        if (!resolved.toLowerCase().startsWith(root)) return null;
+        return path.basename(resolved);
+    }
+
+    /**
+     * Only unhooks this profile's own junction. The package registration is left alone:
+     * it still points at a valid build, and the next launch reconciles it.
+     */
+    async discardProfileData(profileUuid: string): Promise<boolean> {
+        let wasLive = false;
+        for (const channel of CHANNELS) {
+            if (this.liveProfileFor(channel) !== profileUuid) continue;
+            Machine.unlinkChannel(channel);
+            wasLive = true;
+        }
+
+        await fs.promises.rm(this.profileDataDir(profileUuid), { recursive: true, force: true });
+        return wasLive;
+    }
+
+    /**
+     * A running game of the *same* family holds the slots this launch would change — its
+     * junction, its registration, the dxgi.dll in its build. A game of the other family
+     * shares none of them, so preview running is no reason to refuse a release launch.
+     */
+    private async findConflictingGame(version: InstalledVersion): Promise<ProcessInfo | null> {
+        const wantFamily = Machine.packageFamilyFor(version.path).toLowerCase();
+
+        for (const proc of await this.listProcesses(GAME_EXECUTABLE)) {
+            // Unidentifiable processes are treated as conflicting rather than stomped on.
+            if (proc.executablePath === "") return proc;
+
+            let family: string | null;
+            try {
+                family = Machine.packageFamilyFor(path.dirname(proc.executablePath));
+            } catch {
+                family = null;
             }
-            throw new Error("Close Minecraft before switching profiles.");
+
+            if (family === null || family.toLowerCase() === wantFamily) return proc;
         }
 
-        if (!IsRegistered(version)) {
-            status("Unregistering old version...");
-            console.log("[WindowsPlatform] Unregistering current version...");
-            await UnregisterCurrent();
-
-            status("Registering version...");
-            console.log("[WindowsPlatform] Registering version:", version.name);
-            await RegisterVersion(version);
-        }
-
-        status("Ensuring version files...");
-        await EnsureVersionFiles(version, status);
-
-        await ensureProfileJunction(profile, version.type, status);
-
-        SyncProxyDllForProfile(profile, version, status);
-
-        status("Launching Minecraft...");
-        console.log("[WindowsPlatform] Launching Minecraft...");
-        LaunchMinecraft(version);
+        return null;
     }
 
-    static getRegeditModule(): RegeditModule {
-        if (WindowsLauncherPlatform.CachedRegedit)
-            return WindowsLauncherPlatform.CachedRegedit;
-
-        if (typeof process === "undefined" || process.platform !== "win32") {
-            WindowsLauncherPlatform.CachedRegedit = null;
-            throw new Error("regedit-rs module is only available on Windows platforms.");
+    private conflictError(running: ProcessInfo, profile: Profile, version: InstalledVersion): Error {
+        if (running.executablePath === "") {
+            return new Error(`Minecraft is already running. Close it before launching "${profile.name}".`);
         }
 
-        try {
-            WindowsLauncherPlatform.CachedRegedit = window.require("regedit-rs") as RegeditModule;
-        } catch (e) {
-            throw new Error(`Failed to load regedit-rs module. Ensure it is installed and available in the environment. \n ${e}`);
+        const runningBuild = path.dirname(running.executablePath);
+        const sameBuild = path.resolve(runningBuild).toLowerCase() === path.resolve(version.path).toLowerCase();
+
+        if (sameBuild && this.liveProfileFor(profile.channel) === profile.uuid) {
+            return new Error(`"${profile.name}" is already running.`);
         }
-        return WindowsLauncherPlatform.CachedRegedit;
+
+        return new Error(
+            `Another ${profile.channel} profile is already running from ${runningBuild}. ` +
+            `Close it before launching "${profile.name}" (${version.label}).`
+        );
     }
 
-    static getWindowsShortcutsModule() {
-        if (WindowsLauncherPlatform.CachedWindowsShortcuts)
-            return WindowsLauncherPlatform.CachedWindowsShortcuts;
-        
-        if (typeof process === "undefined" || process.platform !== "win32") {
-            WindowsLauncherPlatform.CachedWindowsShortcuts = null;
-            throw new Error("windows-shortcuts module is only available on Windows platforms.");
-        }
+    async launch(request: LaunchRequest, onStatus?: (message: string) => void): Promise<void> {
+        const status = onStatus ?? (() => {});
+        const { profile, version } = request;
 
-        try {
-            WindowsLauncherPlatform.CachedWindowsShortcuts = window.require("windows-shortcuts") as typeof import("windows-shortcuts");
-        } catch (e) {
-            throw new Error(`Failed to load windows-shortcuts module. Ensure it is installed and available in the environment. \n ${e}`);
-        }
-        return WindowsLauncherPlatform.CachedWindowsShortcuts;
+        status(`Checking whether a ${profile.channel} build is running...`);
+        const conflict = await this.findConflictingGame(version);
+        if (conflict) throw this.conflictError(conflict, profile, version);
+
+        const dataDir = this.profileDataDir(profile.uuid);
+
+        await Machine.reconcile({
+            channel: profile.channel,
+            versionPath: version.path,
+            dataDir,
+            proxy: isModded(profile),
+        }, status);
+
+        writeSession(dataDir, {
+            schema: SESSION_SCHEMA,
+            launchedAt: new Date().toISOString(),
+            profile: { uuid: profile.uuid, name: profile.name },
+            channel: profile.channel,
+            version: { uuid: version.uuid, label: version.label, path: version.path },
+            runtime: request.runtime,
+            mods: request.mods,
+        });
+
+        status("Starting Minecraft...");
+        Machine.activate(version.path);
     }
 }

@@ -12,7 +12,7 @@ import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle"
 import { MinecraftRadialButtonPanel } from "@renderer/components/MinecraftRadialButtonPanel";
 import { PopupPanel, usePopupClose } from "@renderer/components/PopupPanel";
 
-import { createProfileFlow } from "@renderer/scripts/ProfileCreation";
+import { createProfileFlow } from "@renderer/scripts/flows/CreateProfile";
 
 import { useAppStore } from "@renderer/states/AppStore";
 import { Popup } from "@renderer/states/PopupStore";
@@ -380,7 +380,7 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
         } else {
             // Ask which profile to add the mod to
             const profileIndex = await Popup.useAsync<number | null>(({ submit }) => {
-                const profiles = useAppStore.getState().allProfiles;
+                const profiles = useAppStore.getState().profiles;
                 return (
                     <PopupPanel
                         title="Add to Profile"
@@ -419,12 +419,12 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
 
         // Add mod to profile, download in background, stay on page
         const state = useAppStore.getState();
-        const profile = state.allProfiles[targetProfileIndex];
+        const profile = state.profiles[targetProfileIndex];
         if (profile && !profile.mods.includes(release.download_name)) {
-            const updatedProfiles = state.allProfiles.map((p, i) =>
+            const updatedProfiles = state.profiles.map((p, i) =>
                 i === targetProfileIndex ? { ...p, mods: [...p.mods, release.download_name] } : p
             );
-            state.setAllProfiles(updatedProfiles);
+            state.setProfiles(updatedProfiles);
         }
         state.setDownloadingMods([...state.downloadingMods, release.download_name]);
         state.saveData();
@@ -564,12 +564,12 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                                                 if (installingFor !== null) {
                                                     // Add directly to the profile we came from
                                                     const state = useAppStore.getState();
-                                                    const profile = state.allProfiles[installingFor];
+                                                    const profile = state.profiles[installingFor];
                                                     if (profile && !profile.mods.includes(release.download_name)) {
-                                                        const updatedProfiles = state.allProfiles.map((p, i) =>
+                                                        const updatedProfiles = state.profiles.map((p, i) =>
                                                             i === installingFor ? { ...p, mods: [...p.mods, release.download_name] } : p
                                                         );
-                                                        state.setAllProfiles(updatedProfiles);
+                                                        state.setProfiles(updatedProfiles);
                                                         state.saveData();
                                                     }
                                                 } else {
