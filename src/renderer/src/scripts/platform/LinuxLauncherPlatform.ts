@@ -125,6 +125,7 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
             version: { uuid: version.uuid, label: version.label, path: version.path },
             runtime: request.runtime,
             mods: request.mods,
+            developerMode: request.developerMode,
         });
 
         status("Starting Minecraft...");

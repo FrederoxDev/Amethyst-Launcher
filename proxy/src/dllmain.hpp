@@ -24,7 +24,10 @@
 
 #pragma warning(disable: 4996)
 
-#define PROXY_VERSION "1.2.0"
+#define PROXY_VERSION "2.0.0"
+
+// Session manifest contract with the launcher (see scripts/session/Session.ts).
+#define AMETHYST_SESSION_SCHEMA 1
 
 void Shutdown();
 void ShutdownWait();

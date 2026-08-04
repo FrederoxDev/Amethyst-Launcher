@@ -1,6 +1,7 @@
 import { Channel } from "@renderer/scripts/domain/Channel";
 
 const child = window.require("child_process") as typeof import("child_process");
+const { createHash } = window.require("crypto") as typeof import("crypto");
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
 
@@ -226,17 +227,30 @@ export function isProxyPresent(versionPath: string): boolean {
     return fs.existsSync(proxyDllPath(versionPath));
 }
 
-export function setProxyPresent(versionPath: string, present: boolean): void {
-    const target = proxyDllPath(versionPath);
+function sha256(filePath: string): string {
+    return createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
+}
 
-    if (!present) {
-        fs.rmSync(target, { force: true });
-        return;
-    }
+/** Presence isn't enough — a rebuilt proxy must replace an older one already in place. */
+export function isProxyCurrent(versionPath: string): boolean {
+    const target = proxyDllPath(versionPath);
+    if (!fs.existsSync(target)) return false;
 
     const source = sourceProxyDllPath();
     if (!fs.existsSync(source)) {
         throw new Error(`Proxy dxgi.dll not found at ${source}. Build the proxy before launching a modded profile.`);
     }
-    fs.copyFileSync(source, target);
+    return sha256(target) === sha256(source);
+}
+
+export function installProxy(versionPath: string): void {
+    const source = sourceProxyDllPath();
+    if (!fs.existsSync(source)) {
+        throw new Error(`Proxy dxgi.dll not found at ${source}. Build the proxy before launching a modded profile.`);
+    }
+    fs.copyFileSync(source, proxyDllPath(versionPath));
+}
+
+export function removeProxy(versionPath: string): void {
+    fs.rmSync(proxyDllPath(versionPath), { force: true });
 }

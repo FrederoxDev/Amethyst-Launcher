@@ -7,6 +7,8 @@
 #include <iostream>
 #include <filesystem>
 #include <fstream>
+#include <algorithm>
+#include <cwctype>
 namespace fs = std::filesystem;
 
 typedef NTSTATUS(NTAPI* NtSuspendThreadPtr)(HANDLE ThreadHandle, PULONG PreviousSuspendCount);
@@ -16,6 +18,7 @@ typedef NTSTATUS(NTAPI* NtResumeThreadPtr)(HANDLE ThreadHandle, PULONG PreviousS
 typedef void(__cdecl* RuntimeInitPtr)(DWORD dMcThreadID, HANDLE hMcThreadHandle);
 
 HMODULE hClientModule = NULL;
+HMODULE hProxyModule = NULL;
 DWORD dMcThreadID = NULL;
 HANDLE hMcThreadHandle = NULL;
 
@@ -99,18 +102,77 @@ void HideConsole()
     // ShowWindow(consoleWindow, SW_HIDE);
 }
 
-fs::path GetLegacyComMojangPath()
+fs::path GetAppDataPath()
 {
     char appdata[MAX_PATH];
     GetEnvironmentVariableA("APPDATA", appdata, MAX_PATH);
-    return fs::path(appdata) / "Minecraft Bedrock" / "games" / "com.mojang";
+    return fs::path(appdata);
 }
 
-fs::path GetLauncherRootPath()
+/** The build folder this proxy was loaded from, which is the game's install directory. */
+fs::path GetProxyDirectory()
 {
-    char appdata[MAX_PATH];
-    GetEnvironmentVariableA("APPDATA", appdata, MAX_PATH);
-    return fs::path(appdata) / "Amethyst" / "Launcher";
+    wchar_t buffer[MAX_PATH];
+    DWORD length = GetModuleFileNameW(hProxyModule, buffer, MAX_PATH);
+    if (length == 0 || length == MAX_PATH) return {};
+    return fs::path(buffer).parent_path();
+}
+
+bool SamePath(const fs::path& a, const fs::path& b)
+{
+    std::error_code ec;
+    if (fs::equivalent(a, b, ec) && !ec) return true;
+
+    auto normalise = [](const fs::path& p) {
+        std::wstring s = p.lexically_normal().wstring();
+        while (!s.empty() && (s.back() == L'\\' || s.back() == L'/')) s.pop_back();
+        std::transform(s.begin(), s.end(), s.begin(), ::towlower);
+        return s;
+    };
+    return normalise(a) == normalise(b);
+}
+
+/*
+ * The launcher writes a session manifest into the profile's data folder immediately
+ * before launch, and that folder is junctioned from its channel's roaming path. Both
+ * channels are checked; the manifest whose version.path is this build is the live one,
+ * which also proves it describes this process rather than the other game.
+ */
+bool ReadSessionManifest(nlohmann::json& out)
+{
+    const fs::path proxyDir = GetProxyDirectory();
+    if (proxyDir.empty()) {
+        std::println("{}[  proxy] [AmethystProxy] Could not resolve the proxy's own directory.{}", red, reset);
+        return false;
+    }
+
+    for (const char* folder : { "Minecraft Bedrock", "Minecraft Bedrock Preview" }) {
+        const fs::path manifestPath = GetAppDataPath() / folder / ".amethyst-session.json";
+
+        std::ifstream file(manifestPath);
+        if (!file.is_open()) continue;
+
+        nlohmann::json manifest;
+        try {
+            file >> manifest;
+        } catch (const std::exception& e) {
+            std::println("{}[  proxy] [AmethystProxy] Could not parse {}: {}{}", red, manifestPath.string(), e.what(), reset);
+            continue;
+        }
+
+        if (!manifest.contains("version") || !manifest["version"].is_object()) continue;
+        if (!manifest["version"].contains("path") || !manifest["version"]["path"].is_string()) continue;
+
+        if (SamePath(fs::path(manifest["version"]["path"].get<std::string>()), proxyDir)) {
+            std::println("[  proxy] [AmethystProxy] Session: {}", manifestPath.string());
+            out = std::move(manifest);
+            return true;
+        }
+    }
+
+    std::println("{}[  proxy] [AmethystProxy] No session manifest describes '{}'. Launch through Amethyst Launcher.{}",
+                 red, proxyDir.string(), reset);
+    return false;
 }
 
 void Proxy()
@@ -125,122 +187,51 @@ void Proxy()
     LoadNtdll();
     SuspendMinecraftThread();
 
-    fs::path launcherConfigPath = GetLauncherRootPath() / "launcher_config.json";
-    if (!fs::exists(launcherConfigPath)) {
-        launcherConfigPath = GetLegacyComMojangPath() / "amethyst" / "launcher_config.json";
-    }
-
-    std::ifstream launcherFile = std::ifstream(launcherConfigPath);
-    if (!launcherFile.is_open()) {
-        std::cerr << red << "[Amethyst-Loader] Could not open " << launcherConfigPath << "\n" << reset;
+    nlohmann::json session;
+    if (!ReadSessionManifest(session)) {
         ResumeMinecraftThread();
         return;
     }
 
-    nlohmann::json launcherConfig;
-    try {
-        launcherFile >> launcherConfig;
-    } catch (const std::exception& e) {
-        std::cerr << red << "[Amethyst-Loader] Failed to parse launcher_config.json: " << e.what() << "\n" << reset;
+    const int schema = session.value("schema", 0);
+    if (schema != AMETHYST_SESSION_SCHEMA) {
+        std::println("{}[  proxy] [AmethystProxy] Session schema {} is unsupported (this proxy speaks {}). Update the launcher or the proxy.{}",
+                     red, schema, AMETHYST_SESSION_SCHEMA, reset);
         ResumeMinecraftThread();
         return;
     }
 
-    std::string runtimeName;
+    const std::string profileName = session.contains("profile") ? session["profile"].value("name", "?") : "?";
 
-    auto resolveRuntimeFromProfiles = [&]() -> std::string {
-        fs::path profilesPath = GetLauncherRootPath() / "Profiles" / "profiles.json";
-        if (!fs::exists(profilesPath)) {
-            profilesPath = GetLegacyComMojangPath() / "amethyst" / "profiles" / "profiles.json";
-        }
-
-        std::ifstream profilesFile = std::ifstream(profilesPath);
-        if (!profilesFile.is_open()) {
-            return "";
-        }
-
-        nlohmann::json profiles;
-        try {
-            profilesFile >> profiles;
-        }
-        catch (...) {
-            return "";
-        }
-
-        if (!profiles.is_array()) {
-            return "";
-        }
-
-        if (launcherConfig.contains("selected_profile_uuid") && launcherConfig["selected_profile_uuid"].is_string()) {
-            std::string selectedUuid = launcherConfig["selected_profile_uuid"];
-            for (const auto& profile : profiles) {
-                if (!profile.is_object()) continue;
-                if (profile.contains("uuid") && profile["uuid"].is_string() && profile["uuid"] == selectedUuid) {
-                    if (profile.contains("runtime") && profile["runtime"].is_string()) {
-                        return profile["runtime"];
-                    }
-                    return "";
-                }
-            }
-        }
-
-        return "";
-    };
-
-    runtimeName = resolveRuntimeFromProfiles();
-
-    // Legacy fallback for older launcher_config format.
-    if (runtimeName.empty() && launcherConfig.contains("runtime") && launcherConfig["runtime"].is_string()) {
-        runtimeName = launcherConfig["runtime"];
-    }
-
-    if (runtimeName.empty()) {
-        std::cerr << red << "Could not resolve runtime from selected profile in launcher configuration." << std::endl << reset;
-        ResumeMinecraftThread();
-        return;
-    }
-
-    // Handle vanilla profiles
-    if (runtimeName == "Vanilla") {
-        std::println("[  proxy] [AmethystProxy] Detected vanilla runtime, no runtime DLL will be injected.");
+    // A vanilla profile carries no runtime, so there is nothing to inject.
+    if (!session.contains("runtime") || session["runtime"].is_null()) {
+        std::println("[  proxy] [AmethystProxy] Profile '{}' is vanilla, no runtime DLL will be injected.", profileName);
         HideConsole();
         ResumeMinecraftThread();
         return;
     }
 
-    std::size_t pos = runtimeName.find('@');
-    std::string dllName;
-
-    if (pos != std::string::npos) {
-        dllName = runtimeName.substr(0, pos);
-    } else {
-        std::cerr << red << std::format("{} is not a valid runtime name, no versioning found!", runtimeName) << std::endl << reset;
+    const std::string runtimeName = session["runtime"].value("id", "");
+    const std::string runtimeRoot = session["runtime"].value("path", "");
+    if (runtimeName.empty() || runtimeRoot.empty()) {
+        std::println("{}[  proxy] [AmethystProxy] Session manifest has an incomplete runtime entry.{}", red, reset);
+        ResumeMinecraftThread();
+        return;
     }
 
-    fs::path runtimeDll = GetLauncherRootPath() / "Mods" / runtimeName / "win-client" / (dllName + ".dll");
+    const std::size_t at = runtimeName.find('@');
+    if (at == std::string::npos) {
+        std::println("{}[  proxy] [AmethystProxy] '{}' is not a valid runtime name, no version found.{}", red, runtimeName, reset);
+        ResumeMinecraftThread();
+        return;
+    }
 
+    const fs::path runtimeDll = fs::path(runtimeRoot) / "win-client" / (runtimeName.substr(0, at) + ".dll");
     if (!fs::exists(runtimeDll)) {
-        fs::path modernPath = runtimeDll;
-        runtimeDll = GetLauncherRootPath() / "Mods" / runtimeName / (dllName + ".dll");
-
-        if (!fs::exists(runtimeDll)) {
-            // Legacy path fallback for older installations
-            runtimeDll = GetLegacyComMojangPath() / "amethyst" / "mods" / runtimeName / "win-client" / (dllName + ".dll");
-        }
-
-        if (!fs::exists(runtimeDll)) {
-            runtimeDll = GetLegacyComMojangPath() / "amethyst" / "mods" / runtimeName / (dllName + ".dll");
-        }
-
-        if (!fs::exists(runtimeDll)) {
-            std::println("{}[  proxy] [AmethystProxy] Runtime DLL not found in '{}' or legacy path'{}'{}", red, modernPath.string(), runtimeDll.string(), reset);
-            ResumeMinecraftThread();
-            ShutdownWait();
-            return;
-        }
-        else {
-            std::println("{}[  proxy] [AmethystProxy] Runtime '{}' uses legacy file paths! New mods should use 'mod/win-client/*.dll' over 'mod/*.dll'{}", yellow, runtimeName, reset);
-        }
+        std::println("{}[  proxy] [AmethystProxy] Runtime DLL not found at '{}'{}", red, runtimeDll.string(), reset);
+        ResumeMinecraftThread();
+        ShutdownWait();
+        return;
     }
 
     std::println("[  proxy] [AmethystProxy] Using 'AmethystProxy@{}'", PROXY_VERSION);
@@ -278,6 +269,7 @@ void Proxy()
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
     if (ul_reason_for_call == DLL_PROCESS_ATTACH) {
+        hProxyModule = hModule;
         hClientModule = GetModuleHandle(NULL);
         // Create a seperate thread to do the proxying after caching the currentThreadID
         dMcThreadID = GetCurrentThreadId();

@@ -7,7 +7,6 @@ import * as VersionFiles from "./VersionFiles";
 const child = window.require("child_process") as typeof import("child_process");
 const path = window.require("path") as typeof import("path");
 
-const GAME_EXECUTABLE = "Minecraft.Windows.exe";
 
 /**
  * The slots one launch owns. Every one is scoped to a single channel or a single build:
@@ -88,9 +87,14 @@ export async function reconcile(desired: DesiredState, onStatus?: (m: string) =>
     reconcileDataLink(desired, status);
     await VersionFiles.ensureVersionFiles(desired.versionPath, desired.channel, status);
 
-    if (VersionFiles.isProxyPresent(desired.versionPath) !== desired.proxy) {
-        status(desired.proxy ? "Installing runtime proxy..." : "Removing runtime proxy...");
-        VersionFiles.setProxyPresent(desired.versionPath, desired.proxy);
+    if (desired.proxy) {
+        if (!VersionFiles.isProxyCurrent(desired.versionPath)) {
+            status("Installing runtime proxy...");
+            VersionFiles.installProxy(desired.versionPath);
+        }
+    } else if (VersionFiles.isProxyPresent(desired.versionPath)) {
+        status("Removing runtime proxy...");
+        VersionFiles.removeProxy(desired.versionPath);
     }
 
     await reconcilePackage(desired, status);
@@ -111,18 +115,21 @@ export function foreignDataPath(channel: Channel): string | null {
 }
 
 /**
- * Starts the game by running its executable.
+ * Activates the registered package, which is what gives the process package identity.
+ * That identity is load-bearing: the loader then resolves imports through the package
+ * graph, so the dxgi.dll proxy sitting in the build folder wins over System32's. A plain
+ * CreateProcess on the exe starts the game but has no package identity, so System32 wins
+ * and mods silently never load.
  *
- * Not via appx activation, and not via protocol. A GDK title takes its identity from
- * the MicrosoftGame.Config beside the exe, so it does not need to be activated as a
- * package — and it must not be: appx activation additionally enforces a Store licence
- * that a loose dev-mode registration cannot satisfy, so the process exits immediately
- * without writing so much as a log. Protocol activation is worse still: registration
- * leaves `HKCU\Software\Classes\<proto>` a stub with no `shell\open\command`, so it
- * resolves to nothing at all.
+ * By AUMID rather than protocol — `Add-AppxPackage -Register` leaves
+ * `HKCU\Software\Classes\<proto>` a stub with no `shell\open\command`.
  */
 export function activate(versionPath: string): void {
-    const exe = path.join(versionPath, GAME_EXECUTABLE);
-    console.log("[Machine] Launching:", exe);
-    child.spawn(exe, [], { cwd: versionPath, detached: true, stdio: "ignore" }).unref();
+    const wantFamily = packageFamilyFor(versionPath).toLowerCase();
+    const pkg = Packages.listRegistered().find(p => p.family.toLowerCase() === wantFamily);
+    if (!pkg) throw new Error(`${versionPath} is not registered, so it cannot be activated.`);
+
+    const aumid = `${pkg.familyName}!${Packages.readApplicationId(versionPath)}`;
+    console.log("[Machine] Activating:", aumid);
+    child.spawn("explorer.exe", [`shell:AppsFolder\\${aumid}`], { detached: true, stdio: "ignore" }).unref();
 }
