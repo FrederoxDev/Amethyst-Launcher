@@ -88,7 +88,10 @@ export async function launchProfile(profile: Profile): Promise<void> {
                 setStatus("launching");
                 setProgress(0.5);
                 setMessage(`Preparing ${version.label}...`);
-                await store.platform.launch({ profile, version, ...resolvedMods }, setMessage);
+                await store.platform.launch(
+                    { profile, version, developerMode: store.developerMode, ...resolvedMods },
+                    setMessage
+                );
             }, true);
             return;
         } catch (e) {

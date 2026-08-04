@@ -13,7 +13,26 @@ const MINECRAFT_FAMILY_PREFIX = "microsoft.minecraft";
 export interface RegisteredPackage {
     /** Identity name, e.g. `Microsoft.MinecraftWindowsBeta`. */
     family: string;
+    /** `<name>_<publisherHash>`, the first half of an AUMID. */
+    familyName: string;
     installPath: string;
+}
+
+/** `<name>_<version>_<arch>__<publisherHash>` collapses to `<name>_<publisherHash>`. */
+function familyNameFrom(packageFullName: string): string {
+    const parts = packageFullName.split("_");
+    if (parts.length < 2 || parts[0] === "" || parts[parts.length - 1] === "") {
+        throw new Error(`Cannot derive a package family name from "${packageFullName}"`);
+    }
+    return `${parts[0]}_${parts[parts.length - 1]}`;
+}
+
+/** The manifest's `<Application Id>`, the second half of an AUMID. */
+export function readApplicationId(versionPath: string): string {
+    const manifest = path.join(versionPath, "appxmanifest.xml");
+    const id = fs.readFileSync(manifest, "utf-8").match(/<Application\s+Id="([^"]+)"/)?.[1];
+    if (!id) throw new Error(`${manifest}: no <Application Id>`);
+    return id;
 }
 
 function regedit(): RegeditModule {
@@ -53,7 +72,7 @@ export function listRegistered(): RegisteredPackage[] {
         const installPath = values.values["PackageRootFolder"]?.value as string | undefined;
         if (!installPath) throw new Error(`Registry key ${fullKey} is missing PackageRootFolder`);
 
-        out.push({ family: key.split("_")[0], installPath });
+        out.push({ family: key.split("_")[0], familyName: familyNameFrom(key), installPath });
     }
     return out;
 }

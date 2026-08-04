@@ -5,6 +5,7 @@ import { PathUtils } from "@renderer/scripts/PathUtils";
 import { SESSION_SCHEMA, writeSession } from "@renderer/scripts/session/Session";
 import { InstalledVersion } from "@renderer/scripts/versions/InstalledVersion";
 import { ILauncherPlatform, LauncherPaths, LaunchRequest, ProcessInfo } from "./LauncherPlatform";
+import * as Licence from "./windows/Licence";
 import * as Machine from "./windows/Machine";
 
 const os = window.require("os") as typeof import("os");
@@ -209,6 +210,10 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             proxy: isModded(profile),
         }, status);
 
+        // Must follow reconcile so the junction is in place and the entitlement lands in
+        // this profile's folder, and precede activation, which requires it.
+        await Licence.ensureEntitlement(version.path, dataDir, status);
+
         writeSession(dataDir, {
             schema: SESSION_SCHEMA,
             launchedAt: new Date().toISOString(),
@@ -217,6 +222,7 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             version: { uuid: version.uuid, label: version.label, path: version.path },
             runtime: request.runtime,
             mods: request.mods,
+            developerMode: request.developerMode,
         });
 
         status("Starting Minecraft...");

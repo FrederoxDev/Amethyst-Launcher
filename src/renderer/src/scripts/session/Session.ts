@@ -20,6 +20,8 @@ export interface SessionManifest {
     version: { uuid: string; label: string; path: string };
     runtime: { id: string; path: string } | null;
     mods: { id: string; path: string }[];
+    /** Developer mode was on for this launch, so the runtime should prompt for a debugger. */
+    developerMode: boolean;
 }
 
 export function sessionPath(dataDir: string): string {

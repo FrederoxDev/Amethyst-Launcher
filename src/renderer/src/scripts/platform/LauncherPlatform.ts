@@ -26,6 +26,7 @@ export interface LaunchRequest {
     version: InstalledVersion;
     runtime: { id: string; path: string } | null;
     mods: { id: string; path: string }[];
+    developerMode: boolean;
 }
 
 /** A channel's game data folder holds data that no profile owns. Recoverable by adopting it. */
