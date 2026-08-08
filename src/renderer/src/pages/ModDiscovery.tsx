@@ -20,7 +20,7 @@ import { Popup } from "@renderer/states/PopupStore";
 import { db } from "@renderer/firebase/Firebase";
 import { useDownloadStore, addPendingDownload, removePendingDownload } from "@renderer/states/DownloadStore";
 
-import { Extractor } from "@renderer/scripts/backend/Extractor";
+import { ImportModArchive, isModArchive, modArchiveExtension, modArchiveName } from "@renderer/scripts/flows/ImportMod";
 
 
 const { shell } = window.require("electron");
@@ -279,24 +279,6 @@ async function downloadToTemp(
     }
 }
 
-async function ImportZIP(zip_path: string): Promise<void> {
-    try {
-        const paths = getPaths();
-        const zip_name = path.basename(zip_path);
-        const extracted_folder_path = path.join(paths.modsPath, zip_name.slice(0, -".zip".length));
-        console.log("Extracting", zip_path, "to", extracted_folder_path);
-        await Extractor.extractFile(zip_path, extracted_folder_path, [], undefined, success => {
-            if (!success) {
-                console.error("Extractor reported failure for:", zip_path);
-            } else {
-                console.log("Successfully extracted Mod ZIP!");
-            }
-        });
-    } catch (error) {
-        console.error("ImportZIP failed:", error);
-    }
-}
-
 async function uninstallMod(modName: string): Promise<void> {
     const paths = getPaths();
     const modPath = path.join(paths.modsPath, modName);
@@ -335,14 +317,14 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                 const parsedData: ParsedGithubRelease[] = [];
 
                 for (const release of data) {
-                    const asset = release.assets.find(asset => asset.name.includes("@") && asset.name.endsWith(".zip"));
+                    const asset = release.assets.find(asset => asset.name.includes("@") && isModArchive(asset.name));
                     if (!asset) continue;
 
                     parsedData.push({
                         id: release.id,
                         name: release.name,
                         published_at: release.published_at,
-                        download_name: asset.name.replace(".zip", ""),
+                        download_name: modArchiveName(asset.name),
                         download_url: asset.browser_download_url,
                     });
                 }
@@ -454,7 +436,7 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
 
         downloadToTemp(
             release.download_url,
-            release.download_name + ".zip",
+            release.download_name + modArchiveExtension(release.download_url),
             (transferred, total) => {
                 useDownloadStore.getState().updateDownload(dlId, {
                     progress: total > 0 ? transferred / total : 0,
@@ -471,8 +453,15 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
             }
 
             useDownloadStore.getState().updateDownload(dlId, { status: "extracting", progress: 1 });
-            await ImportZIP(path!);
-            refreshAllMods();
+            try {
+                await ImportModArchive(path!);
+            } catch (e) {
+                console.error(e);
+                useAppStore.getState().setDownloadingMods(prev => prev.filter(n => n !== release.download_name));
+                useDownloadStore.getState().updateDownload(dlId, { status: "error", progress: 0 });
+                removePendingDownload(dlId);
+                return;
+            }
             useAppStore.getState().setDownloadingMods(prev => prev.filter(n => n !== release.download_name));
             useDownloadStore.getState().updateDownload(dlId, { status: "done" });
             removePendingDownload(dlId);

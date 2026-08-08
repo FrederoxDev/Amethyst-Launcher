@@ -106,12 +106,6 @@
         "name": "Amethyst Mod",
         "role": "Editor",
         "icon": "src/renderer/src/assets/icons/icon.ico"
-      },
-      {
-        "ext": "amth",
-        "name": "Amethyst Mod",
-        "role": "Editor",
-        "icon": "src/renderer/src/assets/icons/icon.ico"
       }
     ]
   }

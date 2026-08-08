@@ -3,9 +3,13 @@ import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { GithubRelease } from "../github/GithubRelease";
 import { CheckAction, DefaultCheckOptions, ToolArtifact, ToolCheckResult, ToolInstalledContext } from "./ToolArtifact";
 import { GithubAsset } from "../github/GithubAsset";
+import { DotnetRequirement, DotnetRuntime } from "../DotnetRuntime";
 
 const fs = window.require("fs") as typeof import("fs");
 const semver = window.require("semver") as typeof import("semver");
+
+/** XVDTool.runtimeconfig.json pins `Microsoft.NETCore.App 8.0.0`, and roll-forward never crosses a major. */
+const XVDTOOL_RUNTIME: DotnetRequirement = { major: 8, channel: "8.0", toolName: "XVDTool" };
 
 /**
  * Shape of the JSON lines that XVDTool prints to stdout/stderr while it runs.
@@ -57,15 +61,20 @@ export class XVDTool extends ToolArtifact {
      * - `promptForUpdate`: `true` – always ask before updating.
      * - `allowOutdated`: `true` – tolerate an older version when GitHub is unreachable.
      * - `releaseFetchTimeout`: `1500` ms.
+     *
+     * Also makes sure the .NET runtime XVDTool needs is present, since XVDTool
+     * is a framework-dependent .NET application and cannot start without it.
      */
-    check(options?: DefaultCheckOptions | undefined): Promise<ToolCheckResult> {
-        const resolvedOptions = { 
+    async check(options?: DefaultCheckOptions | undefined): Promise<ToolCheckResult> {
+        const resolvedOptions = {
             promptForUpdate: options?.promptForUpdate ?? true,
             allowOutdated: options?.allowOutdated ?? true,
             releaseFetchTimeout: options?.releaseFetchTimeout ?? 1500,
             checkForUpdates: options?.checkForUpdates ?? true
         };
-        return super.check(resolvedOptions);
+        const result = await super.check(resolvedOptions);
+        await DotnetRuntime.ensure(XVDTOOL_RUNTIME);
+        return result;
     }
 
     /** The installation folder is simply named after the tool. */

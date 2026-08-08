@@ -133,6 +133,35 @@ function handleProtocolUrl(url: string): void {
         mainWindow.webContents.send("AMETHYST_PROTOCOL_URL", url);
     }
 }
+
+const MOD_ARCHIVE_EXTENSIONS = [".amethyst", ".zip"];
+
+/** Extracts the first mod archive path from an argv array, or null. */
+function extractModFilePath(argv: string[]): string | null {
+    return (
+        argv
+            .slice(1)
+            .find(arg => !arg.startsWith("-") && MOD_ARCHIVE_EXTENSIONS.includes(path.extname(arg).toLowerCase())) ?? null
+    );
+}
+
+let pendingModFilePath: string | null = null;
+
+/** Forwards a mod archive path to the renderer, holding it until the window exists. */
+function handleModFilePath(file_path: string): void {
+    console.log(`[main] Mod file open requested: ${file_path}`);
+    const resolved = path.resolve(file_path);
+
+    if (!mainWindow) {
+        pendingModFilePath = resolved;
+        return;
+    }
+
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+    mainWindow.webContents.send("AMETHYST_OPEN_FILE", resolved);
+}
+
 // Other window is open, so don't create a new one
 if (hasSingleInstanceLock === false) {
     app.quit();
@@ -143,6 +172,12 @@ else {
         app.exit(0);
     });
 
+    // macOS delivers file opens as an event instead of argv.
+    app.on("open-file", (event, file_path) => {
+        event.preventDefault();
+        handleModFilePath(file_path);
+    });
+
     app.on("ready", () => {
         mainWindow = createWindow();
 
@@ -151,6 +186,11 @@ else {
             // Handle the case where the app was cold-started via a protocol URL.
             const url = extractProtocolUrl(process.argv);
             if (url) handleProtocolUrl(url);
+
+            // Handle the case where the app was cold-started by opening a mod file.
+            const filePath = extractModFilePath(process.argv) ?? pendingModFilePath;
+            pendingModFilePath = null;
+            if (filePath) handleModFilePath(filePath);
         });
     });
 
@@ -163,6 +203,10 @@ else {
         // Forward protocol URL if this instance was opened via deep-link.
         const url = extractProtocolUrl(commandLine);
         if (url) handleProtocolUrl(url);
+
+        // Forward mod file path if this instance was opened by a file association.
+        const filePath = extractModFilePath(commandLine);
+        if (filePath) handleModFilePath(filePath);
     });
 }
 
