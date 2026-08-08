@@ -1,6 +1,6 @@
 import { useAppStore } from "@renderer/states/AppStore";
 import { useDownloadStore, getPendingDownloads, removePendingDownload, PendingDownload } from "@renderer/states/DownloadStore";
-import { Extractor } from "@renderer/scripts/backend/Extractor";
+import { ImportModArchive, modArchiveExtension } from "@renderer/scripts/flows/ImportMod";
 
 const fs = window.require("fs") as typeof import("fs");
 const os = window.require("os") as typeof import("os");
@@ -71,7 +71,7 @@ async function resumeModDownload(pending: PendingDownload) {
 
     const { ok, path: filePath, error } = await downloadToTemp(
         pending.url,
-        pending.name + ".zip",
+        pending.name + modArchiveExtension(pending.url),
         (transferred, total) => {
             useDownloadStore.getState().updateDownload(pending.id, {
                 progress: total > 0 ? transferred / total : 0,
@@ -90,13 +90,16 @@ async function resumeModDownload(pending: PendingDownload) {
 
     useDownloadStore.getState().updateDownload(pending.id, { status: "extracting", progress: 1 });
 
-    const modsPath = useAppStore.getState().platform.getPaths().modsPath;
-    const extractedPath = path.join(modsPath, pending.name);
-    await Extractor.extractFile(filePath!, extractedPath, [], undefined, success => {
-        if (!success) console.error("Failed to extract mod during recovery:", pending.name);
-    });
+    try {
+        await ImportModArchive(filePath!);
+    } catch (e) {
+        console.error("Failed to extract mod during recovery:", pending.name, e);
+        useAppStore.getState().setDownloadingMods(prev => prev.filter(n => n !== pending.name));
+        useDownloadStore.getState().updateDownload(pending.id, { status: "error", progress: 0 });
+        removePendingDownload(pending.id);
+        return;
+    }
 
-    useAppStore.getState().refreshAllMods();
     useAppStore.getState().setDownloadingMods(prev => prev.filter(n => n !== pending.name));
     useDownloadStore.getState().updateDownload(pending.id, { status: "done" });
     removePendingDownload(pending.id);

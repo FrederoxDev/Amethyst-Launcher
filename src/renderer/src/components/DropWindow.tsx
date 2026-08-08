@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 
 import { useAppStore } from "@renderer/states/AppStore";
 
-import { Extractor } from "@renderer/scripts/backend/Extractor";
 import { CopyRecursive } from "@renderer/scripts/Files";
+import { ImportModArchive, isModArchive } from "@renderer/scripts/flows/ImportMod";
 import { FULL_PROGRESS_RESET_OPTIONS, ProgressBar } from "@renderer/states/ProgressBarStore";
 
 const path = window.require("path");
+const { ipcRenderer } = window.require("electron") as typeof import("electron");
 
 export function DropWindow() {
     const [hovered, setHovered] = useState(false);
@@ -67,7 +68,7 @@ export function DropWindow() {
             const items = event.dataTransfer.files as unknown as ElectronFile[];
 
             // Serialize folder imports so they queue cleanly through ProgressBar.
-            // ZIP imports go through Extractor (no ProgressBar contention) so they
+            // Archive imports go through Extractor (no ProgressBar contention) so they
             // can fire in parallel.
             (async () => {
                 for (const file of items) {
@@ -77,7 +78,7 @@ export function DropWindow() {
                         if (st.isDirectory()) {
                             await ImportFolder(file_path);
                         } else if (st.isFile()) {
-                            ImportZIP(file_path);
+                            ImportArchive(file_path);
                         } else {
                             console.error("File path does not point to a file or directory!");
                         }
@@ -88,23 +89,23 @@ export function DropWindow() {
             })();
         }
 
-        // IMPORT ZIP
-        function ImportZIP(zip_path: string) {
-            try {
-                const zip_name = path.basename(zip_path);
-                const extracted_folder_path = path.join(paths.modsPath, zip_name.slice(0, -".zip".length));
-                console.log(extracted_folder_path);
-                Extractor.extractFile(zip_path, extracted_folder_path, [], undefined, success => {
-                    if (!success) {
-                        throw new Error("There was an error while extracting Mod ZIP!");
-                    }
-
-                    console.log("Successfully extracted Mod ZIP!");
-                    refreshAllMods();
-                }).then();
-            } catch (error) {
-                setError((error as Error).message);
+        // IMPORT ARCHIVE
+        function ImportArchive(archive_path: string) {
+            if (!isModArchive(archive_path)) {
+                setError(`${path.basename(archive_path)} is not a mod file. Drop a .amethyst or .zip file.`);
+                return;
             }
+
+            ImportModArchive(archive_path).catch(error => setError((error as Error).message));
+        }
+
+        function openFile(_event: unknown, file_path: string) {
+            if (ProgressBar.isBusy()) {
+                setError("Wait for the current operation to finish before importing.");
+                return;
+            }
+
+            ImportArchive(file_path);
         }
 
         // IMPORT FOLDER
@@ -125,12 +126,14 @@ export function DropWindow() {
         window.addEventListener("dragenter", dragStart);
         window.addEventListener("dragleave", dragEnd);
         window.addEventListener("drop", drop);
+        ipcRenderer.on("AMETHYST_OPEN_FILE", openFile);
 
         return () => {
             window.removeEventListener("dragover", dragOver);
             window.removeEventListener("dragenter", dragStart);
             window.removeEventListener("dragleave", dragEnd);
             window.removeEventListener("drop", drop);
+            ipcRenderer.off("AMETHYST_OPEN_FILE", openFile);
         };
     }, [setError, refreshAllMods]);
 
@@ -141,7 +144,7 @@ export function DropWindow() {
             <div className="drop-window-backdrop" />
 
             <h1 className="minecraft-seven drop-window-text">
-                Drop mod .zip or folder to import
+                Drop mod file or folder to import
             </h1>
         </div>
     );
