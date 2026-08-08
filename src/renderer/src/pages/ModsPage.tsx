@@ -17,8 +17,12 @@ const openModsFolder = () => {
     const paths = getPaths();
     if (!fs.existsSync(paths.modsPath)) fs.mkdirSync(paths.modsPath, { recursive: true });
 
-    const startGameCmd = `explorer "${paths.modsPath}"`;
-    child.spawn(startGameCmd, { shell: true });
+    const opener = window.process.platform === "win32" ? "explorer.exe" : "xdg-open";
+    // Not run through the process runner: explorer reports a non-zero code even when it opened
+    // the folder, so its exit says nothing. Only a failure to start is worth reporting.
+    const proc = child.spawn(opener, [paths.modsPath], { detached: true, stdio: "ignore" });
+    proc.on("error", error => console.error(`[Mods] Could not open ${paths.modsPath}:`, error));
+    proc.unref();
 };
 
 export function ModsPage() {

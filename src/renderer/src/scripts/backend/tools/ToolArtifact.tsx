@@ -211,9 +211,20 @@ export abstract class ToolArtifact<
         console.log(`[${this.name}] Downloading archive to '${archivePath}'…`);
         await this.download(asset, archivePath, latestTag);
 
-        // Extract the archive into the tool folder.
+        // Extract the archive into the tool folder. Throws if any entry failed.
         console.log(`[${this.name}] Extracting archive to '${toolPath}'…`);
-        await this.extract(archivePath, toolPath, latestTag);
+        try {
+            await this.extract(archivePath, toolPath, latestTag);
+            await this.assertInstallUsable(latestTag);
+        } catch (error) {
+            // version.txt is deliberately not written, and the half-installed folder is dropped,
+            // so the next check() re-downloads instead of trusting a broken tool forever.
+            console.error(`[${this.name}] Install of '${latestTag}' failed; removing '${toolPath}'.`, error);
+            await fs.promises.rm(toolPath, { recursive: true, force: true }).catch(cleanupError => {
+                console.error(`[${this.name}] Could not remove '${toolPath}'.`, cleanupError);
+            });
+            throw error;
+        }
 
         const action: CheckAction = isInstalled ? "updated" : "installed";
         console.log(`[${this.name}] Tool ${action} successfully at version '${latestTag}'.`);
@@ -293,14 +304,30 @@ export abstract class ToolArtifact<
     /**
      * Convenience wrapper around {@link readVersionFile} that swallows errors
      * and returns `null` instead of throwing.
+     *
+     * A version file without the executable next to it is a broken install, not an install:
+     * reporting `null` makes `check()` wipe and re-download instead of trusting the tag forever.
      */
     protected async getCurrentVersion(): Promise<string | null> {
+        let version: string | null;
         try {
-            return await this.readVersionFile();
+            version = await this.readVersionFile();
         } catch (error) {
             console.warn(`[${this.name}] Failed to read version file:`, error);
             return null;
         }
+
+        if (version === null) return null;
+
+        const executable = this.getExecutable();
+        if (!fs.existsSync(executable)) {
+            console.error(
+                `[${this.name}] version.txt claims '${version}' but '${executable}' is missing. ` +
+                `Treating the tool as not installed so it gets reinstalled.`
+            );
+            return null;
+        }
+        return version;
     }
 
     /** Writes the given version tag to `version.txt`, creating the file if needed. */
@@ -380,20 +407,49 @@ export abstract class ToolArtifact<
     /**
      * Extracts the downloaded archive to `destination`, reporting progress via
      * the global {@link ProgressBar}, then deletes the archive.
+     * Throws if any entry could not be written.
      */
     protected async extract(archivePath: string, destination: string, latestTag: string): Promise<void> {
         console.log(`[${this.name}] Starting extraction: '${archivePath}' → '${destination}'.`);
-        await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
-            setStatus("extracting");
-            await Extractor.extractFile(archivePath, destination, [], (fileIndex, totalFiles) => {
-                const percent = totalFiles > 0 ? fileIndex / totalFiles : 0;
-                setMessage(`Extracting ${this.name} ${latestTag}... (${(percent * 100).toFixed(2)}%)`);
-                setProgress(percent);
+        try {
+            await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
+                setStatus("extracting");
+                await Extractor.extractFile(archivePath, destination, [], (fileIndex, totalFiles) => {
+                    const percent = totalFiles > 0 ? fileIndex / totalFiles : 0;
+                    setMessage(`Extracting ${this.name} ${latestTag}... (${(percent * 100).toFixed(2)}%)`);
+                    setProgress(percent);
+                });
             });
-        });
-        // Clean up the archive now that extraction is done.
-        console.log(`[${this.name}] Extraction complete. Removing archive '${archivePath}'.`);
-        await fs.promises.rm(archivePath, { force: true });
+        } finally {
+            // A corrupt archive must not be left behind for the next run to trip over.
+            console.log(`[${this.name}] Removing archive '${archivePath}'.`);
+            await fs.promises.rm(archivePath, { force: true }).catch(error => {
+                console.error(`[${this.name}] Could not remove archive '${archivePath}'.`, error);
+            });
+        }
+    }
+
+    /** Postcondition for a fresh install: the executable the caller was promised must exist. */
+    private async assertInstallUsable(version: string): Promise<void> {
+        const executable = this.getExecutable();
+        if (fs.existsSync(executable)) return;
+
+        console.error(
+            `[${this.name}] Extraction of '${version}' left no executable at '${executable}'.`,
+            { folder: this.getFolder(), contents: this.listFolder() }
+        );
+        throw new Error(
+            `${this.name} ${version} did not install correctly - "${this.getExecutableName()}" is missing. ` +
+            `The download may be incomplete. Try again.`
+        );
+    }
+
+    private listFolder(): string[] {
+        try {
+            return fs.readdirSync(this.getFolder());
+        } catch {
+            return [];
+        }
     }
 
     /** Returns the platform-specific tools root directory from the app store. */

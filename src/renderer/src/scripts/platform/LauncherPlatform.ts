@@ -37,9 +37,25 @@ export class ForeignGameDataError extends Error {
     }
 }
 
+/**
+ * The machine is missing a system setting the game needs, and fixing it needs administrator
+ * rights. `repair` carries the platform's own fix so the launch flow can ask for consent and
+ * apply it without knowing which platform raised this.
+ */
+export class SystemSetupRequiredError extends Error {
+    constructor(
+        readonly title: string,
+        /** Shown to the user before the permission prompt appears, so it is never a surprise. */
+        readonly explanation: string,
+        readonly repair: () => Promise<void>,
+    ) {
+        super(title);
+        this.name = "SystemSetupRequiredError";
+    }
+}
+
 export interface ILauncherPlatform {
     getPlatformFullName(): string;
-    runCommand(command: string, stdout?: (data: string) => void): Promise<number>;
     getPaths(): LauncherPaths;
     /** Every live process with this image name. Both games run the same executable name. */
     listProcesses(executableName: string): Promise<ProcessInfo[]>;

@@ -1,11 +1,14 @@
 import { useAppStore } from "@renderer/states/AppStore";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
+import { describeResult, run } from "@shared/diagnostics/ProcessRunner";
 import { Downloader } from "./Downloader";
 
 const fs = window.require("fs") as typeof import("fs");
 const os = window.require("os") as typeof import("os");
 const path = window.require("path") as typeof import("path");
-const child = window.require("child_process") as typeof import("child_process");
+
+const LIST_RUNTIMES_TIMEOUT_MS = 20_000;
+const INSTALL_TIMEOUT_MS = 15 * 60_000;
 
 const SHARED_FRAMEWORK = "Microsoft.NETCore.App";
 const INSTALL_SCRIPT_WINDOWS = "https://dot.net/v1/dotnet-install.ps1";
@@ -27,11 +30,6 @@ export interface DotnetRequirement {
     channel: string;
     /** Tool name, used in the messages the user sees. */
     toolName: string;
-}
-
-interface CommandResult {
-    code: number;
-    output: string;
 }
 
 /**
@@ -120,10 +118,14 @@ export class DotnetRuntime {
 
     /** Catches installs in locations the launcher does not know about, which the CLI still resolves. */
     private static async findRootViaCli(major: number): Promise<string | null> {
-        const { code, output } = await this.runCommand("dotnet", ["--list-runtimes"]);
-        if (code !== 0) return null;
+        const result = await run("dotnet", ["--list-runtimes"], { timeoutMs: LIST_RUNTIMES_TIMEOUT_MS });
+        if (result.code !== 0) {
+            // Expected when .NET is not installed at all, so this is a note rather than a failure.
+            console.log(`[dotnet] dotnet --list-runtimes did not answer.\n${describeResult(result)}`);
+            return null;
+        }
 
-        for (const line of output.split("\n")) {
+        for (const line of result.output.split("\n")) {
             const match = line.match(/^Microsoft\.NETCore\.App (\d+)\.\S+ \[(.+)\]\s*$/);
             if (!match || parseInt(match[1], 10) !== major) continue;
             return path.dirname(path.dirname(match[2].trim()));
@@ -181,13 +183,23 @@ export class DotnetRuntime {
                 ? ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", scriptPath, ...scriptArgs]
                 : [scriptPath, ...scriptArgs];
 
-            const { code, output } = await this.runCommand(command, args, line => {
-                const phase = INSTALL_PHASES.find(([pattern]) => pattern.test(line));
-                if (phase) setProgress(phase[1]);
+            const result = await run(command, args, {
+                timeoutMs: INSTALL_TIMEOUT_MS,
+                onLine: line => {
+                    const phase = INSTALL_PHASES.find(([pattern]) => pattern.test(line));
+                    if (phase) setProgress(phase[1]);
+                },
             });
 
-            if (code !== 0) {
-                throw this.failure(requirement, `the installer stopped with code ${code}`, output);
+            if (result.timedOut) {
+                throw this.failure(requirement, "the installer never finished", describeResult(result));
+            }
+            if (result.code !== 0) {
+                throw this.failure(
+                    requirement,
+                    `the installer stopped with code ${result.code}`,
+                    describeResult(result)
+                );
             }
         });
     }
@@ -203,32 +215,5 @@ export class DotnetRuntime {
 
     private static describe(error: unknown): string {
         return error instanceof Error ? error.message : String(error);
-    }
-
-    /** Runs a command to completion. Never rejects: a missing executable is reported as a non-zero code. */
-    private static runCommand(
-        command: string,
-        args: string[],
-        onLine?: (line: string) => void
-    ): Promise<CommandResult> {
-        return new Promise(resolve => {
-            const proc = child.spawn(command, args, { windowsHide: true });
-            let output = "";
-
-            const consume = (data: Buffer | string): void => {
-                const text = data.toString();
-                output += text;
-                if (!onLine) return;
-                for (const line of text.split("\n")) {
-                    const trimmed = line.trim();
-                    if (trimmed) onLine(trimmed);
-                }
-            };
-
-            proc.stdout?.on("data", consume);
-            proc.stderr?.on("data", consume);
-            proc.on("error", error => resolve({ code: -1, output: `${output}${this.describe(error)}` }));
-            proc.on("close", code => resolve({ code: code ?? -1, output }));
-        });
     }
 }

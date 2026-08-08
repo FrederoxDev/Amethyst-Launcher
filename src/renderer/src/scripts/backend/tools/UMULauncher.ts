@@ -139,30 +139,28 @@ export class UMULauncher extends ToolArtifact {
             "PROTONPATH": gdkProtonPath
         };
 
-        const exec_proc = child.spawn(executable, [`${gamePath}`], {
+        const proc = child.spawn(executable, [gamePath], {
             env: env,
             cwd: path.dirname(gamePath),
             stdio: ["ignore", "pipe", "pipe"],
             detached: true
         });
 
-        // exec_proc.stdout?.on("data", (data) => {
-        //     console.log(`[${this.name}] STDOUT] ${data}`);
-        // });
+        // Piped output has to be read. Left unread the pipe fills and the game blocks on its own logging.
+        proc.stdout?.on("data", data => console.log(`[${this.name}] ${data.toString().trimEnd()}`));
+        proc.stderr?.on("data", data => console.error(`[${this.name}] ${data.toString().trimEnd()}`));
 
-        // exec_proc.stderr?.on("data", (data) => {
-        //     console.log(`[${this.name}] STDERR] ${data}`);
-        // });
+        proc.on("error", err => console.error(`[${this.name}] ${executable} reported an error:`, err));
+        proc.on("close", code => console.log(`[${this.name}] Game process exited with code ${code}.`));
 
-        exec_proc.on("error", (err) => {
-            console.error(`[${this.name}] Failed to run game:`, err);
+        // A spawn failure arrives asynchronously, so without this wait the launch would report
+        // success for a game that never started.
+        await new Promise<void>((resolve, reject) => {
+            proc.once("spawn", () => resolve());
+            proc.once("error", error => reject(new Error(`Could not start ${executable}. ${error.message}`)));
         });
 
-        exec_proc.on("close", (code) => {
-            console.log(`[${this.name}] Game process exited with code ${code}.`);
-        });
-
-        exec_proc.unref();
-        console.log(`[${this.name}] Game process spawned (detached). PID: ${exec_proc.pid ?? "unknown"}.`);
+        proc.unref();
+        console.log(`[${this.name}] Game process spawned (detached). PID: ${proc.pid ?? "unknown"}.`);
     }
 }

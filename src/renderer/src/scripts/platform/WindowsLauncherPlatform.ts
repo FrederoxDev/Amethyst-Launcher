@@ -10,29 +10,13 @@ import * as Machine from "./windows/Machine";
 
 const os = window.require("os") as typeof import("os");
 const fs = window.require("fs") as typeof import("fs");
-const child = window.require("child_process") as typeof import("child_process");
 const path = window.require("path") as typeof import("path");
-
-const GAME_EXECUTABLE = "Minecraft.Windows.exe";
 
 export class WindowsLauncherPlatform implements ILauncherPlatform {
     private static cachedPaths: LauncherPaths | null = null;
 
     getPlatformFullName(): string {
         return `Windows ${os.release()} (${os.arch()})`;
-    }
-
-    async runCommand(command: string, stdout?: (data: string) => void): Promise<number> {
-        return new Promise((resolve, reject) => {
-            const [cmd, ...args] = command.split(" ");
-            const proc = child.spawn(cmd, args, { shell: true });
-            if (stdout) proc.stdout?.on("data", data => stdout(data.toString()));
-            proc.stderr?.on("data", data => console.error(`[Command] ${data}`));
-            proc.on("close", code => {
-                if (code !== 0) reject(new Error(`Command failed with exit code ${code}.`));
-                else resolve(0);
-            });
-        });
     }
 
     getPaths(): LauncherPaths {
@@ -59,52 +43,9 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         return paths;
     }
 
-    listProcesses(executableName: string): Promise<ProcessInfo[]> {
-        // tasklist reports tombstoned processes (fully exited, kept alive by a leaked
-        // handle), so each hit is confirmed against WMI, which also yields the image path.
-        return new Promise(resolve => {
-            const proc = child.spawn(
-                "tasklist",
-                ["/FI", `IMAGENAME eq ${executableName}`, "/FO", "CSV", "/NH"],
-                { encoding: "utf-8" } as never
-            );
-
-            let out = "";
-            proc.stdout?.on("data", (data: string | Buffer) => { out += data.toString(); });
-            proc.on("error", () => resolve([]));
-            proc.on("close", () => {
-                const text = out.trim();
-                if (!text || text.includes("No tasks")) return resolve([]);
-
-                const pids = text.split("\n")
-                    .map(line => parseInt(line.match(/^"[^"]+","(\d+)"/)?.[1] ?? "-1", 10))
-                    .filter(pid => pid > 0);
-
-                Promise.all(pids.map(pid => this.inspectProcess(pid)))
-                    .then(found => resolve(found.filter((p): p is ProcessInfo => p !== null)));
-            });
-        });
-    }
-
-    private inspectProcess(pid: number): Promise<ProcessInfo | null> {
-        return new Promise(resolve => {
-            const proc = child.spawn("powershell", [
-                "-NoProfile", "-NonInteractive", "-Command",
-                `$p = Get-CimInstance Win32_Process -Filter "ProcessId=${pid}" -Property ThreadCount,ExecutablePath; ` +
-                `"$($p.ThreadCount)\`t$($p.ExecutablePath)"`,
-            ], { encoding: "utf-8" } as never);
-
-            let out = "";
-            proc.stdout?.on("data", (data: string | Buffer) => { out += data.toString(); });
-            // Fail closed: if WMI is unavailable, treat the process as real but unidentified.
-            proc.on("error", () => resolve({ pid, executablePath: "" }));
-            proc.on("close", () => {
-                const [threadText, executablePath = ""] = out.trim().split("\t");
-                const threads = parseInt(threadText, 10);
-                const alive = Number.isNaN(threads) ? true : threads > 0;
-                resolve(alive ? { pid, executablePath: executablePath.trim() } : null);
-            });
-        });
+    /** Confirmed-running processes only. An unanswerable query yields an empty list, never a guess. */
+    async listProcesses(executableName: string): Promise<ProcessInfo[]> {
+        return (await Machine.probeProcesses(executableName)).processes;
     }
 
     profileDataDir(profileUuid: string): string {
@@ -151,15 +92,26 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
     }
 
     /**
-     * A running game of the *same* family holds the slots this launch would change — its
+     * A running game of the *same* family holds the slots this launch would change - its
      * junction, its registration, the dxgi.dll in its build. A game of the other family
      * shares none of them, so preview running is no reason to refuse a release launch.
      */
     private async findConflictingGame(version: InstalledVersion): Promise<ProcessInfo | null> {
         const wantFamily = Machine.packageFamilyFor(version.path).toLowerCase();
+        const probe = await Machine.probeProcesses(Machine.GAME_EXECUTABLE);
 
-        for (const proc of await this.listProcesses(GAME_EXECUTABLE)) {
-            // Unidentifiable processes are treated as conflicting rather than stomped on.
+        // Fail open. A launch blocked on a question Windows would not answer is a dead end the
+        // user cannot clear, and a game that really is running is caught a few steps later by
+        // Windows refusing to re-register a package it still holds, which says so plainly.
+        if (probe.queryFailed) {
+            console.error(
+                `[Launch] Could not check for a running Minecraft, launching anyway.\n${probe.detail}`
+            );
+            return null;
+        }
+
+        for (const proc of probe.processes) {
+            // Running, but its build cannot be read, so which family it belongs to is unknown.
             if (proc.executablePath === "") return proc;
 
             let family: string | null;
@@ -226,6 +178,6 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         });
 
         status("Starting Minecraft...");
-        Machine.activate(version.path);
+        await Machine.activate(version.path, status);
     }
 }
