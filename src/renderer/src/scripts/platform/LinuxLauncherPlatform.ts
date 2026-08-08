@@ -5,7 +5,6 @@ import { ILauncherPlatform, LauncherPaths, LaunchRequest, ProcessInfo } from "./
 
 const fs = window.require("fs") as typeof import("fs");
 const os = window.require("os") as typeof import("os");
-const child = window.require("child_process") as typeof import("child_process");
 const path = window.require("path") as typeof import("path");
 
 const GAME_EXECUTABLE = "Minecraft.Windows.exe";
@@ -27,19 +26,6 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
             }
         }
         return `Linux ${os.release()} (${os.arch()})`;
-    }
-
-    async runCommand(command: string, stdout?: (data: string) => void): Promise<number> {
-        return new Promise((resolve, reject) => {
-            const [cmd, ...args] = command.split(" ");
-            const proc = child.spawn(cmd, args, { shell: true });
-            if (stdout) proc.stdout?.on("data", data => stdout(data.toString()));
-            proc.stderr?.on("data", data => console.error(`[Command] ${data}`));
-            proc.on("close", code => {
-                if (code !== 0) reject(new Error(`Command failed with exit code ${code}.`));
-                else resolve(0);
-            });
-        });
     }
 
     getPaths(): LauncherPaths {

@@ -3,7 +3,7 @@ import { Channel } from "@renderer/scripts/domain/Channel";
 import { errnoCode } from "@renderer/scripts/Directories";
 import { FileLocker } from "@renderer/scripts/FileLocker";
 import { CIK_KEYS } from "@renderer/scripts/backend/Decryption";
-import { Downloader } from "@renderer/scripts/backend/Downloader";
+import { Downloader, PART_SUFFIX } from "@renderer/scripts/backend/Downloader";
 import { LauncherTools } from "@renderer/scripts/backend/tools/LauncherTools";
 import { LauncherPaths } from "@renderer/scripts/platform/LauncherPlatform";
 import { FULL_PROGRESS_RESET_OPTIONS, ProgressBar } from "@renderer/states/ProgressBarStore";
@@ -103,6 +103,7 @@ export class VersionService {
             if (locker.isLocked(basePath)) continue;
 
             await fs.promises.rm(lockPath, { force: true });
+            await fs.promises.rm(basePath + PART_SUFFIX, { force: true });
             try {
                 if ((await fs.promises.stat(basePath)).isFile()) {
                     await fs.promises.rm(basePath, { force: true });
@@ -180,14 +181,25 @@ export class VersionService {
                             setMessage(`Downloading ${label}... (${mb(transferred)}MB / ${mb(total)}MB)`);
                             setProgress(progress);
                             useDownloadStore.getState().updateDownload(downloadId, { progress });
-                        }, ok => {
-                            if (!ok) throw new Error(`Download of ${label} failed`);
                         });
                     });
                 } catch (e) {
+                    console.error(`[VersionService] Download of ${label} failed.`, { mirror, msixvc, expectedSize }, e);
                     useDownloadStore.getState().updateDownload(downloadId, { status: "error" });
                     removePendingDownload(downloadId);
+                    await fs.promises.rm(msixvc, { force: true }).catch(() => {});
                     throw e;
+                }
+
+                const downloadedSize = fs.statSync(msixvc).size;
+                if (expectedSize > 0 && downloadedSize !== expectedSize) {
+                    await fs.promises.rm(msixvc, { force: true }).catch(() => {});
+                    useDownloadStore.getState().updateDownload(downloadId, { status: "error" });
+                    removePendingDownload(downloadId);
+                    console.error(`[VersionService] ${label} downloaded ${downloadedSize} of ${expectedSize} bytes.`, { mirror, msixvc });
+                    throw new Error(
+                        `${label} downloaded incompletely (${downloadedSize} of ${expectedSize} bytes). Try again.`
+                    );
                 }
             }
 

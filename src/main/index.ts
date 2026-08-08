@@ -1,3 +1,7 @@
+// Imported first: opening the run's log file and installing the console shim has to happen
+// before any other module gets a chance to log or throw.
+import { discardRun } from "./diagnostics/LogWriter";
+
 import { is } from "@electron-toolkit/utils";
 import { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, nativeTheme } from "electron";
 import { autoUpdater } from "electron-updater";
@@ -164,6 +168,7 @@ function handleModFilePath(file_path: string): void {
 
 // Other window is open, so don't create a new one
 if (hasSingleInstanceLock === false) {
+    discardRun();
     app.quit();
 }
 // No window is open so create new

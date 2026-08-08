@@ -1,9 +1,13 @@
 import { Channel } from "@renderer/scripts/domain/Channel";
+import { describeResult, run } from "@shared/diagnostics/ProcessRunner";
 
-const child = window.require("child_process") as typeof import("child_process");
 const { createHash } = window.require("crypto") as typeof import("crypto");
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
+
+const MSI_TIMEOUT_MS = 10 * 60_000;
+/** msiexec's "installed, but Windows wants a reboot". Still an install. */
+const MSI_REBOOT_REQUIRED = 3010;
 
 /** 1x1 transparent PNG, for manifest-referenced assets the msixvc doesn't ship. */
 const PLACEHOLDER_PNG = Buffer.from(
@@ -27,15 +31,6 @@ const CHANNEL_IDS: Record<Channel, { displayName: string; protocol: string; titl
         msaAppId: "00000000403FC600",
     },
 };
-
-function exec(command: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-        child.exec(command, (error, stdout, stderr) => {
-            if (error) reject(new Error(stderr || error.message));
-            else resolve(stdout);
-        });
-    });
-}
 
 /** Strips the manifest bits that block loose registration, returning the effective XML. */
 function patchManifest(versionPath: string): string {
@@ -167,7 +162,7 @@ ${[...languages].map(l => `    <Resource Language="${l}"/>`).join("\n")}
  * The redist's own DLL is the thing the game loads, so its presence is the state worth
  * reading. Not the MSI's ProductCode: the MSI no-ops (exit 0, ~1.1s) when a compatible
  * GameInput is already present without ever registering itself, so a ProductCode check
- * would reinstall on every launch. Versions aren't comparable either — the DLL reports
+ * would reinstall on every launch. Versions aren't comparable either - the DLL reports
  * 3.3.221.0 against the MSI's 10.1.26100.6106.
  */
 function isGameInputInstalled(): boolean {
@@ -182,15 +177,18 @@ async function ensureGameInput(versionPath: string, status: (message: string) =>
     if (!fs.existsSync(msi)) throw new Error(`GameInput is not installed and ${msi} is missing.`);
 
     status("Installing GameInput...");
-    try {
-        await exec(`msiexec /i "${msi}" /quiet /norestart`);
-    } catch (e) {
+    const result = await run("msiexec", ["/i", msi, "/quiet", "/norestart"], { timeoutMs: MSI_TIMEOUT_MS });
+
+    if (result.code !== 0 && result.code !== MSI_REBOOT_REQUIRED) {
+        console.error(`[VersionFiles] GameInput install failed.\n${describeResult(result)}`);
         throw new Error(
-            `GameInput could not be installed from ${msi}. Try running the launcher as administrator. (${e})`
+            `GameInput could not be installed from ${msi}. Try running the launcher as administrator. `
+            + `(${result.timedOut ? "the installer never finished" : `installer result ${result.code}`})`
         );
     }
 
     if (!isGameInputInstalled()) {
+        console.error(`[VersionFiles] msiexec reported ${result.code} but GameInputRedist.dll is still absent.`);
         throw new Error(`GameInput reported a successful install but ${msi} did not provide GameInputRedist.dll.`);
     }
     console.log("[VersionFiles] GameInput installed");
@@ -231,7 +229,7 @@ function sha256(filePath: string): string {
     return createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
 }
 
-/** Presence isn't enough — a rebuilt proxy must replace an older one already in place. */
+/** Presence isn't enough - a rebuilt proxy must replace an older one already in place. */
 export function isProxyCurrent(versionPath: string): boolean {
     const target = proxyDllPath(versionPath);
     if (!fs.existsSync(target)) return false;

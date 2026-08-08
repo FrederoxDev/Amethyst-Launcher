@@ -1,9 +1,10 @@
 import { Profile, isModded } from "@renderer/scripts/domain/Profile";
-import { ForeignGameDataError } from "@renderer/scripts/platform/LauncherPlatform";
+import { ForeignGameDataError, SystemSetupRequiredError } from "@renderer/scripts/platform/LauncherPlatform";
 import { InstalledVersion } from "@renderer/scripts/versions/InstalledVersion";
 import { useAppStore } from "@renderer/states/AppStore";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { adoptGameData } from "./AdoptGameData";
+import { runSystemSetup } from "./SystemSetup";
 
 const path = window.require("path") as typeof import("path");
 
@@ -81,8 +82,13 @@ export async function launchProfile(profile: Profile): Promise<void> {
     const store = useAppStore.getState();
     store.setLastLaunchedProfileUuid(profile.uuid);
 
-    // Unowned data in the way is the user's call. Resolve it, then try once more.
-    for (let attempt = 0; attempt < 2; attempt++) {
+    // Two recoverable blockers, each fixable once: unowned data in the way, which is the
+    // user's call, and a missing Windows setting, which the launcher fixes itself. Each
+    // recovery re-runs the whole launch so it continues without another press of Launch.
+    let adopted = false;
+    let systemSetupDone = false;
+
+    for (;;) {
         try {
             await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
                 setStatus("launching");
@@ -95,8 +101,17 @@ export async function launchProfile(profile: Profile): Promise<void> {
             }, true);
             return;
         } catch (e) {
-            if (attempt > 0 || !(e instanceof ForeignGameDataError)) throw e;
-            await adoptGameData(e.channel);
+            if (e instanceof ForeignGameDataError && !adopted) {
+                adopted = true;
+                await adoptGameData(e.channel);
+                continue;
+            }
+            if (e instanceof SystemSetupRequiredError && !systemSetupDone) {
+                systemSetupDone = true;
+                await runSystemSetup(e);
+                continue;
+            }
+            throw e;
         }
     }
 }

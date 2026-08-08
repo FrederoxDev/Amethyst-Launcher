@@ -50,10 +50,12 @@ function highlightSegment(text: string, lowerQuery: string, keyPrefix: string): 
     return parts;
 }
 
-const LINE_REGEX = /^(\[[^\]]+\])\s(\[[^\]]+\])(?:\s\[([A-Z]+)\])?(\s.*)?$/;
+// The runtime writes `[thread] [mod] [LEVEL] message`; the launcher prefixes a clock time.
+const LINE_REGEX = /^(?:(\d{2}:\d{2}:\d{2}\.\d{3})\s)?(\[[^\]]+\])\s(\[[^\]]+\])(?:\s\[([A-Z]+)\])?(\s.*)?$/;
 
 interface ParsedLine {
     raw: string;
+    time: string | null;
     thread: string | null;
     mod: string | null;
     level: string;
@@ -63,9 +65,9 @@ interface ParsedLine {
 function parseLine(rawLine: string): ParsedLine {
     const line = rawLine.replace(/\r$/, "");
     const match = LINE_REGEX.exec(line);
-    if (!match) return { raw: line, thread: null, mod: null, level: "INFO", rest: null };
-    const [, thread, mod, level, rest] = match;
-    return { raw: line, thread, mod, level: level ?? "INFO", rest: rest ?? null };
+    if (!match) return { raw: line, time: null, thread: null, mod: null, level: "INFO", rest: null };
+    const [, time, thread, mod, level, rest] = match;
+    return { raw: line, time: time ?? null, thread, mod, level: level ?? "INFO", rest: rest ?? null };
 }
 
 function levelClass(level: string): string {
@@ -87,6 +89,8 @@ function renderParsedLine(p: ParsedLine, lineIdx: number, lowerQuery: string): R
     const showLevelTag = p.level !== "INFO";
     return (
         <div key={lineIdx} className="logs-line">
+            {p.time && <span className="logs-line-meta">{highlightSegment(p.time, lowerQuery, `l${lineIdx}c`)}</span>}
+            {p.time && " "}
             <span className="logs-line-meta">{highlightSegment(p.thread, lowerQuery, `l${lineIdx}t`)}</span>
             {" "}
             <span className="logs-line-meta">{highlightSegment(p.mod, lowerQuery, `l${lineIdx}m`)}</span>

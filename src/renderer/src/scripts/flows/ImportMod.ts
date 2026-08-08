@@ -2,6 +2,7 @@ import { Extractor } from "@renderer/scripts/backend/Extractor";
 import { useAppStore } from "@renderer/states/AppStore";
 
 const path = window.require("path") as typeof import("path");
+const fs = window.require("fs") as typeof import("fs");
 
 export const MOD_ARCHIVE_EXTENSIONS = [".amethyst", ".zip"];
 
@@ -21,15 +22,31 @@ export function modArchiveExtension(file_name: string): string {
 
 export async function ImportModArchive(archive_path: string): Promise<void> {
     const paths = useAppStore.getState().platform.getPaths();
-    const extracted_folder_path = path.join(paths.modsPath, modArchiveName(path.basename(archive_path)));
+    const archive_name = path.basename(archive_path);
+    const extracted_folder_path = path.join(paths.modsPath, modArchiveName(archive_name));
 
-    let extracted = false;
-    await Extractor.extractFile(archive_path, extracted_folder_path, [], undefined, success => {
-        extracted = success;
-    });
+    const replacingExisting = fs.existsSync(extracted_folder_path);
 
-    if (!extracted) {
-        throw new Error(`Failed to extract ${path.basename(archive_path)}`);
+    try {
+        await Extractor.extractFile(archive_path, extracted_folder_path, []);
+    } catch (error) {
+        console.error(`[ImportMod] Failed to install "${archive_path}" into "${extracted_folder_path}".`, error);
+        const reason = error instanceof Error ? error.message : String(error);
+
+        if (replacingExisting) {
+            // Someone else's files live here; a half-written folder is bad but deleting it is worse.
+            throw new Error(
+                `Could not install ${archive_name}: ${reason} ` +
+                `The existing files in "${extracted_folder_path}" may be a mix of old and new - reinstall the mod.`,
+                { cause: error }
+            );
+        }
+
+        // We created this folder, so a half-extracted one would show up as an installed mod. Drop it.
+        await fs.promises.rm(extracted_folder_path, { recursive: true, force: true }).catch(cleanupError => {
+            console.error(`[ImportMod] Could not remove "${extracted_folder_path}".`, cleanupError);
+        });
+        throw new Error(`Could not install ${archive_name}: ${reason}`, { cause: error });
     }
 
     useAppStore.getState().refreshAllMods();
