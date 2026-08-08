@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
+import { describeError } from "@shared/diagnostics/Log";
 import { MainPanel } from "@renderer/components/MainPanel";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { useAppStore } from "@renderer/states/AppStore";
+import { log } from "@renderer/scripts/LauncherLog";
 import { channelLabel } from "@renderer/scripts/domain/Channel";
 import { Profile } from "@renderer/scripts/domain/Profile";
 import { launchProfileByUuid } from "@renderer/scripts/flows/Launch";
@@ -12,17 +14,25 @@ import { ProgressBar } from "@renderer/states/ProgressBarStore";
 const { ipcRenderer } = window.require("electron") as typeof import("electron");
 
 ipcRenderer.on("AMETHYST_PROTOCOL_URL", async (_event, url: string) => {
-    console.log(`[renderer] Protocol URL received: ${url}`);
+    log("Protocol", `Handling ${url}`);
 
     try {
         const parsed = new URL(url);
         // amethyst-launcher://launchprofile/<uuid>
-        if (parsed.hostname === "launchprofile") {
-            const profileUuid = parsed.pathname.replace(/^\//, "");
-            if (profileUuid) await launchProfileByUuid(profileUuid);
+        if (parsed.hostname !== "launchprofile") {
+            log("Protocol", `Ignoring ${url}: "${parsed.hostname}" is not an action this launcher knows`);
+            return;
         }
+
+        const profileUuid = parsed.pathname.replace(/^\//, "");
+        if (!profileUuid) {
+            log("Protocol", `Ignoring ${url}: launchprofile carries no profile UUID after the slash`);
+            return;
+        }
+
+        await launchProfileByUuid(profileUuid);
     } catch (e) {
-        console.error("[renderer] Failed to handle protocol URL:", e);
+        log("Protocol", `Handling ${url} failed: ${describeError(e)}`);
         useAppStore.getState().setError((e as Error).message);
         ProgressBar.reset();
     }

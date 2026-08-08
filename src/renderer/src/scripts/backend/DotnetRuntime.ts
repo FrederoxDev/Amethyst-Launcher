@@ -1,3 +1,4 @@
+import { log } from "@renderer/scripts/LauncherLog";
 import { useAppStore } from "@renderer/states/AppStore";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { describeResult, run } from "@shared/diagnostics/ProcessRunner";
@@ -47,10 +48,15 @@ export class DotnetRuntime {
     /** Resolves to the .NET root that satisfies `requirement`, installing it if needed. */
     static async ensure(requirement: DotnetRequirement): Promise<string> {
         const cached = this.resolved.get(requirement.major);
-        if (cached) return this.adopt(requirement.major, cached);
+        if (cached) {
+            log("Dotnet", `.NET ${requirement.channel} already resolved this run to '${cached}', not looking again`);
+            return this.adopt(requirement.major, cached);
+        }
 
         let pending = this.pending.get(requirement.major);
-        if (!pending) {
+        if (pending) {
+            log("Dotnet", `A search for .NET ${requirement.channel} is already running, waiting on it`);
+        } else {
             pending = this.resolve(requirement).finally(() => this.pending.delete(requirement.major));
             this.pending.set(requirement.major, pending);
         }
@@ -58,18 +64,28 @@ export class DotnetRuntime {
     }
 
     private static async resolve(requirement: DotnetRequirement): Promise<string> {
-        const existing = this.findRootOnDisk(requirement.major) ?? (await this.findRootViaCli(requirement.major));
+        log("Dotnet", `${requirement.toolName} needs ${SHARED_FRAMEWORK} ${requirement.major}.x, looking for it`);
+
+        const onDisk = this.findRootOnDisk(requirement.major);
+        const existing = onDisk ?? (await this.findRootViaCli(requirement.major));
         if (existing) {
-            console.log(`[dotnet] Found .NET ${requirement.channel} runtime at '${existing}'.`);
+            log(
+                "Dotnet",
+                `Using the .NET ${requirement.channel} runtime at '${existing}', `
+                + `found ${onDisk ? "in a known location" : "through dotnet --list-runtimes"}`
+            );
             return this.adopt(requirement.major, existing);
         }
 
-        console.log(`[dotnet] No .NET ${requirement.channel} runtime found; installing a private copy.`);
+        log("Dotnet", `No .NET ${requirement.channel} runtime on this machine, installing a private copy to '${this.privateRoot()}'`);
         const installed = await this.install(requirement);
         return this.adopt(requirement.major, installed);
     }
 
     private static adopt(major: number, root: string): string {
+        if (process.env.DOTNET_ROOT !== root) {
+            log("Dotnet", `DOTNET_ROOT set to '${root}' for every process the launcher starts from here on`);
+        }
         process.env.DOTNET_ROOT = root;
         this.resolved.set(major, root);
         return root;
@@ -100,20 +116,33 @@ export class DotnetRuntime {
         return roots;
     }
 
-    private static hasFramework(root: string, major: number): boolean {
+    /** The framework versions a root holds, or why the question could not be answered. */
+    private static frameworkVersions(root: string): { versions: string[]; problem: string | null } {
         try {
-            const versions = fs.readdirSync(path.join(root, "shared", SHARED_FRAMEWORK));
-            return versions.some(version => version.startsWith(`${major}.`));
-        } catch {
-            return false;
+            return { versions: fs.readdirSync(path.join(root, "shared", SHARED_FRAMEWORK)), problem: null };
+        } catch (error) {
+            return { versions: [], problem: error instanceof Error ? error.message : String(error) };
         }
     }
 
+    private static hasFramework(root: string, major: number): boolean {
+        return this.frameworkVersions(root).versions.some(version => version.startsWith(`${major}.`));
+    }
+
+    /** One line for the whole sweep, listing every root and what it held. */
     private static findRootOnDisk(major: number): string | null {
+        let found: string | null = null;
+        const seen: string[] = [];
+
         for (const root of this.candidateRoots()) {
-            if (this.hasFramework(root, major)) return root;
+            const { versions, problem } = this.frameworkVersions(root);
+            const matches = versions.filter(version => version.startsWith(`${major}.`));
+            seen.push(`${root} -> ${problem ? `unavailable (${problem})` : versions.join(", ") || "no frameworks"}`);
+            if (found === null && matches.length > 0) found = root;
         }
-        return null;
+
+        log("Dotnet", `Looked for ${SHARED_FRAMEWORK} ${major}.x in ${seen.length} locations:\n    ${seen.join("\n    ")}`);
+        return found;
     }
 
     /** Catches installs in locations the launcher does not know about, which the CLI still resolves. */
@@ -121,15 +150,27 @@ export class DotnetRuntime {
         const result = await run("dotnet", ["--list-runtimes"], { timeoutMs: LIST_RUNTIMES_TIMEOUT_MS });
         if (result.code !== 0) {
             // Expected when .NET is not installed at all, so this is a note rather than a failure.
-            console.log(`[dotnet] dotnet --list-runtimes did not answer.\n${describeResult(result)}`);
+            log("Dotnet", `dotnet --list-runtimes did not answer.\n${describeResult(result)}`);
             return null;
         }
 
+        const listed: string[] = [];
         for (const line of result.output.split("\n")) {
             const match = line.match(/^Microsoft\.NETCore\.App (\d+)\.\S+ \[(.+)\]\s*$/);
-            if (!match || parseInt(match[1], 10) !== major) continue;
-            return path.dirname(path.dirname(match[2].trim()));
+            if (!match) continue;
+            listed.push(line.trim());
+            if (parseInt(match[1], 10) !== major) continue;
+
+            const root = path.dirname(path.dirname(match[2].trim()));
+            log("Dotnet", `dotnet --list-runtimes reported "${line.trim()}", which resolves to root '${root}'`);
+            return root;
         }
+
+        log(
+            "Dotnet",
+            `dotnet --list-runtimes reported no ${SHARED_FRAMEWORK} ${major}.x. It listed: `
+            + `${listed.join("; ") || "no shared frameworks at all"}`
+        );
         return null;
     }
 
@@ -142,13 +183,20 @@ export class DotnetRuntime {
         try {
             await this.runInstaller(requirement, scriptUrl, scriptPath, root, isWindows);
         } finally {
-            await fs.promises.rm(scriptPath, { force: true });
+            await fs.promises.rm(scriptPath, { force: true }).catch(error => {
+                log("Dotnet", `Could not delete the installer script '${scriptPath}': ${this.describe(error)}`);
+            });
         }
 
         if (!this.hasFramework(root, requirement.major)) {
+            log(
+                "Dotnet",
+                `The installer finished but '${root}' holds `
+                + `${this.frameworkVersions(root).versions.join(", ") || "no frameworks"}`
+            );
             throw this.failure(requirement, "the installer finished but the runtime is still missing");
         }
-        console.log(`[dotnet] Installed the .NET ${requirement.channel} runtime to '${root}'.`);
+        log("Dotnet", `Installed the .NET ${requirement.channel} runtime to '${root}'`);
         return root;
     }
 
@@ -167,6 +215,7 @@ export class DotnetRuntime {
             try {
                 await Downloader.downloadFile(scriptUrl, scriptPath);
             } catch (error) {
+                log("Dotnet", `Could not download ${scriptUrl}: ${this.describe(error)}`);
                 throw this.failure(requirement, `the installer could not be downloaded (${this.describe(error)})`);
             }
             if (!isWindows) await fs.promises.chmod(scriptPath, 0o755);
@@ -182,6 +231,8 @@ export class DotnetRuntime {
             const args = isWindows
                 ? ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", scriptPath, ...scriptArgs]
                 : [scriptPath, ...scriptArgs];
+
+            log("Dotnet", `Running the .NET ${requirement.channel} installer: ${command} ${args.join(" ")}`);
 
             const result = await run(command, args, {
                 timeoutMs: INSTALL_TIMEOUT_MS,
@@ -201,11 +252,12 @@ export class DotnetRuntime {
                     describeResult(result)
                 );
             }
+            log("Dotnet", `The .NET ${requirement.channel} installer finished in ${result.durationMs}ms`);
         });
     }
 
     private static failure(requirement: DotnetRequirement, reason: string, output?: string): Error {
-        if (output) console.error(`[dotnet] Installer output:\n${output}`);
+        log("Dotnet", `.NET ${requirement.channel} could not be installed: ${reason}${output ? `\n${output}` : ""}`);
         return new Error(
             `${requirement.toolName} needs the .NET ${requirement.channel} runtime, and it could not be installed ` +
                 `automatically because ${reason}. Install ".NET Runtime ${requirement.channel}" from ` +

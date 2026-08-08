@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 
+import { describeError } from "@shared/diagnostics/Log";
+import { log } from "@renderer/scripts/LauncherLog";
 import { MinecraftButton, GRAY_MINECRAFT_BUTTON } from "@renderer/components/MinecraftButton";
 import { PopupPanel, usePopupClose } from "@renderer/components/PopupPanel";
 import { TextInput } from "@renderer/components/TextInput";
@@ -57,20 +59,22 @@ function AddContentPopup({ submit: rawSubmit }: PopupUseArguments<string | "brow
                     <MinecraftButton text="Open Mods Folder" colorPallete={GRAY_MINECRAFT_BUTTON} style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "160px" }} onClick={async () => {
                         try {
                             if (!fs.existsSync(modsPath)) {
+                                log("ProfileEditor", `Creating the mods folder ${modsPath} before opening it`);
                                 fs.mkdirSync(modsPath, { recursive: true });
                             }
 
                             const openError = await shell.openPath(modsPath);
                             if (openError) {
-                                const message = `Failed to open mods folder: ${openError}`;
-                                console.error(message);
-                                setError(message);
+                                log("ProfileEditor", `Could not open ${modsPath}: ${openError}`);
+                                setError(`Failed to open mods folder: ${openError}`);
+                            }
+                            else {
+                                log("ProfileEditor", `Opened the mods folder ${modsPath}`);
                             }
                         }
                         catch (e) {
-                            const message = `Failed to open mods folder: ${(e as Error).message}`;
-                            console.error(message);
-                            setError(message);
+                            log("ProfileEditor", `Could not open ${modsPath}: ${describeError(e)}`);
+                            setError(`Failed to open mods folder: ${(e as Error).message}`);
                         }
                     }} />
                 </>
@@ -219,46 +223,78 @@ export function ProfileEditor() {
             </PopupPanel>
         ));
 
-        if (result === null) return false; // cancelled
+        if (result === null) {
+            log("ProfileEditor", `Cancelled at the orphaned-mod prompt for ${orphanedMods.join(", ")}`);
+            return false; // cancelled
+        }
         if (result === "delete") {
-            await Promise.all(orphanedMods.map(modName => {
+            log("ProfileEditor", `Deleting orphaned mod folders from disk: ${orphanedMods.join(", ")}`);
+            await Promise.all(orphanedMods.map(async modName => {
                 const modPath = path.join(modsPath, modName);
-                return fs.promises.rm(modPath, { recursive: true, force: true });
+                try {
+                    await fs.promises.rm(modPath, { recursive: true, force: true });
+                    log("ProfileEditor", `Deleted ${modPath}`);
+                } catch (e) {
+                    log("ProfileEditor", `Could not delete ${modPath}: ${describeError(e)}`);
+                    throw e;
+                }
             }));
+        }
+        else {
+            log("ProfileEditor", `Keeping the files of ${orphanedMods.join(", ")} on disk`);
         }
         return true;
     };
 
     const removeMod = async (modName: string) => {
+        const profile = allProfiles[selectedProfile];
         const orphaned = getOrphanedMods([modName], selectedProfile);
         const proceed = await promptDeleteOrphanedMods(orphaned);
         if (!proceed) return;
+        log("ProfileEditor", `Removed mod "${modName}" from profile "${profile?.name ?? `index ${selectedProfile}`}"`);
         setProfileActiveMods(profileActiveMods.filter(m => m !== modName));
         useAppStore.getState().refreshAllMods();
     };
 
     const deleteProfile = async () => {
         const profile = allProfiles[selectedProfile];
-        if (!profile) return;
+        if (!profile) {
+            log("ProfileEditor", `Delete ignored: no profile at index ${selectedProfile} of ${allProfiles.length}`);
+            return;
+        }
 
         if (!await confirmProfileDeletion(profile)) return;
 
         const orphaned = getOrphanedMods(profile.mods, selectedProfile);
         const proceed = await promptDeleteOrphanedMods(orphaned);
-        if (!proceed) return;
+        if (!proceed) {
+            log("ProfileEditor", `Deletion of "${profile.name}" stopped at the orphaned-mod prompt`);
+            return;
+        }
 
-        await removeProfile(profile);
+        try {
+            await removeProfile(profile);
+        } catch (e) {
+            log("ProfileEditor", `Deleting "${profile.name}" failed: ${describeError(e)}`);
+            useAppStore.getState().setError(`Could not delete ${profile.name}: ${(e as Error).message ?? e}`);
+            return;
+        }
         navigate("/");
     };
 
     const onPlay = async () => {
         const profile = allProfiles[selectedProfile];
-        if (!profile) return;
+        if (!profile) {
+            log("ProfileEditor", `Play ignored: no profile at index ${selectedProfile} of ${allProfiles.length}`);
+            return;
+        }
 
+        log("ProfileEditor", `Play pressed on "${profile.name}" (${profile.uuid})`);
         try {
             await doLaunchProfile(profile);
         }
         catch (e) {
+            log("ProfileEditor", `Launch of "${profile.name}" ended in an error shown to the user: ${describeError(e)}`);
             useAppStore.getState().setError((e as Error).message);
         }
     };
@@ -298,20 +334,36 @@ export function ProfileEditor() {
             return <AddContentPopup {...props} />;
         });
 
-        if (result === null) return;
+        if (result === null) {
+            log("ProfileEditor", "Add Content closed without a choice");
+            return;
+        }
         if (result === "browse") {
+            log("ProfileEditor", `Browsing mods for profile index ${selectedProfile}`);
             useAppStore.getState().setInstallingForProfile(selectedProfile);
             navigate("/mod-discovery");
             return;
         }
-        if (!profileActiveMods.includes(result)) {
-            setProfileActiveMods([...profileActiveMods, result]);
+        if (profileActiveMods.includes(result)) {
+            log("ProfileEditor", `Mod "${result}" not added: the profile already lists it`);
+            return;
         }
+        log("ProfileEditor", `Added mod "${result}" to profile "${allProfiles[selectedProfile]?.name ?? selectedProfile}"`);
+        setProfileActiveMods([...profileActiveMods, result]);
     };
 
     const openVersionPicker = async () => {
         const choice = await Popup.useAsync<VersionChoice | null>(props => <VersionPickerPopup {...props} />);
-        if (!choice) return;
+        if (!choice) {
+            log("ProfileEditor", "Version picker closed without a choice");
+            return;
+        }
+        log(
+            "ProfileEditor",
+            `Version for "${allProfiles[selectedProfile]?.name ?? selectedProfile}": `
+            + `"${profileVersionLabel || "unset"}" (${profileVersionUuid || "unset"}, ${profileChannel}) -> `
+            + `"${choice.label}" (${choice.versionUuid}, ${choice.channel})`
+        );
         startPendingImport(choice);
         setProfileVersionLabel(choice.label);
         setProfileVersionUuid(choice.versionUuid);

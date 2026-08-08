@@ -1,6 +1,7 @@
 const fs = window.require("fs") as typeof import("fs");
 
 import { DownloadProgress } from "@renderer/scripts/backend/Progress";
+import { log } from "@renderer/scripts/LauncherLog";
 
 type WriteStream = import("fs").WriteStream;
 
@@ -32,7 +33,12 @@ class GuardedWriteStream {
         let fail: (error: Error) => void = () => {};
         this.failure = new Promise<never>((_, reject) => (fail = reject));
         this.failure.catch(() => {});
-        this.stream.once("error", error => fail(error));
+        this.stream.once("error", error => {
+            // Logged here as well as re-thrown: a write that fails after the last await has
+            // nowhere to be re-thrown from and would otherwise vanish.
+            log("Download", `Writing "${path}" failed: ${describe(error)}`);
+            fail(error);
+        });
     }
 
     async write(chunk: Uint8Array): Promise<void> {
@@ -63,20 +69,42 @@ export class Downloader {
         onProgress: DownloadProgress = () => {},
         signal?: AbortSignal
     ): Promise<void> {
-        const response = await fetch(from, { signal });
+        const startedAt = Date.now();
+        log("Download", `GET ${from} to "${to}"`);
+
+        let response: Response;
+        try {
+            response = await fetch(from, { signal });
+        } catch (error) {
+            log("Download", `GET ${from} never answered after ${Date.now() - startedAt}ms: ${describe(error)}`);
+            throw new Error(`Download of ${from} failed: ${describe(error)}`, { cause: error });
+        }
+
         if (!response.ok) {
-            console.error(`[Downloader] GET ${from} -> ${response.status} ${response.statusText}`);
+            log("Download", `GET ${from} returned ${response.status} ${response.statusText}`);
             throw new Error(`Download failed: ${from} returned ${response.status} ${response.statusText}`);
         }
 
         if (!response.body) {
-            console.error(`[Downloader] GET ${from} -> ${response.status} with no response body`);
+            log("Download", `GET ${from} returned ${response.status} with no response body`);
             throw new Error(`Download failed: ${from} returned ${response.status} with no content.`);
         }
 
         const expectedSize = parseInt(response.headers.get("Content-Length") || "0", 10);
+        log(
+            "Download",
+            `GET ${from} returned ${response.status}, `
+            + `${expectedSize > 0 ? `${expectedSize} bytes` : "no declared length"}, `
+            + `type ${response.headers.get("Content-Type") ?? "unstated"}`
+        );
+
         const partPath = to + PART_SUFFIX;
-        await fs.promises.rm(partPath, { force: true });
+        try {
+            await fs.promises.rm(partPath, { force: true });
+        } catch (error) {
+            log("Download", `Could not clear the leftover part file "${partPath}": ${describe(error)}`);
+            throw new Error(`Could not start the download of ${from}: ${describe(error)}`, { cause: error });
+        }
 
         const reader = response.body.getReader();
         const out = new GuardedWriteStream(partPath);
@@ -103,16 +131,15 @@ export class Downloader {
             }
         } catch (error) {
             out.destroy();
-            await fs.promises.rm(partPath, { force: true }).catch(() => {});
-            console.error("[Downloader] Download failed.", {
-                url: from,
-                destination: to,
-                received,
-                expectedSize,
-                status: response.status,
-                statusText: response.statusText,
-                error,
+            await fs.promises.rm(partPath, { force: true }).catch(cleanupError => {
+                log("Download", `Could not delete the failed part file "${partPath}": ${describe(cleanupError)}`);
             });
+            log(
+                "Download",
+                `Download of ${from} to "${to}" failed after ${received} of `
+                + `${expectedSize > 0 ? expectedSize : "an unstated number of"} bytes `
+                + `(HTTP ${response.status} ${response.statusText}, ${Date.now() - startedAt}ms): ${describe(error)}`
+            );
             throw new Error(`Download of ${from} failed: ${describe(error)}`, { cause: error });
         } finally {
             reader.releaseLock();
@@ -121,11 +148,13 @@ export class Downloader {
         try {
             await fs.promises.rename(partPath, to);
         } catch (error) {
-            await fs.promises.rm(partPath, { force: true }).catch(() => {});
-            console.error(`[Downloader] Could not move "${partPath}" to "${to}".`, error);
+            await fs.promises.rm(partPath, { force: true }).catch(cleanupError => {
+                log("Download", `Could not delete the part file "${partPath}": ${describe(cleanupError)}`);
+            });
+            log("Download", `Could not move "${partPath}" to "${to}": ${describe(error)}`);
             throw new Error(`Could not save the download to "${to}": ${describe(error)}`, { cause: error });
         }
 
-        console.log(`[Downloader] Saved ${received} bytes from ${from} to "${to}".`);
+        log("Download", `Saved ${received} bytes from ${from} to "${to}" in ${Date.now() - startedAt}ms`);
     }
 }

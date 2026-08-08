@@ -1,4 +1,6 @@
+import { log } from "@renderer/scripts/LauncherLog";
 import { useAppStore } from "@renderer/states/AppStore";
+import { describeError } from "@shared/diagnostics/ProcessRunner";
 import { GithubAsset } from "../github/GithubAsset";
 import { GithubRelease } from "../github/GithubRelease";
 import { GithubTools } from "../github/GithubTools";
@@ -14,10 +16,10 @@ const fs = window.require("fs") as typeof import("fs");
 
 /**
  * Describes the outcome of a `check()` call on a tool artifact.
- * - `"installed"` – the tool was freshly installed (was not present before).
- * - `"updated"` – the tool was already installed and has just been updated.
- * - `"update_skipped"` – an update was available but the user declined it.
- * - `"up_to_date"` – the installed version is already the latest.
+ * - `"installed"` - the tool was freshly installed (was not present before).
+ * - `"updated"` - the tool was already installed and has just been updated.
+ * - `"update_skipped"` - an update was available but the user declined it.
+ * - `"up_to_date"` - the installed version is already the latest.
  */
 export type CheckAction = "installed" | "updated" | "update_skipped" | "up_to_date";
 
@@ -88,7 +90,7 @@ export interface ToolInstalledContext {
  * Abstract base class for tools that are downloaded from GitHub Releases and
  * cached on disk. Subclasses only need to implement a handful of abstract
  * methods to describe platform-specific details (executable name, asset
- * selection, version comparison, …).
+ * selection, version comparison, and so on).
  *
  * @template TCheckOptions  Must extend {@link DefaultCheckOptions}.
  * @template TCheckResult   Must extend {@link ToolCheckResult}.
@@ -111,7 +113,7 @@ export abstract class ToolArtifact<
      * downloading / updating it as needed.
      *
      * Flow:
-     * 1. Guard – reject unsupported platforms early.
+     * 1. Guard - reject unsupported platforms early.
      * 2. Read currently installed version from disk.
      * 3. Fetch the latest GitHub release (subject to timeout).
      * 4. Compare versions; skip the download when already current.
@@ -120,45 +122,58 @@ export abstract class ToolArtifact<
      * 7. Write new version file and fire {@link onInstalled}.
      */
     async check(options?: TCheckOptions): Promise<TCheckResult> {
-        console.log(`[${this.name}] check() called with options:`, options);
+        log(
+            this.name,
+            `check() for ${this.repository}: checkForUpdates=${options?.checkForUpdates ?? false}, `
+            + `promptForUpdate=${options?.promptForUpdate ?? false}, allowOutdated=${options?.allowOutdated ?? false}, `
+            + `releaseFetchTimeout=${options?.releaseFetchTimeout ?? "default"}ms`
+        );
 
         // Reject unsupported platforms before doing any disk/network I/O.
         if (!this.isSupported()) {
             const msg = `${this.name} is not supported on this platform.`;
-            console.error(`[${this.name}] ${msg}`);
+            log(this.name, `${msg} (platform ${window.process.platform}, arch ${window.process.arch})`);
             throw new Error(msg);
         }
 
         const toolPath = this.getFolder();
         PathUtils.ValidatePath(toolPath);
         const executable = this.getExecutable();
-        console.log(`[${this.name}] Tool folder: '${toolPath}' | Executable: '${executable}'`);
 
         // Read the version that is currently installed (may be null if not yet installed).
         const currentVersion = await this.getCurrentVersion();
         const isInstalled = currentVersion !== null;
-        console.log(`[${this.name}] Currently installed version: ${currentVersion ?? "(none)"}`);
+        log(
+            this.name,
+            `Installed version is ${currentVersion ?? "none"}; folder '${toolPath}', executable '${executable}'`
+        );
 
         // If already installed and the caller does not need an update check, return immediately.
         if (isInstalled && !options?.checkForUpdates) {
-            console.log(`[${this.name}] checkForUpdates=false and tool is installed – skipping remote check.`);
+            log(this.name, `Already installed at '${currentVersion}' and no update check was asked for, skipping GitHub`);
             return this.buildResult(currentVersion!, toolPath, executable, "up_to_date");
         }
 
         // Attempt to fetch the latest release from GitHub.
         let latestRelease: GithubRelease | null = null;
         try {
-            console.log(`[${this.name}] Fetching latest release from GitHub (timeout: ${options?.releaseFetchTimeout}ms)…`);
             latestRelease = await this.fetchLatestRelease(options?.releaseFetchTimeout);
-            console.log(`[${this.name}] Latest release tag: '${latestRelease.tagName}'.`);
         } catch (error) {
-            console.warn(`[${this.name}] Failed to fetch latest release:`, error);
             // If the tool is already installed and the caller allows an outdated
             // version, return the current installation rather than throwing.
             if (isInstalled && options?.allowOutdated) {
-                console.log(`[${this.name}] Falling back to installed version '${currentVersion}' (allowOutdated=true).`);
+                log(
+                    this.name,
+                    `GitHub could not be read, carrying on with the installed '${currentVersion}': ${describeError(error)}`
+                );
                 return this.buildResult(currentVersion!, toolPath, executable, "up_to_date");
             }
+            log(
+                this.name,
+                `GitHub could not be read and there is no usable installation to fall back on `
+                + `(installed ${currentVersion ?? "none"}, allowOutdated ${options?.allowOutdated ?? false}): `
+                + `${describeError(error)}`
+            );
             throw error;
         }
 
@@ -166,75 +181,85 @@ export abstract class ToolArtifact<
         const asset = await this.findAsset(latestRelease);
         if (!asset) {
             const msg = `No suitable asset found for the latest release of ${this.name}.`;
-            console.error(`[${this.name}] ${msg}`);
+            log(
+                this.name,
+                `${msg} Release ${latestRelease.tagName} offers: `
+                + `${latestRelease.assets.map(a => a.name).join(", ") || "no assets"} `
+                + `(looking for platform ${window.process.platform}, arch ${window.process.arch})`
+            );
             throw new Error(msg);
         }
-        console.log(`[${this.name}] Matched release asset: '${asset.name}'.`);
 
         const latestTag = latestRelease.tagName;
         const compareResult = this.compareTags(currentVersion, latestTag);
-        console.log(`[${this.name}] Version comparison result: ${compareResult} (current='${currentVersion}', latest='${latestTag}').`);
+        log(
+            this.name,
+            `Latest is '${latestTag}' with asset '${asset.name}'; installed '${currentVersion ?? "none"}' `
+            + `compares ${compareResult}`
+        );
 
-        // Already on the latest (or newer) version – nothing to do.
+        // Already on the latest (or newer) version, nothing to do.
         if (compareResult >= 0 && isInstalled) {
-            console.log(`[${this.name}] Already up-to-date at version '${currentVersion}'.`);
+            log(this.name, `Installed '${currentVersion}' is not behind '${latestTag}', leaving it alone`);
             return this.buildResult(currentVersion!, toolPath, executable, "up_to_date");
         }
 
         // An update is available. Ask the user if required.
         if (isInstalled) {
-            console.log(`[${this.name}] Update available: '${currentVersion}' → '${latestTag}'.`);
             const shouldUpdate = options?.promptForUpdate
                 ? await this.promptUpdate(currentVersion!, latestTag)
                 : true;
 
             if (!shouldUpdate) {
-                console.log(`[${this.name}] User declined the update.`);
                 if (options?.allowOutdated) {
+                    log(this.name, `Update to '${latestTag}' declined, carrying on with '${currentVersion}'`);
                     return this.buildResult(currentVersion!, toolPath, executable, "update_skipped");
                 }
                 const msg = `${this.name} is outdated and update was declined.`;
-                console.error(`[${this.name}] ${msg}`);
+                log(this.name, `Update to '${latestTag}' declined and '${currentVersion}' is not allowed to be used`);
                 throw new Error(msg);
             }
 
-            console.log(`[${this.name}] Proceeding with update. Running onBeforeUpdate hook…`);
+            log(this.name, `Updating from '${currentVersion}' to '${latestTag}'`);
             await this.onBeforeUpdate();
+        } else {
+            log(this.name, `Installing '${latestTag}' for the first time`);
         }
 
         // Wipe the existing installation folder so the extract is clean.
-        console.log(`[${this.name}] Removing old installation at '${toolPath}'…`);
-        await fs.promises.rm(toolPath, { recursive: true, force: true });
+        try {
+            await fs.promises.rm(toolPath, { recursive: true, force: true });
+        } catch (error) {
+            log(this.name, `Could not clear '${toolPath}' before installing '${latestTag}': ${describeError(error)}`);
+            throw error;
+        }
 
         // Download the release archive next to the tool folder.
         const archivePath = toolPath + path.extname(asset.name);
-        console.log(`[${this.name}] Downloading archive to '${archivePath}'…`);
         await this.download(asset, archivePath, latestTag);
 
         // Extract the archive into the tool folder. Throws if any entry failed.
-        console.log(`[${this.name}] Extracting archive to '${toolPath}'…`);
         try {
             await this.extract(archivePath, toolPath, latestTag);
             await this.assertInstallUsable(latestTag);
         } catch (error) {
             // version.txt is deliberately not written, and the half-installed folder is dropped,
             // so the next check() re-downloads instead of trusting a broken tool forever.
-            console.error(`[${this.name}] Install of '${latestTag}' failed; removing '${toolPath}'.`, error);
+            log(this.name, `Install of '${latestTag}' failed, removing '${toolPath}': ${describeError(error)}`);
             await fs.promises.rm(toolPath, { recursive: true, force: true }).catch(cleanupError => {
-                console.error(`[${this.name}] Could not remove '${toolPath}'.`, cleanupError);
+                log(this.name, `Could not remove '${toolPath}': ${describeError(cleanupError)}`);
             });
             throw error;
         }
 
         const action: CheckAction = isInstalled ? "updated" : "installed";
-        console.log(`[${this.name}] Tool ${action} successfully at version '${latestTag}'.`);
 
         // Allow subclasses to run post-install logic (e.g. chmod on Linux).
         await this.onInstalled({ version: latestTag, action });
 
         // Persist the version so subsequent check() calls can skip redundant installs.
         await this.writeVersionFile(latestTag);
-        console.log(`[${this.name}] Version file written with tag '${latestTag}'.`);
+        log(this.name, `${this.name} ${action} at '${latestTag}' in '${toolPath}'`);
 
         return this.buildResult(latestTag, toolPath, executable, action);
     }
@@ -294,7 +319,7 @@ export abstract class ToolArtifact<
     protected async readVersionFile(): Promise<string | null> {
         const versionFile = this.getVersionFile();
         if (!fs.existsSync(versionFile)) {
-            console.log(`[${this.name}] version.txt not found at '${versionFile}'; treating as uninstalled.`);
+            log(this.name, `No version.txt at '${versionFile}', so the tool counts as not installed`);
             return null;
         }
         const content = await fs.promises.readFile(versionFile, "utf-8");
@@ -313,7 +338,7 @@ export abstract class ToolArtifact<
         try {
             version = await this.readVersionFile();
         } catch (error) {
-            console.warn(`[${this.name}] Failed to read version file:`, error);
+            log(this.name, `'${this.getVersionFile()}' could not be read, treating the tool as not installed: ${describeError(error)}`);
             return null;
         }
 
@@ -321,9 +346,10 @@ export abstract class ToolArtifact<
 
         const executable = this.getExecutable();
         if (!fs.existsSync(executable)) {
-            console.error(
-                `[${this.name}] version.txt claims '${version}' but '${executable}' is missing. ` +
-                `Treating the tool as not installed so it gets reinstalled.`
+            log(
+                this.name,
+                `version.txt claims '${version}' but '${executable}' is missing, so the tool will be reinstalled. `
+                + `Folder holds: ${this.listFolder().join(", ") || "nothing"}`
             );
             return null;
         }
@@ -334,8 +360,13 @@ export abstract class ToolArtifact<
     protected async writeVersionFile(version: string): Promise<void> {
         const versionFile = this.getVersionFile();
         PathUtils.ValidatePath(versionFile);
-        console.log(`[${this.name}] Writing version '${version}' to '${versionFile}'.`);
-        await fs.promises.writeFile(versionFile, version, "utf-8");
+        try {
+            await fs.promises.writeFile(versionFile, version, "utf-8");
+        } catch (error) {
+            log(this.name, `Could not write '${version}' to '${versionFile}': ${describeError(error)}`);
+            throw error;
+        }
+        log(this.name, `Wrote '${version}' to '${versionFile}'`);
     }
 
     /**
@@ -357,14 +388,12 @@ export abstract class ToolArtifact<
      * Throws if the release cannot be retrieved.
      */
     protected async fetchLatestRelease(timeout?: number): Promise<GithubRelease> {
-        console.log(`[${this.name}] Fetching latest release for repository '${this.repository}'…`);
         const release = await GithubTools.getLatestRelease(this.repository, timeout);
         if (!release) {
             const msg = `Failed to fetch the latest release for ${this.name}.`;
-            console.error(`[${this.name}] ${msg}`);
+            log(this.name, `${msg} GitHub answered but named no release for '${this.repository}'`);
             throw new Error(msg);
         }
-        console.log(`[${this.name}] Fetched release '${release.tagName}'.`);
         return release;
     }
 
@@ -373,7 +402,7 @@ export abstract class ToolArtifact<
      * decline. Returns `true` if the user accepted the update.
      */
     protected async promptUpdate(currentVersion: string, latestVersion: string): Promise<boolean> {
-        console.log(`[${this.name}] Prompting user for update: '${currentVersion}' → '${latestVersion}'.`);
+        log(this.name, `Asking whether to update from '${currentVersion}' to '${latestVersion}'`);
         const accepted = await Popup.useAsync<boolean>(async ({ submit }) => {
             return <ToolUpdatePopup 
                 name={this.name}
@@ -383,7 +412,7 @@ export abstract class ToolArtifact<
                 decline={() => submit(false)}
             />
         });
-        console.log(`[${this.name}] User ${accepted ? "accepted" : "declined"} the update.`);
+        log(this.name, `The update to '${latestVersion}' was ${accepted ? "accepted" : "declined"}`);
         return accepted;
     }
 
@@ -392,7 +421,7 @@ export abstract class ToolArtifact<
      * global {@link ProgressBar}.
      */
     protected async download(asset: GithubAsset, destination: string, latestTag: string): Promise<void> {
-        console.log(`[${this.name}] Starting download: '${asset.downloadUrl}' → '${destination}'.`);
+        log(this.name, `Downloading ${latestTag} asset '${asset.name}' from ${asset.downloadUrl} to '${destination}'`);
         await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
             setStatus("downloading");
             await Downloader.downloadFile(asset.downloadUrl, destination, (downloaded, total) => {
@@ -401,7 +430,6 @@ export abstract class ToolArtifact<
                 setProgress(percent);
             });
         });
-        console.log(`[${this.name}] Download complete: '${destination}'.`);
     }
 
     /**
@@ -410,7 +438,6 @@ export abstract class ToolArtifact<
      * Throws if any entry could not be written.
      */
     protected async extract(archivePath: string, destination: string, latestTag: string): Promise<void> {
-        console.log(`[${this.name}] Starting extraction: '${archivePath}' → '${destination}'.`);
         try {
             await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
                 setStatus("extracting");
@@ -422,9 +449,8 @@ export abstract class ToolArtifact<
             });
         } finally {
             // A corrupt archive must not be left behind for the next run to trip over.
-            console.log(`[${this.name}] Removing archive '${archivePath}'.`);
             await fs.promises.rm(archivePath, { force: true }).catch(error => {
-                console.error(`[${this.name}] Could not remove archive '${archivePath}'.`, error);
+                log(this.name, `Could not remove the ${latestTag} archive '${archivePath}': ${describeError(error)}`);
             });
         }
     }
@@ -434,9 +460,10 @@ export abstract class ToolArtifact<
         const executable = this.getExecutable();
         if (fs.existsSync(executable)) return;
 
-        console.error(
-            `[${this.name}] Extraction of '${version}' left no executable at '${executable}'.`,
-            { folder: this.getFolder(), contents: this.listFolder() }
+        log(
+            this.name,
+            `Extraction of '${version}' left no executable at '${executable}'. `
+            + `'${this.getFolder()}' holds: ${this.listFolder().join(", ") || "nothing"}`
         );
         throw new Error(
             `${this.name} ${version} did not install correctly - "${this.getExecutableName()}" is missing. ` +
@@ -447,8 +474,8 @@ export abstract class ToolArtifact<
     private listFolder(): string[] {
         try {
             return fs.readdirSync(this.getFolder());
-        } catch {
-            return [];
+        } catch (error) {
+            return [`(unreadable: ${describeError(error)})`];
         }
     }
 

@@ -1,4 +1,5 @@
 import { Channel } from "@renderer/scripts/domain/Channel";
+import { log } from "@renderer/scripts/LauncherLog";
 import { describeResult, run } from "@shared/diagnostics/ProcessRunner";
 
 const { createHash } = window.require("crypto") as typeof import("crypto");
@@ -32,57 +33,136 @@ const CHANNEL_IDS: Record<Channel, { displayName: string; protocol: string; titl
     },
 };
 
+/** Message plus errno, because the code is what says whether a write failure is repairable. */
+function describe(e: unknown): string {
+    const code = typeof e === "object" && e !== null && "code" in e ? String((e as { code: unknown }).code) : null;
+    const message = e instanceof Error ? e.message : String(e);
+    return code ? `${message} (${code})` : message;
+}
+
 /** Strips the manifest bits that block loose registration, returning the effective XML. */
 function patchManifest(versionPath: string): string {
     const manifestPath = path.join(versionPath, "appxmanifest.xml");
-    const original = fs.readFileSync(manifestPath, "utf-8");
+
+    let original: string;
+    try {
+        original = fs.readFileSync(manifestPath, "utf-8");
+    } catch (e) {
+        log("VersionFiles", `Could not read ${manifestPath}: ${describe(e)}`);
+        throw new Error(
+            `This Minecraft version cannot be prepared because its manifest could not be read.\n\n`
+            + `${manifestPath} (${describe(e)})`,
+            { cause: e }
+        );
+    }
 
     const patched = original
         .replace(/<desktop6:Extension\s+Category="windows\.customInstall"[\s\S]*?<\/desktop6:Extension>\s*/g, "")
         .replace(/<rescap:Capability\s+Name="customInstallActions"\s*\/>\s*/g, "")
         .replace(/<Extensions>\s*<\/Extensions>\s*/g, "");
 
-    if (patched !== original) {
-        fs.writeFileSync(manifestPath, patched, "utf-8");
-        console.log("[VersionFiles] Stripped customInstall from manifest");
+    if (patched === original) {
+        log("VersionFiles", `${manifestPath} already has no customInstall, left as is (${original.length} chars)`);
+        return patched;
     }
+
+    try {
+        fs.writeFileSync(manifestPath, patched, "utf-8");
+    } catch (e) {
+        log("VersionFiles", `Could not write the patched ${manifestPath}: ${describe(e)}`);
+        throw new Error(
+            `This Minecraft version cannot be prepared because its manifest could not be written.\n\n`
+            + `${manifestPath} (${describe(e)})`,
+            { cause: e }
+        );
+    }
+    log(
+        "VersionFiles",
+        `Stripped customInstall from ${manifestPath} (${original.length} chars to ${patched.length})`
+    );
     return patched;
 }
 
 function ensureManifestAssets(versionPath: string, manifestXml: string): void {
     const seen = new Set<string>();
+    const created: string[] = [];
+
     for (const match of manifestXml.match(/(?:Logo|Image)="([^"]+\.png)"/gi) ?? []) {
         const file = match.match(/"([^"]+\.png)"/i)?.[1];
         if (!file || seen.has(file)) continue;
         seen.add(file);
 
         const full = path.join(versionPath, file);
-        if (!fs.existsSync(full)) {
+        if (fs.existsSync(full)) continue;
+
+        try {
+            fs.mkdirSync(path.dirname(full), { recursive: true });
             fs.writeFileSync(full, PLACEHOLDER_PNG);
-            console.log("[VersionFiles] Created placeholder asset:", file);
+        } catch (e) {
+            log("VersionFiles", `Could not create the placeholder asset ${full}: ${describe(e)}`);
+            throw new Error(
+                `This Minecraft version cannot be prepared because an image it lists could not be created.\n\n`
+                + `${full} (${describe(e)})`,
+                { cause: e }
+            );
         }
+        created.push(file);
+    }
+
+    log(
+        "VersionFiles",
+        created.length === 0
+            ? `All ${seen.size} manifest images are present in ${versionPath}`
+            : `Created ${created.length} of ${seen.size} manifest images as placeholders: ${created.join(", ")}`
+    );
+}
+
+/** Size and mtime, which is what says whether a file is this launcher's or came with the build. */
+function describeFile(filePath: string): string {
+    try {
+        const stat = fs.statSync(filePath);
+        return `${stat.size} bytes, written ${stat.mtime.toISOString()}`;
+    } catch (e) {
+        return `unreadable: ${describe(e)}`;
     }
 }
 
 /** GDK builds refuse to launch without this next to the exe. */
 function ensureGameConfig(versionPath: string, manifestXml: string, channel: Channel): void {
     const configPath = path.join(versionPath, "MicrosoftGame.Config");
-    if (fs.existsSync(configPath)) return;
+    if (fs.existsSync(configPath)) {
+        log("VersionFiles", `MicrosoftGame.Config already present, left as is: ${configPath} (${describeFile(configPath)})`);
+        return;
+    }
 
     const identity = manifestXml.match(/<Identity\s+Name="([^"]+)"\s+Publisher="([^"]+)"\s+Version="([^"]+)"/);
-    if (!identity) throw new Error(`${versionPath}: appxmanifest.xml has no usable <Identity>`);
+    if (!identity) {
+        log("VersionFiles", `No usable <Identity> in the manifest at ${versionPath}, cannot generate MicrosoftGame.Config`);
+        throw new Error(`${versionPath}: appxmanifest.xml has no usable <Identity>`);
+    }
     const [, packageName, publisher, version] = identity;
     const ids = CHANNEL_IDS[channel];
 
     // Prefer the build's own title id over our per-channel default.
-    const titleId = manifestXml.match(/Protocol\s+Name="ms-xbl-([0-9a-fA-F]+)"/)?.[1].toUpperCase() ?? ids.titleId;
+    const buildTitleId = manifestXml.match(/Protocol\s+Name="ms-xbl-([0-9a-fA-F]+)"/)?.[1].toUpperCase() ?? null;
+    const titleId = buildTitleId ?? ids.titleId;
 
     const languages = new Set<string>();
     for (const m of manifestXml.match(/Language="([a-z]{2}-[a-z]{2})"/gi) ?? []) {
         const lang = m.match(/"([^"]+)"/)?.[1];
         if (lang) languages.add(lang.toLowerCase());
     }
-    if (languages.size === 0) languages.add("en-us");
+    if (languages.size === 0) {
+        languages.add("en-us");
+        log("VersionFiles", "Manifest lists no languages, falling back to en-us");
+    }
+
+    log(
+        "VersionFiles",
+        `Generating MicrosoftGame.Config for ${channel}: identity ${packageName} ${version} by ${publisher}, `
+        + `title id ${titleId} (${buildTitleId ? "from the build" : `from the ${channel} default`}), `
+        + `${languages.size} languages`
+    );
 
     const config = `<?xml version="1.0" encoding="utf-8"?>
 <Game configVersion="1">
@@ -154,8 +234,51 @@ ${[...languages].map(l => `    <Resource Language="${l}"/>`).join("\n")}
 
 </Game>`;
 
-    fs.writeFileSync(configPath, config, "utf-8");
-    console.log("[VersionFiles] Generated MicrosoftGame.Config");
+    try {
+        fs.writeFileSync(configPath, config, "utf-8");
+    } catch (e) {
+        log("VersionFiles", `Could not write ${configPath}: ${describe(e)}`);
+        throw new Error(
+            `This Minecraft version cannot be prepared because its game config could not be written.\n\n`
+            + `${configPath} (${describe(e)})`,
+            { cause: e }
+        );
+    }
+    log("VersionFiles", `Wrote ${configPath} (${config.length} chars)`);
+}
+
+export const GAME_EXECUTABLE = "Minecraft.Windows.exe";
+
+/**
+ * The files a launch stands or falls on, so a half-extracted build is visible in its own right.
+ * An absent dxgi.dll is normal for an unmodded profile and only means something next to the
+ * profile's own modded flag, hence sizes rather than a verdict.
+ */
+export function describePayload(versionPath: string): string {
+    const describe = (name: string): string => {
+        try {
+            return `${name} ${fs.statSync(path.join(versionPath, name)).size} bytes`;
+        } catch {
+            return `${name} absent`;
+        }
+    };
+    return [describe(GAME_EXECUTABLE), describe("appxmanifest.xml"), describe("dxgi.dll")].join(", ");
+}
+
+/**
+ * Nothing downstream reads the build folder before Windows is asked to run it, so an interrupted
+ * extraction or a file an antivirus took away surfaced as a silent do-nothing activation.
+ */
+function assertPayload(versionPath: string): void {
+    const executable = path.join(versionPath, GAME_EXECUTABLE);
+    if (fs.existsSync(executable)) return;
+
+    log("VersionFiles", `${executable} is missing. Folder holds: ${describePayload(versionPath)}`);
+    throw new Error(
+        "This Minecraft version is incomplete, so it cannot start.\n\n"
+        + `${GAME_EXECUTABLE} is not in ${versionPath}. Delete this version in the launcher and download it again. `
+        + "If it keeps happening, antivirus software is most likely removing the file as it is written."
+    );
 }
 
 /**
@@ -165,22 +288,32 @@ ${[...languages].map(l => `    <Resource Language="${l}"/>`).join("\n")}
  * would reinstall on every launch. Versions aren't comparable either - the DLL reports
  * 3.3.221.0 against the MSI's 10.1.26100.6106.
  */
+function gameInputDllPath(): string {
+    return path.join(process.env.SystemRoot ?? "C:\\Windows", "System32", "GameInputRedist.dll");
+}
+
 function isGameInputInstalled(): boolean {
-    const systemRoot = process.env.SystemRoot ?? "C:\\Windows";
-    return fs.existsSync(path.join(systemRoot, "System32", "GameInputRedist.dll"));
+    return fs.existsSync(gameInputDllPath());
 }
 
 async function ensureGameInput(versionPath: string, status: (message: string) => void): Promise<void> {
-    if (isGameInputInstalled()) return;
+    if (isGameInputInstalled()) {
+        log("VersionFiles", `GameInput already installed, skipping: ${gameInputDllPath()} (${describeFile(gameInputDllPath())})`);
+        return;
+    }
 
     const msi = path.join(versionPath, "Installers", "GameInputRedist.msi");
-    if (!fs.existsSync(msi)) throw new Error(`GameInput is not installed and ${msi} is missing.`);
+    if (!fs.existsSync(msi)) {
+        log("VersionFiles", `GameInputRedist.dll is absent from System32 and the installer ${msi} is missing too`);
+        throw new Error(`GameInput is not installed and ${msi} is missing.`);
+    }
 
+    log("VersionFiles", `GameInputRedist.dll is absent from System32, installing from ${msi} (${describeFile(msi)})`);
     status("Installing GameInput...");
     const result = await run("msiexec", ["/i", msi, "/quiet", "/norestart"], { timeoutMs: MSI_TIMEOUT_MS });
 
     if (result.code !== 0 && result.code !== MSI_REBOOT_REQUIRED) {
-        console.error(`[VersionFiles] GameInput install failed.\n${describeResult(result)}`);
+        log("VersionFiles", `GameInput install failed.\n${describeResult(result)}`);
         throw new Error(
             `GameInput could not be installed from ${msi}. Try running the launcher as administrator. `
             + `(${result.timedOut ? "the installer never finished" : `installer result ${result.code}`})`
@@ -188,10 +321,10 @@ async function ensureGameInput(versionPath: string, status: (message: string) =>
     }
 
     if (!isGameInputInstalled()) {
-        console.error(`[VersionFiles] msiexec reported ${result.code} but GameInputRedist.dll is still absent.`);
+        log("VersionFiles", `msiexec reported ${result.code} but GameInputRedist.dll is still absent.`);
         throw new Error(`GameInput reported a successful install but ${msi} did not provide GameInputRedist.dll.`);
     }
-    console.log("[VersionFiles] GameInput installed");
+    log("VersionFiles", `GameInput installed (msiexec result ${result.code})`);
 }
 
 /** Idempotent; safe to run before every launch. */
@@ -202,6 +335,10 @@ export async function ensureVersionFiles(
 ): Promise<void> {
     const status = onStatus ?? (() => {});
 
+    log("VersionFiles", `Preparing the ${channel} build at ${versionPath}`);
+    assertPayload(versionPath);
+    log("VersionFiles", `Build at ${versionPath}: ${describePayload(versionPath)}`);
+
     status("Patching manifest...");
     const manifestXml = patchManifest(versionPath);
     ensureManifestAssets(versionPath, manifestXml);
@@ -210,6 +347,7 @@ export async function ensureVersionFiles(
     ensureGameConfig(versionPath, manifestXml, channel);
 
     await ensureGameInput(versionPath, status);
+    log("VersionFiles", `The ${channel} build at ${versionPath} is ready to register`);
 }
 
 export function proxyDllPath(versionPath: string): string {
@@ -232,23 +370,62 @@ function sha256(filePath: string): string {
 /** Presence isn't enough - a rebuilt proxy must replace an older one already in place. */
 export function isProxyCurrent(versionPath: string): boolean {
     const target = proxyDllPath(versionPath);
-    if (!fs.existsSync(target)) return false;
+    if (!fs.existsSync(target)) {
+        log("VersionFiles", `No dxgi.dll in ${versionPath}, so the proxy has to be installed`);
+        return false;
+    }
 
     const source = sourceProxyDllPath();
     if (!fs.existsSync(source)) {
+        log("VersionFiles", `The launcher's own proxy is missing from ${source}, so ${target} cannot be compared to it`);
         throw new Error(`Proxy dxgi.dll not found at ${source}. Build the proxy before launching a modded profile.`);
     }
-    return sha256(target) === sha256(source);
+
+    const targetHash = sha256(target);
+    const sourceHash = sha256(source);
+    const current = targetHash === sourceHash;
+    log(
+        "VersionFiles",
+        `dxgi.dll in ${versionPath} is ${current ? "current" : "stale"}: `
+        + `installed sha256 ${targetHash.slice(0, 16)} (${describeFile(target)}), `
+        + `launcher's sha256 ${sourceHash.slice(0, 16)} (${describeFile(source)})`
+    );
+    return current;
 }
 
 export function installProxy(versionPath: string): void {
     const source = sourceProxyDllPath();
     if (!fs.existsSync(source)) {
+        log("VersionFiles", `The launcher's own proxy is missing from ${source}, so it cannot be installed`);
         throw new Error(`Proxy dxgi.dll not found at ${source}. Build the proxy before launching a modded profile.`);
     }
-    fs.copyFileSync(source, proxyDllPath(versionPath));
+
+    const target = proxyDllPath(versionPath);
+    try {
+        fs.copyFileSync(source, target);
+    } catch (e) {
+        log("VersionFiles", `Could not copy ${source} to ${target}: ${describe(e)}`);
+        throw new Error(
+            `The mod loader could not be put in place, so this profile cannot start with mods.\n\n`
+            + `${target} (${describe(e)})`,
+            { cause: e }
+        );
+    }
+    log("VersionFiles", `Installed the proxy: ${source} to ${target} (${describeFile(target)})`);
 }
 
 export function removeProxy(versionPath: string): void {
-    fs.rmSync(proxyDllPath(versionPath), { force: true });
+    const target = proxyDllPath(versionPath);
+    const wasThere = fs.existsSync(target);
+    try {
+        fs.rmSync(target, { force: true });
+    } catch (e) {
+        log("VersionFiles", `Could not delete ${target}: ${describe(e)}`);
+        throw new Error(
+            `The mod loader could not be removed, so this profile cannot start unmodded.\n\n`
+            + `${target} (${describe(e)})`,
+            { cause: e }
+        );
+    }
+    log("VersionFiles", wasThere ? `Deleted the proxy at ${target}` : `No proxy at ${target} to delete`);
 }

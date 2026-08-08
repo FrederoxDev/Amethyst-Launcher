@@ -1,5 +1,10 @@
 import React, { useRef } from "react";
 
+// Imported rather than written as "/images/...": a root-relative URL resolves against the drive
+// root once the packaged app is served over file://, which is why these 404'd as /C:/images/...
+import offStateImage from "@renderer/assets/images/button/off-state.png";
+import onStateImage from "@renderer/assets/images/button/on-state.png";
+
 type MinecraftToggleProps = {
     isChecked: boolean;
     setIsChecked: React.Dispatch<React.SetStateAction<boolean>>;
@@ -21,11 +26,11 @@ export function MinecraftToggle({ isChecked, setIsChecked }: MinecraftToggleProp
         <div className="toggle_panel" onClick={handleCheckboxChange}>
             <div className="toggle_base">
                 <div className="toggle_base_on">
-                    <img className="toggle_base_on_image" src="/images/button/on-state.png" alt="" />
+                    <img className="toggle_base_on_image" src={onStateImage} alt="" />
                 </div>
 
                 <div className="toggle_base_off">
-                    <img className="toggle_base_off_image" src="/images/button/off-state.png" alt="" />
+                    <img className="toggle_base_off_image" src={offStateImage} alt="" />
                 </div>
             </div>
 

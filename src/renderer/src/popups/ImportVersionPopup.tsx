@@ -4,7 +4,9 @@ import { Dropdown } from "@renderer/components/Dropdown";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { PopupPanel } from "@renderer/components/PopupPanel";
 import { TextInput } from "@renderer/components/TextInput";
+import { describeError } from "@shared/diagnostics/Log";
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
+import { log } from "@renderer/scripts/LauncherLog";
 import { PathUtils } from "@renderer/scripts/PathUtils";
 import { Channel, channelLabel, parseChannel } from "@renderer/scripts/domain/Channel";
 import { channelFromFilename, prettifyVersionFromFilename } from "@renderer/scripts/versions/Catalog";
@@ -56,10 +58,21 @@ export function ImportVersionPopup({ submit }: PopupUseArguments<ImportRequest |
         const picked = await ipcRenderer.invoke("dialog:openFile", [
             { name: "MSIXVC Files", extensions: ["msixvc"] },
         ]) as string | null;
-        if (!picked) return;
+        if (!picked) {
+            log("ImportVersion", "File picker closed without a .msixvc");
+            return;
+        }
         try {
-            if (fs.statSync(picked).isFile()) setFile(picked);
-        } catch { /* unreadable */ }
+            if (fs.statSync(picked).isFile()) {
+                log("ImportVersion", `Selected ${picked}`);
+                setFile(picked);
+            }
+            else {
+                log("ImportVersion", `Ignoring ${picked}: it is not a file`);
+            }
+        } catch (e) {
+            log("ImportVersion", `Ignoring ${picked}: it could not be read: ${describeError(e)}`);
+        }
     };
 
     return (

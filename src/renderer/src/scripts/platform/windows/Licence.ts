@@ -1,3 +1,4 @@
+import { log } from "@renderer/scripts/LauncherLog";
 import { describeError } from "@shared/diagnostics/ProcessRunner";
 
 const child = window.require("child_process") as typeof import("child_process");
@@ -10,28 +11,72 @@ const GAME_EXECUTABLE = "Minecraft.Windows.exe";
 const ACQUIRE_TIMEOUT_MS = 120_000;
 const POLL_INTERVAL_MS = 250;
 
-/** The game caches its entitlement as `<titleId>.ent` in its data folder. */
-export function hasEntitlement(dataDir: string): boolean {
+/**
+ * The game caches its entitlement as `<titleId>.ent` in its data folder. The files themselves and
+ * not just a yes/no, because an entitlement that came in with adopted data from a different
+ * install is the one case where the file is present and the licence behind it may not be.
+ */
+/**
+ * Deduped, because this is polled four times a second while a licence is being acquired and a
+ * missing data folder would otherwise write the same line five hundred times.
+ */
+const reportedReadFailures = new Set<string>();
+
+export function entitlementFiles(dataDir: string): string[] {
     try {
-        return fs.readdirSync(dataDir).some(name => name.toLowerCase().endsWith(".ent"));
-    } catch {
-        return false;
+        return fs.readdirSync(dataDir).filter(name => name.toLowerCase().endsWith(".ent"));
+    } catch (e) {
+        const key = `${dataDir}|${describeError(e)}`;
+        if (!reportedReadFailures.has(key)) {
+            reportedReadFailures.add(key);
+            log("Licence", `${dataDir} could not be listed, so it counts as unentitled: ${describeError(e)}`);
+        }
+        return [];
     }
+}
+
+/** Each `.ent` with its size and when it was written, which is what says where it came from. */
+export function describeEntitlements(dataDir: string): string {
+    const files = entitlementFiles(dataDir);
+    if (files.length === 0) return "none";
+
+    return files
+        .map(name => {
+            try {
+                const stat = fs.statSync(path.join(dataDir, name));
+                return `${name} (${stat.size} bytes, written ${stat.mtime.toISOString()})`;
+            } catch (e) {
+                return `${name} (unreadable: ${describeError(e)})`;
+            }
+        })
+        .join(", ");
+}
+
+function hasEntitlement(dataDir: string): boolean {
+    return entitlementFiles(dataDir).length > 0;
 }
 
 function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+const EXIT_WAIT_MS = 10_000;
+
 async function waitForExit(pid: number): Promise<void> {
-    for (let waited = 0; waited < 10_000; waited += POLL_INTERVAL_MS) {
+    for (let waited = 0; waited < EXIT_WAIT_MS; waited += POLL_INTERVAL_MS) {
         try {
             process.kill(pid, 0);
         } catch {
+            log("Licence", `Licence-acquisition process ${pid} exited after ${(waited / 1000).toFixed(1)}s`);
             return;
         }
         await sleep(POLL_INTERVAL_MS);
     }
+    log(
+        "Licence",
+        `Licence-acquisition process ${pid} was still running ${EXIT_WAIT_MS / 1000}s after being asked to close; `
+        + `carrying on, but it may hold the package registration`
+    );
 }
 
 /**
@@ -40,16 +85,24 @@ async function waitForExit(pid: number): Promise<void> {
  * started, and node would tear the renderer down over the unhandled `error` event.
  */
 async function startGame(executable: string, cwd: string): Promise<import("child_process").ChildProcess> {
+    log("Licence", `Starting ${executable} directly (no package identity) in ${cwd}`);
     const proc = child.spawn(executable, [], { cwd, stdio: "ignore", windowsHide: true });
 
     // Attached before the race so a later failure still has a handler.
-    proc.on("error", error => console.error(`[Licence] ${executable} reported an error: ${describeError(error)}`));
+    proc.on("error", error => log("Licence", `${executable} reported an error: ${describeError(error)}`));
+    proc.on("exit", (code, signal) => {
+        log("Licence", `${executable} (pid ${proc.pid ?? "unknown"}) exited with code ${code}, signal ${signal}`);
+    });
 
     await new Promise<void>((resolve, reject) => {
         proc.once("spawn", () => resolve());
-        proc.once("error", error => reject(new Error(`Could not start ${executable}. ${describeError(error)}`)));
+        proc.once("error", error => {
+            log("Licence", `${executable} could not be started: ${describeError(error)}`);
+            reject(new Error(`Could not start ${executable}. ${describeError(error)}`));
+        });
     });
 
+    log("Licence", `${executable} started as pid ${proc.pid ?? "unknown"}`);
     return proc;
 }
 
@@ -67,38 +120,55 @@ export async function ensureEntitlement(
     dataDir: string,
     status: (message: string) => void
 ): Promise<void> {
-    if (hasEntitlement(dataDir)) return;
+    if (hasEntitlement(dataDir)) {
+        log("Licence", `Already entitled, skipping: ${dataDir} holds ${describeEntitlements(dataDir)}`);
+        return;
+    }
 
     status("First run for this profile - acquiring a Minecraft licence...");
-    console.log(`[Licence] No entitlement in ${dataDir}, bootstrapping via direct launch`);
+    log("Licence", `No entitlement in ${dataDir}, bootstrapping via direct launch`);
 
     const executable = path.join(versionPath, GAME_EXECUTABLE);
     const proc = await startGame(executable, versionPath);
-    if (proc.pid === undefined) throw new Error(`Could not start ${executable} to acquire a licence.`);
+    if (proc.pid === undefined) {
+        log("Licence", `${executable} spawned without a pid, so it cannot be waited on or stopped`);
+        throw new Error(`Could not start ${executable} to acquire a licence.`);
+    }
+
+    let waited = 0;
+    let stopped = "the wait ran out";
 
     try {
-        for (let waited = 0; waited < ACQUIRE_TIMEOUT_MS; waited += POLL_INTERVAL_MS) {
+        for (; waited < ACQUIRE_TIMEOUT_MS; waited += POLL_INTERVAL_MS) {
             if (hasEntitlement(dataDir)) {
-                console.log(`[Licence] Entitlement acquired after ${(waited / 1000).toFixed(1)}s`);
+                stopped = "an entitlement appeared";
+                log("Licence", `Entitlement acquired after ${(waited / 1000).toFixed(1)}s: ${describeEntitlements(dataDir)}`);
                 return;
             }
             if (proc.exitCode !== null) {
-                console.error(`[Licence] ${executable} exited with code ${proc.exitCode} before writing an entitlement`);
+                stopped = `the game exited with code ${proc.exitCode}`;
+                log("Licence", `${executable} exited with code ${proc.exitCode} before writing an entitlement`);
                 break;
             }
             await sleep(POLL_INTERVAL_MS);
         }
     } finally {
+        log("Licence", `Stopping pid ${proc.pid} after ${(waited / 1000).toFixed(1)}s (${stopped})`);
         proc.kill();
         await waitForExit(proc.pid);
     }
 
     if (!hasEntitlement(dataDir)) {
-        console.error(
-            `[Licence] No .ent file in ${dataDir} after ${ACQUIRE_TIMEOUT_MS / 1000}s of running ${executable}`
+        log(
+            "Licence",
+            `No .ent file in ${dataDir} after ${(waited / 1000).toFixed(1)}s of running ${executable} `
+            + `(waited for any *.ent to appear, up to ${ACQUIRE_TIMEOUT_MS / 1000}s; ${stopped}). `
+            + `Folder holds: ${describeEntitlements(dataDir)}`
         );
         throw new Error(
             "Could not acquire a Minecraft licence for this profile. Sign in to Minecraft or the Xbox app once, then try again."
         );
     }
+
+    log("Licence", `Entitlement present after the run was stopped: ${describeEntitlements(dataDir)}`);
 }

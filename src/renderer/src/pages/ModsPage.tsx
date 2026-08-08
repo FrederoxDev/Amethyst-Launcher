@@ -6,6 +6,8 @@ import { MainPanel } from "@renderer/components/MainPanel";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { PopupPanel } from "@renderer/components/PopupPanel";
 
+import { describeError } from "@shared/diagnostics/Log";
+import { log } from "@renderer/scripts/LauncherLog";
 import { GetAllMods, ValidatedMod } from "@renderer/scripts/Mods";
 import { useAppStore } from "@renderer/states/AppStore";
 
@@ -15,13 +17,17 @@ function getPaths() {
 
 const openModsFolder = () => {
     const paths = getPaths();
-    if (!fs.existsSync(paths.modsPath)) fs.mkdirSync(paths.modsPath, { recursive: true });
+    if (!fs.existsSync(paths.modsPath)) {
+        log("ModsPage", `Creating the mods folder ${paths.modsPath} before opening it`);
+        fs.mkdirSync(paths.modsPath, { recursive: true });
+    }
 
     const opener = window.process.platform === "win32" ? "explorer.exe" : "xdg-open";
+    log("ModsPage", `Opening ${paths.modsPath} with ${opener}`);
     // Not run through the process runner: explorer reports a non-zero code even when it opened
     // the folder, so its exit says nothing. Only a failure to start is worth reporting.
     const proc = child.spawn(opener, [paths.modsPath], { detached: true, stdio: "ignore" });
-    proc.on("error", error => console.error(`[Mods] Could not open ${paths.modsPath}:`, error));
+    proc.on("error", error => log("ModsPage", `Could not start ${opener} for ${paths.modsPath}: ${describeError(error)}`));
     proc.unref();
 };
 

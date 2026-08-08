@@ -1,5 +1,6 @@
 import { MinecraftButton, GRAY_MINECRAFT_BUTTON } from "@renderer/components/MinecraftButton";
 import { PopupPanel } from "@renderer/components/PopupPanel";
+import { log } from "@renderer/scripts/LauncherLog";
 import { Popup } from "@renderer/states/PopupStore";
 
 interface ConfirmOptions {
@@ -9,8 +10,16 @@ interface ConfirmOptions {
     cancelText?: string;
 }
 
-export function confirmAction(options: ConfirmOptions): Promise<boolean> {
+/** One place to record what the user was asked and what they answered. */
+export async function confirmAction(options: ConfirmOptions): Promise<boolean> {
+    const answer = await showConfirm(options);
+    log("Confirm", `"${options.title}" answered ${answer ? "yes" : "no"}`);
+    return answer;
+}
+
+function showConfirm(options: ConfirmOptions): Promise<boolean> {
     const { title, message, confirmText = "Confirm", cancelText = "Cancel" } = options;
+    log("Confirm", `Asking "${title}": ${message}`);
     return Popup.useAsync<boolean>(({ submit }) => (
         <PopupPanel
             title={title}

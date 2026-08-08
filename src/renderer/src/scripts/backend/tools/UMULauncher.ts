@@ -1,3 +1,4 @@
+import { log } from "@renderer/scripts/LauncherLog";
 import { PathUtils } from "@renderer/scripts/PathUtils";
 import { GithubRelease } from "../github/GithubRelease";
 import { GithubAsset } from "../github/GithubAsset";
@@ -10,7 +11,7 @@ const { shellEnv } = window.require("shell-env") as typeof import("shell-env");
 
 /**
  * Concrete {@link ToolArtifact} implementation for
- * [UMU Launcher](https://github.com/raonygamer/umu-launcher) – a compatibility
+ * [UMU Launcher](https://github.com/raonygamer/umu-launcher) - a compatibility
  * layer for running Windows games on Linux via Proton.
  *
  * Supported platforms: **Linux** only.
@@ -31,14 +32,14 @@ export class UMULauncher extends ToolArtifact {
      */
     isSupported(): boolean {
         const supported = window.process.platform === "linux";
-        console.log(`[${this.name}] isSupported() → ${supported} (platform='${window.process.platform}').`);
+        if (!supported) log(this.name, `Not supported on platform '${window.process.platform}', Linux only`);
         return supported;
     }
 
     /**
      * Overrides the base `check()` to supply UMU Launcher-specific defaults:
-     * - `promptForUpdate`: `false` – always auto-update without prompting.
-     * - `allowOutdated`: `true` – tolerate an older version when GitHub is unreachable.
+     * - `promptForUpdate`: `false` - always auto-update without prompting.
+     * - `allowOutdated`: `true` - tolerate an older version when GitHub is unreachable.
      * - `releaseFetchTimeout`: `1000` ms.
      */
     check(options?: DefaultCheckOptions | undefined): Promise<ToolCheckResult> {
@@ -60,7 +61,6 @@ export class UMULauncher extends ToolArtifact {
      * Returns the executable filename (`umu-run`).
      */
     protected getExecutableName(): string {
-        console.log(`[${this.name}] getExecutableName() → 'umu-run'.`);
         return "umu-run";
     }
 
@@ -69,8 +69,13 @@ export class UMULauncher extends ToolArtifact {
      * a single archive per release.
      */
     protected async findAsset(release: GithubRelease): Promise<GithubAsset | null> {
-        console.log(`[${this.name}] Searching release assets. Total assets: ${release.assets.length}.`);
         const asset = release.assets[0] ?? null;
+        log(
+            this.name,
+            asset
+                ? `Taking the first asset of release ${release.tagName}: '${asset.name}' of ${release.assets.length}`
+                : `Release ${release.tagName} ships no assets`
+        );
         return asset;
     }
 
@@ -102,10 +107,14 @@ export class UMULauncher extends ToolArtifact {
      * (`chmod 755`) since GitHub release archives may not preserve permissions.
      */
     protected async onInstalled(context: ToolInstalledContext): Promise<void> {
-        console.log(`[${this.name}] onInstalled: version='${context.version}', action='${context.action}'.`);
         const folder = this.getFolder();
-        console.log(`[${this.name}] Applying chmod 755 recursively to '${folder}'.`);
-        await PathUtils.chmodRecursive(folder, 0o755);
+        log(this.name, `${context.action} '${context.version}', marking everything in '${folder}' executable`);
+        try {
+            await PathUtils.chmodRecursive(folder, 0o755);
+        } catch (error) {
+            log(this.name, `chmod 755 across '${folder}' failed: ${error instanceof Error ? error.message : String(error)}`);
+            throw error;
+        }
     }
 
     /**
@@ -116,7 +125,7 @@ export class UMULauncher extends ToolArtifact {
      * @param shouldAskUpdate When `true`, prompts the user before updating UMU Launcher.
      */
     async runGame(gamePath: string, envVars: Record<string, string>, checkForUpdates: boolean = false): Promise<void> {
-        console.log(`[${this.name}] runGame() called. gamePath='${gamePath}', checkForUpdates=${checkForUpdates}.`);
+        log(this.name, `Starting '${gamePath}' through Proton, checkForUpdates=${checkForUpdates}`);
 
         const { executable } = await this.check({
             allowOutdated: true,
@@ -139,6 +148,16 @@ export class UMULauncher extends ToolArtifact {
             "PROTONPATH": gdkProtonPath
         };
 
+        // The launcher's own additions only. The inherited shell environment is not logged:
+        // it is long and routinely carries tokens the user never meant to hand over.
+        const ownEnv = { ...envVars, PROTONPATH: gdkProtonPath };
+        log(
+            this.name,
+            `Spawning ${executable} ${gamePath} in ${path.dirname(gamePath)} with `
+            + `${Object.entries(ownEnv).map(([k, v]) => `${k}=${v}`).join(", ")} `
+            + `on top of ${Object.keys(envs).length} inherited variables`
+        );
+
         const proc = child.spawn(executable, [gamePath], {
             env: env,
             cwd: path.dirname(gamePath),
@@ -146,21 +165,28 @@ export class UMULauncher extends ToolArtifact {
             detached: true
         });
 
-        // Piped output has to be read. Left unread the pipe fills and the game blocks on its own logging.
+        // Piped output has to be read. Left unread the pipe fills and the game blocks on its own
+        // logging. Left on console rather than log(): it is the game's own stream, line by line,
+        // and the console shim records it either way.
         proc.stdout?.on("data", data => console.log(`[${this.name}] ${data.toString().trimEnd()}`));
         proc.stderr?.on("data", data => console.error(`[${this.name}] ${data.toString().trimEnd()}`));
 
-        proc.on("error", err => console.error(`[${this.name}] ${executable} reported an error:`, err));
-        proc.on("close", code => console.log(`[${this.name}] Game process exited with code ${code}.`));
+        proc.on("error", err => log(this.name, `${executable} reported an error: ${err.message}`));
+        proc.on("close", (code, signal) => {
+            log(this.name, `${gamePath} exited with code ${code}, signal ${signal}`);
+        });
 
         // A spawn failure arrives asynchronously, so without this wait the launch would report
         // success for a game that never started.
         await new Promise<void>((resolve, reject) => {
             proc.once("spawn", () => resolve());
-            proc.once("error", error => reject(new Error(`Could not start ${executable}. ${error.message}`)));
+            proc.once("error", error => {
+                log(this.name, `${executable} could not be started: ${error.message}`);
+                reject(new Error(`Could not start ${executable}. ${error.message}`));
+            });
         });
 
         proc.unref();
-        console.log(`[${this.name}] Game process spawned (detached). PID: ${proc.pid ?? "unknown"}.`);
+        log(this.name, `${gamePath} started as pid ${proc.pid ?? "unknown"}, detached from the launcher`);
     }
 }

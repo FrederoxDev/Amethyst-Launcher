@@ -2,6 +2,7 @@ import { NewInstancePopup, NewInstanceResult } from "@renderer/popups/NewInstanc
 import { VersionChoice, VersionPickerPopup } from "@renderer/popups/VersionPickerPopup";
 import { Channel } from "@renderer/scripts/domain/Channel";
 import { Profile } from "@renderer/scripts/domain/Profile";
+import { log } from "@renderer/scripts/LauncherLog";
 import { useAppStore } from "@renderer/states/AppStore";
 import { Popup } from "@renderer/states/PopupStore";
 import { startPendingImport } from "./VersionChoice";
@@ -19,19 +20,33 @@ async function pickVersion(restrictToChannel?: Channel): Promise<VersionChoice |
 
 /** Version -> name/runtime -> profile. Returns null if the user backed out. */
 export async function createProfileFlow(restrictToChannel?: Channel): Promise<CreatedProfile | null> {
+    log("CreateProfile", `Profile creation started${restrictToChannel ? `, limited to ${restrictToChannel}` : ""}`);
+
     let choice = await pickVersion(restrictToChannel);
-    if (!choice) return null;
+    if (!choice) {
+        log("CreateProfile", "Cancelled at the version picker");
+        return null;
+    }
+    log("CreateProfile", `Version picked: "${choice.label}" (${choice.versionUuid}, ${choice.channel})`);
 
     while (true) {
         const instance = await Popup.useAsync<NewInstanceResult | null>(props => (
             <NewInstancePopup {...props} versionLabel={choice!.label} channel={choice!.channel} />
         ));
-        if (!instance) return null;
+        if (!instance) {
+            log("CreateProfile", `Cancelled at the instance details for "${choice.label}"`);
+            return null;
+        }
 
         if (instance.kind === "reselect") {
+            log("CreateProfile", `Going back to the version picker from "${choice.label}"`);
             const next = await pickVersion(restrictToChannel);
-            if (!next) return null;
+            if (!next) {
+                log("CreateProfile", "Cancelled at the version picker on reselect");
+                return null;
+            }
             choice = next;
+            log("CreateProfile", `Version reselected: "${choice.label}" (${choice.versionUuid}, ${choice.channel})`);
             continue;
         }
 
@@ -53,6 +68,11 @@ export async function createProfileFlow(restrictToChannel?: Channel): Promise<Cr
         state.setEditingProfileIndex(profiles.length - 1);
         state.saveData();
 
+        log(
+            "CreateProfile",
+            `Created "${profile.name}" (${profile.uuid}) at index ${profiles.length - 1}: ${profile.channel}, `
+            + `version "${profile.versionLabel}" (${profile.versionUuid}), runtime choice ${instance.runtime}`
+        );
         return { profile, index: profiles.length - 1 };
     }
 }

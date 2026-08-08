@@ -1,9 +1,11 @@
 import { Channel, CHANNELS } from "@renderer/scripts/domain/Channel";
 import { Profile, isModded } from "@renderer/scripts/domain/Profile";
 import { moveDirectory } from "@renderer/scripts/Directories";
+import { log } from "@renderer/scripts/LauncherLog";
 import { PathUtils } from "@renderer/scripts/PathUtils";
 import { SESSION_SCHEMA, writeSession } from "@renderer/scripts/session/Session";
 import { InstalledVersion } from "@renderer/scripts/versions/InstalledVersion";
+import { describeError } from "@shared/diagnostics/ProcessRunner";
 import { ILauncherPlatform, LauncherPaths, LaunchRequest, ProcessInfo } from "./LauncherPlatform";
 import * as Licence from "./windows/Licence";
 import * as Machine from "./windows/Machine";
@@ -40,6 +42,7 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
 
         for (const p of Object.values(paths)) PathUtils.ValidatePath(p);
         WindowsLauncherPlatform.cachedPaths = paths;
+        log("Paths", `Resolved from APPDATA ${appData}: ${Object.entries(paths).map(([k, v]) => `${k}=${v}`).join(", ")}`);
         return paths;
     }
 
@@ -58,20 +61,35 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
 
     async adoptGameData(channel: Channel, profileUuid: string): Promise<void> {
         const source = Machine.foreignDataPath(channel);
-        if (!source) throw new Error(`No unowned ${channel} game data to adopt.`);
+        if (!source) {
+            log("Adopt", `Nothing to adopt for ${channel}: its game data folder is not unowned data`);
+            throw new Error(`No unowned ${channel} game data to adopt.`);
+        }
 
         const target = this.profileDataDir(profileUuid);
+        log("Adopt", `Adopting ${channel} game data at ${source} as profile ${profileUuid}`);
         fs.mkdirSync(path.dirname(target), { recursive: true });
         await moveDirectory(source, target);
+
+        // Whatever came in came from another install, licence file included, and that is the one
+        // way a brand new profile starts life already holding an entitlement it did not earn.
+        log("Adopt", `Moved ${channel} game data from ${source} into ${target}`);
+        log("Adopt", `Licence files carried over: ${Licence.describeEntitlements(target)}`);
     }
 
     liveProfileFor(channel: Channel): string | null {
         const target = Machine.currentDataTarget(channel);
-        if (!target) return null;
+        if (!target) {
+            log("Profiles", `No profile owns the ${channel} game data: it is not a junction to anywhere`);
+            return null;
+        }
 
         const root = path.resolve(this.getPaths().profileDataPath).toLowerCase();
         const resolved = path.resolve(target);
-        if (!resolved.toLowerCase().startsWith(root)) return null;
+        if (!resolved.toLowerCase().startsWith(root)) {
+            log("Profiles", `The ${channel} game data points at ${resolved}, which is outside ${root}, so no profile owns it`);
+            return null;
+        }
         return path.basename(resolved);
     }
 
@@ -80,14 +98,24 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
      * it still points at a valid build, and the next launch reconciles it.
      */
     async discardProfileData(profileUuid: string): Promise<boolean> {
+        const dir = this.profileDataDir(profileUuid);
+        log("Profiles", `Discarding the data of profile ${profileUuid} at ${dir}`);
+
         let wasLive = false;
         for (const channel of CHANNELS) {
             if (this.liveProfileFor(channel) !== profileUuid) continue;
+            log("Profiles", `Profile ${profileUuid} is the live ${channel} data, unlinking it first`);
             Machine.unlinkChannel(channel);
             wasLive = true;
         }
 
-        await fs.promises.rm(this.profileDataDir(profileUuid), { recursive: true, force: true });
+        try {
+            await fs.promises.rm(dir, { recursive: true, force: true });
+        } catch (e) {
+            log("Profiles", `Could not delete ${dir}: ${describeError(e)}`);
+            throw new Error(`This profile's data could not be deleted.\n\n${dir} (${describeError(e)})`, { cause: e });
+        }
+        log("Profiles", `Deleted ${dir}${wasLive ? ", which was the live game data" : ""}`);
         return wasLive;
     }
 
@@ -104,31 +132,39 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         // user cannot clear, and a game that really is running is caught a few steps later by
         // Windows refusing to re-register a package it still holds, which says so plainly.
         if (probe.queryFailed) {
-            console.error(
-                `[Launch] Could not check for a running Minecraft, launching anyway.\n${probe.detail}`
-            );
+            log("Launch", `Could not check for a running Minecraft, launching anyway.\n${probe.detail}`);
             return null;
         }
 
         for (const proc of probe.processes) {
             // Running, but its build cannot be read, so which family it belongs to is unknown.
-            if (proc.executablePath === "") return proc;
+            if (proc.executablePath === "") {
+                log("Launch", `pid ${proc.pid} is running Minecraft from an image path Windows would not report, treating it as a conflict`);
+                return proc;
+            }
 
             let family: string | null;
             try {
                 family = Machine.packageFamilyFor(path.dirname(proc.executablePath));
-            } catch {
+            } catch (e) {
+                log("Launch", `Could not read the package family of the build pid ${proc.pid} runs from (${proc.executablePath}): ${describeError(e)}`);
                 family = null;
             }
 
-            if (family === null || family.toLowerCase() === wantFamily) return proc;
+            if (family === null || family.toLowerCase() === wantFamily) {
+                log("Launch", `pid ${proc.pid} runs ${family ?? "an unreadable family"} from ${proc.executablePath}, which conflicts with ${wantFamily}`);
+                return proc;
+            }
+            log("Launch", `pid ${proc.pid} runs ${family}, a different game from ${wantFamily}, so it is not a conflict`);
         }
 
+        log("Launch", `No running Minecraft conflicts with ${wantFamily}`);
         return null;
     }
 
     private conflictError(running: ProcessInfo, profile: Profile, version: InstalledVersion): Error {
         if (running.executablePath === "") {
+            log("Launch", `Refusing to launch "${profile.name}": pid ${running.pid} is Minecraft, build unknown`);
             return new Error(`Minecraft is already running. Close it before launching "${profile.name}".`);
         }
 
@@ -136,9 +172,15 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         const sameBuild = path.resolve(runningBuild).toLowerCase() === path.resolve(version.path).toLowerCase();
 
         if (sameBuild && this.liveProfileFor(profile.channel) === profile.uuid) {
+            log("Launch", `Refusing to launch "${profile.name}": pid ${running.pid} is this same profile and build`);
             return new Error(`"${profile.name}" is already running.`);
         }
 
+        log(
+            "Launch",
+            `Refusing to launch "${profile.name}" (${version.path}): pid ${running.pid} runs the same `
+            + `${profile.channel} game from ${runningBuild}`
+        );
         return new Error(
             `Another ${profile.channel} profile is already running from ${runningBuild}. ` +
             `Close it before launching "${profile.name}" (${version.label}).`
@@ -148,6 +190,14 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
     async launch(request: LaunchRequest, onStatus?: (message: string) => void): Promise<void> {
         const status = onStatus ?? (() => {});
         const { profile, version } = request;
+
+        log(
+            "Launch",
+            `Launching "${profile.name}" (${profile.uuid}) on ${profile.channel}: build ${version.label} at ${version.path}, `
+            + `runtime ${request.runtime ? `${request.runtime.id} from ${request.runtime.path}` : "none"}, `
+            + `${request.mods.length} mods${request.mods.length > 0 ? ` (${request.mods.map(m => m.id).join(", ")})` : ""}, `
+            + `developer mode ${request.developerMode ? "on" : "off"}, modded ${isModded(profile) ? "yes" : "no"}`
+        );
 
         status(`Checking whether a ${profile.channel} build is running...`);
         const conflict = await this.findConflictingGame(version);
@@ -176,8 +226,10 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             mods: request.mods,
             developerMode: request.developerMode,
         });
+        log("Launch", `Session file written to ${dataDir} for "${profile.name}"`);
 
         status("Starting Minecraft...");
-        await Machine.activate(version.path, status);
+        await Machine.activate(version.path, dataDir, status);
+        log("Launch", `"${profile.name}" is running`);
     }
 }

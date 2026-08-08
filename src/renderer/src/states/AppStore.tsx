@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+import { describeError } from "@shared/diagnostics/Log";
+import { log } from "@renderer/scripts/LauncherLog";
 import { LauncherConfig, readLauncherConfig, writeLauncherConfig } from "@renderer/scripts/Launcher";
 import { GetAllMods, ValidatedMod } from "@renderer/scripts/Mods";
 import { ProfileStore } from "@renderer/scripts/ProfileStore";
@@ -10,14 +12,22 @@ import { LinuxLauncherPlatform } from "@renderer/scripts/platform/LinuxLauncherP
 import { InstalledVersion } from "@renderer/scripts/versions/InstalledVersion";
 import { VersionService } from "@renderer/scripts/versions/VersionService";
 import { FileLocker } from "@renderer/scripts/FileLocker";
+import { takeStartupNotices } from "@renderer/scripts/Utility";
 import { StateSetter, StateUtils } from "./StateUtils";
 import { resumePendingDownloads } from "@renderer/scripts/DownloadRecovery";
 
 const { ipcRenderer } = window.require("electron") as typeof import("electron");
 
 function createPlatform(): ILauncherPlatform {
-    if (process.platform === "win32") return new WindowsLauncherPlatform();
-    if (process.platform === "linux") return new LinuxLauncherPlatform();
+    if (process.platform === "win32") {
+        log("AppStore", "Platform backend: Windows");
+        return new WindowsLauncherPlatform();
+    }
+    if (process.platform === "linux") {
+        log("AppStore", "Platform backend: Linux");
+        return new LinuxLauncherPlatform();
+    }
+    log("AppStore", `No platform backend for process.platform "${process.platform}"`);
     throw new Error(`Unsupported platform: ${process.platform}`);
 }
 
@@ -93,6 +103,8 @@ export const useAppStore = create<AppStore>((set, get) => {
         refreshInstalledVersions: () => set({ installedVersions: [...versions.library.list()] }),
 
         setLastLaunchedProfileUuid: uuid => {
+            const previous = get().lastLaunchedProfileUuid;
+            if (previous !== uuid) log("AppStore", `lastLaunchedProfileUuid: ${previous} -> ${uuid}`);
             set({ lastLaunchedProfileUuid: uuid });
             get().saveData();
         },
@@ -103,6 +115,7 @@ export const useAppStore = create<AppStore>((set, get) => {
         setUITheme: value => {
             set(state => {
                 const next = StateUtils.resolveSetStateAction(value, state.UITheme);
+                if (next !== state.UITheme) log("Settings", `UI theme: ${state.UITheme} -> ${next}`);
                 ipcRenderer.send("WINDOW_UI_THEME", next);
                 return { UITheme: next };
             });
@@ -110,16 +123,30 @@ export const useAppStore = create<AppStore>((set, get) => {
         },
 
         setKeepLauncherOpen: value => {
-            set(state => ({ keepLauncherOpen: StateUtils.resolveSetStateAction(value, state.keepLauncherOpen) }));
+            set(state => {
+                const next = StateUtils.resolveSetStateAction(value, state.keepLauncherOpen);
+                if (next !== state.keepLauncherOpen) log("Settings", `Keep launcher open: ${state.keepLauncherOpen} -> ${next}`);
+                return { keepLauncherOpen: next };
+            });
             get().saveData();
         },
 
         setDeveloperMode: value => {
-            set(state => ({ developerMode: StateUtils.resolveSetStateAction(value, state.developerMode) }));
+            set(state => {
+                const next = StateUtils.resolveSetStateAction(value, state.developerMode);
+                if (next !== state.developerMode) log("Settings", `Developer mode: ${state.developerMode} -> ${next}`);
+                return { developerMode: next };
+            });
             get().saveData();
         },
 
-        setError: value => set(state => ({ error: StateUtils.resolveSetStateAction(value, state.error) })),
+        // Every banner the user is shown is recorded, so a screenshot of one can be matched
+        // to the run that produced it.
+        setError: value => set(state => {
+            const next = StateUtils.resolveSetStateAction(value, state.error);
+            if (next !== state.error && next !== "") log("AppStore", `Showing error banner: ${next}`);
+            return { error: next };
+        }),
 
         setDownloadingMods: value =>
             set(state => ({ downloadingMods: StateUtils.resolveSetStateAction(value, state.downloadingMods) })),
@@ -172,16 +199,27 @@ export const useAppStore = create<AppStore>((set, get) => {
     };
 });
 
+/** Names the step in flight so a throw says which one failed, not just that startup did. */
+let hydratePhase = "not started";
+
 async function hydrate(): Promise<void> {
     const { platform, versions, profileStore, refreshAllMods, refreshInstalledVersions } = useAppStore.getState();
+    const paths = platform.getPaths();
 
+    hydratePhase = "reading the installed-version library";
     versions.library.load();
+
+    hydratePhase = "pruning installed versions whose folder is gone";
     versions.library.prune();
     refreshInstalledVersions();
 
+    hydratePhase = `reading profiles from ${paths.profilesFilePath}`;
     const profiles = profileStore.load();
-    const config = readLauncherConfig(platform.getPaths().launcherConfigPath);
 
+    hydratePhase = `reading the launcher config from ${paths.launcherConfigPath}`;
+    const config = readLauncherConfig(paths.launcherConfigPath);
+
+    hydratePhase = "applying the loaded state";
     useAppStore.setState({
         profiles,
         keepLauncherOpen: config.keep_open,
@@ -194,23 +232,43 @@ async function hydrate(): Promise<void> {
     versions.subscribe("uninstalled", refreshInstalledVersions);
 
     ipcRenderer.send("WINDOW_UI_THEME", useAppStore.getState().UITheme);
+
+    hydratePhase = "scanning the mods folder";
     refreshAllMods();
+
+    hydratePhase = "done";
+    const state = useAppStore.getState();
+    log(
+        "AppStore",
+        `Startup finished: ${state.profiles.length} profiles, ${state.installedVersions.length} installed versions, `
+        + `${state.allValidMods.length} valid mods, ${state.allInvalidMods.length} invalid mods, `
+        + `last launched ${state.lastLaunchedProfileUuid ?? "none"}`
+    );
+
+    // Anything a loader had to move aside is the user's to know about, in their own words.
+    const notices = takeStartupNotices();
+    if (notices.length > 0) {
+        log("AppStore", `Startup moved ${notices.length} unreadable file(s) aside`);
+        state.setError(notices.join("\n\n"));
+    }
 }
 
 export function InitializeAppState(): void {
     ipcRenderer.removeAllListeners("APP_STATE_INIT");
     ipcRenderer.on("APP_STATE_INIT", async () => {
+        log("AppStore", "APP_STATE_INIT received, loading state from disk");
         // Bad on-disk state now throws instead of being papered over, so it has to
         // reach the user here rather than dying as an unhandled rejection.
         try {
             await hydrate();
         } catch (e) {
-            console.error("[AppStore] Startup failed:", e);
+            log("AppStore", `Startup failed while ${hydratePhase}: ${describeError(e)}`);
             useAppStore.setState({ error: `Startup failed: ${(e as Error).message ?? e}` });
             return;
         }
         resumePendingDownloads();
     });
+    log("AppStore", "Asking the main process for APP_STATE_INIT");
     ipcRenderer.send("APP_STATE_INIT_REQUEST");
 }
 
