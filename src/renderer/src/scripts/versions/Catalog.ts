@@ -1,7 +1,13 @@
+import { describeError } from "@shared/diagnostics/Log";
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 import { Channel, channelLabel, isChannel } from "@renderer/scripts/domain/Channel";
+import { log } from "@renderer/scripts/LauncherLog";
+import { discardCacheFile, inspectStamp, stampFields, tryReadJsonFile } from "@renderer/scripts/Utility";
 
 const fs = window.require("fs") as typeof import("fs");
+
+const FORMAT = "version-catalog-cache";
+const FORMAT_VERSION = 1;
 
 const DATABASE_URL =
     "https://raw.githubusercontent.com/LukasPAH/minecraft-windows-gdk-version-db/refs/heads/main/historical_versions.json";
@@ -60,6 +66,7 @@ export function channelFromFilename(name: string): Channel | null {
 
 function serialize(cache: CachedCatalog): string {
     return JSON.stringify({
+        ...stampFields(FORMAT, FORMAT_VERSION),
         versions: cache.versions.map(v => ({
             uuid: v.uuid,
             channel: v.channel,
@@ -71,11 +78,10 @@ function serialize(cache: CachedCatalog): string {
     }, undefined, 4);
 }
 
-function deserialize(text: string, where: string): CachedCatalog {
-    const o = JSON.parse(text) as Record<string, unknown>;
-    if (!Array.isArray(o.versions)) throw new Error(`${where}: "versions" must be an array`);
-    if (typeof o.fetched_at !== "string") throw new Error(`${where}: "fetched_at" must be a string`);
-    if (typeof o.file_version !== "number") throw new Error(`${where}: "file_version" must be a number`);
+function deserialize(o: Record<string, unknown>, where: string): CachedCatalog {
+    if (!Array.isArray(o.versions)) throw new Error(`"versions" must be an array, not ${typeof o.versions}`);
+    if (typeof o.fetched_at !== "string") throw new Error(`"fetched_at" must be a string, not ${typeof o.fetched_at}`);
+    if (typeof o.file_version !== "number") throw new Error(`"file_version" must be a number, not ${typeof o.file_version}`);
 
     const versions = o.versions.map((raw, index) => {
         const e = raw as Record<string, unknown>;
@@ -89,12 +95,17 @@ function deserialize(text: string, where: string): CachedCatalog {
         return { uuid: e.uuid, channel: e.channel, version: SemVersion.fromString(e.version), urls: e.urls as string[] };
     });
 
-    return { versions, fetchedAt: new Date(o.fetched_at), fileVersion: o.file_version };
+    const fetchedAt = new Date(o.fetched_at);
+    if (Number.isNaN(fetchedAt.getTime())) throw new Error(`"fetched_at" is not a date: "${o.fetched_at}"`);
+
+    return { versions, fetchedAt, fileVersion: o.file_version };
 }
 
 async function fetchRemote(): Promise<CachedCatalog> {
+    log("Catalog", `Fetching the version database from ${DATABASE_URL}`);
     const response = await fetch(DATABASE_URL);
     if (!response.ok) {
+        log("Catalog", `Version database returned ${response.status} ${response.statusText}`);
         throw new Error(`Version database returned ${response.status} ${response.statusText}`);
     }
     const data = await response.json() as RemoteContract;
@@ -124,26 +135,88 @@ export class Catalog {
     constructor(private readonly cacheFilePath: string) {}
 
     /**
-     * Serves the cache while fresh, refetches when stale. Being offline falls back to a
-     * stale cache; a corrupt cache does not — that's a bug, not a network condition.
+     * The cache is disposable: it can always be fetched again, so a file this build cannot read
+     * is deleted and treated as a cache miss rather than reported to the user. Being offline
+     * with a stale but readable cache still falls back to that cache.
      */
-    async refresh(): Promise<readonly CatalogVersion[]> {
-        const onDisk = fs.existsSync(this.cacheFilePath)
-            ? deserialize(fs.readFileSync(this.cacheFilePath, "utf-8"), this.cacheFilePath)
-            : null;
+    private readCache(): CachedCatalog | null {
+        if (!fs.existsSync(this.cacheFilePath)) {
+            log("Catalog", `No cached version list at ${this.cacheFilePath}`);
+            return null;
+        }
 
-        if (onDisk && Date.now() - onDisk.fetchedAt.getTime() < REFRESH_INTERVAL_MS) {
-            this.cache = onDisk;
-            return this.cache.versions;
+        const read = tryReadJsonFile<unknown>("Catalog", this.cacheFilePath);
+        if (!read.ok) {
+            discardCacheFile("Catalog", this.cacheFilePath, read.reason);
+            return null;
+        }
+
+        const stamp = inspectStamp("Catalog", this.cacheFilePath, read.value, FORMAT, FORMAT_VERSION);
+        if (stamp.state === "mismatch") {
+            discardCacheFile("Catalog", this.cacheFilePath, stamp.reason);
+            return null;
+        }
+        if (stamp.state === "legacy") {
+            // Unstamped means an older launcher wrote it, and that is exactly the drift that
+            // used to dead-end the version list. It costs one fetch to be certain.
+            discardCacheFile("Catalog", this.cacheFilePath, "it carries no format stamp, so an older launcher build wrote it");
+            return null;
+        }
+
+        if (typeof read.value !== "object" || read.value === null || Array.isArray(read.value)) {
+            discardCacheFile("Catalog", this.cacheFilePath, "it does not hold a JSON object");
+            return null;
+        }
+
+        try {
+            return deserialize(read.value as Record<string, unknown>, this.cacheFilePath);
+        } catch (e) {
+            discardCacheFile("Catalog", this.cacheFilePath, (e as Error).message);
+            return null;
+        }
+    }
+
+    async refresh(): Promise<readonly CatalogVersion[]> {
+        const onDisk = this.readCache();
+
+        if (onDisk) {
+            const ageMinutes = (Date.now() - onDisk.fetchedAt.getTime()) / 60000;
+            if (ageMinutes * 60000 < REFRESH_INTERVAL_MS) {
+                this.cache = onDisk;
+                log(
+                    "Catalog",
+                    `Serving the cached list of ${onDisk.versions.length} versions, fetched ${ageMinutes.toFixed(1)} `
+                    + `minutes ago, under the ${REFRESH_INTERVAL_MS / 60000} minute refresh interval`
+                );
+                return this.cache.versions;
+            }
+            log("Catalog", `Cached list is ${ageMinutes.toFixed(1)} minutes old, refetching`);
         }
 
         try {
             this.cache = await fetchRemote();
-            fs.writeFileSync(this.cacheFilePath, serialize(this.cache), "utf-8");
-            console.log(`[Catalog] Refreshed: ${this.cache.versions.length} versions`);
+            // Caching is best effort: a fetched list that could not be written is still a
+            // fetched list, and failing here would be reported as an unreachable database.
+            try {
+                fs.writeFileSync(this.cacheFilePath, serialize(this.cache), "utf-8");
+                log("Catalog", `Refreshed: ${this.cache.versions.length} versions cached to ${this.cacheFilePath}`);
+            } catch (writeError) {
+                log(
+                    "Catalog",
+                    `Refreshed ${this.cache.versions.length} versions but could not write `
+                    + `${this.cacheFilePath}: ${describeError(writeError)}`
+                );
+            }
         } catch (e) {
-            if (!onDisk) throw new Error(`Could not reach the version database and no cache is available. ${e}`);
-            console.warn("[Catalog] Refresh failed, using stale cache:", e);
+            if (!onDisk) {
+                log("Catalog", `Refresh failed and no cache exists at ${this.cacheFilePath}: ${describeError(e)}`);
+                throw new Error(`Could not reach the version database and no cache is available. ${e}`);
+            }
+            log(
+                "Catalog",
+                `Refresh failed, falling back to the ${onDisk.versions.length}-version cache fetched `
+                + `${onDisk.fetchedAt.toISOString()}: ${describeError(e)}`
+            );
             this.cache = onDisk;
         }
 

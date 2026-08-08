@@ -20,6 +20,8 @@ import { Popup } from "@renderer/states/PopupStore";
 import { db } from "@renderer/firebase/Firebase";
 import { useDownloadStore, addPendingDownload, removePendingDownload } from "@renderer/states/DownloadStore";
 
+import { describeError } from "@shared/diagnostics/Log";
+import { log } from "@renderer/scripts/LauncherLog";
 import { ImportModArchive, isModArchive, modArchiveExtension, modArchiveName } from "@renderer/scripts/flows/ImportMod";
 
 
@@ -125,6 +127,7 @@ export function ModReadme({ githubUrl }: { githubUrl: string }) {
                 readmeCache.set(githubUrl, text);
                 setReadme(text);
             } catch (e) {
+                log("ModDiscovery", `README for ${githubUrl} could not be loaded: ${describeError(e)}`);
                 const fallback = "README could not be loaded.";
                 readmeCache.set(githubUrl, fallback);
                 setReadme(fallback);
@@ -271,10 +274,14 @@ async function downloadToTemp(
         const filePath = path.join(tempDir, filename);
         fs.writeFileSync(filePath, combined);
 
-        console.log(`Downloaded to ${filePath}`);
+        log("ModDiscovery", `Downloaded ${url} to ${filePath} (${transferred} bytes)`);
         return { ok: true, path: filePath };
     } catch (e: any) {
-        if (e.name === "AbortError") return { ok: false, error: "Download cancelled" };
+        if (e.name === "AbortError") {
+            log("ModDiscovery", `Download of ${url} cancelled by the user`);
+            return { ok: false, error: "Download cancelled" };
+        }
+        log("ModDiscovery", `Download of ${url} failed: ${describeError(e)}`);
         return { ok: false, error: e.message ?? String(e) };
     }
 }
@@ -284,11 +291,12 @@ async function uninstallMod(modName: string): Promise<void> {
     const modPath = path.join(paths.modsPath, modName);
     try {
         await fs.promises.rm(modPath, { recursive: true, force: true });
-        console.log(`Uninstalled mod: ${modName}`);
+        log("ModDiscovery", `Uninstalled "${modName}" by deleting ${modPath}`);
     } catch (e: any) {
         if (e?.code === "ENOENT") {
-            console.log(`Mod not found: ${modName}`);
+            log("ModDiscovery", `Uninstall of "${modName}" did nothing: ${modPath} does not exist`);
         } else {
+            log("ModDiscovery", `Uninstalling "${modName}" from ${modPath} failed: ${describeError(e)}`);
             throw e;
         }
     }
@@ -307,7 +315,10 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
         if (releasesCache.has(mod.githubUrl)) return;
 
         const repo = parseGitHubRepo(mod.githubUrl);
-        if (!repo) return;
+        if (!repo) {
+            log("ModDiscovery", `No releases for "${mod.name}": "${mod.githubUrl}" is not a github.com/owner/repo URL`);
+            return;
+        }
 
         const fetchReleases = async () => {
             try {
@@ -330,9 +341,10 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                 }
 
                 releasesCache.set(mod.githubUrl, parsedData);
+                log("ModDiscovery", `"${mod.name}" has ${parsedData.length} installable release(s) of ${data.length} on GitHub`);
                 setReleases(parsedData);
             } catch (err) {
-                console.error("Error fetching releases", err);
+                log("ModDiscovery", `Could not read the releases of ${mod.githubUrl}: ${describeError(err)}`);
             } finally {
                 setLoading(false);
             }
@@ -343,11 +355,11 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
 
     const handleInstallClick = (release: ParsedGithubRelease, isTrusted: boolean) => {
         if (isTrusted) {
-            // proceed directly
+            log("ModDiscovery", `Installing "${release.download_name}" directly: "${mod.name}" is an Amethyst org mod`);
             installMod(release);
             onClose?.();
         } else {
-            // show confirmation popup
+            log("ModDiscovery", `Asking the user to confirm the unreviewed mod "${release.download_name}"`);
             setConfirmingMod(release);
         }
     };
@@ -357,8 +369,9 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
         let targetProfileIndex: number;
 
         if (installingFor !== null) {
-            // Came from a profile's "Add Content" — skip profile picker
+            // Came from a profile's "Add Content", so skip the profile picker
             targetProfileIndex = installingFor;
+            log("ModDiscovery", `Installing "${release.download_name}" into profile index ${installingFor}, the one it was opened from`);
         } else {
             // Ask which profile to add the mod to
             const profileIndex = await Popup.useAsync<number | null>(({ submit }) => {
@@ -388,15 +401,22 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                 );
             });
 
-            if (profileIndex === null) return;
+            if (profileIndex === null) {
+                log("ModDiscovery", `Install of "${release.download_name}" cancelled at the profile picker`);
+                return;
+            }
 
-            // Handle "New Profile" — run full creation flow
+            // Handle "New Profile", which runs the full creation flow
             targetProfileIndex = profileIndex;
             if (profileIndex === -1) {
                 const result = await createProfileFlow();
-                if (!result) return;
+                if (!result) {
+                    log("ModDiscovery", `Install of "${release.download_name}" cancelled while creating a profile for it`);
+                    return;
+                }
                 targetProfileIndex = result.index;
             }
+            log("ModDiscovery", `Installing "${release.download_name}" into profile index ${targetProfileIndex}`);
         }
 
         // Add mod to profile, download in background, stay on page
@@ -407,6 +427,10 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                 i === targetProfileIndex ? { ...p, mods: [...p.mods, release.download_name] } : p
             );
             state.setProfiles(updatedProfiles);
+            log("ModDiscovery", `Added "${release.download_name}" to profile "${profile.name}" (${profile.uuid})`);
+        }
+        else if (!profile) {
+            log("ModDiscovery", `No profile at index ${targetProfileIndex}; downloading "${release.download_name}" without attaching it`);
         }
         state.setDownloadingMods([...state.downloadingMods, release.download_name]);
         state.saveData();
@@ -445,10 +469,10 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
             abortController.signal
         ).then(async ({ ok, path, error }) => {
             if (!ok) {
-                console.error(error);
                 useAppStore.getState().setDownloadingMods(prev => prev.filter(n => n !== release.download_name));
                 useDownloadStore.getState().updateDownload(dlId, { status: "error", progress: 0 });
                 removePendingDownload(dlId);
+                useAppStore.getState().setError(`Could not download ${release.download_name}: ${error}`);
                 return;
             }
 
@@ -456,20 +480,25 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
             try {
                 await ImportModArchive(path!);
             } catch (e) {
-                console.error(e);
+                log("ModDiscovery", `Installing "${release.download_name}" from ${path} failed: ${describeError(e)}`);
                 useAppStore.getState().setDownloadingMods(prev => prev.filter(n => n !== release.download_name));
                 useDownloadStore.getState().updateDownload(dlId, { status: "error", progress: 0 });
                 removePendingDownload(dlId);
+                useAppStore.getState().setError(`Could not install ${release.download_name}: ${(e as Error).message ?? e}`);
                 return;
             }
             useAppStore.getState().setDownloadingMods(prev => prev.filter(n => n !== release.download_name));
             useDownloadStore.getState().updateDownload(dlId, { status: "done" });
             removePendingDownload(dlId);
 
-            // update download count in firestore
-            console.log(`Incrementing download count for mod ${mod.id}`);
-            const modDocRef = doc(db, "mods", mod.id);
-            await updateDoc(modDocRef, { downloads: increment(1) });
+            try {
+                const modDocRef = doc(db, "mods", mod.id);
+                await updateDoc(modDocRef, { downloads: increment(1) });
+                log("ModDiscovery", `Incremented the download count of "${mod.id}"`);
+            } catch (e) {
+                // Cosmetic, so it must never fail the install the user actually asked for.
+                log("ModDiscovery", `Could not increment the download count of "${mod.id}": ${describeError(e)}`);
+            }
         });
     };
 
@@ -560,6 +589,10 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                                                         );
                                                         state.setProfiles(updatedProfiles);
                                                         state.saveData();
+                                                        log("ModDiscovery", `Added the installed "${release.download_name}" to profile "${profile.name}" (${profile.uuid})`);
+                                                    }
+                                                    else {
+                                                        log("ModDiscovery", `"${release.download_name}" not added: profile "${profile?.name ?? installingFor}" already lists it`);
                                                     }
                                                 } else {
                                                     // No profile context — use same picker flow as install
@@ -577,7 +610,13 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                                             style={{ display: "flex" }}
                                             onClick={async e => {
                                                 e.stopPropagation();
-                                                await uninstallMod(release.download_name);
+                                                try {
+                                                    await uninstallMod(release.download_name);
+                                                } catch (error) {
+                                                    useAppStore.getState().setError(
+                                                        `Could not remove ${release.download_name}: ${(error as Error).message ?? error}`
+                                                    );
+                                                }
                                                 refreshAllMods();
                                             }}
                                         >
@@ -683,9 +722,11 @@ export function ModDiscovery() {
                 })) as ModDiscoveryData[];
 
                 modsCache = modsData;
+                log("ModDiscovery", `Loaded ${modsData.length} mods from the discovery database`);
                 setMods(modsData);
             } catch (e) {
-                console.error("Failed to fetch mods:", e);
+                log("ModDiscovery", `Could not load the mod list: ${describeError(e)}`);
+                useAppStore.getState().setError("The mod list could not be loaded. Check your internet connection and try again.");
             } finally {
                 setFetching(false);
             }

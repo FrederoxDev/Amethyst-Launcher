@@ -1,4 +1,6 @@
+import { describeError } from "@shared/diagnostics/Log";
 import { useAppStore } from "@renderer/states/AppStore";
+import { log } from "@renderer/scripts/LauncherLog";
 import { channelLabel } from "@renderer/scripts/domain/Channel";
 import { InstalledVersion } from "@renderer/scripts/versions/InstalledVersion";
 import { Popup } from "@renderer/states/PopupStore";
@@ -42,7 +44,12 @@ const VersionCard = ({ version, canDelete, onInspect, onDelete }: {
                 >
                     <img src={DeleteIconAsset} alt="" />
                 </div>
-                <div className="version-icon-action version-icon-action-neutral" onClick={() => openPath(version.path)}>
+                <div className="version-icon-action version-icon-action-neutral" onClick={() => {
+                    openPath(version.path).then(error => log(
+                        "VersionPage",
+                        error ? `Could not open ${version.path}: ${error}` : `Opened ${version.path}`
+                    ));
+                }}>
                     <img src={OpenFolderIconAsset} alt="" />
                 </div>
                 <div className="version-icon-action version-icon-action-neutral" onClick={() => onInspect(version)}>
@@ -60,14 +67,24 @@ export function VersionPage() {
     const canManage = ProgressBar.useCanDoAction("download");
 
     const startImport = async () => {
-        if (!canManage) return;
+        if (!canManage) {
+            log(
+                "VersionPage",
+                `Import ignored: the launcher is "${ProgressBar.getState().currentStatus}", which blocks downloads`
+            );
+            return;
+        }
 
         const request = await Popup.useAsync<ImportRequest | null>(props => <ImportVersionPopup {...props} />);
-        if (!request) return;
+        if (!request) {
+            log("VersionPage", "Import popup closed without a file");
+            return;
+        }
 
         try {
             await versions.importMsixvc(request);
         } catch (e) {
+            log("VersionPage", `Import of "${request.label}" from ${request.file} failed: ${describeError(e)}`);
             setError(`Could not import ${request.label}: ${(e as Error).message ?? e}`);
         }
     };
@@ -94,11 +111,15 @@ export function VersionPage() {
             confirmText: "Yeah, do it!",
             cancelText: "No, don't do it!",
         });
-        if (!ok) return;
+        if (!ok) {
+            log("VersionPage", `Deletion of "${version.label}" (${version.uuid}) cancelled by the user`);
+            return;
+        }
 
         try {
             await versions.uninstall(version.uuid);
         } catch (e) {
+            log("VersionPage", `Deleting "${version.label}" at ${version.path} failed: ${describeError(e)}`);
             setError(`Could not delete ${version.label}: ${(e as Error).message ?? e}`);
         }
     };

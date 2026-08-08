@@ -5,6 +5,8 @@ import { LoadingWheel } from "@renderer/components/LoadingWheel";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
 import { PopupPanel } from "@renderer/components/PopupPanel";
+import { describeError } from "@shared/diagnostics/Log";
+import { log } from "@renderer/scripts/LauncherLog";
 
 const { ipcRenderer } = window.require("electron");
 
@@ -18,18 +20,23 @@ export function UpdatePage() {
     const [appVersion, setAppVersion] = useState("-");
 
     const checkForUpdates = useCallback(() => {
-        ipcRenderer.invoke("check-for-updates");
+        log("Update", "Asking the main process to check for launcher updates");
+        ipcRenderer.invoke("check-for-updates").catch(e => {
+            log("Update", `Update check could not be started: ${describeError(e)}`);
+        });
     }, []);
 
     const downloadUpdate = useCallback(() => {
-        ipcRenderer.invoke("update-download").then(lls => {
-            console.log("Download download:", lls);
-        });
+        log("Update", "User chose to download the launcher update");
+        ipcRenderer.invoke("update-download")
+            .then(files => log("Update", `Update download finished: ${JSON.stringify(files)}`))
+            .catch(e => log("Update", `Update download failed: ${describeError(e)}`));
         setDownloadActive(true);
         ipcRenderer.invoke("set-auto-install-on-app-quit", true);
     }, [setDownloadActive]);
 
     const ignoreUpdate = useCallback(() => {
+        log("Update", "User dismissed the launcher update; it will not install on quit");
         setPopupClosed(true);
         ipcRenderer.invoke("set-auto-install-on-app-quit", false);
     }, [setPopupClosed]);
@@ -40,25 +47,26 @@ export function UpdatePage() {
         checkForUpdates();
 
         const onUpdateAvailable = (_, info) => {
-            console.log("Update available:", info);
+            log("Update", `Update ${info?.version} is available, offering it to the user`);
             setUpdateInfo(info);
             setUpdateAvailable(true);
             setPopupClosed(false);
         };
 
         const onUpdateCancelled = (_, info) => {
-            console.log("Download cancelled:", info);
+            // Thrown on purpose so the window handler records it as a fatal; log it first,
+            // because a throw out of an IPC listener carries no context of its own.
+            log("Update", `Update ${info?.version} was cancelled before it finished downloading`);
             throw new Error(`Launcher Update cancelled`);
         };
 
+        // The main process already logs this in 10% steps; the renderer only moves the bar.
         const onDownloadProgress = (_, info) => {
-            console.log("Download progress:", info);
             setDownloadPercentage(info.percent);
         };
 
         const onUpdateDownloaded = (_, info) => {
-            console.log("Update downloaded:", info);
-            console.log("restart now?");
+            log("Update", `Update ${info?.version} downloaded and ready to install`);
 
             setDownloadPercentage(100);
             setUpdateAvailable(false);
@@ -80,9 +88,9 @@ export function UpdatePage() {
     }, [setUpdateAvailable, setPopupClosed, setDownloadActive, setDownloadPercentage, checkForUpdates]);
 
     useEffect(() => {
-        ipcRenderer.invoke("get-app-version").then(version => {
-            setAppVersion(version);
-        });
+        ipcRenderer.invoke("get-app-version")
+            .then(version => setAppVersion(version))
+            .catch(e => log("Update", `Could not read the launcher version: ${describeError(e)}`));
     }, []);
 
     return (

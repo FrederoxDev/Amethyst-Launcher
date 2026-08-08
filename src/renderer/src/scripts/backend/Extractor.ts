@@ -2,6 +2,7 @@ const fs = window.require("fs") as typeof import("fs");
 const JSZip = window.require("jszip") as typeof import("jszip");
 
 import { ExtractProgress } from "@renderer/scripts/backend/Progress";
+import { log } from "@renderer/scripts/LauncherLog";
 
 const path = window.require("path") as typeof import("path");
 
@@ -33,24 +34,35 @@ export class Extractor {
         excludes: string[],
         onProgress: ExtractProgress = (): void => {}
     ): Promise<void> {
+        const startedAt = Date.now();
+        log("Extract", `Extracting "${file}" to "${to}"${excludes.length > 0 ? `, excluding ${excludes.join(", ")}` : ""}`);
+
         try {
             await fs.promises.mkdir(to, { recursive: true });
         } catch (error) {
-            console.error(`[Extractor] Could not create destination "${to}".`, error);
+            log("Extract", `Could not create the destination "${to}": ${describe(error)}`);
             throw new Error(`Could not create the folder "${to}": ${describe(error)}`, { cause: error });
         }
 
         let zip: Awaited<ReturnType<typeof JSZip.loadAsync>>;
+        let archiveBytes = 0;
         try {
             const data = await fs.promises.readFile(file);
+            archiveBytes = data.length;
             zip = await JSZip.loadAsync(data);
         } catch (error) {
-            console.error(`[Extractor] Could not read archive "${file}".`, error);
+            log("Extract", `Could not read the archive "${file}": ${describe(error)}`);
             throw new Error(`"${path.basename(file)}" is not a readable archive: ${describe(error)}`, { cause: error });
         }
 
         const excluded = new Set(excludes);
-        const entries = Object.entries(zip.files).filter(([name, entry]) => !entry.dir && !excluded.has(name));
+        const all = Object.entries(zip.files);
+        const entries = all.filter(([name, entry]) => !entry.dir && !excluded.has(name));
+        log(
+            "Extract",
+            `"${file}" is ${archiveBytes} bytes holding ${all.length} entries, `
+            + `${entries.length} of them files to write`
+        );
 
         const root = path.resolve(to);
         const targets = new Map<string, string>();
@@ -58,28 +70,29 @@ export class Extractor {
             try {
                 targets.set(name, resolveEntry(root, name));
             } catch (error) {
-                console.error(`[Extractor] Rejected entry in "${file}".`, { entry: name, destination: to, error });
+                log("Extract", `Rejected entry "${name}" of "${file}" bound for outside "${to}": ${describe(error)}`);
                 throw new Error(`"${path.basename(file)}" is unsafe to extract: ${describe(error)}`, { cause: error });
             }
         }
 
         const total = entries.length;
         let extracted = 0;
+        let bytes = 0;
 
+        // No line per entry: an msixvc holds tens of thousands of them. Only the total is logged.
         for (const [name, entry] of entries) {
             const target = targets.get(name)!;
             try {
                 const data = await entry.async("uint8array");
                 await fs.promises.mkdir(path.dirname(target), { recursive: true });
                 await fs.promises.writeFile(target, data);
+                bytes += data.length;
             } catch (error) {
-                console.error(`[Extractor] Failed on entry "${name}".`, {
-                    archive: file,
-                    target,
-                    extracted,
-                    total,
-                    error,
-                });
+                log(
+                    "Extract",
+                    `Failed on entry "${name}" of "${file}" bound for "${target}" `
+                    + `after ${extracted} of ${total} entries (${bytes} bytes): ${describe(error)}`
+                );
                 throw new Error(
                     `Could not extract "${name}" from "${path.basename(file)}" ` +
                     `(${extracted} of ${total} entries done): ${describe(error)}`,
@@ -91,6 +104,6 @@ export class Extractor {
             onProgress(extracted, total, name);
         }
 
-        console.log(`[Extractor] Extracted ${extracted} entries from "${file}" to "${to}".`);
+        log("Extract", `Extracted ${extracted} entries (${bytes} bytes) from "${file}" to "${to}" in ${Date.now() - startedAt}ms`);
     }
 }

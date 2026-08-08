@@ -4,6 +4,8 @@ import { MinecraftRadialButtonPanel } from "@renderer/components/MinecraftRadial
 import { MinecraftToggle } from "@renderer/components/MinecraftToggle";
 import { ReadOnlyTextBox } from "@renderer/components/ReadOnlyTextBox";
 
+import { describeError } from "@shared/diagnostics/Log";
+import { log } from "@renderer/scripts/LauncherLog";
 import { useAppStore } from "@renderer/states/AppStore";
 
 const fs = window.require("fs") as typeof import("fs");
@@ -26,12 +28,18 @@ export function GeneralSettingsTab() {
 
     const updateCfgText = () => {
         if (!fs.existsSync(paths.launcherConfigPath)) {
-            setLauncherCfg("Launcher config does not exist...");
+            log("Settings", `No launcher config to show at ${paths.launcherConfigPath}`);
+            setLauncherCfg("No launcher config has been saved yet.");
             return;
         }
 
-        const data = fs.readFileSync(paths.launcherConfigPath, "utf-8");
-        setLauncherCfg(data);
+        try {
+            setLauncherCfg(fs.readFileSync(paths.launcherConfigPath, "utf-8"));
+        } catch (e) {
+            // Reading for display must never throw out of the effect and blank the screen.
+            log("Settings", `Could not read ${paths.launcherConfigPath} for display: ${describeError(e)}`);
+            setLauncherCfg(`The launcher config could not be read.\n\n${paths.launcherConfigPath}`);
+        }
     };
 
     useEffect(() => {

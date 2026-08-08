@@ -1,4 +1,5 @@
 import { ActionType, AppStatusType, BLOCKED_ACTIONS } from "@renderer/scripts/AppStatus";
+import { log } from "@renderer/scripts/LauncherLog";
 import { SetStateAction, StateUtils } from "./StateUtils";
 import { create } from "zustand";
 
@@ -54,10 +55,14 @@ export class ProgressBar {
         progress: 0,
         show: false,
 
+        // Status is the coarse state that gates launching, downloading and dropping files, so
+        // each transition is recorded. Message and progress are not: they change per chunk.
         setStatus(status) {
-            set((state) => ({
-                currentStatus: StateUtils.resolveSetStateAction(status, state.currentStatus)
-            }));
+            set((state) => {
+                const next = StateUtils.resolveSetStateAction(status, state.currentStatus);
+                if (next !== state.currentStatus) log("Progress", `Status: ${state.currentStatus} -> ${next}`);
+                return { currentStatus: next };
+            });
         },
         setMessage(message) {
             set((state) => ({
@@ -75,7 +80,12 @@ export class ProgressBar {
             }));
         },
         update(partial) {
-            set(partial);
+            set((state) => {
+                if (partial.currentStatus !== undefined && partial.currentStatus !== state.currentStatus) {
+                    log("Progress", `Status: ${state.currentStatus} -> ${partial.currentStatus}`);
+                }
+                return partial;
+            });
         },
         reset() {
             set({

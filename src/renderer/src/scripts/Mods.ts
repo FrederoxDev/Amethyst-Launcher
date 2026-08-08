@@ -1,6 +1,8 @@
 const fs = window.require("fs");
 const path = window.require("path");
 
+import { describeError } from "@shared/diagnostics/Log";
+import { log } from "@renderer/scripts/LauncherLog";
 import { useAppStore } from "@renderer/states/AppStore";
 import {
     ajv,
@@ -16,9 +18,36 @@ function getPaths() {
     return useAppStore.getState().platform.getPaths();
 }
 
+/**
+ * The mods folder is re-scanned by a filesystem watcher, so the scan itself must stay quiet.
+ * Only a scan whose outcome differs from the last one is worth a line.
+ */
+let lastScanSignature: string | null = null;
+
+function scanSignature(mods: ValidatedMod[]): string {
+    return mods.map(m => `${m.id}:${m.ok ? "ok" : m.errors.join("|")}:${m.warnings.join("|")}`).join("\n");
+}
+
+function describeScan(mods: ValidatedMod[]): string {
+    if (mods.length === 0) return "no mod folders";
+    return mods
+        .map(m => {
+            if (!m.ok) return `${m.id} INVALID (${m.errors.join("; ")})`;
+            const warnings = m.warnings.length > 0 ? ` warnings: ${m.warnings.join("; ")}` : "";
+            return `${m.id} ok (${m.config.meta.type})${warnings}`;
+        })
+        .join(", ");
+}
+
 export function GetAllMods(): ValidatedMod[] {
     const paths = getPaths();
-    if (!fs.existsSync(paths.modsPath)) return [];
+    if (!fs.existsSync(paths.modsPath)) {
+        if (lastScanSignature !== "missing") {
+            lastScanSignature = "missing";
+            log("Mods", `No mods folder at ${paths.modsPath}, reporting zero mods`);
+        }
+        return [];
+    }
 
     const allFolders = fs
         .readdirSync(paths.modsPath, { withFileTypes: true })
@@ -31,6 +60,12 @@ export function GetAllMods(): ValidatedMod[] {
         const validated = ValidateMod(modIdentifier);
         result.push(validated);
     });
+
+    const signature = scanSignature(result);
+    if (signature !== lastScanSignature) {
+        lastScanSignature = signature;
+        log("Mods", `Scanned ${paths.modsPath}: ${describeScan(result)}`);
+    }
 
     return result;
 }
@@ -64,7 +99,8 @@ export function ValidateMod(id: string): ValidatedMod {
         const configDataText = fs.readFileSync(modConfigPath, "utf-8");
         configUnchecked = JSON.parse(configDataText);
     } catch (e) {
-        errors.push("Failed to read/parse mod.json");
+        log("Mods", `Could not read ${modConfigPath}: ${describeError(e)}`);
+        errors.push(`Failed to read/parse ${modConfigPath}`);
 
         return {
             ok: false,

@@ -6,6 +6,11 @@ const child = (globalThis as unknown as { require: NodeRequire }).require(
 export interface ProcessResult {
     command: string;
     args: string[];
+    /**
+     * `args` with any key material replaced, and the only form that may be written to a log.
+     * Equal to `args` unless the caller supplied {@link RunOptions.redactArgs}.
+     */
+    loggableArgs: string[];
     /** `-1` when the process never started, or was killed before it could report a code. */
     code: number;
     stdout: string;
@@ -24,6 +29,11 @@ export interface RunOptions {
     timeoutMs?: number;
     /** Called with each complete line of stdout and stderr as it arrives. */
     onLine?: (line: string) => void;
+    /**
+     * Rewrites the argument list before anything logs it. Redaction lives here rather than at
+     * the call sites so a command line carrying a key cannot be logged by forgetting to.
+     */
+    redactArgs?: (args: string[]) => string[];
 }
 
 export const DEFAULT_TIMEOUT_MS = 60_000;
@@ -100,6 +110,7 @@ function makeLineReader(onLine: (line: string) => void): { push(text: string): v
 export function run(command: string, args: string[], options: RunOptions = {}): Promise<ProcessResult> {
     const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const startedAt = Date.now();
+    const loggableArgs = options.redactArgs ? options.redactArgs(args) : args;
 
     return new Promise<ProcessResult>(resolve => {
         // One reader per stream: a shared one would splice a half-written stdout line onto the
@@ -124,6 +135,7 @@ export function run(command: string, args: string[], options: RunOptions = {}): 
             resolve({
                 command,
                 args,
+                loggableArgs,
                 code,
                 stdout,
                 stderr: cleanStderr,
@@ -187,7 +199,7 @@ export function describeResult(result: ProcessResult): string {
             ? `timed out after ${result.durationMs}ms`
             : `exit ${result.code} in ${result.durationMs}ms`;
 
-    const command = [result.command, ...result.args.map(abbreviate)].join(" ");
+    const command = [result.command, ...result.loggableArgs.map(abbreviate)].join(" ");
     const body = result.output.trim();
     const detail = body ? `\n${body.split(/\r?\n/).map(line => `    ${line}`).join("\n")}` : "";
     return `${command}\n  ${outcome}${detail}`;

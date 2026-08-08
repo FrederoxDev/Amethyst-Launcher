@@ -1,6 +1,8 @@
+import { describeError } from "@shared/diagnostics/Log";
 import { useAppStore } from "@renderer/states/AppStore";
 import { useDownloadStore, getPendingDownloads, removePendingDownload, PendingDownload } from "@renderer/states/DownloadStore";
 import { ImportModArchive, modArchiveExtension } from "@renderer/scripts/flows/ImportMod";
+import { log } from "@renderer/scripts/LauncherLog";
 import { Downloader } from "@renderer/scripts/backend/Downloader";
 
 const fs = window.require("fs") as typeof import("fs");
@@ -31,9 +33,14 @@ async function downloadToTemp(
         await Downloader.downloadFile(url, filePath, (transferred, total) => onProgress?.(transferred, total), signal);
         return { ok: true, path: filePath };
     } catch (e) {
-        await fs.promises.rm(filePath, { force: true }).catch(() => {});
-        if (isAbort(e)) return { ok: false, error: "Download cancelled" };
-        console.error("[DownloadRecovery] Download failed.", { url, filePath }, e);
+        await fs.promises.rm(filePath, { force: true }).catch(cleanupError => {
+            log("Recovery", `Could not delete the abandoned temp file ${filePath}: ${describeError(cleanupError)}`);
+        });
+        if (isAbort(e)) {
+            log("Recovery", `Download of ${url} was cancelled by the user; ${filePath} deleted`);
+            return { ok: false, error: "Download cancelled" };
+        }
+        log("Recovery", `Download of ${url} to ${filePath} failed: ${describeError(e)}`);
         return { ok: false, error: e instanceof Error ? e.message : String(e) };
     }
 }
@@ -45,6 +52,7 @@ function describeRecoveryFailure(pending: PendingDownload, error: unknown): stri
 
 /** Clears the in-flight bookkeeping and shows the user why the resumed download stopped. */
 function failRecovery(pending: PendingDownload, message: string): void {
+    log("Recovery", `Giving up on ${pending.type} "${pending.name}" (${pending.id}): ${message}`);
     useAppStore.getState().setDownloadingMods(prev => prev.filter(n => n !== pending.name));
     useDownloadStore.getState().updateDownload(pending.id, { status: "error", progress: 0 });
     removePendingDownload(pending.id);
@@ -52,6 +60,7 @@ function failRecovery(pending: PendingDownload, message: string): void {
 }
 
 async function resumeModDownload(pending: PendingDownload): Promise<void> {
+    log("Recovery", `Resuming mod download "${pending.name}" (${pending.id}) from ${pending.url}`);
     const dlStore = useDownloadStore.getState();
     const abortController = new AbortController();
 
@@ -80,7 +89,6 @@ async function resumeModDownload(pending: PendingDownload): Promise<void> {
     );
 
     if (!ok) {
-        console.error(`[DownloadRecovery] Download failed for ${pending.name}:`, { url: pending.url, error });
         failRecovery(pending, `Could not finish downloading ${pending.name}: ${error}`);
         return;
     }
@@ -90,32 +98,37 @@ async function resumeModDownload(pending: PendingDownload): Promise<void> {
     try {
         await ImportModArchive(filePath!);
     } catch (e) {
-        console.error(`[DownloadRecovery] Install failed for ${pending.name}:`, { archive: filePath }, e);
+        log("Recovery", `Installing the resumed archive ${filePath} failed: ${describeError(e)}`);
         failRecovery(pending, e instanceof Error ? e.message : String(e));
         return;
     } finally {
-        await fs.promises.rm(filePath!, { force: true }).catch(() => {});
+        await fs.promises.rm(filePath!, { force: true }).catch(cleanupError => {
+            log("Recovery", `Could not delete the temp archive ${filePath}: ${describeError(cleanupError)}`);
+        });
     }
 
     useAppStore.getState().setDownloadingMods(prev => prev.filter(n => n !== pending.name));
     useDownloadStore.getState().updateDownload(pending.id, { status: "done" });
     removePendingDownload(pending.id);
+    log("Recovery", `Resumed mod "${pending.name}" installed`);
 }
 
 async function resumeVersionDownload(pending: PendingDownload): Promise<void> {
     removePendingDownload(pending.id);
     if (!pending.versionUuid) {
-        console.error(`[DownloadRecovery] Pending version download for ${pending.name} has no version id; dropping it.`);
+        log("Recovery", `Dropping pending version "${pending.name}" (${pending.id}): the saved entry carries no versionUuid`);
         useAppStore.getState().setError(
             `Could not resume the download of ${pending.name} because the saved entry is incomplete. Install it again from the versions list.`
         );
         return;
     }
 
+    log("Recovery", `Resuming version install "${pending.name}" (${pending.versionUuid})`);
     try {
         await useAppStore.getState().versions.resolveOrInstall(pending.versionUuid);
+        log("Recovery", `Resumed version "${pending.name}" installed`);
     } catch (e) {
-        console.error(`[DownloadRecovery] Version install failed for ${pending.name}:`, { uuid: pending.versionUuid }, e);
+        log("Recovery", `Resuming version "${pending.name}" (${pending.versionUuid}) failed: ${describeError(e)}`);
         const reason = e instanceof Error ? e.message : String(e);
         useAppStore.getState().setError(`Could not finish installing ${pending.name}: ${reason}`);
     }
@@ -123,20 +136,27 @@ async function resumeVersionDownload(pending: PendingDownload): Promise<void> {
 
 export function resumePendingDownloads(): void {
     const pending = getPendingDownloads();
-    if (pending.length === 0) return;
+    if (pending.length === 0) {
+        log("Recovery", "No downloads were left in flight by a previous session");
+        return;
+    }
 
-    console.log(`Resuming ${pending.length} pending download(s) from previous session`);
+    log(
+        "Recovery",
+        `Resuming ${pending.length} download(s) left by a previous session: `
+        + `${pending.map(p => `${p.type} "${p.name}" (${p.id})`).join(", ")}`
+    );
 
     for (const entry of pending) {
         if (entry.type === "mod") {
             resumeModDownload(entry).catch(e => failRecovery(entry, describeRecoveryFailure(entry, e)));
         } else if (entry.type === "version") {
             resumeVersionDownload(entry).catch(e => {
-                console.error(`[DownloadRecovery] Unhandled failure resuming ${entry.name}:`, e);
+                log("Recovery", `Unhandled failure resuming "${entry.name}": ${describeError(e)}`);
                 useAppStore.getState().setError(describeRecoveryFailure(entry, e));
             });
         } else {
-            console.error(`[DownloadRecovery] Dropping pending download of unknown type '${entry.type}'.`, entry);
+            log("Recovery", `Dropping pending download "${entry.name}" (${entry.id}): unknown type "${entry.type}"`);
             removePendingDownload(entry.id);
         }
     }

@@ -1,7 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
+import { describeError } from "@shared/diagnostics/Log";
 import { MinecraftButton, GRAY_MINECRAFT_BUTTON } from "@renderer/components/MinecraftButton";
 import { useAppStore } from "@renderer/states/AppStore";
+import { log } from "@renderer/scripts/LauncherLog";
 import { confirmAction } from "@renderer/popups/ConfirmPopup";
 import { FULL_PROGRESS_RESET_OPTIONS, ProgressBar } from "@renderer/states/ProgressBarStore";
 
@@ -271,15 +273,20 @@ export function LogsPage() {
             message: `"${file.name}" will be permanently deleted. This cannot be undone.`,
             confirmText: "Delete",
         });
-        if (!ok) return;
+        if (!ok) {
+            log("LogsPage", `Deletion of ${file.path} cancelled by the user`);
+            return;
+        }
         try {
             await fs.promises.unlink(file.path);
+            log("LogsPage", `Deleted log ${file.path}`);
             if (selected === file.path) {
                 setSelected(null);
                 setContent("");
             }
             refresh();
         } catch (e) {
+            log("LogsPage", `Could not delete ${file.path}: ${describeError(e)}`);
             setError((e as Error).message);
         }
     };
@@ -288,6 +295,7 @@ export function LogsPage() {
         try {
             await navigator.clipboard.writeText(file.path);
         } catch (e) {
+            log("LogsPage", `Could not copy ${file.path} to the clipboard: ${describeError(e)}`);
             setError((e as Error).message);
         }
         setContextMenu(null);
@@ -297,6 +305,7 @@ export function LogsPage() {
         try {
             shell.showItemInFolder(file.path);
         } catch (e) {
+            log("LogsPage", `Could not show ${file.path} in the file manager: ${describeError(e)}`);
             setError((e as Error).message);
         }
         setContextMenu(null);
@@ -309,6 +318,7 @@ export function LogsPage() {
                 entries = await fs.promises.readdir(logsDir);
             } catch (e: any) {
                 if (e?.code === "ENOENT") {
+                    log("LogsPage", `No logs folder at ${logsDir} yet`);
                     setFiles([]);
                     return;
                 }
@@ -320,7 +330,8 @@ export function LogsPage() {
                     const stat = await fs.promises.stat(full);
                     if (!stat.isFile()) return null;
                     return { name, path: full, size: stat.size, mtimeMs: stat.mtimeMs } as LogFile;
-                } catch {
+                } catch (e) {
+                    log("LogsPage", `Leaving ${full} out of the list: ${describeError(e)}`);
                     return null;
                 }
             }))).filter((f): f is LogFile => f !== null);
@@ -328,6 +339,7 @@ export function LogsPage() {
             setFiles(loaded);
             setError("");
         } catch (e) {
+            log("LogsPage", `Could not list ${logsDir}: ${describeError(e)}`);
             setError((e as Error).message);
         }
     };
@@ -344,27 +356,40 @@ export function LogsPage() {
         let cancelled = false;
         fs.promises.readFile(selected, "utf-8")
             .then(text => { if (!cancelled) setContent(text); })
-            .catch(e => { if (!cancelled) setContent(`Failed to read file: ${(e as Error).message}`); });
+            .catch(e => {
+                log("LogsPage", `Could not read ${selected}: ${describeError(e)}`);
+                if (!cancelled) setContent(`Failed to read file: ${(e as Error).message}`);
+            });
         return () => { cancelled = true; };
     }, [selected]);
 
     const deleteAllLogs = async () => {
-        if (files.length === 0) return;
+        if (files.length === 0) {
+            log("LogsPage", `Delete All ignored: no log files listed in ${logsDir}`);
+            return;
+        }
         const ok = await confirmAction({
             title: "Delete All Logs?",
             message: `All ${files.length} log file(s) will be permanently deleted. This cannot be undone.`,
             confirmText: "Delete All",
         });
-        if (!ok) return;
+        if (!ok) {
+            log("LogsPage", `Deletion of all ${files.length} log file(s) cancelled by the user`);
+            return;
+        }
         try {
             await ProgressBar.useAsync(async (state) => {
                 state.setMessage(`Clearing ${files.length} log file(s)...`);
-                await Promise.all(files.map(f => fs.promises.unlink(f.path).catch(() => { /* ignore per-file */ })));
+                log("LogsPage", `Deleting all ${files.length} log file(s) in ${logsDir}`);
+                await Promise.all(files.map(f => fs.promises.unlink(f.path).catch(e => {
+                    log("LogsPage", `Could not delete ${f.path}: ${describeError(e)}`);
+                })));
             }, true, FULL_PROGRESS_RESET_OPTIONS);
             setSelected(null);
             setContent("");
             await refresh();
         } catch (e) {
+            log("LogsPage", `Clearing the logs folder failed: ${describeError(e)}`);
             setError((e as Error).message);
         }
     };
@@ -372,8 +397,10 @@ export function LogsPage() {
     const openLogsFolder = async () => {
         try {
             if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
-            await shell.openPath(logsDir);
+            const openError = await shell.openPath(logsDir);
+            log("LogsPage", openError ? `Could not open ${logsDir}: ${openError}` : `Opened ${logsDir}`);
         } catch (e) {
+            log("LogsPage", `Could not open ${logsDir}: ${describeError(e)}`);
             setError((e as Error).message);
         }
     };

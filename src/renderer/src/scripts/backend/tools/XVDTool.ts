@@ -1,4 +1,5 @@
 import { AppStatusType } from "@renderer/scripts/AppStatus";
+import { log } from "@renderer/scripts/LauncherLog";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { describeResult, run } from "@shared/diagnostics/ProcessRunner";
 import { GithubRelease } from "../github/GithubRelease";
@@ -14,6 +15,14 @@ const XVDTOOL_RUNTIME: DotnetRequirement = { major: 8, channel: "8.0", toolName:
 
 /** Generous, because a full msixvc runs for many minutes, but never unbounded. */
 const XVDTOOL_TIMEOUT_MS = 60 * 60_000;
+
+/**
+ * The CIK guid identifies which key was tried and is worth logging; the key bytes that follow
+ * `-cikdata` are the secret itself and must never reach a log file a tester sends on.
+ */
+function redactCik(args: string[]): string[] {
+    return args.map((arg, index) => (args[index - 1] === "-cikdata" ? `<${arg.length} chars redacted>` : arg));
+}
 
 /**
  * Shape of the JSON lines that XVDTool prints to stdout/stderr while it runs.
@@ -34,7 +43,7 @@ interface OutputModel {
 
 /**
  * Concrete {@link ToolArtifact} implementation for
- * [XVDTool](https://github.com/AmethystAPI/xvdtool) – a utility for working
+ * [XVDTool](https://github.com/AmethystAPI/xvdtool) - a utility for working
  * with Xbox Virtual Disk (XVD) files.
  *
  * Supported platforms: **Windows x64** and **Linux x64**.
@@ -56,14 +65,16 @@ export class XVDTool extends ToolArtifact {
      */
     isSupported(): boolean {
         const supported = (window.process.platform === "win32" || window.process.platform === "linux") && window.process.arch === "x64";
-        console.log(`[${this.name}] isSupported() → ${supported} (platform='${window.process.platform}', arch='${window.process.arch}').`);
+        if (!supported) {
+            log(this.name, `Not supported on platform '${window.process.platform}', arch '${window.process.arch}'`);
+        }
         return supported;
     }
 
     /**
      * Overrides the base `check()` to supply XVDTool-specific defaults:
-     * - `promptForUpdate`: `true` – always ask before updating.
-     * - `allowOutdated`: `true` – tolerate an older version when GitHub is unreachable.
+     * - `promptForUpdate`: `true` - always ask before updating.
+     * - `allowOutdated`: `true` - tolerate an older version when GitHub is unreachable.
      * - `releaseFetchTimeout`: `1500` ms.
      *
      * Also makes sure the .NET runtime XVDTool needs is present, since XVDTool
@@ -91,9 +102,7 @@ export class XVDTool extends ToolArtifact {
      * On Windows the `.exe` suffix is appended; on Linux the binary has no extension.
      */
     protected getExecutableName(): string {
-        const exeName = "XVDTool" + (window.process.platform === "win32" ? ".exe" : "");
-        console.log(`[${this.name}] getExecutableName() → '${exeName}'.`);
-        return exeName;
+        return "XVDTool" + (window.process.platform === "win32" ? ".exe" : "");
     }
 
     /**
@@ -108,6 +117,7 @@ export class XVDTool extends ToolArtifact {
         for (const asset of release.assets) {
             const name = asset.name.toLowerCase();
             if (name.includes(platform) && name.includes(arch)) {
+                log(this.name, `Release ${release.tagName} asset '${asset.name}' matches ${platform} ${arch}`);
                 return asset;
             }
         }
@@ -127,11 +137,15 @@ export class XVDTool extends ToolArtifact {
             return -1;
         }
         try {
-            const result = semver.compare(current, latest);
-            return result;
-        } catch {
+            return semver.compare(current, latest);
+        } catch (error) {
             // If tags are not valid semver, fallback to string comparison.
             const result = current.localeCompare(latest);
+            log(
+                this.name,
+                `'${current}' and '${latest}' are not both semver (${error instanceof Error ? error.message : String(error)}), `
+                + `compared as text instead: ${result}`
+            );
             return result;
         }
     }
@@ -151,13 +165,14 @@ export class XVDTool extends ToolArtifact {
      * (`chmod 755`) since GitHub release tarballs do not preserve permissions.
      */
     protected onInstalled(context: ToolInstalledContext): Promise<void> {
-        console.log(`[${this.name}] onInstalled: version='${context.version}', action='${context.action}'.`);
-        if (process.platform === "linux") {
-            const exe = this.getExecutable();
-            console.log(`[${this.name}] Applying chmod 755 to '${exe}' (Linux requires explicit execute permission).`);
-            return fs.promises.chmod(exe, 0o755);
-        }
-        return Promise.resolve();
+        if (process.platform !== "linux") return Promise.resolve();
+
+        const exe = this.getExecutable();
+        log(this.name, `${context.action} '${context.version}', marking '${exe}' executable for Linux`);
+        return fs.promises.chmod(exe, 0o755).catch(error => {
+            log(this.name, `chmod 755 on '${exe}' failed: ${error instanceof Error ? error.message : String(error)}`);
+            throw error;
+        });
     }
 
     /**
@@ -175,7 +190,7 @@ export class XVDTool extends ToolArtifact {
      * @returns Always resolves to `null` (output is reported via progress events).
      */
     async decryptFile(inputFile: string, cikKeys: Record<string, string>, checkForUpdates: boolean = false): Promise<string | null> {
-        console.log(`[${this.name}] decryptFile() called. inputFile='${inputFile}', keys=${Object.keys(cikKeys).length}, checkForUpdates=${checkForUpdates}.`);
+        log(this.name, `Decrypting '${inputFile}' with ${Object.keys(cikKeys).length} known CIK keys, checkForUpdates=${checkForUpdates}`);
 
         // Ensure XVDTool is installed (and optionally up-to-date) before running.
         const { executable: xvdtoolExecutable } = await this.check({
@@ -186,22 +201,29 @@ export class XVDTool extends ToolArtifact {
         });
 
         const entries = Object.entries(cikKeys);
-        if (entries.length === 0) throw new Error("Decryption failed: no CIK keys were provided.");
+        if (entries.length === 0) {
+            log(this.name, `No CIK keys were supplied for '${inputFile}', so it cannot be decrypted`);
+            throw new Error("Decryption failed: no CIK keys were provided.");
+        }
 
         let lastError = "";
+        let attempt = 0;
         for (const [cikUuid, cikData] of entries) {
-            console.log(`[${this.name}] Trying CIK ${cikUuid}...`);
+            attempt += 1;
+            log(this.name, `Trying CIK ${cikUuid} (${attempt} of ${entries.length}) on '${inputFile}'`);
             try {
                 await this.runTool("decrypting", xvdtoolExecutable, [
                     "-nd", "-eu", "-cik", cikUuid, "-cikdata", cikData, inputFile
                 ]);
-                console.log(`[${this.name}] Decrypted '${inputFile}' with CIK ${cikUuid}.`);
+                log(this.name, `Decrypted '${inputFile}' with CIK ${cikUuid}`);
                 return null;
             } catch (err) {
                 lastError = err instanceof Error ? err.message : String(err);
-                console.warn(`[${this.name}] CIK ${cikUuid} failed: ${lastError}`);
+                log(this.name, `CIK ${cikUuid} did not decrypt '${inputFile}': ${lastError}`);
             }
         }
+
+        log(this.name, `None of the ${entries.length} CIK keys decrypted '${inputFile}'`);
         throw new Error(`Decryption failed: none of the ${entries.length} known CIK keys worked. Last error: ${lastError}`);
     }
 
@@ -211,7 +233,7 @@ export class XVDTool extends ToolArtifact {
      * responding all arrive here as a thrown error rather than a promise nobody settles.
      */
     private async runTool(status: AppStatusType, executable: string, args: string[]): Promise<void> {
-        console.log(`[${this.name}] Running: ${executable} ${args.join(" ")}`);
+        log(this.name, `Running ${executable} ${redactCik(args).join(" ")}`);
 
         await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
             setStatus(status);
@@ -219,6 +241,7 @@ export class XVDTool extends ToolArtifact {
 
             const result = await run(executable, args, {
                 timeoutMs: XVDTOOL_TIMEOUT_MS,
+                redactArgs: redactCik,
                 // Both streams: the JSON protocol is documented as arriving on either.
                 onLine: line => {
                     const error = this.consumeLine(line, setMessage, setProgress);
@@ -227,7 +250,10 @@ export class XVDTool extends ToolArtifact {
             });
 
             if (result.spawnError || result.timedOut || result.code !== 0 || toolErrors.length > 0) {
-                console.error(`[${this.name}] Run failed.\n${describeResult(result)}`);
+                log(
+                    this.name,
+                    `Run failed with ${toolErrors.length} reported errors.\n${describeResult(result)}`
+                );
             }
 
             if (result.spawnError) throw new Error(`XVDTool could not be started (${result.spawnError}).`);
@@ -236,6 +262,8 @@ export class XVDTool extends ToolArtifact {
             }
             if (toolErrors.length > 0) throw new Error(toolErrors.join("; "));
             if (result.code !== 0) throw new Error(`XVDTool ended with code ${result.code}. ${result.output}`.trim());
+
+            log(this.name, `${executable} finished with code ${result.code} in ${result.durationMs}ms`);
         });
     }
 
@@ -271,7 +299,7 @@ export class XVDTool extends ToolArtifact {
 
         if (!parsed.error) return null;
         const detail = parsed.message ? `${parsed.error}: ${parsed.message}` : `${parsed.error} (raw: ${line})`;
-        console.error(`[${this.name}] Tool error: ${detail}`);
+        log(this.name, `Tool error: ${detail}`);
         return detail;
     }
 
@@ -290,7 +318,7 @@ export class XVDTool extends ToolArtifact {
      * @returns Always resolves to `null` (output is reported via progress events).
      */
     async extractFile(inputFile: string, outputFolder: string, checkForUpdates: boolean = false): Promise<string | null> {
-        console.log(`[${this.name}] extractFile() called. inputFile='${inputFile}', outputFolder='${outputFolder}', checkForUpdates=${checkForUpdates}.`);
+        log(this.name, `Extracting '${inputFile}' to '${outputFolder}', checkForUpdates=${checkForUpdates}`);
 
         // Ensure XVDTool is installed (and optionally up-to-date) before running.
         const { executable: xvdtoolExecutable } = await this.check({
@@ -304,10 +332,14 @@ export class XVDTool extends ToolArtifact {
 
         const written = fs.existsSync(outputFolder) ? fs.readdirSync(outputFolder).length : 0;
         if (written === 0) {
-            console.error(`[${this.name}] Extraction left ${outputFolder} empty.`);
+            log(
+                this.name,
+                `Extraction of '${inputFile}' reported success but '${outputFolder}' `
+                + `${fs.existsSync(outputFolder) ? "is empty" : "does not exist"}`
+            );
             throw new Error(`XVDTool reported success but nothing was written to ${outputFolder}.`);
         }
-        console.log(`[${this.name}] Extracted '${inputFile}' to '${outputFolder}'.`);
+        log(this.name, `Extracted '${inputFile}' to '${outputFolder}', which now holds ${written} entries`);
         return null;
     }
 }

@@ -8,6 +8,7 @@ import { HashRouter } from "react-router-dom";
 
 import App from "@renderer/App";
 import { reportEnvironment } from "@renderer/scripts/diagnostics/EnvironmentReport";
+import { log } from "@renderer/scripts/LauncherLog";
 
 import "@renderer/styles/index.css";
 
@@ -53,6 +54,8 @@ class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryStat
     }
 }
 
+log("Renderer", `Renderer starting, log file ${launcherLogPath() || "unknown"}`);
+
 ReactDOM.createRoot(document.getElementById("app") as HTMLElement).render(
     <ErrorBoundary>
         <HashRouter>
@@ -61,5 +64,12 @@ ReactDOM.createRoot(document.getElementById("app") as HTMLElement).render(
     </ErrorBoundary>
 );
 
+log("Renderer", "React root mounted");
+
 // Registry and disk probes, so they wait until the window has drawn.
-window.requestIdleCallback(() => reportEnvironment(), { timeout: 5000 });
+window.requestIdleCallback(() => {
+    log("Renderer", "Window is idle, collecting the environment report for the log header");
+    reportEnvironment();
+}, { timeout: 5000 });
+
+window.addEventListener("beforeunload", () => log("Renderer", "Window unloading"));

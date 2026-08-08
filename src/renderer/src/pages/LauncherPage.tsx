@@ -1,5 +1,7 @@
 import warningIcon from "@renderer/assets/images/icons/warning-icon.png";
 
+import { describeError } from "@shared/diagnostics/Log";
+import { log } from "@renderer/scripts/LauncherLog";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { useAppStore } from "@renderer/states/AppStore";
 import { useShallow } from "zustand/shallow";
@@ -242,10 +244,18 @@ export function LauncherPage() {
 
     const deleteProfile = async (index: number) => {
         const profile = allProfiles[index];
-        if (!profile) return;
+        if (!profile) {
+            log("LauncherPage", `Delete ignored: no profile at index ${index} of ${allProfiles.length}`);
+            return;
+        }
         if (!await confirmProfileDeletion(profile)) return;
         snapshotPositions();
-        await removeProfile(profile);
+        try {
+            await removeProfile(profile);
+        } catch (e) {
+            log("LauncherPage", `Deleting "${profile.name}" failed: ${describeError(e)}`);
+            setError(`Could not delete ${profile.name}: ${(e as Error).message ?? e}`);
+        }
     };
 
     const handleReorder = (targetUuid: string) => {
@@ -264,10 +274,11 @@ export function LauncherPage() {
     };
 
     const launchGame = async (profile: Profile) => {
+        log("LauncherPage", `Play pressed on "${profile.name}" (${profile.uuid})`);
         try {
             await launchProfile(profile);
         } catch (e) {
-            console.error(e);
+            log("LauncherPage", `Launch of "${profile.name}" ended in an error shown to the user: ${describeError(e)}`);
             setError((e as Error).message);
             ProgressBar.reset();
         }
@@ -342,10 +353,16 @@ export function LauncherPage() {
                         }}
                         onDrop={(e) => {
                             e.preventDefault();
+                            if (dragUuidRef.current) {
+                                log("LauncherPage", `Profile order saved: ${allProfiles.map(p => p.name).join(", ")}`);
+                            }
                             setDragUuid(null);
                             saveData();
                         }}
                         onDragEnd={() => {
+                            if (dragUuidRef.current) {
+                                log("LauncherPage", `Profile order saved: ${allProfiles.map(p => p.name).join(", ")}`);
+                            }
                             setDragUuid(null);
                             saveData();
                         }}
@@ -357,6 +374,7 @@ export function LauncherPage() {
                             isSelected={lastLaunchedProfileUuid === profile.uuid}
                             canPlay={canLaunch && !runtimeWarning}
                             onEdit={() => {
+                                log("LauncherPage", `Opening the editor for "${profile.name}" (${profile.uuid})`);
                                 setEditingProfile(index);
                                 navigate("/profile-editor");
                             }}
@@ -369,9 +387,14 @@ export function LauncherPage() {
                 })}
                 <div className="launcher-profile-card launcher-create-card" data-uuid="__create__" onClick={async () => {
                     snapshotPositions();
-                    const result = await createProfileFlow();
-                    if (!result) return;
-                    navigate(isModded(result.profile) ? "/profile-editor" : "/");
+                    try {
+                        const result = await createProfileFlow();
+                        if (!result) return;
+                        navigate(isModded(result.profile) ? "/profile-editor" : "/");
+                    } catch (e) {
+                        log("LauncherPage", `Profile creation failed: ${describeError(e)}`);
+                        setError(`Could not create the profile: ${(e as Error).message ?? e}`);
+                    }
                 }}>
                     <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
                         <path d="M10 4V16M4 10H16" stroke="#9f9f9f" strokeWidth="2.5" strokeLinecap="square" />

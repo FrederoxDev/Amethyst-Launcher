@@ -1,9 +1,11 @@
 import { useAppStore } from "@renderer/states/AppStore";
 import { Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { describeError } from "@shared/diagnostics/Log";
 import { Popup } from "@renderer/states/PopupStore";
 import { createProfileFlow } from "@renderer/scripts/flows/CreateProfile";
 import { adoptAllForeignGameData } from "@renderer/scripts/flows/AdoptGameData";
 import { isModded } from "@renderer/scripts/domain/Profile";
+import { log } from "@renderer/scripts/LauncherLog";
 
 import lushCaveImage from "@renderer/assets/images/art/lush_cave.jpg";
 import craftingIcon from "@renderer/assets/images/icons/crafting-icon.png";
@@ -70,8 +72,15 @@ function DownloadManagerButton() {
 
     const cancelDownload = (id: string) => {
         const dl = downloads.find(d => d.id === id);
-        if (dl?.abortController) {
+        if (!dl) {
+            log("Downloads", `Dismissed download ${id}, which is no longer in the list`);
+        }
+        else if (dl.abortController) {
+            log("Downloads", `User cancelled "${dl.name}" (${id}) at ${Math.round(dl.progress * 100)}%, status ${dl.status}`);
             dl.abortController.abort();
+        }
+        else {
+            log("Downloads", `Removed "${dl.name}" (${id}) from the list; status ${dl.status} carries nothing to abort`);
         }
         removeDownload(id);
     };
@@ -173,17 +182,24 @@ export default function App() {
     const onboardingStarted = useRef(false);
 
     useEffect(() => {
-        setTimeout(() => useAppStore.getState().versions.cleanupStaleLocks(), 0);
+        setTimeout(() => {
+            useAppStore.getState().versions.cleanupStaleLocks().catch(e => {
+                log("App", `Stale lock sweep failed: ${describeError(e)}`);
+            });
+        }, 0);
     }, []);
 
     useEffect(() => {
         // Guard against React StrictMode double-mount in dev (and any future
         // remount). Once we've kicked off onboarding, never kick it off again
         // from this tree.
-        if (onboardingStarted.current) return;
+        if (onboardingStarted.current) {
+            log("App", "Onboarding already started for this tree, not starting it again");
+            return;
+        }
         onboardingStarted.current = true;
         adoptAllForeignGameData().catch(e => {
-            console.error("[App] Could not resolve existing game data:", e);
+            log("App", `Resolving existing game data failed: ${describeError(e)}`);
             useAppStore.getState().setError(`Could not resolve existing game data: ${(e as Error).message ?? e}`);
         });
     }, []);
@@ -194,10 +210,11 @@ export default function App() {
 
         try {
             if (!fs.existsSync(modsPath)) {
+                log("App", `Creating the mods folder ${modsPath}`);
                 fs.mkdirSync(modsPath, { recursive: true });
             }
         } catch (e) {
-            console.error("Failed to initialize mods folder watcher:", e);
+            log("App", `No mods folder watcher: ${modsPath} could not be created: ${describeError(e)}`);
             return;
         }
 
@@ -218,8 +235,9 @@ export default function App() {
             watcher = fs.watch(modsPath, { persistent: false }, () => {
                 scheduleRefresh();
             });
+            log("App", `Watching ${modsPath} for mod changes`);
         } catch (e) {
-            console.error("Failed to watch mods folder:", e);
+            log("App", `No mods folder watcher: fs.watch on ${modsPath} failed: ${describeError(e)}`);
             return;
         }
 

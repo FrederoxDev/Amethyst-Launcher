@@ -1,3 +1,4 @@
+import { log } from "@renderer/scripts/LauncherLog";
 import { PathUtils } from "../../PathUtils";
 import { GithubRelease } from "../github/GithubRelease";
 import { GithubAsset } from "../github/GithubAsset";
@@ -5,7 +6,7 @@ import { CheckAction, DefaultCheckOptions, ToolArtifact, ToolCheckResult, ToolIn
 
 /**
  * Concrete {@link ToolArtifact} implementation for
- * [GDK Proton](https://github.com/raonygamer/gdk-proton) – a Proton build
+ * [GDK Proton](https://github.com/raonygamer/gdk-proton) - a Proton build
  * tailored for running GDK games on Linux.
  *
  * Supported platforms: **Linux** only.
@@ -26,14 +27,14 @@ export class GDKProton extends ToolArtifact {
      */
     isSupported(): boolean {
         const supported = window.process.platform === "linux";
-        console.log(`[${this.name}] isSupported() → ${supported} (platform='${window.process.platform}').`);
+        if (!supported) log(this.name, `Not supported on platform '${window.process.platform}', Linux only`);
         return supported;
     }
 
     /**
      * Overrides the base `check()` to supply GDK Proton-specific defaults:
-     * - `promptForUpdate`: `false` – always auto-update without prompting.
-     * - `allowOutdated`: `true` – tolerate an older version when GitHub is unreachable.
+     * - `promptForUpdate`: `false` - always auto-update without prompting.
+     * - `allowOutdated`: `true` - tolerate an older version when GitHub is unreachable.
      * - `releaseFetchTimeout`: `1000` ms.
      */
     check(options?: DefaultCheckOptions | undefined): Promise<ToolCheckResult> {
@@ -55,7 +56,6 @@ export class GDKProton extends ToolArtifact {
      * Returns the executable filename (`proton`).
      */
     protected getExecutableName(): string {
-        console.log(`[${this.name}] getExecutableName() → 'proton'.`);
         return "proton";
     }
 
@@ -64,8 +64,13 @@ export class GDKProton extends ToolArtifact {
      * a single archive per release.
      */
     protected async findAsset(release: GithubRelease): Promise<GithubAsset | null> {
-        console.log(`[${this.name}] Searching release assets. Total assets: ${release.assets.length}.`);
         const asset = release.assets[0] ?? null;
+        log(
+            this.name,
+            asset
+                ? `Taking the first asset of release ${release.tagName}: '${asset.name}' of ${release.assets.length}`
+                : `Release ${release.tagName} ships no assets`
+        );
         return asset;
     }
 
@@ -97,9 +102,13 @@ export class GDKProton extends ToolArtifact {
      * (`chmod 755`) since GitHub release archives may not preserve permissions.
      */
     protected async onInstalled(context: ToolInstalledContext): Promise<void> {
-        console.log(`[${this.name}] onInstalled: version='${context.version}', action='${context.action}'.`);
         const folder = this.getFolder();
-        console.log(`[${this.name}] Applying chmod 755 recursively to '${folder}'.`);
-        await PathUtils.chmodRecursive(folder, 0o755);
+        log(this.name, `${context.action} '${context.version}', marking everything in '${folder}' executable`);
+        try {
+            await PathUtils.chmodRecursive(folder, 0o755);
+        } catch (error) {
+            log(this.name, `chmod 755 across '${folder}' failed: ${error instanceof Error ? error.message : String(error)}`);
+            throw error;
+        }
     }
 }

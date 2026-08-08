@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { log } from "@renderer/scripts/LauncherLog";
 import { SetStateAction, StateUtils } from "./StateUtils";
 
 export type NodeCallback<SubmitArgs> = (args: PopupUseArguments<SubmitArgs>) => React.ReactNode;
@@ -43,7 +44,11 @@ export class Popup {
 
     static async useAsync<T = void>(node: NodeOrCallback<T>): Promise<T> {
         if (this.busy) {
-            console.warn("[Popup.useAsync] called while another popup is already open — rejecting. Sequence your popups or check Popup.isOpen() first.");
+            log(
+                "Popup",
+                "Refusing to open a popup while another one is already open. Sequence the popups or check "
+                + "Popup.isOpen() first; the caller sees a rejected promise."
+            );
             return Promise.reject(new Error("Another popup is already open."));
         }
         this.busy = true;
