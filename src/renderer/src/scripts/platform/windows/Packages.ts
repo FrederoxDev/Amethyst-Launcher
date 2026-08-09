@@ -190,6 +190,12 @@ export function readIdentityName(versionPath: string): string {
     return match[1];
 }
 
+/**
+ * One unreadable entry is not an answer about the rest of them, and every caller is on the launch
+ * path, where an entry Windows half-wrote is a reason to register again rather than a reason to
+ * stop. A skipped entry costs a registration that turns out to be unnecessary; a thrown one costs
+ * the launch, with a line of registry path where a user needs something to do.
+ */
 export function listRegistered(): RegisteredPackage[] {
     const listed = regedit().listSync(PACKAGES_KEY);
     if (!listed[PACKAGES_KEY].exists) return [];
@@ -199,13 +205,25 @@ export function listRegistered(): RegisteredPackage[] {
         if (!key.toLowerCase().startsWith(MINECRAFT_FAMILY_PREFIX)) continue;
 
         const fullKey = `${PACKAGES_KEY}\\${key}`;
-        const values = regedit().listSync(fullKey)[fullKey];
-        if (!values.exists) throw new Error(`Registry key ${fullKey} vanished while being read`);
+        let installPath: string | undefined;
+        try {
+            const values = regedit().listSync(fullKey)[fullKey];
+            installPath = values.exists ? values.values["PackageRootFolder"]?.value as string | undefined : undefined;
+        } catch (e) {
+            log("Packages", `Skipping ${fullKey}, which could not be read: ${describeError(e)}`);
+            continue;
+        }
 
-        const installPath = values.values["PackageRootFolder"]?.value as string | undefined;
-        if (!installPath) throw new Error(`Registry key ${fullKey} is missing PackageRootFolder`);
+        if (!installPath) {
+            log("Packages", `Skipping ${fullKey}, which holds no PackageRootFolder to register from`);
+            continue;
+        }
 
-        out.push({ family: key.split("_")[0], familyName: familyNameFrom(key), installPath });
+        try {
+            out.push({ family: key.split("_")[0], familyName: familyNameFrom(key), installPath });
+        } catch (e) {
+            log("Packages", `Skipping ${fullKey}, whose name is not shaped like a package: ${describeError(e)}`);
+        }
     }
     return out;
 }

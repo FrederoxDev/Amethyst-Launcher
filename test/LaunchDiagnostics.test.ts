@@ -76,6 +76,18 @@ describe("machine readiness", () => {
         assert.equal(verdict.kind, "developer-mode-off");
         assert.match(verdict.nextStep, /For developers/);
     });
+
+    it("keeps a route that needs no launcher, for a repair that does not take", () => {
+        for (const developerMode of [true, false]) {
+            for (const sideloadingBlockedByPolicy of [true, false]) {
+                const verdict = classifyMachineReadiness({ developerMode, sideloadingBlockedByPolicy });
+                if (verdict.kind === "ready") continue;
+                assert.notEqual(verdict.manualStep.trim(), "", `${verdict.kind} has no by-hand route`);
+                assert.match(verdict.manualStep, /press Play again/, `${verdict.kind} does not say what to do after`);
+                assert.doesNotMatch(verdict.manualStep, /permission prompt/, `${verdict.kind} still expects a prompt`);
+            }
+        }
+    });
 });
 
 describe("build integrity", () => {
@@ -138,10 +150,51 @@ describe("launch outcome", () => {
         assert.equal(verdict.started, true);
     });
 
+    it("counts a game on screen over the process id Windows named and that has since gone", () => {
+        const verdict = classifyLaunch(facts({
+            activationPid: 5150,
+            activationPidAlive: false,
+            shellSpawnError: "spawn explorer.exe ENOENT",
+            processes: [{ pid: 42, executablePath: `${BUILD}\\Minecraft.Windows.exe` }],
+        }));
+        assert.equal(verdict.kind, "running");
+    });
+
     it("does not fail a launch it could not check", () => {
-        const verdict = classifyLaunch(facts({ probeFailed: true, activationPid: 900 }));
-        assert.equal(verdict.kind, "unverified");
-        assert.equal(verdict.started, true);
+        const stillThere = classifyLaunch(facts({ probeFailed: true, activationPid: 900, activationPidAlive: true }));
+        assert.equal(stillThere.kind, "unverified");
+        assert.equal(stillThere.started, true);
+
+        const nothingNamed = classifyLaunch(facts({ probeFailed: true }));
+        assert.equal(nothingNamed.kind, "unverified");
+        assert.equal(nothingNamed.started, true);
+    });
+
+    it("still calls a named process that has died a crash when the process list is unreadable", () => {
+        const verdict = classifyLaunch(facts({ probeFailed: true, activationPid: 900, activationPidAlive: false }));
+        assert.equal(verdict.kind, "exited-immediately");
+        assert.equal(verdict.started, false);
+    });
+
+    it("does not report a success when neither way of asking got anywhere and nothing can be checked", () => {
+        const verdict = classifyLaunch(facts({
+            probeFailed: true,
+            hresult: "0x80270254",
+            usedShellFallback: true,
+            shellSpawnError: "spawn explorer.exe ENOENT",
+        }));
+        assert.equal(verdict.kind, "activation-refused");
+        assert.equal(verdict.started, false);
+    });
+
+    it("does not say Windows refused a request it accepted", () => {
+        const verdict = classifyLaunch(facts({
+            usedShellFallback: true,
+            shellSpawnError: "spawn explorer.exe ENOENT",
+        }));
+        assert.equal(verdict.kind, "activation-refused");
+        assert.doesNotMatch(verdict.summary, /refused/);
+        assert.match(verdict.summary, /accepted/);
     });
 
     it("blames Windows only when Windows actually refused", () => {
@@ -223,6 +276,8 @@ describe("launch outcome", () => {
             facts({ activationPid: 1, activationPidAlive: false }),
             facts({ activationPid: 1, activationPidAlive: true }),
             facts({ processes: [{ pid: 2, executablePath: "D:\\Other\\Minecraft.Windows.exe" }] }),
+            facts({ probeFailed: true, activationPid: 1, activationPidAlive: false }),
+            facts({ probeFailed: true, usedShellFallback: true, shellSpawnError: "no explorer" }),
             facts(),
         ];
 

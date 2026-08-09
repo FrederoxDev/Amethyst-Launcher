@@ -163,7 +163,7 @@ const SETUP_NEXT_STEP =
  * was on keeps the registration after it is turned off, so nothing else on the launch path
  * notices, and Windows then refuses the activation or kills the process on sight.
  */
-function assertMachineReady(): void {
+function assertMachineReady(desired: DesiredState): void {
     const developerMode = Packages.readDeveloperMode();
     const sideloadingBlockedByPolicy = Packages.readSideloadingPolicyBlock();
 
@@ -194,8 +194,65 @@ function assertMachineReady(): void {
     throw new SystemSetupRequiredError(
         readiness.headline,
         `${readiness.explanation}\n\n${readiness.nextStep}`,
-        () => Packages.enableDeveloperMode(),
+        readiness.manualStep,
+        async status => {
+            await Packages.enableDeveloperMode();
+            await dropRegistration(desired.versionPath, status);
+        },
     );
+}
+
+/**
+ * A registration made from a build folder stops being runnable the moment Developer Mode goes
+ * off, and turning it back on does not revive it - Windows keeps the registry entry but refuses
+ * to start it. reconcilePackage trusts that entry and skips straight to an activation that dies
+ * on the spot, so the entry has to go with it.
+ *
+ * Only this launch's own game. Unregistering takes the package's local data with it, and the
+ * other channel may be a Microsoft Store install with somebody's worlds in it, which this
+ * launch neither touches nor needs.
+ */
+async function dropRegistration(versionPath: string, status: (m: string) => void): Promise<void> {
+    let family: string;
+    try {
+        family = packageFamilyFor(versionPath);
+    } catch (e) {
+        log("Machine", `Cannot tell which game ${versionPath} is, so no registration is dropped: ${describeError(e)}`);
+        return;
+    }
+
+    const wanted = family.toLowerCase();
+    const registered = listRegisteredSafely().filter(pkg => pkg.family.toLowerCase() === wanted);
+    if (registered.length === 0) {
+        log("Machine", `Nothing registered as ${family}, so the launch registers it from scratch anyway`);
+        return;
+    }
+
+    status("Setting Minecraft up again...");
+    for (const pkg of registered) {
+        log("Machine", `Dropping the ${pkg.family} registration at ${pkg.installPath} so it is made again`);
+        try {
+            await Packages.unregister(pkg.family);
+        } catch (e) {
+            log(
+                "Machine",
+                `Could not drop ${pkg.family}, the registration that follows replaces it anyway: ${describeError(e)}`
+            );
+        }
+    }
+}
+
+/**
+ * The repair runs after Developer Mode is already on, so a registry read that fails here must
+ * not throw away a fix the user has just consented to and been prompted for.
+ */
+function listRegisteredSafely(): Packages.RegisteredPackage[] {
+    try {
+        return Packages.listRegistered();
+    } catch (e) {
+        log("Machine", `Could not read which Minecraft packages are registered: ${describeError(e)}`);
+        return [];
+    }
 }
 
 /**
@@ -228,6 +285,7 @@ async function repairAndRetry(
         throw new SystemSetupRequiredError(
             readiness.headline,
             `${readiness.explanation}\n\n${readiness.nextStep}`,
+            readiness.manualStep,
             () => Packages.enableDeveloperMode(),
         );
     }
@@ -349,7 +407,7 @@ export async function reconcile(desired: DesiredState, onStatus?: (m: string) =>
     // First, and on every launch: it is the one blocker that costs nothing to read, and a launch
     // that proceeds without it ends in a refusal or an instant exit with no reason attached.
     status("Checking Windows settings...");
-    assertMachineReady();
+    assertMachineReady(desired);
 
     // Cheap and reversible first, invasive last.
     reconcileDataLink(desired, status);

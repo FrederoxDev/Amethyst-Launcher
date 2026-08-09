@@ -26,7 +26,7 @@ export async function runSystemSetup(required: SystemSetupRequiredError): Promis
     try {
         await ProgressBar.useAsync(async ({ setMessage }) => {
             setMessage("Waiting for permission...");
-            await required.repair();
+            await required.repair(setMessage);
         }, true, FULL_PROGRESS_RESET_OPTIONS);
     } catch (e) {
         log("SystemSetup", `"${required.title}" could not be applied: ${describeError(e)}`);
