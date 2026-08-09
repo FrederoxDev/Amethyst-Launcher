@@ -1,4 +1,5 @@
 import { log, logBlock } from "@renderer/scripts/LauncherLog";
+import { describeError } from "@shared/diagnostics/Log";
 
 const child = window.require("child_process") as typeof import("child_process");
 const fs = window.require("fs") as typeof import("fs");
@@ -14,7 +15,7 @@ const PACKAGES_KEY =
 const APP_MODEL_UNLOCK_KEY = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock";
 const APPX_POLICY_KEY = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Appx";
 
-/** Any Minecraft Bedrock package family, not a fixed list — release, preview, and whatever ships next. */
+/** Any Minecraft Bedrock package family, not a fixed list: release, preview, and whatever ships next. */
 const MINECRAFT_FAMILY_PREFIX = "microsoft.minecraft";
 
 export interface RegisteredPackage {
@@ -53,11 +54,33 @@ function familyNameFrom(packageFullName: string): string {
     return `${parts[0]}_${parts[parts.length - 1]}`;
 }
 
+/**
+ * The one message for a manifest that cannot answer a question about the build. Every caller is
+ * on the launch path, where "no <Identity Name>" tells a user nothing they can act on.
+ */
+function damagedManifest(manifest: string, what: string, cause?: unknown): Error {
+    log("Packages", `${manifest} could not be read for ${what}: ${describeError(cause ?? "the value is not in the file")}`);
+    return new Error(
+        "This Minecraft version is damaged, so Windows cannot install it.\n\n"
+        + "Delete this version in the launcher and download it again.",
+        { cause }
+    );
+}
+
+function readManifest(versionPath: string, what: string): { path: string; xml: string } {
+    const manifest = path.join(versionPath, "appxmanifest.xml");
+    try {
+        return { path: manifest, xml: fs.readFileSync(manifest, "utf-8") };
+    } catch (e) {
+        throw damagedManifest(manifest, what, e);
+    }
+}
+
 /** The manifest's `<Application Id>`, the second half of an AUMID. */
 export function readApplicationId(versionPath: string): string {
-    const manifest = path.join(versionPath, "appxmanifest.xml");
-    const id = fs.readFileSync(manifest, "utf-8").match(/<Application\s+Id="([^"]+)"/)?.[1];
-    if (!id) throw new Error(`${manifest}: no <Application Id>`);
+    const manifest = readManifest(versionPath, "its application id");
+    const id = manifest.xml.match(/<Application\s+Id="([^"]+)"/)?.[1];
+    if (!id) throw damagedManifest(manifest.path, "its application id");
     return id;
 }
 
@@ -76,7 +99,7 @@ interface PowerShellResult {
 /**
  * Base64 rather than a quoted `-Command` string: the script carries manifest paths and
  * nested scripts, and cmd/PowerShell quoting mangles those (it silently ate an earlier
- * version of this very script). Never rejects — callers classify the exit code themselves.
+ * version of this very script). Never rejects, so callers classify the exit code themselves.
  */
 /**
  * powershell.exe serialises its progress stream onto stderr as a multi-kilobyte CLIXML blob.
@@ -108,25 +131,39 @@ function quote(value: string): string {
     return value.replace(/'/g, "''");
 }
 
-function readDword(key: string, name: string): number | null {
+/** `undefined` when the registry could not be read at all, which is not the same as absent. */
+function readDword(key: string, name: string): number | null | undefined {
+    let listed: ReturnType<RegeditModule["listSync"]>[string];
     try {
-        const listed = regedit().listSync(key)[key];
-        if (!listed.exists) return null;
-        const value = listed.values[name]?.value;
-        return typeof value === "number" ? value : null;
-    } catch {
-        return null;
+        listed = regedit().listSync(key)[key];
+    } catch (e) {
+        log("Packages", `Could not read ${key} from the registry: ${describeError(e)}`);
+        return undefined;
     }
+
+    if (!listed.exists) return null;
+    const value = listed.values[name]?.value;
+    return typeof value === "number" ? value : null;
 }
 
 /**
  * Registering an unpacked build from a loose appxmanifest.xml is a developer operation, so
- * Windows refuses it (HRESULT 0x80073CFF) unless this is set. The Settings app writes it
- * when Developer Mode is switched on; it is the single value that differs between a machine
- * where the launcher works and one where registration silently does nothing.
+ * Windows refuses it (HRESULT 0x80073CFF) unless this is set, and it refuses to run what it
+ * registered for the same reason. The Settings app writes it when Developer Mode is switched on;
+ * it is the single value that differs between a machine where the launcher works and one where
+ * registration silently does nothing.
+ *
+ * `null` when Windows would not answer, which must never be read as "off": a launch stopped over
+ * an unanswered question is a dead end, while a launch that carries on gets a real answer out of
+ * whichever step Windows refuses next.
  */
+export function readDeveloperMode(): boolean | null {
+    const value = readDword(APP_MODEL_UNLOCK_KEY, "AllowDevelopmentWithoutDevLicense");
+    return value === undefined ? null : value === 1;
+}
+
 export function isDeveloperModeEnabled(): boolean {
-    return readDword(APP_MODEL_UNLOCK_KEY, "AllowDevelopmentWithoutDevLicense") === 1;
+    return readDeveloperMode() === true;
 }
 
 /**
@@ -134,17 +171,22 @@ export function isDeveloperModeEnabled(): boolean {
  * AppModelUnlock ourselves is pointless: the policy wins and gets re-applied. This is the
  * one cause the launcher genuinely cannot repair.
  */
+export function readSideloadingPolicyBlock(): boolean | null {
+    const allTrusted = readDword(APPX_POLICY_KEY, "AllowAllTrustedApps");
+    const withoutLicense = readDword(APPX_POLICY_KEY, "AllowDevelopmentWithoutDevLicense");
+    if (allTrusted === undefined || withoutLicense === undefined) return null;
+    return allTrusted === 0 || withoutLicense === 0;
+}
+
 export function isSideloadingBlockedByPolicy(): boolean {
-    return readDword(APPX_POLICY_KEY, "AllowAllTrustedApps") === 0
-        || readDword(APPX_POLICY_KEY, "AllowDevelopmentWithoutDevLicense") === 0;
+    return readSideloadingPolicyBlock() === true;
 }
 
 /** The package family a build registers as, read from the build itself. */
 export function readIdentityName(versionPath: string): string {
-    const manifest = path.join(versionPath, "appxmanifest.xml");
-    const xml = fs.readFileSync(manifest, "utf-8");
-    const match = xml.match(/<Identity\s+Name="([^"]+)"/);
-    if (!match) throw new Error(`No <Identity Name> in ${manifest}`);
+    const manifest = readManifest(versionPath, "which Minecraft it is");
+    const match = manifest.xml.match(/<Identity\s+Name="([^"]+)"/);
+    if (!match) throw damagedManifest(manifest.path, "which Minecraft it is");
     return match[1];
 }
 
@@ -280,9 +322,17 @@ export async function register(versionPath: string): Promise<void> {
     log("Packages", `Registered ${identity} from ${versionPath}`);
 }
 
+/** The manual route, so a refused or broken permission prompt is never the end of the road. */
+const DEVELOPER_MODE_BY_HAND =
+    "You can turn it on yourself instead: open Settings, then System, then For developers, and turn on "
+    + "Developer Mode. Then come back and press Play.";
+
 export class ElevationDeclinedError extends Error {
     constructor() {
-        super("The permission prompt was dismissed.");
+        super(
+            "Developer Mode was not turned on, because the Windows permission prompt was dismissed.\n\n"
+            + `Press Play again and choose Yes. ${DEVELOPER_MODE_BY_HAND}`
+        );
         this.name = "ElevationDeclinedError";
     }
 }
@@ -338,17 +388,20 @@ export async function enableDeveloperMode(): Promise<void> {
         logBlock("Packages", "Elevation did not start", result.output);
         // ERROR_CANCELLED from ShellExecute is how a dismissed UAC prompt comes back.
         if (/cancel/i.test(result.output)) throw new ElevationDeclinedError();
-        throw new Error(`Windows would not show the permission prompt. ${result.output}`);
+        throw new Error(`Windows would not show the permission prompt.\n\n${DEVELOPER_MODE_BY_HAND}`);
     }
 
     if (result.code !== 0) {
         logBlock("Packages", `Elevated Developer Mode write failed (exit ${result.code})`, elevatedError || result.output);
-        throw new Error(`Developer Mode could not be turned on. ${elevatedError || result.output}`);
+        throw new Error(`Developer Mode could not be turned on.\n\n${DEVELOPER_MODE_BY_HAND}`);
     }
 
     if (!isDeveloperModeEnabled()) {
         log("Packages", "Developer Mode still reads as off after the elevated write");
-        throw new Error("Developer Mode was set but Windows still reports it as off.");
+        throw new Error(
+            "Developer Mode was turned on but Windows still reports it as off.\n\n"
+            + "Restart the computer and press Play again."
+        );
     }
 
     log("Packages", "Developer Mode is now on");

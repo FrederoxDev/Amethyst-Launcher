@@ -1,12 +1,10 @@
-import warningIcon from "@renderer/assets/images/icons/warning-icon.png";
-
 import { describeError } from "@shared/diagnostics/Log";
 import { log } from "@renderer/scripts/LauncherLog";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { useAppStore } from "@renderer/states/AppStore";
 import { useShallow } from "zustand/shallow";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
-import { launchProfile } from "@renderer/scripts/flows/Launch";
+import { launchErrorMessage, launchProfile } from "@renderer/scripts/flows/Launch";
 import { useNavigate } from "react-router-dom";
 import { channelLabel } from "@renderer/scripts/domain/Channel";
 import { Profile, isModded } from "@renderer/scripts/domain/Profile";
@@ -157,7 +155,6 @@ export function LauncherPage() {
         setEditingProfile,
         setAllProfiles,
         saveData,
-        error,
         setError,
         allMods,
     ] = useAppStore(useShallow(state => [
@@ -166,7 +163,6 @@ export function LauncherPage() {
         state.setEditingProfileIndex,
         state.setProfiles,
         state.saveData,
-        state.error,
         state.setError,
         state.allMods,
     ]));
@@ -279,7 +275,7 @@ export function LauncherPage() {
             await launchProfile(profile);
         } catch (e) {
             log("LauncherPage", `Launch of "${profile.name}" ended in an error shown to the user: ${describeError(e)}`);
-            setError((e as Error).message);
+            setError(launchErrorMessage(e));
             ProgressBar.reset();
         }
     };
@@ -304,26 +300,6 @@ export function LauncherPage() {
 
     return (
         <div className="launcher-page">
-            {error !== "" && (
-                <div className="launcher-error-banner">
-                    <div className="launcher-error-body">
-                        <img src={warningIcon} className="launcher-error-icon pixelated" alt="" />
-                        <p className="minecraft-seven launcher-error-text">{error}</p>
-                    </div>
-                    <div className="launcher-error-actions">
-                        <div className="launcher-error-close" onClick={() => setError("")}>
-                            <svg width="18" height="18" viewBox="0 0 12 12">
-                                <polygon
-                                    className="fill-[#FFFFFF]"
-                                    fillRule="evenodd"
-                                    points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"
-                                />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Profile Grid */}
             <div className="launcher-profile-grid" ref={gridRef} onDragOver={(e) => { e.preventDefault(); setDragPos({ x: e.clientX, y: e.clientY }); }} onDrop={(e) => e.preventDefault()}>
                 {allProfiles.map((profile, index) => {

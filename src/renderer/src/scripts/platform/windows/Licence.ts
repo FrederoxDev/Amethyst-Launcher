@@ -98,7 +98,11 @@ async function startGame(executable: string, cwd: string): Promise<import("child
         proc.once("spawn", () => resolve());
         proc.once("error", error => {
             log("Licence", `${executable} could not be started: ${describeError(error)}`);
-            reject(new Error(`Could not start ${executable}. ${describeError(error)}`));
+            reject(new Error(
+                "Minecraft could not be started to sign this profile in.\n\n"
+                + "Antivirus software blocking Minecraft is the most common cause, so allow the launcher's "
+                + "Versions folder in it. Then press Play again."
+            ));
         });
     });
 
@@ -132,10 +136,14 @@ export async function ensureEntitlement(
     const proc = await startGame(executable, versionPath);
     if (proc.pid === undefined) {
         log("Licence", `${executable} spawned without a pid, so it cannot be waited on or stopped`);
-        throw new Error(`Could not start ${executable} to acquire a licence.`);
+        throw new Error(
+            "Minecraft could not be started to sign this profile in.\n\n"
+            + "Restart the computer and press Play again."
+        );
     }
 
     let waited = 0;
+    let crashed = false;
     let stopped = "the wait ran out";
 
     try {
@@ -146,6 +154,7 @@ export async function ensureEntitlement(
                 return;
             }
             if (proc.exitCode !== null) {
+                crashed = true;
                 stopped = `the game exited with code ${proc.exitCode}`;
                 log("Licence", `${executable} exited with code ${proc.exitCode} before writing an entitlement`);
                 break;
@@ -165,8 +174,17 @@ export async function ensureEntitlement(
             + `(waited for any *.ent to appear, up to ${ACQUIRE_TIMEOUT_MS / 1000}s; ${stopped}). `
             + `Folder holds: ${describeEntitlements(dataDir)}`
         );
+        // Two different problems: a game that closed itself is a crash and belongs to the game or
+        // its mods, while a game that stayed up and wrote nothing is waiting for a sign-in.
         throw new Error(
-            "Could not acquire a Minecraft licence for this profile. Sign in to Minecraft or the Xbox app once, then try again."
+            crashed
+                ? "Minecraft closed itself while the launcher was signing this profile in.\n\n"
+                    + "This is a crash in the game or in one of its mods. Open Logs and read the newest Minecraft "
+                    + "log for the reason. If this profile uses mods, turn them off one at a time in the profile "
+                    + "editor to find which one crashes."
+                : "This profile could not be signed in to Minecraft.\n\n"
+                    + "Open Minecraft from the Start menu once and sign in with your Microsoft account, then come "
+                    + "back and press Play."
         );
     }
 

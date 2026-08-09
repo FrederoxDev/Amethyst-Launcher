@@ -1,3 +1,4 @@
+import { describeError } from "@shared/diagnostics/Log";
 import { SystemSetupRequiredError } from "@renderer/scripts/platform/LauncherPlatform";
 import { log } from "@renderer/scripts/LauncherLog";
 import { confirmAction } from "@renderer/popups/ConfirmPopup";
@@ -18,14 +19,19 @@ export async function runSystemSetup(required: SystemSetupRequiredError): Promis
     if (!accepted) {
         log("SystemSetup", `User declined: ${required.title}`);
         throw new Error(
-            `${required.title}. Minecraft cannot start until that is done, so the launch was stopped.`
+            `Minecraft cannot start until this is done, so the launch was stopped.\n\n${required.explanation}`
         );
     }
 
-    await ProgressBar.useAsync(async ({ setMessage }) => {
-        setMessage("Waiting for permission...");
-        await required.repair();
-    }, true, FULL_PROGRESS_RESET_OPTIONS);
+    try {
+        await ProgressBar.useAsync(async ({ setMessage }) => {
+            setMessage("Waiting for permission...");
+            await required.repair();
+        }, true, FULL_PROGRESS_RESET_OPTIONS);
+    } catch (e) {
+        log("SystemSetup", `"${required.title}" could not be applied: ${describeError(e)}`);
+        throw e;
+    }
 
     log("SystemSetup", `Applied: ${required.title}`);
 }

@@ -1,9 +1,17 @@
 import { Channel } from "@renderer/scripts/domain/Channel";
+import { errnoCode } from "@renderer/scripts/Directories";
 import { log, logBlock } from "@renderer/scripts/LauncherLog";
 import { describeError, describeResult, readMarker, runPowerShell } from "@shared/diagnostics/ProcessRunner";
 import { ForeignGameDataError, ProcessInfo, SystemSetupRequiredError } from "../LauncherPlatform";
 import * as Activation from "./Activation";
 import * as DataLink from "./DataLink";
+import {
+    classifyLaunch,
+    classifyMachineReadiness,
+    describeHresult,
+    launchFailureMessage,
+    LaunchFacts,
+} from "./LaunchDiagnostics";
 import * as Licence from "./Licence";
 import * as Packages from "./Packages";
 import * as VersionFiles from "./VersionFiles";
@@ -110,7 +118,10 @@ function reconcileDataLink(desired: DesiredState, status: (m: string) => void): 
     switch (state.kind) {
         case "blocked-by-file":
             log("Machine", `Cannot link ${desired.channel} game data: ${roaming} is a file`);
-            throw new Error(`"${roaming}" is a file, not a folder. Remove or rename it.`);
+            throw new Error(
+                `Minecraft's ${desired.channel} data cannot be set up because a file is sitting where its `
+                + `folder belongs.\n\nRename or delete that file, then press Play again.\n\n"${roaming}"`
+            );
 
         case "foreign-data":
             log("Machine", `Cannot link ${desired.channel} game data: ${roaming} holds data no profile owns`);
@@ -141,6 +152,52 @@ function reconcileDataLink(desired: DesiredState, status: (m: string) => void): 
     DataLink.link(desired.channel, desired.dataDir);
 }
 
+/** Every registration failure ends somewhere a user can go next, whatever Windows said. */
+const SETUP_NEXT_STEP =
+    "Close Minecraft if it is open, restart the computer, then press Play again. If it still will not "
+    + "set up, open Logs and send the log file, which holds what Windows said.";
+
+/**
+ * The two machine-wide settings Windows checks every time a loose-registered package is run,
+ * not only when it is registered. A machine that registered the package while Developer Mode
+ * was on keeps the registration after it is turned off, so nothing else on the launch path
+ * notices, and Windows then refuses the activation or kills the process on sight.
+ */
+function assertMachineReady(): void {
+    const developerMode = Packages.readDeveloperMode();
+    const sideloadingBlockedByPolicy = Packages.readSideloadingPolicyBlock();
+
+    if (developerMode === null || sideloadingBlockedByPolicy === null) {
+        log(
+            "Machine",
+            "Windows would not say whether Developer Mode is on or whether policy blocks sideloading, so the "
+            + "launch carries on and lets registration or activation give the real answer"
+        );
+        return;
+    }
+
+    const readiness = classifyMachineReadiness({ developerMode, sideloadingBlockedByPolicy });
+
+    log(
+        "Machine",
+        `Machine preconditions: Developer Mode ${developerMode ? "on" : "off"}, `
+        + `sideloading blocked by this computer's policy ${sideloadingBlockedByPolicy ? "yes" : "no"}, `
+        + `verdict "${readiness.kind}"`
+    );
+
+    if (readiness.kind === "ready") return;
+
+    if (readiness.kind === "sideloading-blocked") {
+        throw new Error(`${readiness.headline}\n\n${readiness.explanation}\n\n${readiness.nextStep}`);
+    }
+
+    throw new SystemSetupRequiredError(
+        readiness.headline,
+        `${readiness.explanation}\n\n${readiness.nextStep}`,
+        () => Packages.enableDeveloperMode(),
+    );
+}
+
 /**
  * One repair per blocker, and at most one permission prompt across the whole launch. The
  * unrepairable branches come first: when sideloading is policy-blocked or Developer Mode is
@@ -158,22 +215,19 @@ async function repairAndRetry(
     );
 
     if (failure.blocker === "sideloading-policy") {
+        const readiness = classifyMachineReadiness({ developerMode: true, sideloadingBlockedByPolicy: true });
         log("Machine", "Sideloading is blocked by this computer's policy, which the launcher cannot change");
-        throw new Error(
-            "This computer's settings do not allow Minecraft to be set up, and the block is managed by "
-            + "whoever administers it, so the launcher cannot change it. If this is a work or school "
-            + "computer, its administrator has to allow app sideloading.\n\n"
-            + `(${failure.detail})`
-        );
+        throw new Error(`${readiness.headline}\n\n${readiness.explanation}\n\n${readiness.nextStep}`);
     }
 
+    // Windows can refuse for want of Developer Mode while the registry value reads as on, so this
+    // branch is decided by what Windows said and not by re-reading the setting.
     if (failure.blocker === "developer-mode") {
-        log("Machine", "Developer Mode is off, asking the user for permission to turn it on");
+        const readiness = classifyMachineReadiness({ developerMode: false, sideloadingBlockedByPolicy: false });
+        log("Machine", "Windows refused the registration for want of Developer Mode, asking for permission to turn it on");
         throw new SystemSetupRequiredError(
-            "Windows needs a setting turned on",
-            "Windows will not let Minecraft be set up until Developer Mode is on. The launcher can turn it "
-            + "on for you, but Windows will ask for permission first.\n\n"
-            + "Choose Yes when the Windows permission prompt appears, and the launch will carry on by itself.",
+            readiness.headline,
+            `${readiness.explanation}\n\n${readiness.nextStep}`,
             () => Packages.enableDeveloperMode(),
         );
     }
@@ -193,11 +247,10 @@ async function repairAndRetry(
                 log("Machine", `Retry after the package-in-use wait failed for another reason: ${describeError(e)}`);
                 throw e;
             }
-            log("Machine", `Windows still holds the package after the wait (blocker ${e.blocker})`);
+            logBlock("Machine", `Windows still holds the package after the wait (blocker ${e.blocker})`, e.detail);
             throw new Error(
                 "Minecraft is still open, or Windows has not finished closing it.\n\n"
-                + "Close Minecraft, wait a few seconds, then press Launch again.\n\n"
-                + `(${e.detail})`
+                + "Close Minecraft, wait a few seconds, then press Play again."
             );
         }
     }
@@ -222,16 +275,16 @@ async function repairAndRetry(
                 log("Machine", `Retry after clearing ${family} failed for another reason: ${describeError(e)}`);
                 throw e;
             }
-            log("Machine", `Registration still refused after clearing ${family} (blocker ${e.blocker})`);
+            logBlock("Machine", `Registration still refused after clearing ${family} (blocker ${e.blocker})`, e.detail);
             throw new Error(
-                `Minecraft could not be set up on this computer.\n\n${e.message}\n\n(${e.detail})`
+                `Minecraft could not be set up on this computer.\n\n${e.message}\n\n${SETUP_NEXT_STEP}`
             );
         }
     }
 
-    log("Machine", `No repair exists for blocker "${failure.blocker}", giving up on registration`);
+    logBlock("Machine", `No repair exists for blocker "${failure.blocker}", giving up on registration`, failure.detail);
     throw new Error(
-        `Minecraft could not be set up on this computer.\n\n${failure.message}\n\n(${failure.detail})`
+        `Minecraft could not be set up on this computer.\n\n${failure.message}\n\n${SETUP_NEXT_STEP}`
     );
 }
 
@@ -292,6 +345,11 @@ export async function reconcile(desired: DesiredState, onStatus?: (m: string) =>
         `Reconciling ${desired.channel}: build ${desired.versionPath}, data ${desired.dataDir}, `
         + `proxy ${desired.proxy ? "required" : "not required"}`
     );
+
+    // First, and on every launch: it is the one blocker that costs nothing to read, and a launch
+    // that proceeds without it ends in a refusal or an instant exit with no reason attached.
+    status("Checking Windows settings...");
+    assertMachineReady();
 
     // Cheap and reversible first, invasive last.
     reconcileDataLink(desired, status);
@@ -359,14 +417,33 @@ export async function activate(
         const seen = registered.length === 0
             ? "no Minecraft packages are registered"
             : registered.map(p => `${p.family} -> ${p.installPath}`).join("; ");
-        log("Machine", `Cannot activate ${wantFamily}: ${seen}`);
+        log(
+            "Machine",
+            `Cannot activate ${wantFamily}: ${seen}. Expected it to be registered to ${versionPath} `
+            + `by the reconcile step that just ran`
+        );
         throw new Error(
-            `Minecraft was not set up on this computer, so it cannot be started.\n\n`
-            + `Expected ${packageFamilyFor(versionPath)} from ${versionPath}, but ${seen}.`
+            "Minecraft was set up but Windows has no record of it, so it cannot be started.\n\n"
+            + "Press Play again. If that does not help, restart the computer and try once more."
         );
     }
 
-    const aumid = `${pkg.familyName}!${Packages.readApplicationId(versionPath)}`;
+    // A resolvable app id is the other half of "registered": the family comes from the registry
+    // and the application id from the build, and an activation with either half wrong resolves
+    // to nothing at all while still reporting a success.
+    let applicationId: string;
+    try {
+        applicationId = Packages.readApplicationId(versionPath);
+    } catch (e) {
+        log("Machine", `Cannot build an app id for ${versionPath}: ${describeError(e)}`);
+        throw new Error(
+            "This Minecraft version is missing the file Windows needs in order to start it.\n\n"
+            + "Delete this version in the launcher and download it again.",
+            { cause: e }
+        );
+    }
+
+    const aumid = `${pkg.familyName}!${applicationId}`;
     log("Machine", `Activating ${aumid}`);
     log("Machine", `Build holds ${VersionFiles.describePayload(versionPath)}`);
 
@@ -375,6 +452,7 @@ export async function activate(
     // is what has always worked here, so a machine that launches today still launches today.
     const outcome = await Activation.activateByAumid(aumid);
     let launchedBy: string;
+    let shellSpawnError = "";
 
     if (outcome.ok) {
         launchedBy = `the activation manager, which created process ${outcome.pid}`;
@@ -383,45 +461,90 @@ export async function activate(
         launchedBy = "the shell, after the activation manager refused";
         logBlock(
             "Machine",
-            `Activation manager would not start ${aumid}, falling back to the shell`,
+            `Activation manager would not start ${aumid} (HRESULT ${outcome.hresult || "none"}, `
+            + `${describeHresult(outcome.hresult)}), falling back to the shell`,
             outcome.detail
         );
-        activateViaShell(aumid);
+        shellSpawnError = await activateViaShell(aumid);
     }
 
     status("Waiting for Minecraft to start...");
-    await confirmStarted(aumid, versionPath, dataDir, pkg, outcome, launchedBy);
+    await confirmStarted(aumid, versionPath, dataDir, pkg, outcome, launchedBy, shellSpawnError);
 }
 
-function activateViaShell(aumid: string): void {
-    const explorer = child.spawn("explorer.exe", [`shell:AppsFolder\\${aumid}`], {
-        detached: true,
-        stdio: "ignore",
+/** Resolves once explorer.exe is up, or with the reason it could not be started. */
+function activateViaShell(aumid: string): Promise<string> {
+    return new Promise(resolve => {
+        let settled = false;
+        const settle = (failure: string): void => {
+            if (settled) return;
+            settled = true;
+            resolve(failure);
+        };
+
+        const explorer = child.spawn("explorer.exe", [`shell:AppsFolder\\${aumid}`], {
+            detached: true,
+            stdio: "ignore",
+        });
+        explorer.on("error", error => {
+            log("Machine", `explorer.exe could not be started to activate ${aumid}: ${describeError(error)}`);
+            settle(describeError(error));
+        });
+        explorer.on("spawn", () => {
+            log("Machine", `explorer.exe shell:AppsFolder\\${aumid} started as pid ${explorer.pid ?? "unknown"}`);
+            settle("");
+        });
+        explorer.unref();
     });
-    explorer.on("error", error => {
-        log("Machine", `explorer.exe could not be started to activate ${aumid}: ${describeError(error)}`);
-    });
-    explorer.on("spawn", () => {
-        log("Machine", `explorer.exe shell:AppsFolder\\${aumid} started as pid ${explorer.pid ?? "unknown"}`);
-    });
-    explorer.unref();
 }
 
-/** Whether a process id Windows handed back is still alive, without disturbing it. */
+/**
+ * Whether a process id Windows handed back is still alive, without disturbing it.
+ *
+ * EPERM is the answer for a process this one is not allowed to query, and a process that cannot
+ * be queried is emphatically a process that exists. Reading it as "gone" is what turned a running
+ * game into a report that Windows had created a process which "has already exited".
+ */
 function isAlive(pid: number): boolean {
     if (pid <= 0) return false;
     try {
         process.kill(pid, 0);
         return true;
-    } catch {
+    } catch (e) {
+        const code = errnoCode(e);
+        if (code === "EPERM") return true;
+        if (code !== "ESRCH") {
+            log("Machine", `Could not tell whether process ${pid} is alive, treating it as gone: ${describeError(e)}`);
+        }
         return false;
     }
+}
+
+/**
+ * Whether the process Windows says it created is still there. Two witnesses, and either one is
+ * enough: the process list only ever sees the game, so a live process id it does not hold is
+ * still a live process, and calling that a crash is the mistake worth being careful about.
+ */
+function activationPidAlive(pid: number, probe: ProcessProbe): boolean {
+    if (pid <= 0) return false;
+    if (!probe.queryFailed && probe.processes.some(p => p.pid === pid)) return true;
+    return isAlive(pid);
+}
+
+/** A setting Windows would not report reads as unknown, never as the safe-looking answer. */
+function describeSetting(value: boolean | null, yes: string, no: string): string {
+    if (value === null) return "Windows would not say";
+    return value ? yes : no;
 }
 
 /**
  * The activation result and the poll answer different questions and both are needed. The HRESULT
  * says whether Windows accepted the request; only the poll says whether a game is there, because
  * a process Windows created and that exited a moment later reports as a success.
+ *
+ * Windows refusing, Windows starting nothing, and the game dying on its own are three different
+ * problems with three different fixes, so the verdict is decided from the facts in one place
+ * rather than described as one failure with several possible causes.
  */
 async function confirmStarted(
     aumid: string,
@@ -429,32 +552,42 @@ async function confirmStarted(
     dataDir: string,
     pkg: Packages.RegisteredPackage,
     outcome: Activation.ActivationOutcome,
-    launchedBy: string
+    launchedBy: string,
+    shellSpawnError: string
 ): Promise<void> {
     const startedAt = Date.now();
     let probe: ProcessProbe = { processes: [], queryFailed: true, detail: "not checked yet" };
 
+    const facts = (): LaunchFacts => ({
+        versionPath,
+        hresult: outcome.hresult,
+        activationPid: outcome.pid,
+        activationPidAlive: activationPidAlive(outcome.pid, probe),
+        usedShellFallback: !outcome.ok,
+        shellSpawnError,
+        processes: probe.processes,
+        probeFailed: probe.queryFailed,
+    });
+
+    let verdict = classifyLaunch(facts());
+
     while (Date.now() - startedAt < ACTIVATION_TIMEOUT_MS) {
         await sleep(ACTIVATION_POLL_MS);
         probe = await probeProcesses(GAME_EXECUTABLE);
-        if (probe.queryFailed) continue;
+        verdict = classifyLaunch(facts());
 
-        const started = probe.processes.find(
-            p => p.executablePath === "" || samePath(path.dirname(p.executablePath), versionPath)
-        );
-        if (started) {
-            const from = started.executablePath || "an image path Windows would not report";
-            log("Machine", `${aumid} started as pid ${started.pid} from ${from}, via ${launchedBy}`);
+        if (verdict.kind === "running") {
+            log("Machine", `${aumid} is up: ${verdict.summary}, via ${launchedBy}`);
             return;
         }
+
+        // A process id Windows handed back that is already gone is a finished answer, not a
+        // slow one, so the user is told it crashed now instead of in fifteen seconds' time.
+        if (verdict.kind === "exited-immediately") break;
     }
 
-    // Being unable to look is not evidence that the game failed to start, so it must not fail the launch.
-    if (probe.queryFailed) {
-        log(
-            "Machine",
-            `Activated ${aumid} via ${launchedBy}, but Windows could not be asked whether it started`
-        );
+    if (verdict.started) {
+        log("Machine", `${aumid} was started via ${launchedBy}, but ${verdict.summary}`);
         return;
     }
 
@@ -463,34 +596,37 @@ async function confirmStarted(
         : probe.processes.map(p => `${p.pid} ${p.executablePath || "(image path unreadable)"}`).join("; ");
 
     const createdProcess = outcome.pid > 0
-        ? `Windows created process ${outcome.pid}, which ${isAlive(outcome.pid) ? "is still running" : "has already exited"}`
+        ? `Windows created process ${outcome.pid}, which ${activationPidAlive(outcome.pid, probe) ? "is still running" : "has already exited"}`
         : "Windows created no process";
 
     const detail =
-        `App id: ${aumid}\n`
+        `Outcome: ${verdict.kind}, ${verdict.summary}\n`
+        + `App id: ${aumid}\n`
         + `Started by: ${launchedBy}\n`
-        + `Activation result: ${outcome.hresult || "none"} (${Activation.describeHresult(outcome.hresult)})\n`
+        + `Activation result: ${outcome.hresult || "none"} (${describeHresult(outcome.hresult)})\n`
         + `${createdProcess}\n`
+        + (shellSpawnError ? `Shell fallback: ${shellSpawnError}\n` : "")
+        + `Waited: ${Math.round((Date.now() - startedAt) / 1000)}s\n`
         + `Expected build: ${versionPath}\n`
         + `Build holds: ${VersionFiles.describePayload(versionPath)}\n`
         + `Registered as: ${pkg.family} -> ${pkg.installPath}\n`
         + `Licence files in ${dataDir}: ${Licence.describeEntitlements(dataDir)}\n`
-        + `Developer Mode: ${Packages.isDeveloperModeEnabled() ? "on" : "off"}\n`
-        + `Sideloading blocked by this computer's policy: ${Packages.isSideloadingBlockedByPolicy() ? "yes" : "no"}\n`
-        + `Minecraft processes running: ${seen}`;
+        + `Developer Mode: ${describeSetting(Packages.readDeveloperMode(), "on", "off")}\n`
+        + `Sideloading blocked by this computer's policy: `
+        + `${describeSetting(Packages.readSideloadingPolicyBlock(), "yes", "no")}\n`
+        + `Minecraft processes running: ${seen}\n`
+        + `Process query: ${probe.detail}`;
+
+    logBlock("Machine", `${aumid} did not end up running: ${verdict.kind}`, detail);
 
     // Windows keeps its own account of the activation, and it is routinely the only place the
-    // real reason is written down. A tester cannot be asked to go and read Event Viewer.
-    const sinceSeconds = Math.round((Date.now() - startedAt) / 1000) + 30;
-    const events = await Activation.recentAppModelEvents(sinceSeconds);
+    // real reason is written down. A tester cannot be asked to go and read Event Viewer. Skipped
+    // when the game itself crashed, because that reason is in the game's log and not in Windows'.
+    if (verdict.kind !== "exited-immediately") {
+        const sinceSeconds = Math.round((Date.now() - startedAt) / 1000) + 30;
+        const events = await Activation.recentAppModelEvents(sinceSeconds);
+        logBlock("Machine", `What Windows recorded in the last ${sinceSeconds} seconds`, events);
+    }
 
-    logBlock("Machine", `${aumid} was activated but no Minecraft appeared`, detail);
-    logBlock("Machine", `What Windows recorded in the last ${sinceSeconds} seconds`, events);
-
-    throw new Error(
-        `Minecraft did not start.\n\n`
-        + `Windows accepted the request to open it, but no Minecraft was running `
-        + `${Math.round(ACTIVATION_TIMEOUT_MS / 1000)} seconds later.\n\n`
-        + detail
-    );
+    throw new Error(launchFailureMessage(verdict));
 }

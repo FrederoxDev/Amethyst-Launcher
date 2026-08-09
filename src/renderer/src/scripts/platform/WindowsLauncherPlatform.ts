@@ -9,6 +9,7 @@ import { describeError } from "@shared/diagnostics/ProcessRunner";
 import { ILauncherPlatform, LauncherPaths, LaunchRequest, ProcessInfo } from "./LauncherPlatform";
 import * as Licence from "./windows/Licence";
 import * as Machine from "./windows/Machine";
+import * as VersionFiles from "./windows/VersionFiles";
 
 const os = window.require("os") as typeof import("os");
 const fs = window.require("fs") as typeof import("fs");
@@ -199,6 +200,11 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             + `developer mode ${request.developerMode ? "on" : "off"}, modded ${isModded(profile) ? "yes" : "no"}`
         );
 
+        // Before anything reads the build: every step from here on opens a file inside it, and a
+        // half-extracted folder would otherwise surface as whichever of those failed first.
+        status(`Checking ${version.label}...`);
+        VersionFiles.assertBuildUsable(version.path);
+
         status(`Checking whether a ${profile.channel} build is running...`);
         const conflict = await this.findConflictingGame(version);
         if (conflict) throw this.conflictError(conflict, profile, version);
@@ -216,16 +222,28 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         // this profile's folder, and precede activation, which requires it.
         await Licence.ensureEntitlement(version.path, dataDir, status);
 
-        writeSession(dataDir, {
-            schema: SESSION_SCHEMA,
-            launchedAt: new Date().toISOString(),
-            profile: { uuid: profile.uuid, name: profile.name },
-            channel: profile.channel,
-            version: { uuid: version.uuid, label: version.label, path: version.path },
-            runtime: request.runtime,
-            mods: request.mods,
-            developerMode: request.developerMode,
-        });
+        // The runtime reads this to find out which mods to load, so a launch that cannot write it
+        // would start a game that silently has no mods in it.
+        try {
+            writeSession(dataDir, {
+                schema: SESSION_SCHEMA,
+                launchedAt: new Date().toISOString(),
+                profile: { uuid: profile.uuid, name: profile.name },
+                channel: profile.channel,
+                version: { uuid: version.uuid, label: version.label, path: version.path },
+                runtime: request.runtime,
+                mods: request.mods,
+                developerMode: request.developerMode,
+            });
+        } catch (e) {
+            log("Launch", `Could not write the session file into ${dataDir}: ${describeError(e)}`);
+            throw new Error(
+                "This profile's folder could not be written to, so Minecraft was not started.\n\n"
+                + "Check that the drive is not full and that antivirus software is not blocking the "
+                + `launcher, then press Play again.\n\n${dataDir}`,
+                { cause: e }
+            );
+        }
         log("Launch", `Session file written to ${dataDir} for "${profile.name}"`);
 
         status("Starting Minecraft...");

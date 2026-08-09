@@ -32,7 +32,11 @@ export interface LaunchRequest {
 /** A channel's game data folder holds data that no profile owns. Recoverable by adopting it. */
 export class ForeignGameDataError extends Error {
     constructor(readonly channel: Channel, readonly dataPath: string) {
-        super(`"${dataPath}" holds Minecraft data that no profile owns.`);
+        super(
+            `Minecraft's ${channel} folder holds worlds and settings that no profile owns, so this profile `
+            + `cannot use it.\n\nPress Play again and choose what to do with it, or move "${dataPath}" `
+            + "somewhere else yourself."
+        );
         this.name = "ForeignGameDataError";
     }
 }
