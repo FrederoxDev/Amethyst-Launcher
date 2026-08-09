@@ -184,7 +184,10 @@ export async function launchProfile(profile: Profile): Promise<void> {
             if (e instanceof SystemSetupRequiredError) {
                 if (systemSetupDone) {
                     log("Launch", `"${e.title}" is still unsatisfied after one repair attempt; giving up`);
-                    throw new Error(`${e.title}, and it is still not on after the launcher set it.\n\n${e.explanation}`);
+                    throw new Error(
+                        "The launcher could not finish setting Windows up, so Minecraft was not started.\n\n"
+                        + e.manualStep
+                    );
                 }
                 systemSetupDone = true;
                 log("Launch", `Launch blocked by "${e.title}"; running the repair`);

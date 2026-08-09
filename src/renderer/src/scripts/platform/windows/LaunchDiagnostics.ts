@@ -73,6 +73,8 @@ export interface MachineReadiness {
     headline: string;
     explanation: string;
     nextStep: string;
+    /** The route that needs no launcher and no permission prompt, for when the repair does not take. */
+    manualStep: string;
 }
 
 /**
@@ -93,6 +95,10 @@ export function classifyMachineReadiness(facts: {
             nextStep:
                 "If this is a work or school computer, ask its administrator to allow app sideloading. "
                 + "On your own computer, open Settings, then System, then For developers, and turn on Developer Mode.",
+            manualStep:
+                "Ask whoever administers this computer to allow app sideloading. On your own computer, open "
+                + "Settings, then System, then For developers, turn on Developer Mode, restart the computer "
+                + "and press Play again.",
         };
     }
 
@@ -106,10 +112,13 @@ export function classifyMachineReadiness(facts: {
             nextStep:
                 "Choose Yes when the Windows permission prompt appears and the launch carries on by itself. "
                 + "You can also turn it on yourself in Settings, then System, then For developers.",
+            manualStep:
+                "Open Settings, then System, then For developers, and turn on Developer Mode yourself. "
+                + "Then restart the computer and press Play again.",
         };
     }
 
-    return { kind: "ready", headline: "", explanation: "", nextStep: "" };
+    return { kind: "ready", headline: "", explanation: "", nextStep: "", manualStep: "" };
 }
 
 export type BuildIntegrityKind = "usable" | "folder-missing" | "files-missing";
@@ -223,6 +232,19 @@ export function isOurGame(process: ProcessSnapshot, versionPath: string): boolea
     return parentPath(process.executablePath) === normalisePath(versionPath);
 }
 
+function crashedOnStartup(pid: number): LaunchVerdict {
+    return {
+        kind: "exited-immediately",
+        started: false,
+        summary: `Windows started process ${pid} and it exited before the launcher saw a game`,
+        headline: "Minecraft started and then closed itself straight away.",
+        nextStep:
+            "This is a crash in the game or in one of its mods, not a problem with Windows. Open Logs and "
+            + "read the newest Minecraft log for the reason. If this profile uses mods, turn them off one at "
+            + "a time in the profile editor to find which one crashes.",
+    };
+}
+
 export function classifyLaunch(facts: LaunchFacts): LaunchVerdict {
     const ours = facts.probeFailed ? undefined : facts.processes.find(p => isOurGame(p, facts.versionPath));
     if (ours) {
@@ -235,6 +257,28 @@ export function classifyLaunch(facts: LaunchFacts): LaunchVerdict {
         };
     }
 
+    // Both ways of asking failed, and no process list can soften that, so it is decided before
+    // the process list gets a say.
+    if (facts.shellSpawnError !== "") {
+        const asked = facts.hresult === ACTIVATION_SUCCESS_HRESULT
+            ? `Windows accepted the activation (${facts.hresult}) but created no process`
+            : `Windows refused the activation (${facts.hresult || "no result"})`;
+        return {
+            kind: "activation-refused",
+            started: false,
+            summary: `${asked} and the shell fallback could not be started: ${facts.shellSpawnError}`,
+            headline: "Windows would not start Minecraft, and the second way of asking it failed too.",
+            nextStep: DEFAULT_HRESULT_NEXT_STEP,
+        };
+    }
+
+    // Asking a process whether it is still there needs no process list, so a game that Windows
+    // named and that has since died is known even when Windows will not list anything. Calling
+    // that unverified would report a success to somebody who has no game.
+    if (facts.hresult === ACTIVATION_SUCCESS_HRESULT && facts.activationPid > 0 && !facts.activationPidAlive) {
+        return crashedOnStartup(facts.activationPid);
+    }
+
     // Not being able to look is not evidence that nothing started, and failing a launch over an
     // unanswered question leaves a user with a game on screen and an error banner over it.
     if (facts.probeFailed) {
@@ -244,16 +288,6 @@ export function classifyLaunch(facts: LaunchFacts): LaunchVerdict {
             summary: "Windows would not say which processes are running, so the launch could not be confirmed either way",
             headline: "Minecraft was asked to start, but the launcher could not check whether it did.",
             nextStep: "If Minecraft does not appear within a few seconds, press Play again.",
-        };
-    }
-
-    if (facts.shellSpawnError !== "") {
-        return {
-            kind: "activation-refused",
-            started: false,
-            summary: `Windows refused the activation (${facts.hresult || "no result"}) and the shell fallback could not be started: ${facts.shellSpawnError}`,
-            headline: "Windows would not start Minecraft, and the second way of asking it failed too.",
-            nextStep: DEFAULT_HRESULT_NEXT_STEP,
         };
     }
 
@@ -283,16 +317,7 @@ export function classifyLaunch(facts: LaunchFacts): LaunchVerdict {
 
     // Windows accepted the request from here down, so nothing below may blame Windows for it.
     if (facts.activationPid > 0 && !facts.activationPidAlive) {
-        return {
-            kind: "exited-immediately",
-            started: false,
-            summary: `Windows started process ${facts.activationPid} and it exited before the launcher saw a game`,
-            headline: "Minecraft started and then closed itself straight away.",
-            nextStep:
-                "This is a crash in the game or in one of its mods, not a problem with Windows. Open Logs and "
-                + "read the newest Minecraft log for the reason. If this profile uses mods, turn them off one at "
-                + "a time in the profile editor to find which one crashes.",
-        };
+        return crashedOnStartup(facts.activationPid);
     }
 
     if (facts.activationPid > 0 && facts.activationPidAlive) {

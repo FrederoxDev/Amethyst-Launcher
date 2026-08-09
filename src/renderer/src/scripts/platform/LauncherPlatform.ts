@@ -51,7 +51,9 @@ export class SystemSetupRequiredError extends Error {
         readonly title: string,
         /** Shown to the user before the permission prompt appears, so it is never a surprise. */
         readonly explanation: string,
-        readonly repair: () => Promise<void>,
+        /** What to do by hand, for when the launcher's own repair does not take. */
+        readonly manualStep: string,
+        readonly repair: (onStatus: (message: string) => void) => Promise<void>,
     ) {
         super(title);
         this.name = "SystemSetupRequiredError";
