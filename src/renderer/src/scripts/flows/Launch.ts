@@ -1,4 +1,5 @@
 import { describeError } from "@shared/diagnostics/Log";
+import { AppStatusType } from "@renderer/scripts/AppStatus";
 import { Profile, isModded } from "@renderer/scripts/domain/Profile";
 import { log } from "@renderer/scripts/LauncherLog";
 import { ForeignGameDataError, SystemSetupRequiredError } from "@renderer/scripts/platform/LauncherPlatform";
@@ -9,6 +10,16 @@ import { adoptGameData } from "./AdoptGameData";
 import { runSystemSetup } from "./SystemSetup";
 
 const path = window.require("path") as typeof import("path");
+
+/** What the launcher is doing, said the way a user would say it. */
+const BUSY_WORDING: Partial<Record<AppStatusType, string>> = {
+    downloading: "downloading a Minecraft version",
+    extracting: "unpacking a Minecraft version",
+    decrypting: "unpacking a Minecraft version",
+    launching: "starting Minecraft",
+    importing: "importing files",
+    deleting: "deleting files",
+};
 
 interface ResolvedMods {
     runtime: { id: string; path: string } | null;
@@ -40,12 +51,16 @@ function resolveMods(profile: Profile): ResolvedMods {
     if (isModded(profile)) {
         if (runtimes.length === 0) {
             log("Launch", `"${profile.name}" is modded but none of its ${active.length} mods declares type "runtime"`);
-            throw new Error("A modded profile needs a runtime mod.");
+            throw new Error(
+                "A modded profile needs a runtime mod, and this one has none.\n\n"
+                + "Open the profile and tick a runtime mod, or turn mods off for it."
+            );
         }
         if (runtimes.length > 1) {
             log("Launch", `"${profile.name}" carries ${runtimes.length} runtime mods: ${runtimes.map(m => m.id).join(", ")}`);
             throw new Error(
-                `A modded profile can only have one runtime mod. Found: ${runtimes.map(m => `'${m.id}'`).join(", ")}.`
+                `A profile can only have one runtime mod, and this one has ${runtimes.length}: `
+                + `${runtimes.map(m => `'${m.id}'`).join(", ")}.\n\nOpen the profile and untick all but one of them.`
             );
         }
     }
@@ -66,7 +81,9 @@ function resolveMods(profile: Profile): ResolvedMods {
 async function resolveVersion(profile: Profile): Promise<InstalledVersion> {
     if (!profile.versionUuid) {
         log("Launch", `"${profile.name}" (${profile.uuid}) carries no versionUuid`);
-        throw new Error("This profile has no Minecraft version selected. Pick one in the profile editor.");
+        throw new Error(
+            "This profile has no Minecraft version selected.\n\nOpen the profile and pick one, then press Play."
+        );
     }
 
     const { versions } = useAppStore.getState();
@@ -79,7 +96,13 @@ async function resolveVersion(profile: Profile): Promise<InstalledVersion> {
         resolved = await versions.resolveOrInstall(profile.versionUuid);
     }, true);
 
-    if (!resolved) throw new Error("Could not resolve this profile's Minecraft version.");
+    if (!resolved) {
+        log("Launch", `resolveOrInstall(${profile.versionUuid}) returned nothing for "${profile.name}"`);
+        throw new Error(
+            `${profile.versionLabel || "This profile's Minecraft version"} could not be prepared.\n\n`
+            + "Open Versions, download it again, then press Play."
+        );
+    }
 
     const version = resolved as InstalledVersion;
     if (version.channel !== profile.channel) {
@@ -106,13 +129,19 @@ export async function launchProfile(profile: Profile): Promise<void> {
     );
 
     if (!ProgressBar.canDoAction("launch")) {
-        // Silently doing nothing here reads as a dead Play button, so say what is holding it.
+        // Silently doing nothing here reads as a dead Play button, so say what is holding it, and
+        // say it to the user too: the button is only greyed out on the page that owns it, and a
+        // launch asked for from a link or another page arrives here with nothing shown at all.
+        const { currentStatus, message } = ProgressBar.getState();
         log(
             "Launch",
-            `Launch of "${profile.name}" refused: the launcher is "${ProgressBar.getState().currentStatus}" `
-            + `(${ProgressBar.getState().message || "no message"}), which blocks the launch action`
+            `Launch of "${profile.name}" refused: the launcher is "${currentStatus}" `
+            + `(${message || "no message"}), which blocks the launch action`
         );
-        return;
+        throw new Error(
+            `The launcher is busy ${BUSY_WORDING[currentStatus] ?? "with something else"}, so "${profile.name}" `
+            + "was not started.\n\nWait for that to finish, then press Play again."
+        );
     }
 
     const resolvedMods = resolveMods(profile);
@@ -155,7 +184,7 @@ export async function launchProfile(profile: Profile): Promise<void> {
             if (e instanceof SystemSetupRequiredError) {
                 if (systemSetupDone) {
                     log("Launch", `"${e.title}" is still unsatisfied after one repair attempt; giving up`);
-                    throw e;
+                    throw new Error(`${e.title}, and it is still not on after the launcher set it.\n\n${e.explanation}`);
                 }
                 systemSetupDone = true;
                 log("Launch", `Launch blocked by "${e.title}"; running the repair`);
@@ -174,7 +203,25 @@ export async function launchProfileByUuid(profileUuid: string): Promise<void> {
     if (!profile) {
         const known = useAppStore.getState().profiles.map(p => p.uuid).join(", ") || "none";
         log("Launch", `No profile with UUID ${profileUuid}; known profiles: ${known}`);
-        throw new Error(`No profile with UUID ${profileUuid}.`);
+        throw new Error(
+            "That profile no longer exists, so it could not be started.\n\n"
+            + "Pick a profile in the launcher and press Play."
+        );
     }
     await launchProfile(profile);
+}
+
+/**
+ * What the banner shows. Anything thrown on the launch path is meant to carry its own words, so
+ * this only has to make sure that something reaches the user when one of them does not, because
+ * a banner with nothing in it is the dead end this whole path exists to avoid.
+ */
+export function launchErrorMessage(e: unknown): string {
+    const message = e instanceof Error ? e.message.trim() : typeof e === "string" ? e.trim() : "";
+    if (message !== "") return message;
+
+    return (
+        "Minecraft could not be started, and the reason did not come back in a form that can be shown here.\n\n"
+        + "Open Logs and send the newest launcher log."
+    );
 }

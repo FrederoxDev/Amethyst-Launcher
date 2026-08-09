@@ -1,0 +1,54 @@
+.launcher-error-banner {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    background-color: #CA3636;
+    width: 100%;
+    border: 3px solid #CF4A4A;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.launcher-error-body {
+    display: flex;
+    flex-direction: row;
+    padding: 8px;
+    gap: 8px;
+}
+
+.launcher-error-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.launcher-error-message {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.launcher-error-text {
+    color: #FFFFFF;
+    font-size: 16px;
+}
+
+.launcher-error-hint {
+    color: #E0E0E0;
+    font-size: 13px;
+}
+
+.launcher-error-actions {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: row;
+    padding: 8px;
+    gap: 8px;
+    justify-content: right;
+    align-items: center;
+}
+
+.launcher-error-close {
+    cursor: pointer;
+    padding: 4px;
+}

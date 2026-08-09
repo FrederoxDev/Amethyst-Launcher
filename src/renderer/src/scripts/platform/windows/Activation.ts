@@ -1,5 +1,6 @@
 import { log } from "@renderer/scripts/LauncherLog";
 import { describeResult, psQuote, readMarker, runPowerShell } from "@shared/diagnostics/ProcessRunner";
+import { ACTIVATION_SUCCESS_HRESULT, describeHresult, normaliseHresult } from "./LaunchDiagnostics";
 
 const { Buffer } = window.require("buffer") as typeof import("buffer");
 
@@ -17,34 +18,6 @@ const EVENT_CHANNELS = [
     "Microsoft-Windows-TWinUI/Operational",
     "Microsoft-Windows-AppXDeploymentServer/Operational",
 ];
-
-/**
- * FACILITY_SHELL activation results, plus the general codes seen in practice. Only codes with
- * a documented symbolic name are here; anything else is reported raw rather than guessed at.
- */
-const HRESULT_MEANINGS: Record<string, string> = {
-    "0x80004005": "E_FAIL, Windows gave no reason",
-    "0x80040154": "REGDB_E_CLASSNOTREG, the Windows component that starts apps is not registered",
-    "0x80070002": "ERROR_FILE_NOT_FOUND, Windows could not find part of the app",
-    "0x80070005": "E_ACCESSDENIED, Windows refused permission to start the app",
-    "0x80070057": "E_INVALIDARG, Windows did not accept the app id, so it resolved to nothing",
-    "0x80070522": "ERROR_PRIVILEGE_NOT_HELD, this account is not allowed to start the app",
-    "0x80270251": "E_ELEVATED_ACTIVATION_NOT_SUPPORTED, apps cannot be started from a program running as administrator",
-    "0x80270252": "E_UAC_DISABLED, User Account Control is off and Windows will not start packaged apps without it",
-    "0x80270253": "E_FULL_ADMIN_NOT_SUPPORTED, the built-in Administrator account cannot run packaged apps",
-    "0x80270254": "E_APPLICATION_NOT_REGISTERED, Windows has no record of this app for this user",
-    "0x80270255": "E_MULTIPLE_EXTENSIONS_FOR_APPLICATION, the app id matches more than one entry",
-    "0x80270256": "E_MULTIPLE_PACKAGES_FOR_FAMILY, more than one package claims this family",
-    "0x80270257": "E_APPLICATION_MANAGER_NOT_RUNNING, the Windows service that starts apps is not running",
-    "0x8027025A": "E_APPLICATION_ACTIVATION_TIMED_OUT, the app took too long to start",
-    "0x8027025B": "E_APPLICATION_ACTIVATION_EXEC_FAILURE, Windows could not start the app's program",
-    "0x8027025C": "E_APPLICATION_TEMPORARY_LICENSE_ERROR, there is a problem with the app's licence",
-    "0x8027025D": "E_APPLICATION_TRIAL_LICENSE_EXPIRED, the app's licence has expired",
-};
-
-export function describeHresult(hresult: string): string {
-    return HRESULT_MEANINGS[hresult.toUpperCase().replace("0X", "0x")] ?? "no documented meaning for this code";
-}
 
 export interface ActivationOutcome {
     /** Windows both accepted the request and reported a process for it. */
@@ -110,10 +83,6 @@ public static class GameLauncher {
 }
 `;
 
-function formatHresult(raw: string | null): string {
-    return raw ? raw.trim().toUpperCase().replace("0X", "0x") : "";
-}
-
 /**
  * Asks Windows to start the app and to say what happened, which `explorer.exe shell:AppsFolder`
  * cannot: it hands the request off and exits 0 either way, so a refused activation and a
@@ -135,7 +104,7 @@ export async function activateByAumid(aumid: string): Promise<ActivationOutcome>
         { timeoutMs: ACTIVATION_TIMEOUT_MS }
     );
 
-    const hresult = formatHresult(readMarker(result.output, "ACTIVATE_HRESULT"));
+    const hresult = normaliseHresult(readMarker(result.output, "ACTIVATE_HRESULT"));
     const pid = parseInt(readMarker(result.output, "ACTIVATE_PID") ?? "", 10);
     const failure = readMarker(result.output, "ACTIVATE_FAILURE") ?? "";
     const reached = readMarker(result.output, "ACTIVATE_STATE") === "ok";
@@ -146,7 +115,7 @@ export async function activateByAumid(aumid: string): Promise<ActivationOutcome>
         return { ok: false, hresult, pid: 0, detail };
     }
 
-    const ok = hresult === "0x00000000" && Number.isFinite(pid) && pid > 0;
+    const ok = hresult === ACTIVATION_SUCCESS_HRESULT && Number.isFinite(pid) && pid > 0;
     const detail =
         `ActivateApplication ${aumid}\n`
         + `  HRESULT ${hresult} (${describeHresult(hresult)})\n`

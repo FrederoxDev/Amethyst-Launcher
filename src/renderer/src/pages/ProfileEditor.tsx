@@ -11,7 +11,7 @@ import { Popup, PopupUseArguments } from "@renderer/states/PopupStore";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { useAppStore } from "@renderer/states/AppStore";
 import { VersionChoice, VersionPickerPopup } from "@renderer/popups/VersionPickerPopup";
-import { launchProfile as doLaunchProfile } from "@renderer/scripts/flows/Launch";
+import { launchErrorMessage, launchProfile as doLaunchProfile } from "@renderer/scripts/flows/Launch";
 import {
     confirmProfileDeletion,
     deleteProfile as removeProfile,
@@ -286,6 +286,10 @@ export function ProfileEditor() {
         const profile = allProfiles[selectedProfile];
         if (!profile) {
             log("ProfileEditor", `Play ignored: no profile at index ${selectedProfile} of ${allProfiles.length}`);
+            useAppStore.getState().setError(
+                "That profile is no longer open, so it could not be started.\n\n"
+                + "Go back to the launcher, pick a profile and press Play."
+            );
             return;
         }
 
@@ -295,7 +299,8 @@ export function ProfileEditor() {
         }
         catch (e) {
             log("ProfileEditor", `Launch of "${profile.name}" ended in an error shown to the user: ${describeError(e)}`);
-            useAppStore.getState().setError((e as Error).message);
+            useAppStore.getState().setError(launchErrorMessage(e));
+            ProgressBar.reset();
         }
     };
 

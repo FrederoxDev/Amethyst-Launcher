@@ -1,6 +1,7 @@
 import { Channel } from "@renderer/scripts/domain/Channel";
 import { log } from "@renderer/scripts/LauncherLog";
 import { describeResult, run } from "@shared/diagnostics/ProcessRunner";
+import { classifyBuild } from "./LaunchDiagnostics";
 
 const { createHash } = window.require("crypto") as typeof import("crypto");
 const fs = window.require("fs") as typeof import("fs");
@@ -267,18 +268,24 @@ export function describePayload(versionPath: string): string {
 
 /**
  * Nothing downstream reads the build folder before Windows is asked to run it, so an interrupted
- * extraction or a file an antivirus took away surfaced as a silent do-nothing activation.
+ * extraction or a file an antivirus took away surfaced as a silent do-nothing activation. Both
+ * files matter: the game is what runs, and the manifest is what Windows registers and what every
+ * package family and app id is read out of.
  */
-function assertPayload(versionPath: string): void {
-    const executable = path.join(versionPath, GAME_EXECUTABLE);
-    if (fs.existsSync(executable)) return;
+export function assertBuildUsable(versionPath: string): void {
+    const verdict = classifyBuild({
+        folderExists: fs.existsSync(versionPath),
+        gameExecutable: fs.existsSync(path.join(versionPath, GAME_EXECUTABLE)),
+        manifest: fs.existsSync(path.join(versionPath, "appxmanifest.xml")),
+    });
 
-    log("VersionFiles", `${executable} is missing. Folder holds: ${describePayload(versionPath)}`);
-    throw new Error(
-        "This Minecraft version is incomplete, so it cannot start.\n\n"
-        + `${GAME_EXECUTABLE} is not in ${versionPath}. Delete this version in the launcher and download it again. `
-        + "If it keeps happening, antivirus software is most likely removing the file as it is written."
+    if (verdict.kind === "usable") return;
+
+    log(
+        "VersionFiles",
+        `${versionPath} is not usable (${verdict.kind}). Folder holds: ${describePayload(versionPath)}`
     );
+    throw new Error(`${verdict.headline}\n\n${verdict.nextStep}`);
 }
 
 /**
@@ -336,7 +343,7 @@ export async function ensureVersionFiles(
     const status = onStatus ?? (() => {});
 
     log("VersionFiles", `Preparing the ${channel} build at ${versionPath}`);
-    assertPayload(versionPath);
+    assertBuildUsable(versionPath);
     log("VersionFiles", `Build at ${versionPath}: ${describePayload(versionPath)}`);
 
     status("Patching manifest...");

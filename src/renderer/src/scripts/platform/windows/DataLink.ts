@@ -62,7 +62,11 @@ export function readLink(channel: Channel): LinkState {
             return { kind: "absent" };
         }
         log("DataLink", `Could not read ${p} for ${channel}: ${describe(e)}`);
-        throw e;
+        throw new Error(
+            `Minecraft's ${channel} data folder could not be read, so this profile cannot be set up.\n\n`
+            + `${FOLDER_IN_USE_NEXT_STEP}\n\n"${p}"`,
+            { cause: e }
+        );
     }
 
     if (st.isSymbolicLink()) {
@@ -85,6 +89,10 @@ export function readLink(channel: Channel): LinkState {
     return { kind: "foreign-data" };
 }
 
+/** Whatever holds the folder is a running program or an open window, so the fix is the same one. */
+const FOLDER_IN_USE_NEXT_STEP =
+    "Close Minecraft and any window showing that folder, then press Play again.";
+
 export function link(channel: Channel, target: string): void {
     const p = roamingPath(channel);
     try {
@@ -95,7 +103,7 @@ export function link(channel: Channel, target: string): void {
         log("DataLink", `Could not point ${p} at ${target} for ${channel}: ${describe(e)}`);
         throw new Error(
             `Minecraft's ${channel} data folder could not be pointed at this profile.\n\n`
-            + `"${p}" -> "${target}" (${describe(e)})`,
+            + `${FOLDER_IN_USE_NEXT_STEP}\n\n"${p}"`,
             { cause: e }
         );
     }
@@ -110,7 +118,8 @@ export function unlink(channel: Channel): void {
     } catch (e) {
         log("DataLink", `Could not remove the ${channel} junction at ${p}: ${describe(e)}`);
         throw new Error(
-            `Minecraft's ${channel} data folder could not be unlinked.\n\n"${p}" (${describe(e)})`,
+            `Minecraft's ${channel} data folder could not be unlinked from the profile using it.\n\n`
+            + `${FOLDER_IN_USE_NEXT_STEP}\n\n"${p}"`,
             { cause: e }
         );
     }
@@ -125,7 +134,7 @@ export function removeEmptyDir(channel: Channel): void {
         log("DataLink", `Could not remove the empty ${channel} folder at ${p}: ${describe(e)}`);
         throw new Error(
             `The empty folder Minecraft's ${channel} data would replace could not be removed.\n\n`
-            + `"${p}" (${describe(e)})`,
+            + `${FOLDER_IN_USE_NEXT_STEP}\n\n"${p}"`,
             { cause: e }
         );
     }

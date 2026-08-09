@@ -13,6 +13,7 @@ import earthIcon from "@renderer/assets/images/icons/earth-icon.png";
 import settingsIcon from "@renderer/assets/images/icons/settings-icon.png";
 
 import { DropWindow } from "@renderer/components/DropWindow";
+import { ErrorBanner } from "@renderer/components/ErrorBanner";
 import Title from "@renderer/components/Title";
 
 import { LauncherPage } from "@renderer/pages/LauncherPage";
@@ -330,6 +331,7 @@ export default function App() {
                         </div>
                     </div>
                     <div className="view_container app-view-container">
+                        <ErrorBanner />
                         <div className="app-view-content">
                             <AnimatedRoutes />
                             <UpdatePage></UpdatePage>
