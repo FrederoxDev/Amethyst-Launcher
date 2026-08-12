@@ -14,6 +14,7 @@ import {
     fileStamp,
     formatEntry,
     installConsoleForwarder,
+    isoStamp,
 } from "../../shared/diagnostics/Log";
 
 /** Enough runs to still hold the evidence after a tester reproduces a bug a few times. */
@@ -34,6 +35,7 @@ export interface MachineReport {
 const startedAt = Date.now();
 const logsDir = path.join(app.getPath("appData"), "Amethyst", "Launcher", "Logs");
 const logFile = path.join(logsDir, `launcher_${fileStamp(startedAt)}.log`);
+const jsonlFile = path.join(logsDir, `launcher_${fileStamp(startedAt)}.jsonl`);
 
 let writable = true;
 let machineBlockWritten = false;
@@ -48,8 +50,26 @@ function appendRaw(text: string): void {
     }
 }
 
+/** Structured sidecar for agents: one JSON object per line, mirroring the human-readable file. */
+function appendJsonl(entry: LogEntry): void {
+    if (!writable) return;
+    try {
+        const record = {
+            timestamp: isoStamp(entry.time),
+            level: entry.level,
+            thread: entry.source,
+            source: entry.scope,
+            message: entry.message,
+        };
+        fs.appendFileSync(jsonlFile, `${JSON.stringify(record)}\n`, "utf-8");
+    } catch {
+        // A full or read-only disk must not take the launcher down with it.
+    }
+}
+
 export function writeEntry(entry: LogEntry): void {
     appendRaw(`${formatEntry(entry)}\n`);
+    appendJsonl(entry);
 }
 
 export function mainLog(level: LogLevel, scope: string, message: string): void {
@@ -69,6 +89,7 @@ export function discardRun(): void {
     machineBlockWritten = true;
     try {
         fs.rmSync(logFile, { force: true });
+        fs.rmSync(jsonlFile, { force: true });
     } catch {
         // Worst case it stays as one header-only file.
     }
@@ -76,7 +97,8 @@ export function discardRun(): void {
 
 /**
  * Rotation is by count, never by truncating or clearing the current file: a user who hits a bug
- * on their tenth attempt must still be able to hand over the run that shows it.
+ * on their tenth attempt must still be able to hand over the run that shows it. Counted by run
+ * (timestamp stem), not by file, since each run now leaves both a `.log` and a `.jsonl` behind.
  */
 function rotate(): void {
     let entries: string[];
@@ -86,8 +108,12 @@ function rotate(): void {
         return;
     }
 
-    const runs = entries.filter(name => /^launcher_.*\.log$/i.test(name)).sort();
-    for (const name of runs.slice(0, Math.max(0, runs.length - (KEEP_RUNS - 1)))) {
+    const files = entries.filter(name => /^launcher_.*\.(log|jsonl)$/i.test(name));
+    const stems = [...new Set(files.map(name => name.replace(/\.(log|jsonl)$/i, "")))].sort();
+    const staleStems = new Set(stems.slice(0, Math.max(0, stems.length - (KEEP_RUNS - 1))));
+
+    for (const name of files) {
+        if (!staleStems.has(name.replace(/\.(log|jsonl)$/i, ""))) continue;
         try {
             fs.rmSync(path.join(logsDir, name), { force: true });
         } catch {
