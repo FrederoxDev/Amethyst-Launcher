@@ -23,6 +23,11 @@ export function clockStamp(time: number): string {
     return `${pad(d.getHours(), 2)}:${pad(d.getMinutes(), 2)}:${pad(d.getSeconds(), 2)}.${pad(d.getMilliseconds(), 3)}`;
 }
 
+/** ISO-8601 UTC, matching the runtime's own per-line timestamp so both logs sort and cross-reference by absolute time. */
+export function isoStamp(time: number): string {
+    return new Date(time).toISOString();
+}
+
 /** Matches the runtime's own log file naming so both sort together in the Logs list. */
 export function fileStamp(time: number): string {
     const d = new Date(time);
@@ -35,7 +40,7 @@ export function fileStamp(time: number): string {
 /** `HH:MM:SS.mmm [source] [scope] [LEVEL] message`, with the tag omitted for INFO as the runtime does. */
 export function formatEntry(entry: LogEntry): string {
     const tag = entry.level === "INFO" ? "" : ` [${entry.level}]`;
-    return `${clockStamp(entry.time)} [${entry.source}] [${entry.scope}]${tag} ${entry.message}`;
+    return `${isoStamp(entry.time)} [${entry.source}] [${entry.scope}]${tag} ${entry.message}`;
 }
 
 export function describeError(value: unknown): string {
