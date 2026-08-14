@@ -1,0 +1,8 @@
+{
+    cmdlines = {
+        "xmake -y",
+        [[xmake lua "C:\\\\Program Files\\\\xmake\\\\modules\\\\private\\\\utils\\\\statistics.lua" --yes]],
+        "xmake f -c -p windows -a x64 -m release --toolchain=clang-cl -y",
+        "xmake -y"
+    }
+}

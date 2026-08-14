@@ -2,8 +2,8 @@ import { Channel } from "@renderer/scripts/domain/Channel";
 import { log } from "@renderer/scripts/LauncherLog";
 import { describeResult, run } from "@shared/diagnostics/ProcessRunner";
 import { classifyBuild } from "./LaunchDiagnostics";
+import { PRELOAD_DLL } from "./Preload";
 
-const { createHash } = window.require("crypto") as typeof import("crypto");
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
 
@@ -252,8 +252,8 @@ export const GAME_EXECUTABLE = "Minecraft.Windows.exe";
 
 /**
  * The files a launch stands or falls on, so a half-extracted build is visible in its own right.
- * An absent dxgi.dll is normal for an unmodded profile and only means something next to the
- * profile's own modded flag, hence sizes rather than a verdict.
+ * The preload DLL is listed because a patched build cannot start without it, and the retired
+ * dxgi proxy because one left behind says which launcher version last prepared this folder.
  */
 export function describePayload(versionPath: string): string {
     const describe = (name: string): string => {
@@ -263,7 +263,8 @@ export function describePayload(versionPath: string): string {
             return `${name} absent`;
         }
     };
-    return [describe(GAME_EXECUTABLE), describe("appxmanifest.xml"), describe("dxgi.dll")].join(", ");
+    return [describe(GAME_EXECUTABLE), describe("appxmanifest.xml"), describe(PRELOAD_DLL), describe("dxgi.dll")]
+        .join(", ");
 }
 
 /**
@@ -355,84 +356,4 @@ export async function ensureVersionFiles(
 
     await ensureGameInput(versionPath, status);
     log("VersionFiles", `The ${channel} build at ${versionPath} is ready to register`);
-}
-
-export function proxyDllPath(versionPath: string): string {
-    return path.join(versionPath, "dxgi.dll");
-}
-
-export function sourceProxyDllPath(): string {
-    const base = import.meta.env.DEV ? path.join(process.cwd(), "resources") : process.resourcesPath;
-    return path.join(base, "proxy", "dxgi.dll");
-}
-
-export function isProxyPresent(versionPath: string): boolean {
-    return fs.existsSync(proxyDllPath(versionPath));
-}
-
-function sha256(filePath: string): string {
-    return createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
-}
-
-/** Presence isn't enough - a rebuilt proxy must replace an older one already in place. */
-export function isProxyCurrent(versionPath: string): boolean {
-    const target = proxyDllPath(versionPath);
-    if (!fs.existsSync(target)) {
-        log("VersionFiles", `No dxgi.dll in ${versionPath}, so the proxy has to be installed`);
-        return false;
-    }
-
-    const source = sourceProxyDllPath();
-    if (!fs.existsSync(source)) {
-        log("VersionFiles", `The launcher's own proxy is missing from ${source}, so ${target} cannot be compared to it`);
-        throw new Error(`Proxy dxgi.dll not found at ${source}. Build the proxy before launching a modded profile.`);
-    }
-
-    const targetHash = sha256(target);
-    const sourceHash = sha256(source);
-    const current = targetHash === sourceHash;
-    log(
-        "VersionFiles",
-        `dxgi.dll in ${versionPath} is ${current ? "current" : "stale"}: `
-        + `installed sha256 ${targetHash.slice(0, 16)} (${describeFile(target)}), `
-        + `launcher's sha256 ${sourceHash.slice(0, 16)} (${describeFile(source)})`
-    );
-    return current;
-}
-
-export function installProxy(versionPath: string): void {
-    const source = sourceProxyDllPath();
-    if (!fs.existsSync(source)) {
-        log("VersionFiles", `The launcher's own proxy is missing from ${source}, so it cannot be installed`);
-        throw new Error(`Proxy dxgi.dll not found at ${source}. Build the proxy before launching a modded profile.`);
-    }
-
-    const target = proxyDllPath(versionPath);
-    try {
-        fs.copyFileSync(source, target);
-    } catch (e) {
-        log("VersionFiles", `Could not copy ${source} to ${target}: ${describe(e)}`);
-        throw new Error(
-            `The mod loader could not be put in place, so this profile cannot start with mods.\n\n`
-            + `${target} (${describe(e)})`,
-            { cause: e }
-        );
-    }
-    log("VersionFiles", `Installed the proxy: ${source} to ${target} (${describeFile(target)})`);
-}
-
-export function removeProxy(versionPath: string): void {
-    const target = proxyDllPath(versionPath);
-    const wasThere = fs.existsSync(target);
-    try {
-        fs.rmSync(target, { force: true });
-    } catch (e) {
-        log("VersionFiles", `Could not delete ${target}: ${describe(e)}`);
-        throw new Error(
-            `The mod loader could not be removed, so this profile cannot start unmodded.\n\n`
-            + `${target} (${describe(e)})`,
-            { cause: e }
-        );
-    }
-    log("VersionFiles", wasThere ? `Deleted the proxy at ${target}` : `No proxy at ${target} to delete`);
 }

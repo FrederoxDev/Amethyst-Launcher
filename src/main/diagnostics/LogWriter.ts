@@ -50,7 +50,6 @@ function appendRaw(text: string): void {
     }
 }
 
-/** Structured sidecar for agents: one JSON object per line, mirroring the human-readable file. */
 function appendJsonl(entry: LogEntry): void {
     if (!writable) return;
     try {
@@ -63,7 +62,6 @@ function appendJsonl(entry: LogEntry): void {
         };
         fs.appendFileSync(jsonlFile, `${JSON.stringify(record)}\n`, "utf-8");
     } catch {
-        // A full or read-only disk must not take the launcher down with it.
     }
 }
 
@@ -97,8 +95,7 @@ export function discardRun(): void {
 
 /**
  * Rotation is by count, never by truncating or clearing the current file: a user who hits a bug
- * on their tenth attempt must still be able to hand over the run that shows it. Counted by run
- * (timestamp stem), not by file, since each run now leaves both a `.log` and a `.jsonl` behind.
+ * on their tenth attempt must still be able to hand over the run that shows it.
  */
 function rotate(): void {
     let entries: string[];

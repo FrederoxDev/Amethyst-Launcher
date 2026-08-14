@@ -1,4 +1,6 @@
 import { Channel } from "@renderer/scripts/domain/Channel";
+import { log } from "@renderer/scripts/LauncherLog";
+import { describeError } from "@shared/diagnostics/ProcessRunner";
 
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
@@ -38,4 +40,20 @@ export function writeSession(dataDir: string, manifest: SessionManifest): void {
 
 export function clearSession(dataDir: string): void {
     fs.rmSync(sessionPath(dataDir), { force: true });
+}
+
+export function updateSessionDeveloperMode(dataDir: string, developerMode: boolean): void {
+    const target = sessionPath(dataDir);
+    if (!fs.existsSync(target)) return;
+
+    try {
+        const manifest = JSON.parse(fs.readFileSync(target, "utf-8")) as SessionManifest;
+        manifest.developerMode = developerMode;
+        const tmp = `${target}.tmp`;
+        fs.writeFileSync(tmp, JSON.stringify(manifest, undefined, 2), "utf-8");
+        fs.renameSync(tmp, target);
+        log("Session", `Updated developer mode in ${target}: ${developerMode}`);
+    } catch (e) {
+        log("Session", `Could not update developer mode in ${target}: ${describeError(e)}`);
+    }
 }
