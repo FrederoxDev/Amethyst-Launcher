@@ -85,7 +85,13 @@ function countArray(filePath: string, pick: (parsed: unknown) => unknown): numbe
 function stateLine(): string {
     return probe(() => {
         const paths = useAppStore.getState().platform.getPaths();
-        const profiles = probe(() => String(countArray(paths.profilesFilePath, parsed => parsed)));
+        // Mirrors ProfileStore.load: stamped files nest the array under `profiles`, and only
+        // files written before stamping existed are a bare array. Reading just the legacy shape
+        // reported every current file as malformed.
+        const profiles = probe(() => String(countArray(
+            paths.profilesFilePath,
+            parsed => (Array.isArray(parsed) ? parsed : (parsed as { profiles?: unknown })?.profiles)
+        )));
         const versions = probe(() =>
             String(countArray(
                 path.join(paths.versionsPath, "installed_versions.json"),

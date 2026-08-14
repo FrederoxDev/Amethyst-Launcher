@@ -20,6 +20,8 @@ import {
 } from "@renderer/scripts/flows/ProfileActions";
 import { startPendingImport } from "@renderer/scripts/flows/VersionChoice";
 import { Channel, channelLabel } from "@renderer/scripts/domain/Channel";
+import { describeProblem, diagnoseProfile, launchBlocker, problemFor } from "@renderer/scripts/domain/ProfileDiagnosis";
+import { toModStatus } from "@renderer/scripts/Mods";
 import { MOD_DISCOVERY_ENABLED } from "@renderer/scripts/FeatureFlags";
 
 const fs = window.require("fs") as typeof import("fs");
@@ -140,11 +142,9 @@ export function ProfileEditor() {
     const dotsRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
-    const allValidMods = useAppStore(state => state.allValidMods);
     const allProfiles = useAppStore(state => state.profiles);
     const selectedProfile = useAppStore(state => state.editingProfileIndex);
     const saveData = useAppStore(state => state.saveData);
-    const allInvalidMods = useAppStore(state => state.allInvalidMods);
     const downloadingMods = useAppStore(state => state.downloadingMods);
     const allMods = useAppStore(state => state.allMods);
     const installedVersions = useAppStore(state => state.installedVersions);
@@ -380,6 +380,18 @@ export function ProfileEditor() {
         return installed?.label ?? profileVersionLabel ?? "Select version...";
     }, [profileVersionUuid, profileVersionLabel, installedVersions]);
 
+    /**
+     * Everything wrong with this profile, from the one place that decides it. Scoped to the
+     * profile: the mods folder may hold other broken mods, and they are the Mod Manager's
+     * business rather than a number on this page that matches nothing the user can see.
+     */
+    const profileProblems = useMemo(() => diagnoseProfile({
+        modded: profileActiveMods.length > 0 || profileRuntime.toLowerCase() !== "vanilla",
+        modIds: profileActiveMods,
+        mods: toModStatus(allMods),
+        downloading: downloadingMods,
+    }), [profileActiveMods, profileRuntime, allMods, downloadingMods]);
+
     const allModsList = useMemo(() => {
         const runtimeSet = new Set(
             allMods
@@ -387,17 +399,20 @@ export function ProfileEditor() {
                 .map(mod => mod.id)
         );
 
+        // Its own problem, not a bare red name. "Not in the mods folder" and "here but cannot be
+        // loaded, because ..." are different faults with different fixes, and the row is the one
+        // place the user is already looking when they want to know which of the two this is.
         const modsWithMeta = profileActiveMods.map(name => ({
             name,
-            exists: allValidMods.includes(name),
             isDownloading: downloadingMods.includes(name),
+            problem: problemFor(profileProblems, name),
         }));
 
         const runtimeMods = modsWithMeta.filter(mod => runtimeSet.has(mod.name));
         const nonRuntimeMods = modsWithMeta.filter(mod => !runtimeSet.has(mod.name));
 
         return [...runtimeMods, ...nonRuntimeMods];
-    }, [profileActiveMods, allValidMods, downloadingMods, allMods]);
+    }, [profileActiveMods, downloadingMods, allMods, profileProblems]);
 
     const filteredModsList = useMemo(() => {
         if (!modSearch) return allModsList;
@@ -405,30 +420,23 @@ export function ProfileEditor() {
         return allModsList.filter(mod => mod.name.toLowerCase().includes(q));
     }, [allModsList, modSearch]);
 
+
+
     const runtimeWarning = useMemo(() => {
-        const moddedNow = profileActiveMods.length > 0 || profileRuntime.toLowerCase() !== "vanilla";
-        if (!moddedNow) {
-            return null;
-        }
-
-        const runtimeMods = allMods.filter(mod => mod.ok && profileActiveMods.includes(mod.id) && mod.config.meta.type === "runtime");
-        if (runtimeMods.length === 0) {
-            return "Modded Profiles must have a Runtime Mod";
-        }
-
-        if (runtimeMods.length > 1) {
-            return `Modded Profiles can only have one Runtime Mod. Found: ${runtimeMods.map(mod => `'${mod.id}'`).join(", ")}`;
-        }
-
-        return null;
-    }, [allProfiles, selectedProfile, profileActiveMods, profileRuntime, allMods]);
+        const blocker = launchBlocker(profileProblems);
+        return blocker === null ? null : describeProblem(blocker);
+    }, [profileProblems]);
 
     return (
         <div className="profile-editor-page">
-            {allInvalidMods.length > 0 && (
-                <p className="minecraft-seven profile-editor-invalid-mods">
-                    Failed to show {allInvalidMods.length} mods! See Mod Manager for details
-                </p>
+            {profileProblems.length > 0 && (
+                <div className="profile-editor-invalid-mods">
+                    {profileProblems.map((problem, index) => (
+                        <p className="minecraft-seven" key={`${problem.kind}:${problem.modId ?? index}`}>
+                            {describeProblem(problem)}
+                        </p>
+                    ))}
+                </div>
             )}
 
             <div className="profile-editor-mod-section">
@@ -549,11 +557,18 @@ export function ProfileEditor() {
                                 })()}
                             </div>
                             <div className="profile-editor-mod-row-info">
-                                <p className={`minecraft-seven ${mod.exists ? "" : "profile-editor-mod-missing"}`}>
+                                <p className={`minecraft-seven ${mod.problem ? "profile-editor-mod-missing" : ""}`}>
                                     {mod.name}
                                 </p>
                                 {mod.isDownloading && (
                                     <span className="minecraft-seven profile-editor-mod-downloading">Downloading...</span>
+                                )}
+                                {mod.problem && (
+                                    <span className="minecraft-seven profile-editor-mod-problem">
+                                        {mod.problem.reasons.length > 0
+                                            ? mod.problem.reasons.join(" ")
+                                            : mod.problem.headline}
+                                    </span>
                                 )}
                             </div>
                             <div

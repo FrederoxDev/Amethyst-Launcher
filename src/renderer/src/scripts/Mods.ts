@@ -8,11 +8,14 @@ import {
     ajv,
     FromValidatedV1_1_0ToConfig,
     FromValidatedV1_2_0ToConfig,
+    FromValidatedV1_3_0ToConfig,
     ModConfig,
     ValidateModSchemaV1_1_0,
     ValidateModSchemaV1_2_0,
+    ValidateModSchemaV1_3_0,
 } from "./schema/ModConfigSchema";
 import type { ValidateFunction } from "ajv";
+import type { ModStatus } from "@renderer/scripts/domain/ProfileDiagnosis";
 
 function getPaths() {
     return useAppStore.getState().platform.getPaths();
@@ -81,9 +84,21 @@ export enum DeprecatedStatus {
 }
 
 const validators: { [version: string]: [ValidateFunction, (data: any) => ModConfig | undefined, DeprecatedStatus] } = {
-    "1.1.0": [ValidateModSchemaV1_1_0, FromValidatedV1_1_0ToConfig, DeprecatedStatus.None],
-    "1.2.0": [ValidateModSchemaV1_2_0, FromValidatedV1_2_0ToConfig, DeprecatedStatus.None],
+    "1.1.0": [ValidateModSchemaV1_1_0, FromValidatedV1_1_0ToConfig, DeprecatedStatus.Deprecated],
+    "1.2.0": [ValidateModSchemaV1_2_0, FromValidatedV1_2_0ToConfig, DeprecatedStatus.Deprecated],
+    "1.3.0": [ValidateModSchemaV1_3_0, FromValidatedV1_3_0ToConfig, DeprecatedStatus.None],
 };
+
+/**
+ * Runtimes only.
+ *
+ * The contract that changed is the one between Amethyst-Preload and the runtime: the preload
+ * calls `AmethystRuntimeStart`, where the dxgi proxy called `Init` with a suspended game thread.
+ * Nothing a content mod implements takes part in that - a mod still exports `Initialize` and
+ * still links the same AmethystAPI - so gating every mod on the format would have made a
+ * launcher-wide break out of a change only runtimes can see.
+ */
+const RUNTIME_FORMAT_VERSION = "1.3.0";
 
 const deprecatedVersions = ["1.0.0"];
 
@@ -143,6 +158,21 @@ export function ValidateMod(id: string): ValidatedMod {
     for (const [version, [validator, fromValidated, deprecationStatus]] of Object.entries(validators)) {
         if (configUnchecked["format_version"] !== version) continue;
 
+        if (deprecationStatus === DeprecatedStatus.Removed) {
+            errors.push(
+                `This mod is built for Amethyst format_version "${version}", which this launcher can no longer run. `
+                + "Check for an update from its author, or remove it from the profile."
+            );
+
+            return {
+                ok: false,
+                config: undefined,
+                warnings,
+                errors,
+                id,
+            };
+        }
+
         if (deprecationStatus === DeprecatedStatus.Deprecated) {
             warnings.push(
                 `Mod uses deprecated format_version "${version}". New mods should update to a newer format_version.`
@@ -165,6 +195,24 @@ export function ValidateMod(id: string): ValidatedMod {
         const config = fromValidated(configUnchecked);
         if (!config) {
             errors.push("Failed to convert validated config to internal representation for format_version " + version);
+
+            return {
+                ok: false,
+                config: undefined,
+                warnings,
+                errors,
+                id,
+            };
+        }
+
+        // Only knowable once the config is converted: whether a mod is a runtime is a field
+        // inside it, not something the format version says.
+        if (config.meta.type === "runtime" && version !== RUNTIME_FORMAT_VERSION) {
+            errors.push(
+                `This runtime is built for Amethyst format_version "${version}", and runtimes must be on `
+                + `"${RUNTIME_FORMAT_VERSION}" to start the game. Update the runtime, or pick a newer one. `
+                + "Your other mods are unaffected."
+            );
 
             return {
                 ok: false,
@@ -200,4 +248,14 @@ export function ValidateMod(id: string): ValidatedMod {
         errors,
         id,
     };
+}
+
+/** The scan's result in the shape a profile diagnosis reads, so both sides cannot drift apart. */
+export function toModStatus(mods: readonly ValidatedMod[]): ModStatus[] {
+    return mods.map(mod => ({
+        id: mod.id,
+        ok: mod.ok,
+        isRuntime: mod.ok && mod.config.meta.type === "runtime",
+        errors: mod.errors,
+    }));
 }

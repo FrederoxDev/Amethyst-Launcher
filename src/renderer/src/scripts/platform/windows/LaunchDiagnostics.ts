@@ -15,6 +15,7 @@ export const ACTIVATION_SUCCESS_HRESULT = "0x00000000";
  * a documented symbolic name are here; anything else is reported raw rather than guessed at.
  */
 const HRESULT_MEANINGS: Record<string, string> = {
+    "0x00000000": "S_OK, Windows accepted the request",
     "0x80004005": "E_FAIL, Windows gave no reason",
     "0x80040154": "REGDB_E_CLASSNOTREG, the Windows component that starts apps is not registered",
     "0x80070002": "ERROR_FILE_NOT_FOUND, Windows could not find part of the app",

@@ -76,6 +76,12 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         // way a brand new profile starts life already holding an entitlement it did not earn.
         log("Adopt", `Moved ${channel} game data from ${source} into ${target}`);
         log("Adopt", `Licence files carried over: ${Licence.describeEntitlements(target)}`);
+
+        // The folder the game reads from has just been emptied by the move, so it is pointed at
+        // the profile that now owns it. Without this the data is only reachable through this
+        // launcher, and anything else starting Minecraft - the Store shortcut included - creates
+        // a fresh empty folder and presents it as a player who has lost every world they had.
+        Machine.linkChannel(channel, target);
     }
 
     liveProfileFor(channel: Channel): string | null {
@@ -215,7 +221,7 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             channel: profile.channel,
             versionPath: version.path,
             dataDir,
-            proxy: isModded(profile),
+            modded: isModded(profile),
         }, status);
 
         // Must follow reconcile so the junction is in place and the entitlement lands in
@@ -247,7 +253,12 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         log("Launch", `Session file written to ${dataDir} for "${profile.name}"`);
 
         status("Starting Minecraft...");
-        await Machine.activate(version.path, dataDir, status);
-        log("Launch", `"${profile.name}" is running`);
+        const confirmed = await Machine.activate(version.path, dataDir, status);
+        log(
+            "Launch",
+            confirmed
+                ? `"${profile.name}" is running`
+                : `"${profile.name}" was started, but Windows would not confirm that it is running`
+        );
     }
 }

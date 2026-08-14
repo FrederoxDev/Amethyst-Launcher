@@ -1,6 +1,8 @@
 import { describeError } from "@shared/diagnostics/Log";
 import { AppStatusType } from "@renderer/scripts/AppStatus";
 import { Profile, isModded } from "@renderer/scripts/domain/Profile";
+import { describeProblem, diagnoseProfile, launchBlocker } from "@renderer/scripts/domain/ProfileDiagnosis";
+import { toModStatus } from "@renderer/scripts/Mods";
 import { log } from "@renderer/scripts/LauncherLog";
 import { ForeignGameDataError, SystemSetupRequiredError } from "@renderer/scripts/platform/LauncherPlatform";
 import { InstalledVersion } from "@renderer/scripts/versions/InstalledVersion";
@@ -32,38 +34,27 @@ function resolveMods(profile: Profile): ResolvedMods {
         modsPath: useAppStore.getState().platform.getPaths().modsPath,
     };
 
-    const missing = profile.mods.filter(id => !allMods.some(mod => mod.ok && mod.id === id));
-    if (missing.length > 0) {
+    // The same diagnosis the profile editor and the launcher grid show, so the reason a launch
+    // refuses is word for word the reason the user was already looking at.
+    const problems = diagnoseProfile({
+        modded: isModded(profile),
+        modIds: profile.mods,
+        mods: toModStatus(allMods),
+        downloading: useAppStore.getState().downloadingMods,
+    });
+
+    const blocker = launchBlocker(problems);
+    if (blocker) {
         log(
             "Launch",
-            `"${profile.name}" lists ${missing.join(", ")}, which the mods folder does not hold as valid mods `
-            + `(known valid: ${allMods.filter(m => m.ok).map(m => m.id).join(", ") || "none"})`
+            `"${profile.name}" cannot start (${blocker.kind}${blocker.modId ? `, ${blocker.modId}` : ""}): `
+            + `${describeProblem(blocker).replace(/\n+/g, " ")}`
         );
-        throw new Error(
-            `This profile is missing ${missing.length} mod${missing.length > 1 ? "s" : ""}: `
-            + `${missing.map(id => `'${id}'`).join(", ")}. Edit the profile to fix it.`
-        );
+        throw new Error(`${describeProblem(blocker)}\n\nOpen the profile to fix it.`);
     }
 
     const active = allMods.filter(mod => mod.ok && profile.mods.includes(mod.id));
     const runtimes = active.filter(mod => mod.config?.meta?.type === "runtime");
-
-    if (isModded(profile)) {
-        if (runtimes.length === 0) {
-            log("Launch", `"${profile.name}" is modded but none of its ${active.length} mods declares type "runtime"`);
-            throw new Error(
-                "A modded profile needs a runtime mod, and this one has none.\n\n"
-                + "Open the profile and tick a runtime mod, or turn mods off for it."
-            );
-        }
-        if (runtimes.length > 1) {
-            log("Launch", `"${profile.name}" carries ${runtimes.length} runtime mods: ${runtimes.map(m => m.id).join(", ")}`);
-            throw new Error(
-                `A profile can only have one runtime mod, and this one has ${runtimes.length}: `
-                + `${runtimes.map(m => `'${m.id}'`).join(", ")}.\n\nOpen the profile and untick all but one of them.`
-            );
-        }
-    }
 
     const toEntry = (id: string) => ({ id, path: path.join(modsPath, id) });
     const resolved = {

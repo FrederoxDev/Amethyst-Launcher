@@ -4,6 +4,7 @@ import { describeError } from "@shared/diagnostics/Log";
 import { MinecraftButton, GRAY_MINECRAFT_BUTTON } from "@renderer/components/MinecraftButton";
 import { useAppStore } from "@renderer/states/AppStore";
 import { log } from "@renderer/scripts/LauncherLog";
+import { launcherLogPath } from "@renderer/scripts/diagnostics/RendererLog";
 import { confirmAction } from "@renderer/popups/ConfirmPopup";
 import { FULL_PROGRESS_RESET_OPTIONS, ProgressBar } from "@renderer/states/ProgressBarStore";
 
@@ -324,7 +325,10 @@ export function LogsPage() {
                 }
                 throw e;
             }
-            const loaded = (await Promise.all(entries.map(async name => {
+            // One entry per run. Every run also writes a .jsonl sidecar holding the same lines
+            // for tooling to read, and listing it here showed every run twice, half of them as
+            // JSON nobody can read in the viewer. It is deleted alongside its .log instead.
+            const loaded = (await Promise.all(entries.filter(name => name.endsWith(".log")).map(async name => {
                 const full = path.join(logsDir, name);
                 try {
                     const stat = await fs.promises.stat(full);
@@ -364,26 +368,36 @@ export function LogsPage() {
     }, [selected]);
 
     const deleteAllLogs = async () => {
-        if (files.length === 0) {
-            log("LogsPage", `Delete All ignored: no log files listed in ${logsDir}`);
+        // The run in progress is still being written to, so deleting it accomplishes nothing:
+        // the next line logged brings it straight back, shorter, which is what made "delete all"
+        // look like it had left two files behind. It is also the log a user is most likely to
+        // need, being the one for whatever they just did.
+        const current = launcherLogPath();
+        const deletable = files.filter(f => path.resolve(f.path) !== path.resolve(current));
+
+        if (deletable.length === 0) {
+            log("LogsPage", `Delete All ignored: ${logsDir} holds nothing but the run in progress`);
             return;
         }
         const ok = await confirmAction({
             title: "Delete All Logs?",
-            message: `All ${files.length} log file(s) will be permanently deleted. This cannot be undone.`,
+            message: `${deletable.length} log(s) will be permanently deleted. This cannot be undone.\n\n`
+                + "The log for the session you are in now is kept, because it is still being written.",
             confirmText: "Delete All",
         });
         if (!ok) {
-            log("LogsPage", `Deletion of all ${files.length} log file(s) cancelled by the user`);
+            log("LogsPage", `Deletion of ${deletable.length} log(s) cancelled by the user`);
             return;
         }
         try {
             await ProgressBar.useAsync(async (state) => {
-                state.setMessage(`Clearing ${files.length} log file(s)...`);
-                log("LogsPage", `Deleting all ${files.length} log file(s) in ${logsDir}`);
-                await Promise.all(files.map(f => fs.promises.unlink(f.path).catch(e => {
-                    log("LogsPage", `Could not delete ${f.path}: ${describeError(e)}`);
-                })));
+                state.setMessage(`Clearing ${deletable.length} log(s)...`);
+                log("LogsPage", `Deleting ${deletable.length} log(s) in ${logsDir}, keeping the run in progress`);
+                await Promise.all(deletable.flatMap(f => [f.path, `${f.path.slice(0, -".log".length)}.jsonl`]
+                    .map(target => fs.promises.unlink(target).catch(e => {
+                        if ((e as { code?: string }).code === "ENOENT") return;
+                        log("LogsPage", `Could not delete ${target}: ${describeError(e)}`);
+                    }))));
             }, true, FULL_PROGRESS_RESET_OPTIONS);
             setSelected(null);
             setContent("");

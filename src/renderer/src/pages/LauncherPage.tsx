@@ -8,6 +8,8 @@ import { launchErrorMessage, launchProfile } from "@renderer/scripts/flows/Launc
 import { useNavigate } from "react-router-dom";
 import { channelLabel } from "@renderer/scripts/domain/Channel";
 import { Profile, isModded } from "@renderer/scripts/domain/Profile";
+import { describeProblem, diagnoseProfile, launchBlocker } from "@renderer/scripts/domain/ProfileDiagnosis";
+import { toModStatus } from "@renderer/scripts/Mods";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { createProfileFlow } from "@renderer/scripts/flows/CreateProfile";
@@ -157,6 +159,7 @@ export function LauncherPage() {
         saveData,
         setError,
         allMods,
+        downloadingMods,
     ] = useAppStore(useShallow(state => [
         state.profiles,
         state.lastLaunchedProfileUuid,
@@ -165,6 +168,7 @@ export function LauncherPage() {
         state.saveData,
         state.setError,
         state.allMods,
+        state.downloadingMods,
     ]));
 
     // Subscribe to ProgressBar status so play-button gating updates reactively
@@ -280,22 +284,15 @@ export function LauncherPage() {
         }
     };
 
+    /** The profile's own reason, not a guess at it: an invalid runtime is not a missing one. */
     const getRuntimeWarning = (profile: Profile): string | null => {
-        if (!isModded(profile)) {
-            return null;
-        }
-
-        const runtimeMods = allMods.filter(mod => mod.ok && profile.mods.includes(mod.id) && mod.config.meta.type === "runtime");
-
-        if (runtimeMods.length === 0) {
-            return "Modded Profiles must have a Runtime Mod";
-        }
-
-        if (runtimeMods.length > 1) {
-            return "Modded Profiles can only have one Runtime Mod";
-        }
-
-        return null;
+        const blocker = launchBlocker(diagnoseProfile({
+            modded: isModded(profile),
+            modIds: profile.mods,
+            mods: toModStatus(allMods),
+            downloading: downloadingMods,
+        }));
+        return blocker === null ? null : describeProblem(blocker);
     };
 
     return (

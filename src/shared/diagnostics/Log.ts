@@ -23,7 +23,6 @@ export function clockStamp(time: number): string {
     return `${pad(d.getHours(), 2)}:${pad(d.getMinutes(), 2)}:${pad(d.getSeconds(), 2)}.${pad(d.getMilliseconds(), 3)}`;
 }
 
-/** ISO-8601 UTC, matching the runtime's own per-line timestamp so both logs sort and cross-reference by absolute time. */
 export function isoStamp(time: number): string {
     return new Date(time).toISOString();
 }

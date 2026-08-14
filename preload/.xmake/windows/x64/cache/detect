@@ -1,0 +1,22 @@
+{
+    ["lib.detect.has_flags"] = {
+        ["windows_x64_c:\\program files\\llvm\\bin\\clang-cl.exe__cxx_cxflags_--target=x86_64-pc-windows-msvc_-std:c++23"] = false,
+        ["windows_x64_c:\\program files\\llvm\\bin\\clang-cl.exe__cxx_cxflags_--target=x86_64-pc-windows-msvc_-std:c++latest"] = true
+    },
+    ["find_program_clang-cl_arch_x64_plat_windows_checktoolcxx"] = {
+        ["clang-cl"] = [[C:\Program Files\LLVM\bin\clang-cl]]
+    },
+    ["find_program_clang-cl_arch_x64_plat_windows_checktoolld"] = {
+        ["link.exe"] = [[C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\bin\HostX64\x64\link.exe]]
+    },
+    find_program = {
+        ["C:\\Program Files\\LLVM\\bin\\clang-cl"] = [[c:\program files\llvm\bin\clang-cl.exe]],
+        ["clang-cl.exe"] = [[C:\Program Files\LLVM\bin\clang-cl.exe]]
+    },
+    ["find_program_clang-cl_arch_x64_plat_windows_checktoolsh"] = {
+        ["link.exe"] = [[C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\bin\HostX64\x64\link.exe]]
+    },
+    ["find_program_clang-cl_arch_x64_plat_windows_checktoolcc"] = {
+        ["clang-cl"] = [[C:\Program Files\LLVM\bin\clang-cl]]
+    }
+}

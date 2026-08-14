@@ -5,10 +5,12 @@ import { log } from "@renderer/scripts/LauncherLog";
 import { LauncherConfig, readLauncherConfig, writeLauncherConfig } from "@renderer/scripts/Launcher";
 import { GetAllMods, ValidatedMod } from "@renderer/scripts/Mods";
 import { ProfileStore } from "@renderer/scripts/ProfileStore";
+import { CHANNELS } from "@renderer/scripts/domain/Channel";
 import { Profile } from "@renderer/scripts/domain/Profile";
 import { ILauncherPlatform } from "@renderer/scripts/platform/LauncherPlatform";
 import { WindowsLauncherPlatform } from "@renderer/scripts/platform/WindowsLauncherPlatform";
 import { LinuxLauncherPlatform } from "@renderer/scripts/platform/LinuxLauncherPlatform";
+import { updateSessionDeveloperMode } from "@renderer/scripts/session/Session";
 import { InstalledVersion } from "@renderer/scripts/versions/InstalledVersion";
 import { VersionService } from "@renderer/scripts/versions/VersionService";
 import { FileLocker } from "@renderer/scripts/FileLocker";
@@ -77,6 +79,14 @@ interface AppStore {
     fileLocker: FileLocker;
 }
 
+function updateLiveSessionsDeveloperMode(platform: ILauncherPlatform, developerMode: boolean): void {
+    for (const channel of CHANNELS) {
+        const profileUuid = platform.liveProfileFor(channel);
+        if (!profileUuid) continue;
+        updateSessionDeveloperMode(platform.profileDataDir(profileUuid), developerMode);
+    }
+}
+
 export const useAppStore = create<AppStore>((set, get) => {
     const platform = createPlatform();
     const paths = platform.getPaths();
@@ -138,6 +148,7 @@ export const useAppStore = create<AppStore>((set, get) => {
                 return { developerMode: next };
             });
             get().saveData();
+            updateLiveSessionsDeveloperMode(platform, get().developerMode);
         },
 
         // Every banner the user is shown is recorded, so a screenshot of one can be matched

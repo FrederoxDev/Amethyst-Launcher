@@ -14,6 +14,7 @@ import {
 } from "./LaunchDiagnostics";
 import * as Licence from "./Licence";
 import * as Packages from "./Packages";
+import * as Preload from "./Preload";
 import * as VersionFiles from "./VersionFiles";
 
 const child = window.require("child_process") as typeof import("child_process");
@@ -37,7 +38,7 @@ export interface DesiredState {
     channel: Channel;
     versionPath: string;
     dataDir: string;
-    proxy: boolean;
+    modded: boolean;
 }
 
 function samePath(a: string, b: string): boolean {
@@ -401,7 +402,7 @@ export async function reconcile(desired: DesiredState, onStatus?: (m: string) =>
     log(
         "Machine",
         `Reconciling ${desired.channel}: build ${desired.versionPath}, data ${desired.dataDir}, `
-        + `proxy ${desired.proxy ? "required" : "not required"}`
+        + `mods ${desired.modded ? "on" : "off"}`
     );
 
     // First, and on every launch: it is the one blocker that costs nothing to read, and a launch
@@ -413,20 +414,7 @@ export async function reconcile(desired: DesiredState, onStatus?: (m: string) =>
     reconcileDataLink(desired, status);
     await VersionFiles.ensureVersionFiles(desired.versionPath, desired.channel, status);
 
-    if (desired.proxy) {
-        if (VersionFiles.isProxyCurrent(desired.versionPath)) {
-            log("Machine", `The proxy in ${desired.versionPath} is already the launcher's own build, leaving it`);
-        } else {
-            status("Installing runtime proxy...");
-            VersionFiles.installProxy(desired.versionPath);
-        }
-    } else if (VersionFiles.isProxyPresent(desired.versionPath)) {
-        log("Machine", `This profile is unmodded but ${desired.versionPath} holds a proxy, removing it`);
-        status("Removing runtime proxy...");
-        VersionFiles.removeProxy(desired.versionPath);
-    } else {
-        log("Machine", `This profile is unmodded and ${desired.versionPath} holds no proxy, nothing to do`);
-    }
+    Preload.ensurePreload(desired.versionPath, GAME_EXECUTABLE, desired.modded, status);
 
     await reconcilePackage(desired, status);
     log("Machine", `Reconciled ${desired.channel} for ${desired.versionPath}`);
@@ -436,6 +424,14 @@ export async function reconcile(desired: DesiredState, onStatus?: (m: string) =>
 export function currentDataTarget(channel: Channel): string | null {
     const state = DataLink.readLink(channel);
     return state.kind === "linked" ? state.target : null;
+}
+
+/** Points a channel's game data folder at a profile, replacing whatever is there. */
+export function linkChannel(channel: Channel, dataDir: string): void {
+    const state = DataLink.readLink(channel);
+    if (state.kind === "linked") DataLink.unlink(channel);
+    else if (state.kind === "empty-dir") DataLink.removeEmptyDir(channel);
+    DataLink.link(channel, dataDir);
 }
 
 export function unlinkChannel(channel: Channel): void {
@@ -453,10 +449,11 @@ export function foreignDataPath(channel: Channel): string | null {
 
 /**
  * Activates the registered package, which is what gives the process package identity.
- * That identity is load-bearing: the loader then resolves imports through the package
- * graph, so the dxgi.dll proxy sitting in the build folder wins over System32's. A plain
- * CreateProcess on the exe starts the game but has no package identity, so System32 wins
- * and mods silently never load.
+ *
+ * Identity is no longer what makes mods load: the preload is named in the game's own import
+ * table, so the loader resolves it out of the build folder however the process was started.
+ * What identity is still needed for is the game itself - Xbox Live sign-in, the store, and the
+ * entitlement Windows checks before it will activate the package at all.
  *
  * By AUMID rather than protocol - `Add-AppxPackage -Register` leaves
  * `HKCU\Software\Classes\<proto>` a stub with no `shell\open\command`.
@@ -465,7 +462,7 @@ export async function activate(
     versionPath: string,
     dataDir: string,
     onStatus?: (m: string) => void
-): Promise<void> {
+): Promise<boolean> {
     const status = onStatus ?? (() => {});
     const wantFamily = packageFamilyFor(versionPath).toLowerCase();
     const registered = Packages.listRegistered();
@@ -527,7 +524,7 @@ export async function activate(
     }
 
     status("Waiting for Minecraft to start...");
-    await confirmStarted(aumid, versionPath, dataDir, pkg, outcome, launchedBy, shellSpawnError);
+    return confirmStarted(aumid, versionPath, dataDir, pkg, outcome, launchedBy, shellSpawnError);
 }
 
 /** Resolves once explorer.exe is up, or with the reason it could not be started. */
@@ -540,10 +537,22 @@ function activateViaShell(aumid: string): Promise<string> {
             resolve(failure);
         };
 
-        const explorer = child.spawn("explorer.exe", [`shell:AppsFolder\\${aumid}`], {
-            detached: true,
-            stdio: "ignore",
-        });
+        // spawn throws synchronously for the errors raised before the child exists - EPERM from
+        // an antivirus or policy hook among them - and a throw inside this executor rejects the
+        // promise instead of reaching the error handler below, which is how a raw "spawn EPERM"
+        // reached the user in place of a launch failure that says what to do about it.
+        let explorer: import("child_process").ChildProcess;
+        try {
+            explorer = child.spawn("explorer.exe", [`shell:AppsFolder\\${aumid}`], {
+                detached: true,
+                stdio: "ignore",
+            });
+        } catch (e) {
+            log("Machine", `explorer.exe could not be started to activate ${aumid}: ${describeError(e)}`);
+            settle(describeError(e));
+            return;
+        }
+
         explorer.on("error", error => {
             log("Machine", `explorer.exe could not be started to activate ${aumid}: ${describeError(error)}`);
             settle(describeError(error));
@@ -612,7 +621,7 @@ async function confirmStarted(
     outcome: Activation.ActivationOutcome,
     launchedBy: string,
     shellSpawnError: string
-): Promise<void> {
+): Promise<boolean> {
     const startedAt = Date.now();
     let probe: ProcessProbe = { processes: [], queryFailed: true, detail: "not checked yet" };
 
@@ -636,7 +645,7 @@ async function confirmStarted(
 
         if (verdict.kind === "running") {
             log("Machine", `${aumid} is up: ${verdict.summary}, via ${launchedBy}`);
-            return;
+            return true;
         }
 
         // A process id Windows handed back that is already gone is a finished answer, not a
@@ -644,9 +653,12 @@ async function confirmStarted(
         if (verdict.kind === "exited-immediately") break;
     }
 
+    // Started, but nothing confirmed it. Reported as such rather than as a success: telling the
+    // user a game is running when the question could not be answered is how a failed launch
+    // reached them as "started" with nothing on screen.
     if (verdict.started) {
         log("Machine", `${aumid} was started via ${launchedBy}, but ${verdict.summary}`);
-        return;
+        return false;
     }
 
     const seen = probe.processes.length === 0
