@@ -11,13 +11,13 @@
     flex-direction: column;
     height: fit-content;
     max-height: 100%;
-    border: 3px solid #1E1E1F;
-    background-color: #48494a;
+    border: 3px solid var(--color-outline);
+    background-color: var(--color-surface);
     overflow-y: auto;
 }
 
 .settings-section {
-    background-color: #313233;
+    background-color: var(--color-surface-sunken);
     padding: 8px 16px;
 }
 

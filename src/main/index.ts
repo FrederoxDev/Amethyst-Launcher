@@ -3,14 +3,19 @@
 import { discardRun, mainLog } from "./diagnostics/LogWriter";
 
 import { is } from "@electron-toolkit/utils";
-import { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, nativeTheme } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, nativeTheme, shell } from "electron";
 import { autoUpdater } from "electron-updater";
 import * as fs from "fs";
 import * as path from "path";
+import { fileURLToPath } from "url";
 
 import { describeError } from "../shared/diagnostics/Log";
+import { registerDownloadIpc } from "./net/DownloadService";
+import { registerIconScheme, serveIcons } from "./protocol/IconProtocol";
 
 process.env["ELECTRON_DISABLE_SECURITY_WARNINGS"] = "true";
+
+registerIconScheme();
 
 {
     const amethyst_appdata_path = path.join(app.getPath("appData"), "Amethyst", "Launcher", "AppData");
@@ -42,6 +47,84 @@ function sendToWindow(scope: string, channel: string, payload?: unknown): boolea
     return true;
 }
 
+const devRendererUrl = is.dev && process.env["ELECTRON_RENDERER_URL"] ? process.env["ELECTRON_RENDERER_URL"] : null;
+const rendererRoot = path.resolve(__dirname, "../renderer");
+
+/**
+ * The renderer displays third-party markdown, so a navigation it did not intend is assumed
+ * hostile. Only the app's own bundle counts as its own URL — including local files, because a
+ * mod archive can drop an HTML file on disk and `file://` runs with the same Node privileges.
+ */
+function isAppUrl(target: string): boolean {
+    let url: URL;
+    try {
+        url = new URL(target);
+    } catch {
+        return false;
+    }
+
+    if (devRendererUrl) {
+        try {
+            return url.origin === new URL(devRendererUrl).origin;
+        } catch {
+            return false;
+        }
+    }
+
+    if (url.protocol !== "file:") return false;
+    try {
+        const relative = path.relative(rendererRoot, fileURLToPath(url));
+        return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+    } catch {
+        return false;
+    }
+}
+
+const EXTERNAL_PROTOCOLS = ["http:", "https:", "mailto:"];
+
+/** Hands a URL to the OS browser, refusing the schemes that would make the shell an exec sink. */
+function openExternally(target: string): void {
+    let url: URL;
+    try {
+        url = new URL(target);
+    } catch {
+        mainLog("WARN", "window", `Not opening "${target}" externally: it is not a URL`);
+        return;
+    }
+
+    if (!EXTERNAL_PROTOCOLS.includes(url.protocol)) {
+        mainLog("WARN", "window", `Not opening ${url.href} externally: "${url.protocol}" is not a browser scheme`);
+        return;
+    }
+
+    mainLog("INFO", "window", `Opening ${url.href} in the default browser`);
+    shell.openExternal(url.href).catch(e => {
+        mainLog("ERROR", "window", `Could not open ${url.href} externally: ${describeError(e)}`);
+    });
+}
+
+function guardNavigation(contents: Electron.WebContents): void {
+    contents.on("will-navigate", (event, url) => {
+        if (isAppUrl(url)) return;
+        event.preventDefault();
+        mainLog("WARN", "window", `Blocked a top-level navigation to ${url}`);
+        openExternally(url);
+    });
+
+    contents.setWindowOpenHandler(({ url }) => {
+        mainLog("INFO", "window", `Blocked a new window for ${url}`);
+        openExternally(url);
+        return { action: "deny" };
+    });
+
+    contents.on("will-attach-webview", event => {
+        mainLog("WARN", "window", "Blocked a <webview> attachment");
+        event.preventDefault();
+    });
+}
+
+app.on("web-contents-created", (_event, contents) => guardNavigation(contents));
+
 function createWindow(): BrowserWindow {
     const win = new BrowserWindow({
         width: 800,
@@ -53,7 +136,6 @@ function createWindow(): BrowserWindow {
         webPreferences: {
             preload: path.join(app.getAppPath(), "/out/preload/index.js"),
             nodeIntegration: true,
-            webSecurity: false,
             contextIsolation: false,
         },
         frame: false,
@@ -61,9 +143,9 @@ function createWindow(): BrowserWindow {
 
     win.setMenuBarVisibility(false);
 
-    if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
-        mainLog("INFO", "window", `Loading dev renderer from ${process.env["ELECTRON_RENDERER_URL"]}`);
-        win.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+    if (devRendererUrl) {
+        mainLog("INFO", "window", `Loading dev renderer from ${devRendererUrl}`);
+        win.loadURL(devRendererUrl);
     } else {
         const file = path.join(__dirname, "../renderer/index.html");
         mainLog("INFO", "window", `Loading packaged renderer from ${file}`);
@@ -79,10 +161,16 @@ function createWindow(): BrowserWindow {
     return win;
 }
 
-const windowMenu = new Menu();
-windowMenu.append(new MenuItem({ role: "toggleDevTools" }));
-windowMenu.append(new MenuItem({ role: "reload" }));
-Menu.setApplicationMenu(windowMenu);
+// Reload is not shipped: every child process is spawned from the renderer, so Ctrl+R during an
+// appx registration destroys the state awaiting an elevated PowerShell that keeps running.
+if (is.dev) {
+    const windowMenu = new Menu();
+    windowMenu.append(new MenuItem({ role: "toggleDevTools" }));
+    windowMenu.append(new MenuItem({ role: "reload" }));
+    Menu.setApplicationMenu(windowMenu);
+} else {
+    Menu.setApplicationMenu(null);
+}
 
 ipcMain.on("TITLE_BAR_ACTION", (_, args) => {
     if (!mainWindow) {
@@ -149,33 +237,11 @@ function handle<T>(
     });
 }
 
-handle("get-app-path", () => app.getAppPath(), result => result);
-handle("get-appdata-path", () => app.getPath("home"), result => result);
-handle("get-localappdata-path", () => process.env.LOCALAPPDATA ?? null, result => result ?? "LOCALAPPDATA is unset");
-
 // Sync because every file the renderer writes stamps the version that wrote it, and the write
 // paths are not async.
 ipcMain.on("get-app-version-sync", (event) => {
     event.returnValue = app.getVersion();
 });
-
-ipcMain.on("get-appdata-path-sync", (event) => {
-    const value = app.getPath("appData");
-    mainLog("INFO", "ipc", `get-appdata-path-sync -> ${value}`);
-    event.returnValue = value;
-});
-
-handle(
-    "show-dialog",
-    async (args: Electron.OpenDialogOptions) => await dialog.showOpenDialog(args),
-    result => (result.canceled ? "cancelled by user" : `picked ${result.filePaths.join(", ")}`)
-);
-
-handle(
-    "show-message",
-    async (args: Electron.MessageBoxOptions) => await dialog.showMessageBox(args),
-    result => `button ${result.response}`
-);
 
 ipcMain.on("APP_STATE_INIT_REQUEST", event => {
     mainLog("INFO", "ipc", "APP_STATE_INIT_REQUEST received, replying APP_STATE_INIT");
@@ -256,8 +322,10 @@ else {
     mainLog("INFO", "startup", "Single instance lock acquired");
 
     app.on("window-all-closed", () => {
-        mainLog("INFO", "shutdown", "All windows closed, exiting with code 0");
-        app.exit(0);
+        // quit(), not exit(): exit() skips before-quit/will-quit, so the log's terminal block
+        // never writes and a deferred update never installs.
+        mainLog("INFO", "shutdown", "All windows closed, quitting");
+        app.quit();
     });
 
     app.on("before-quit", () => mainLog("INFO", "shutdown", "before-quit"));
@@ -272,6 +340,7 @@ else {
 
     app.on("ready", () => {
         mainLog("INFO", "startup", `App ready, creating main window (version ${app.getVersion()})`);
+        serveIcons();
         mainWindow = createWindow();
 
         mainWindow.once("ready-to-show", () => {
@@ -309,6 +378,8 @@ else {
         if (filePath) handleModFilePath(filePath);
     });
 }
+
+registerDownloadIpc();
 
 handle("get-app-version", () => app.getVersion(), result => result);
 
@@ -371,10 +442,15 @@ autoUpdater.on("download-progress", info => {
     sendToWindow("update", "download-progress", info);
 });
 
-autoUpdater.on("update-downloaded", () => {
-    mainLog("INFO", "update", "Update downloaded, quitting to install");
-    // mainWindow.webContents.send('update-downloaded', info);
-    autoUpdater.quitAndInstall(true, true);
+autoUpdater.on("update-downloaded", info => {
+    // Installing is the user's call: autoInstallOnAppQuit carries the choice they made in the
+    // update popup, and quitting here would kill a mod install that is mid-flight.
+    mainLog(
+        "INFO",
+        "update",
+        `Update ${info.version} downloaded; it will ${autoUpdater.autoInstallOnAppQuit ? "install on quit" : "not be installed"}`
+    );
+    sendToWindow("update", "update-downloaded", info);
 });
 
 autoUpdater.on("error", error => {

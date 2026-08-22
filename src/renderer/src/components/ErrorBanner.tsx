@@ -5,7 +5,9 @@ import warningIcon from "@renderer/assets/images/icons/warning-icon.png";
 import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { GRAY_MINECRAFT_BUTTON, MinecraftButton } from "@renderer/components/MinecraftButton";
+import { clickable } from "@renderer/components/Clickable";
+import { MinecraftButton } from "@renderer/components/MinecraftButton";
+import { GRAY_MINECRAFT_BUTTON } from "@renderer/components/MinecraftButtonPalette";
 import { useAppStore } from "@renderer/states/AppStore";
 
 export function ErrorBanner(): ReactNode | null {
@@ -16,7 +18,7 @@ export function ErrorBanner(): ReactNode | null {
     if (error === "") return null;
 
     return (
-        <div className="launcher-error-banner">
+        <div className="launcher-error-banner" role="alert">
             <div className="launcher-error-body">
                 <img src={warningIcon} className="launcher-error-icon pixelated" alt="" />
                 <div className="launcher-error-message">
@@ -34,7 +36,7 @@ export function ErrorBanner(): ReactNode | null {
                     onClick={() => navigate("/logs")}
                     style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "120px" }}
                 />
-                <div className="launcher-error-close" onClick={() => setError("")}>
+                <div className="launcher-error-close" {...clickable(() => setError(""), { label: "Dismiss error" })}>
                     <svg width="18" height="18" viewBox="0 0 12 12">
                         <polygon
                             className="fill-[#FFFFFF]"

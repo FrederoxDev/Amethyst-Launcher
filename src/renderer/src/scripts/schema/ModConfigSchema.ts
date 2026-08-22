@@ -1,8 +1,10 @@
 import Ajv from "ajv";
+import type { ErrorObject } from "ajv";
 
 import { ModConfigSchemaV1_1_0, ModConfigSchemaV1_2_0, ModConfigSchemaV1_3_0 } from "@renderer/scripts/schema/Schemas";
 
-export const ajv = new Ajv();
+/** `allErrors` because every surface that shows a rejected mod is built to list more than one. */
+const ajv = new Ajv({ allErrors: true });
 
 export interface ModDependency {
     dependency_uuid: string;
@@ -36,115 +38,79 @@ export interface ModConfig {
     };
 }
 
-interface ModConfigV1_1_0_Dependency {
-    dependency_uuid: string;
-    dependency_namespace?: string;
-    version_range: string;
-    is_soft?: boolean;
-}
-
-export interface ModConfigV1_1_0 {
-    format_version: "1.1.0";
+/** What every mod.json schema validates to. Only `platforms` differs between the versions. */
+interface ValidatedModConfig {
+    format_version: string;
     meta: {
         name: string;
         uuid: string;
         version: string;
         namespace: string;
         is_runtime?: boolean;
-        author?: string;
-        dependencies?: ModConfigV1_1_0_Dependency[];
+        author?: string | string[];
+        friendly_name?: string;
+        log_name?: string;
+        dependencies?: ModDependency[];
+        platforms?: Partial<Record<SupportedPlatform, ModPlatform>>;
     };
 }
 
-export interface ModConfigV1_3_0 {
-    format_version: "1.3.0";
-    meta: {
-        name: string;
-        uuid: string;
-        version: string;
-        namespace: string;
-        is_runtime?: boolean;
-        author?: string;
-        dependencies?: ModConfigV1_1_0_Dependency[];
-        platforms: Partial<Record<SupportedPlatform, ModPlatform>>;
-    };
+function toAuthors(author: string | string[] | undefined): string[] {
+    if (author === undefined) return [];
+    return typeof author === "string" ? [author] : author;
 }
 
-export interface ModConfigV1_2_0 {
-    format_version: "1.2.0";
-    meta: {
-        name: string;
-        uuid: string;
-        version: string;
-        namespace: string;
-        is_runtime?: boolean;
-        author?: string;
-        dependencies?: ModConfigV1_1_0_Dependency[];
-        platforms: Partial<Record<SupportedPlatform, ModPlatform>>;
-    };
-}
-
-export const ValidateModSchemaV1_1_0 = ajv.compile(ModConfigSchemaV1_1_0);
-// Not `compile({ ModConfigSchemaV1_2_0 })`: wrapping the schema in an object literal compiles a
-// schema with no constraints in it, which accepted every 1.2.0 mod.json whatever it held.
-export const ValidateModSchemaV1_2_0 = ajv.compile(ModConfigSchemaV1_2_0);
-export const ValidateModSchemaV1_3_0 = ajv.compile(ModConfigSchemaV1_3_0);
-
-export const FromValidatedV1_1_0ToConfig = (validated: ModConfigV1_1_0): ModConfig => {
-    let authors: string[] = [];
-    if (validated.meta.author) authors = [validated.meta.author];
-
+function toModConfig(validated: ValidatedModConfig): ModConfig {
     return {
         format_version: validated.format_version,
         meta: {
             name: validated.meta.name,
             version: validated.meta.version,
             type: validated.meta.is_runtime ? "runtime" : "mod",
-            authors: authors,
+            authors: toAuthors(validated.meta.author),
             namespace: validated.meta.namespace,
             uuid: validated.meta.uuid,
             dependencies: validated.meta.dependencies,
-            platforms: {
-                "win-client": {},
-            },
+            // 1.1.0 predates the field, and the only platform it ever ran on is win-client.
+            platforms: validated.meta.platforms ?? { "win-client": {} },
         },
     };
-};
+}
 
-export const FromValidatedV1_3_0ToConfig = (validated: ModConfigV1_3_0): ModConfig => {
-    let authors: string[] = [];
-    if (validated.meta.author) authors = [validated.meta.author];
+export type SchemaOutcome = { ok: true; config: ModConfig } | { ok: false; errors: ErrorObject[] };
+
+export type ModFormat =
+    | { version: string; support: "removed" }
+    | { version: string; support: "current" | "deprecated"; validate: (data: unknown) => SchemaOutcome };
+
+function modFormat(version: string, schema: object, support: "current" | "deprecated"): ModFormat {
+    const validate = ajv.compile(schema);
 
     return {
-        format_version: validated.format_version,
-        meta: {
-            name: validated.meta.name,
-            version: validated.meta.version,
-            type: validated.meta.is_runtime ? "runtime" : "mod",
-            authors: authors,
-            namespace: validated.meta.namespace,
-            uuid: validated.meta.uuid,
-            dependencies: validated.meta.dependencies,
-            platforms: validated.meta.platforms,
+        version,
+        support,
+        validate: data => {
+            // The one place the schema and `ValidatedModConfig` are asserted to agree, rather than
+            // once per format with the interface out of reach.
+            if (validate(data)) return { ok: true, config: toModConfig(data as ValidatedModConfig) };
+            return { ok: false, errors: validate.errors ?? [] };
         },
     };
-};
+}
 
-export const FromValidatedV1_2_0ToConfig = (validated: ModConfigV1_2_0): ModConfig => {
-    let authors: string[] = [];
-    if (validated.meta.author) authors = [validated.meta.author];
+/** The one place a format_version is recognised, whether it is still runnable or not. */
+export const MOD_FORMATS: readonly ModFormat[] = [
+    { version: "1.0.0", support: "removed" },
+    modFormat("1.1.0", ModConfigSchemaV1_1_0, "deprecated"),
+    modFormat("1.2.0", ModConfigSchemaV1_2_0, "deprecated"),
+    modFormat("1.3.0", ModConfigSchemaV1_3_0, "current"),
+];
 
-    return {
-        format_version: validated.format_version,
-        meta: {
-            name: validated.meta.name,
-            version: validated.meta.version,
-            type: validated.meta.is_runtime ? "runtime" : "mod",
-            authors: authors,
-            namespace: validated.meta.namespace,
-            uuid: validated.meta.uuid,
-            dependencies: validated.meta.dependencies,
-            platforms: validated.meta.platforms,
-        },
-    };
-};
+/** Ajv's own words, with the mod and the field named so the user knows where to look. */
+export function describeSchemaErrors(modId: string, errors: readonly ErrorObject[]): string[] {
+    return errors.map(error => {
+        const path = error.instancePath.replace(/^\//, "").replace(/\//g, ".");
+        const field = path === "" ? "mod.json" : `mod.json ${path}`;
+        return `${modId}: ${field} ${error.message ?? "is not valid"}`;
+    });
+}

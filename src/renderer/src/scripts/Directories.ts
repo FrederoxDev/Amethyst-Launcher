@@ -15,7 +15,7 @@ function describe(e: unknown): string {
     return code ? `${message} (${code})` : message;
 }
 
-export function ensureParentExists(p: string) {
+export function ensureParentExists(p: string): void {
     fs.mkdirSync(path.dirname(p), { recursive: true });
 }
 

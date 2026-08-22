@@ -1,5 +1,5 @@
-import { SemVersion } from "@renderer/scripts/classes/SemVersion";
-import { Channel, isChannel } from "@renderer/scripts/domain/Channel";
+import { SemVersion } from "../classes/SemVersion.ts";
+import { type Channel, isChannel } from "../domain/Channel.ts";
 
 export interface InstalledVersion {
     uuid: string;
@@ -12,9 +12,20 @@ export interface InstalledVersion {
     imported: boolean;
 }
 
+/**
+ * The one folder name shape the launcher creates under the versions folder. Anything else is
+ * refused here, because the caller joins the result onto `versionsPath` and hands it to a
+ * recursive delete.
+ */
+const SAFE_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9 ._-]*[A-Za-z0-9_-]$/;
+
 /** Version and channel alone are not unique across imports; the uuid is. */
 export function artifactSlug(version: string, channel: Channel, uuid: string): string {
-    return `Minecraft-${version}-${channel}-${uuid}`;
+    const slug = `Minecraft-${version}-${channel}-${uuid}`;
+    if (!SAFE_SEGMENT.test(slug)) {
+        throw new Error(`"${slug}" cannot be used as a folder name: only letters, digits, spaces, ".", "_" and "-" are allowed.`);
+    }
+    return slug;
 }
 
 export function serialize(v: InstalledVersion): unknown {

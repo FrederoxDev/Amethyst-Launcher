@@ -1,6 +1,6 @@
 import * as child from "child_process";
 import * as fs from "fs";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { MainPanel } from "@renderer/components/MainPanel";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
@@ -8,7 +8,7 @@ import { PopupPanel } from "@renderer/components/PopupPanel";
 
 import { describeError } from "@shared/diagnostics/Log";
 import { log } from "@renderer/scripts/LauncherLog";
-import { GetAllMods, ValidatedMod } from "@renderer/scripts/Mods";
+import { ValidatedMod } from "@renderer/scripts/Mods";
 import { useAppStore } from "@renderer/states/AppStore";
 
 function getPaths() {
@@ -36,12 +36,11 @@ export function ModsPage() {
     /** Will report any errors and why they are not valid to select etc */
     /** Todo make this popup a panel after a more info button is pressed or something */
 
-    const [allReports, setAllReports] = useState<ValidatedMod[]>([]);
-    const [selectedReport, setSelectedReport] = useState<ValidatedMod | undefined>(undefined);
-
-    useEffect(() => {
-        setAllReports(GetAllMods());
-    }, []);
+    // The store's copy, kept current by the app's watcher on the mods folder: a page reporting mod
+    // state cannot be showing the scan it took when it opened.
+    const allReports: readonly ValidatedMod[] = useAppStore(state => state.allMods);
+    const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+    const selectedReport = allReports.find(report => report.id === selectedId);
 
     return (
         <>
@@ -53,7 +52,7 @@ export function ModsPage() {
                             <div
                                 className="mods-item"
                                 onClick={() => {
-                                    setSelectedReport(report);
+                                    setSelectedId(report.id);
                                 }}
                                 key={report.id}
                             >
@@ -89,7 +88,7 @@ export function ModsPage() {
             {selectedReport && (
                 <PopupPanel
                     title={selectedReport.id}
-                    onClose={() => setSelectedReport(undefined)}
+                    onClose={() => setSelectedId(undefined)}
                     size="lg"
                 >
                     <p className="minecraft-seven mods-popup-subtitle">

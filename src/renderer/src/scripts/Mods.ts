@@ -1,23 +1,14 @@
-const fs = window.require("fs");
-const path = window.require("path");
+const fs = window.require("fs") as typeof import("fs");
+const path = window.require("path") as typeof import("path");
 
-import { describeError } from "@shared/diagnostics/Log";
+import { describeError, userMessage } from "@shared/diagnostics/Log";
 import { log } from "@renderer/scripts/LauncherLog";
 import { useAppStore } from "@renderer/states/AppStore";
-import {
-    ajv,
-    FromValidatedV1_1_0ToConfig,
-    FromValidatedV1_2_0ToConfig,
-    FromValidatedV1_3_0ToConfig,
-    ModConfig,
-    ValidateModSchemaV1_1_0,
-    ValidateModSchemaV1_2_0,
-    ValidateModSchemaV1_3_0,
-} from "./schema/ModConfigSchema";
-import type { ValidateFunction } from "ajv";
-import type { ModStatus } from "@renderer/scripts/domain/ProfileDiagnosis";
+import type { LauncherPaths } from "@renderer/scripts/platform/LauncherPlatform";
+import { describeSchemaErrors, MOD_FORMATS, ModConfig } from "./schema/ModConfigSchema";
+import type { ModDependencyStatus, ModStatus } from "@renderer/scripts/domain/ProfileDiagnosis";
 
-function getPaths() {
+function getPaths(): LauncherPaths {
     return useAppStore.getState().platform.getPaths();
 }
 
@@ -77,18 +68,6 @@ export type ValidatedMod =
     | { ok: true; config: ModConfig; errors: string[]; warnings: string[]; id: string }
     | { ok: false; config: undefined; errors: string[]; warnings: string[]; id: string };
 
-export enum DeprecatedStatus {
-    None,
-    Deprecated,
-    Removed,
-}
-
-const validators: { [version: string]: [ValidateFunction, (data: any) => ModConfig | undefined, DeprecatedStatus] } = {
-    "1.1.0": [ValidateModSchemaV1_1_0, FromValidatedV1_1_0ToConfig, DeprecatedStatus.Deprecated],
-    "1.2.0": [ValidateModSchemaV1_2_0, FromValidatedV1_2_0ToConfig, DeprecatedStatus.Deprecated],
-    "1.3.0": [ValidateModSchemaV1_3_0, FromValidatedV1_3_0ToConfig, DeprecatedStatus.None],
-};
-
 /**
  * Runtimes only.
  *
@@ -100,154 +79,95 @@ const validators: { [version: string]: [ValidateFunction, (data: any) => ModConf
  */
 const RUNTIME_FORMAT_VERSION = "1.3.0";
 
-const deprecatedVersions = ["1.0.0"];
+const PLACEHOLDER_UUID = "00000000-0000-0000-0000-000000000000";
 
 export function ValidateMod(id: string): ValidatedMod {
     const paths = getPaths();
     const modConfigPath = path.join(paths.modsPath, id, "mod.json");
-    let configUnchecked: Record<any, any> = {};
 
     const errors: string[] = [];
     const warnings: string[] = [];
+    const rejected = (): ValidatedMod => ({ ok: false, config: undefined, errors, warnings, id });
 
+    let parsed: unknown;
     try {
-        const configDataText = fs.readFileSync(modConfigPath, "utf-8");
-        configUnchecked = JSON.parse(configDataText);
+        parsed = JSON.parse(fs.readFileSync(modConfigPath, "utf-8"));
     } catch (e) {
         log("Mods", `Could not read ${modConfigPath}: ${describeError(e)}`);
-        errors.push(`Failed to read/parse ${modConfigPath}`);
-
-        return {
-            ok: false,
-            errors,
-            warnings,
-            config: undefined,
-            id,
-        };
+        errors.push(`${id}: could not read ${modConfigPath} - ${userMessage(e)}`);
+        return rejected();
     }
 
-    // if format_version field is not present, inject the 1.0.0 format_version
-    // this is needed for old mods to still be able to correctly validate :)
-    if (configUnchecked["format_version"] === undefined) {
-        configUnchecked["format_version"] = "1.1.0";
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        errors.push(`${id}: mod.json does not hold a JSON object.`);
+        return rejected();
+    }
+
+    const configUnchecked = parsed as Record<string, unknown>;
+    const formatVersion = configUnchecked["format_version"];
+
+    if (typeof formatVersion !== "string") {
         errors.push(
-            "No format_version field present, please add a format_version field to your mod.json! Fallback is no longer supported."
+            `${id}: mod.json has no format_version field. Add one - the fallback to an assumed version is gone.`
         );
-
-        return {
-            ok: false,
-            config: undefined,
-            warnings,
-            errors,
-            id,
-        };
+        return rejected();
     }
 
-    if (deprecatedVersions.includes(configUnchecked["format_version"])) {
-        errors.push(`Mod uses deprecated format_version "${configUnchecked["format_version"]}"`);
-
-        return {
-            ok: false,
-            config: undefined,
-            warnings,
-            errors,
-            id,
-        };
+    const format = MOD_FORMATS.find(candidate => candidate.version === formatVersion);
+    if (format === undefined) {
+        errors.push(`${id}: mod.json declares an unknown format_version "${formatVersion}".`);
+        return rejected();
     }
 
-    for (const [version, [validator, fromValidated, deprecationStatus]] of Object.entries(validators)) {
-        if (configUnchecked["format_version"] !== version) continue;
-
-        if (deprecationStatus === DeprecatedStatus.Removed) {
-            errors.push(
-                `This mod is built for Amethyst format_version "${version}", which this launcher can no longer run. `
-                + "Check for an update from its author, or remove it from the profile."
-            );
-
-            return {
-                ok: false,
-                config: undefined,
-                warnings,
-                errors,
-                id,
-            };
-        }
-
-        if (deprecationStatus === DeprecatedStatus.Deprecated) {
-            warnings.push(
-                `Mod uses deprecated format_version "${version}". New mods should update to a newer format_version.`
-            );
-        }
-
-        const success = validator(configUnchecked);
-        if (!success) {
-            errors.push(...ajv.errorsText(validator.errors, { dataVar: "mod.config/", separator: "\n" }).split("\n"));
-
-            return {
-                ok: false,
-                config: undefined,
-                warnings,
-                errors,
-                id,
-            };
-        }
-
-        const config = fromValidated(configUnchecked);
-        if (!config) {
-            errors.push("Failed to convert validated config to internal representation for format_version " + version);
-
-            return {
-                ok: false,
-                config: undefined,
-                warnings,
-                errors,
-                id,
-            };
-        }
-
-        // Only knowable once the config is converted: whether a mod is a runtime is a field
-        // inside it, not something the format version says.
-        if (config.meta.type === "runtime" && version !== RUNTIME_FORMAT_VERSION) {
-            errors.push(
-                `This runtime is built for Amethyst format_version "${version}", and runtimes must be on `
-                + `"${RUNTIME_FORMAT_VERSION}" to start the game. Update the runtime, or pick a newer one. `
-                + "Your other mods are unaffected."
-            );
-
-            return {
-                ok: false,
-                config: undefined,
-                warnings,
-                errors,
-                id,
-            };
-        }
-
-        // Check for common mod.json issues
-        if (config.meta.uuid === "00000000-0000-0000-0000-000000000000") {
-            warnings.push(
-                'Mod is using the placeholder UUID "00000000-0000-0000-0000-000000000000", please generate a unique UUID for your mod'
-            );
-        }
-
-        return {
-            ok: true,
-            config,
-            warnings,
-            errors: errors,
-            id,
-        };
+    if (format.support === "removed") {
+        errors.push(
+            `${id} is built for Amethyst format_version "${formatVersion}", which this launcher can no longer run. `
+            + "Check for an update from its author, or remove it from the profile."
+        );
+        return rejected();
     }
 
-    errors.push(`Unknown format_version "${configUnchecked["format_version"]}"`);
+    if (format.support === "deprecated") {
+        warnings.push(
+            `Mod uses deprecated format_version "${formatVersion}". New mods should update to a newer format_version.`
+        );
+    }
 
-    return {
-        ok: false,
-        config: undefined,
-        warnings,
-        errors,
-        id,
-    };
+    const outcome = format.validate(configUnchecked);
+    if (!outcome.ok) {
+        errors.push(...describeSchemaErrors(id, outcome.errors));
+        return rejected();
+    }
+
+    const config = outcome.config;
+
+    // Only knowable once the config is converted: whether a mod is a runtime is a field
+    // inside it, not something the format version says.
+    if (config.meta.type === "runtime" && formatVersion !== RUNTIME_FORMAT_VERSION) {
+        errors.push(
+            `This runtime is built for Amethyst format_version "${formatVersion}", and runtimes must be on `
+            + `"${RUNTIME_FORMAT_VERSION}" to start the game. Update the runtime, or pick a newer one. `
+            + "Your other mods are unaffected."
+        );
+        return rejected();
+    }
+
+    if (config.meta.uuid === PLACEHOLDER_UUID) {
+        warnings.push(
+            `Mod is using the placeholder UUID "${PLACEHOLDER_UUID}", please generate a unique UUID for your mod`
+        );
+    }
+
+    return { ok: true, config, warnings, errors, id };
+}
+
+function toDependencyStatus(config: ModConfig): ModDependencyStatus[] {
+    return (config.meta.dependencies ?? []).map(dependency => ({
+        uuid: dependency.dependency_uuid ?? "",
+        namespace: dependency.dependency_namespace ?? "",
+        versionRange: dependency.version_range,
+        isSoft: dependency.is_soft ?? false,
+    }));
 }
 
 /** The scan's result in the shape a profile diagnosis reads, so both sides cannot drift apart. */
@@ -257,5 +177,9 @@ export function toModStatus(mods: readonly ValidatedMod[]): ModStatus[] {
         ok: mod.ok,
         isRuntime: mod.ok && mod.config.meta.type === "runtime",
         errors: mod.errors,
+        uuid: mod.ok ? mod.config.meta.uuid : undefined,
+        namespace: mod.ok ? mod.config.meta.namespace : undefined,
+        version: mod.ok ? mod.config.meta.version : undefined,
+        dependencies: mod.ok ? toDependencyStatus(mod.config) : [],
     }));
 }

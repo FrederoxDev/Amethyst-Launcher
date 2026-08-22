@@ -64,6 +64,23 @@ export class PeFormatError extends Error {
     }
 }
 
+/**
+ * The image already imports the DLL, so there is nothing to add.
+ *
+ * Adding it a second time is not a wasted write but a permanent one: each pass appends another
+ * section and raises NumberOfSections, and once the section table outgrows SizeOfHeaders the
+ * build can never be patched or started again.
+ */
+export class AlreadyImportedError extends Error {
+    readonly dllName: string;
+
+    constructor(dllName: string) {
+        super(`the image already imports ${dllName}`);
+        this.name = "AlreadyImportedError";
+        this.dllName = dllName;
+    }
+}
+
 function align(value: number, to: number): number {
     return Math.ceil(value / to) * to;
 }
@@ -162,36 +179,54 @@ function readCString(fd: number, offset: number): string {
     return chunk.toString("ascii", 0, end === -1 ? read : end);
 }
 
-/** Names only. The thunks are never needed to answer "is our DLL already in here". */
-export function readImportedDlls(exePath: string): string[] {
+interface ImportEntry {
+    /** The descriptor as it sits in the image, so an existing table can be copied verbatim. */
+    descriptor: Buffer;
+    /** The imported DLL's name, or "" for a descriptor that names none. */
+    name: string;
+}
+
+function readImportDescriptors(fd: number, headers: Buffer, layout: Layout): ImportEntry[] {
+    const dir = directory(headers, layout, DIR_IMPORT);
+    if (dir.rva === 0) return [];
+
+    const entries: ImportEntry[] = [];
+    const base = toFileOffset(layout, dir.rva);
+    const scratch = Buffer.alloc(DESCRIPTOR_SIZE);
+
+    for (let i = 0; i < 4096; i++) {
+        fs.readSync(fd, scratch, 0, DESCRIPTOR_SIZE, base + i * DESCRIPTOR_SIZE);
+        const originalFirstThunk = scratch.readUInt32LE(0);
+        const nameRva = scratch.readUInt32LE(12);
+        const firstThunk = scratch.readUInt32LE(16);
+        if (originalFirstThunk === 0 && nameRva === 0 && firstThunk === 0) break;
+        entries.push({
+            descriptor: Buffer.from(scratch),
+            name: nameRva === 0 ? "" : readCString(fd, toFileOffset(layout, nameRva)),
+        });
+    }
+    return entries;
+}
+
+function namesDll(entries: ImportEntry[], dllName: string): boolean {
+    const wanted = dllName.toLowerCase();
+    return entries.some(entry => entry.name.toLowerCase() === wanted);
+}
+
+/**
+ * Whether the image's import table already names the DLL.
+ *
+ * Throws whatever stopped it from finding out. A read that did not happen is not an answer, and
+ * the caller that treats it as "no" is the caller that patches an already-patched image.
+ */
+export function importsDll(exePath: string, dllName: string): boolean {
     const fd = fs.openSync(exePath, "r");
     try {
         const headers = readHeaders(fd);
-        const layout = parse(headers);
-        const dir = directory(headers, layout, DIR_IMPORT);
-        if (dir.rva === 0) return [];
-
-        const names: string[] = [];
-        const base = toFileOffset(layout, dir.rva);
-        const descriptor = Buffer.alloc(DESCRIPTOR_SIZE);
-
-        for (let i = 0; i < 4096; i++) {
-            fs.readSync(fd, descriptor, 0, DESCRIPTOR_SIZE, base + i * DESCRIPTOR_SIZE);
-            const originalFirstThunk = descriptor.readUInt32LE(0);
-            const nameRva = descriptor.readUInt32LE(12);
-            const firstThunk = descriptor.readUInt32LE(16);
-            if (originalFirstThunk === 0 && nameRva === 0 && firstThunk === 0) break;
-            if (nameRva !== 0) names.push(readCString(fd, toFileOffset(layout, nameRva)));
-        }
-        return names;
+        return namesDll(readImportDescriptors(fd, headers, parse(headers)), dllName);
     } finally {
         fs.closeSync(fd);
     }
-}
-
-export function importsDll(exePath: string, dllName: string): boolean {
-    const wanted = dllName.toLowerCase();
-    return readImportedDlls(exePath).some(name => name.toLowerCase() === wanted);
 }
 
 /**
@@ -271,18 +306,13 @@ export function addImport(exePath: string, dllName: string, functionName: string
             );
         }
 
-        const existing = directory(headers, layout, DIR_IMPORT);
-        if (existing.rva === 0) throw new PeFormatError("image has no import directory to extend");
-
-        const descriptorBase = toFileOffset(layout, existing.rva);
-        const originalDescriptors: Buffer[] = [];
-        const scratch = Buffer.alloc(DESCRIPTOR_SIZE);
-        for (let i = 0; i < 4096; i++) {
-            fs.readSync(fd, scratch, 0, DESCRIPTOR_SIZE, descriptorBase + i * DESCRIPTOR_SIZE);
-            if (scratch.readUInt32LE(0) === 0 && scratch.readUInt32LE(12) === 0 && scratch.readUInt32LE(16) === 0)
-                break;
-            originalDescriptors.push(Buffer.from(scratch));
+        if (directory(headers, layout, DIR_IMPORT).rva === 0) {
+            throw new PeFormatError("image has no import directory to extend");
         }
+
+        const entries = readImportDescriptors(fd, headers, layout);
+        if (namesDll(entries, dllName)) throw new AlreadyImportedError(dllName);
+        const originalDescriptors = entries.map(entry => entry.descriptor);
 
         // Everything below is laid out relative to the new section, so its RVAs are known before
         // a byte is written.

@@ -4,7 +4,7 @@
     "printWidth": 120,
     "trailingComma": "es5",
     "arrowParens": "avoid",
-    "endOfLine": "crlf",
+    "endOfLine": "lf",
     "tabWidth": 4,
     "useTabs": false
 }

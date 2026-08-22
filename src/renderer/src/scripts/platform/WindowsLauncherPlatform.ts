@@ -5,8 +5,8 @@ import { log } from "@renderer/scripts/LauncherLog";
 import { PathUtils } from "@renderer/scripts/PathUtils";
 import { SESSION_SCHEMA, writeSession } from "@renderer/scripts/session/Session";
 import { InstalledVersion } from "@renderer/scripts/versions/InstalledVersion";
-import { describeError } from "@shared/diagnostics/ProcessRunner";
-import { ILauncherPlatform, LauncherPaths, LaunchRequest, ProcessInfo } from "./LauncherPlatform";
+import { describeError } from "@shared/diagnostics/Log";
+import { DIRECTORY_PATHS, FILE_PATHS, ILauncherPlatform, LauncherPaths, LaunchOutcome, LaunchRequest, ProcessInfo } from "./LauncherPlatform";
 import * as Licence from "./windows/Licence";
 import * as Machine from "./windows/Machine";
 import * as VersionFiles from "./windows/VersionFiles";
@@ -14,6 +14,14 @@ import * as VersionFiles from "./windows/VersionFiles";
 const os = window.require("os") as typeof import("os");
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
+
+/**
+ * The `unverified` verdict, said to the user. `Machine.startGame` reduces the verdict to a
+ * boolean, so the words are repeated here rather than reached.
+ */
+const UNCONFIRMED_LAUNCH_MESSAGE =
+    "Minecraft was asked to start, but the launcher could not check whether it did.\n\n"
+    + "If Minecraft does not appear within a few seconds, press Play again.";
 
 export class WindowsLauncherPlatform implements ILauncherPlatform {
     private static cachedPaths: LauncherPaths | null = null;
@@ -41,15 +49,11 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             profileDataPath: path.join(launcher, "ProfileData"),
         };
 
-        for (const p of Object.values(paths)) PathUtils.ValidatePath(p);
+        for (const key of DIRECTORY_PATHS) PathUtils.ensureDirectory(paths[key]);
+        for (const key of FILE_PATHS) PathUtils.ensureParentDirectory(paths[key]);
         WindowsLauncherPlatform.cachedPaths = paths;
         log("Paths", `Resolved from APPDATA ${appData}: ${Object.entries(paths).map(([k, v]) => `${k}=${v}`).join(", ")}`);
         return paths;
-    }
-
-    /** Confirmed-running processes only. An unanswerable query yields an empty list, never a guess. */
-    async listProcesses(executableName: string): Promise<ProcessInfo[]> {
-        return (await Machine.probeProcesses(executableName)).processes;
     }
 
     profileDataDir(profileUuid: string): string {
@@ -91,30 +95,35 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             return null;
         }
 
-        const root = path.resolve(this.getPaths().profileDataPath).toLowerCase();
+        // Compared a path segment at a time. A textual prefix test makes "ProfileData-backup" a
+        // child of "ProfileData", and the profile it names is then whichever folder happens to
+        // sit at the end of somebody else's path.
+        const root = this.getPaths().profileDataPath;
         const resolved = path.resolve(target);
-        if (!resolved.toLowerCase().startsWith(root)) {
+        const relative = path.relative(root, resolved);
+        if (relative === "" || relative.startsWith("..") || path.isAbsolute(relative)) {
             log("Profiles", `The ${channel} game data points at ${resolved}, which is outside ${root}, so no profile owns it`);
             return null;
         }
-        return path.basename(resolved);
+        return relative.split(path.sep)[0];
     }
 
     /**
      * Only unhooks this profile's own junction. The package registration is left alone:
      * it still points at a valid build, and the next launch reconciles it.
+     *
+     * The data goes first and the junction after, so a delete that fails leaves the profile
+     * exactly as it was and the user can try again. Unhooking first turned a delete that could
+     * not finish into a profile still on the list with nothing behind it.
      */
     async discardProfileData(profileUuid: string): Promise<boolean> {
         const dir = this.profileDataDir(profileUuid);
-        log("Profiles", `Discarding the data of profile ${profileUuid} at ${dir}`);
-
-        let wasLive = false;
-        for (const channel of CHANNELS) {
-            if (this.liveProfileFor(channel) !== profileUuid) continue;
-            log("Profiles", `Profile ${profileUuid} is the live ${channel} data, unlinking it first`);
-            Machine.unlinkChannel(channel);
-            wasLive = true;
-        }
+        const live = CHANNELS.filter(channel => this.liveProfileFor(channel) === profileUuid);
+        log(
+            "Profiles",
+            `Discarding the data of profile ${profileUuid} at ${dir}; it is the live data for `
+            + `[${live.join(", ") || "no channel"}]`
+        );
 
         try {
             await fs.promises.rm(dir, { recursive: true, force: true });
@@ -122,8 +131,18 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             log("Profiles", `Could not delete ${dir}: ${describeError(e)}`);
             throw new Error(`This profile's data could not be deleted.\n\n${dir} (${describeError(e)})`, { cause: e });
         }
-        log("Profiles", `Deleted ${dir}${wasLive ? ", which was the live game data" : ""}`);
-        return wasLive;
+        log("Profiles", `Deleted ${dir}`);
+
+        for (const channel of live) {
+            try {
+                Machine.unlinkChannel(channel);
+            } catch (e) {
+                // The data it pointed at is already gone, so a junction left behind is cleared by
+                // the next launch rather than a reason to keep a profile with no data on the list.
+                log("Profiles", `Could not unlink the ${channel} game data of profile ${profileUuid}: ${describeError(e)}`);
+            }
+        }
+        return live.length > 0;
     }
 
     /**
@@ -194,7 +213,7 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         );
     }
 
-    async launch(request: LaunchRequest, onStatus?: (message: string) => void): Promise<void> {
+    async launch(request: LaunchRequest, onStatus?: (message: string) => void): Promise<LaunchOutcome> {
         const status = onStatus ?? (() => {});
         const { profile, version } = request;
 
@@ -224,10 +243,6 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             modded: isModded(profile),
         }, status);
 
-        // Must follow reconcile so the junction is in place and the entitlement lands in
-        // this profile's folder, and precede activation, which requires it.
-        await Licence.ensureEntitlement(version.path, dataDir, status);
-
         // The runtime reads this to find out which mods to load, so a launch that cannot write it
         // would start a game that silently has no mods in it.
         try {
@@ -253,12 +268,19 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         log("Launch", `Session file written to ${dataDir} for "${profile.name}"`);
 
         status("Starting Minecraft...");
-        const confirmed = await Machine.activate(version.path, dataDir, status);
+        // The manifest stays. It describes how this profile is set up, not one launch of it, so
+        // starting the game from the Start menu afterwards loads the same mods the launcher did.
+        const confirmed = await Machine.startGame(version.path, status);
+
         log(
             "Launch",
             confirmed
                 ? `"${profile.name}" is running`
                 : `"${profile.name}" was started, but Windows would not confirm that it is running`
         );
+        return {
+            confirmed,
+            unconfirmedMessage: confirmed ? "" : UNCONFIRMED_LAUNCH_MESSAGE,
+        };
     }
 }

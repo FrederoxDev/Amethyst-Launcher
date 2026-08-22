@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import type { ModStatus, ProfileDiagnosisInput } from "../src/renderer/src/scripts/domain/ProfileDiagnosis.ts";
+import type { ModDependencyStatus, ModStatus, ProfileDiagnosisInput } from "../src/renderer/src/scripts/domain/ProfileDiagnosis.ts";
 import {
     describeProblem,
     diagnoseProfile,
@@ -92,6 +92,94 @@ describe("profile diagnosis", () => {
         assert.deepEqual(problems, []);
     });
 
+    // Telling a user to install the thing they are installing is the one thing this must not do.
+    it("says the runtime is on its way rather than absent while it downloads", () => {
+        const problems = diagnoseProfile(input({
+            modIds: ["Amethyst-Runtime"],
+            mods: [],
+            downloading: ["Amethyst-Runtime"],
+        }));
+
+        assert.equal(problems.length, 1);
+        assert.equal(problems[0].kind, "runtime-downloading");
+        assert.ok(describeProblem(problems[0]).includes("Amethyst-Runtime"));
+        assert.ok(!problems.some(p => p.kind === "runtime-absent"));
+    });
+
+    it("waits rather than faulting while any listed mod could still turn out to be the runtime", () => {
+        const problems = diagnoseProfile(input({
+            modIds: ["Create", "Sodium"],
+            mods: [mod("Create")],
+            downloading: ["Sodium"],
+        }));
+        assert.equal(problems[0].kind, "runtime-downloading");
+    });
+
+    it("names the mod whose required dependency the profile does not have", () => {
+        const problems = diagnoseProfile(input({
+            modIds: ["Amethyst-Runtime", "Create"],
+            mods: [
+                mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
+                mod("Create", {
+                    uuid: "create-uuid",
+                    namespace: "create",
+                    dependencies: [{ uuid: "flywheel-uuid", namespace: "flywheel", versionRange: ">=1.0.0", isSoft: false }],
+                }),
+            ],
+        }));
+
+        const problem = problemFor(problems, "Create");
+        assert.equal(problem?.kind, "dependency-missing");
+        assert.ok(describeProblem(problem!).includes("flywheel"));
+    });
+
+    it("accepts a dependency satisfied by another mod in the profile", () => {
+        const problems = diagnoseProfile(input({
+            modIds: ["Amethyst-Runtime", "Create", "Flywheel"],
+            mods: [
+                mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
+                mod("Create", {
+                    uuid: "create-uuid",
+                    namespace: "create",
+                    dependencies: [{ uuid: "flywheel-uuid", namespace: "flywheel", versionRange: ">=1.0.0", isSoft: false }],
+                }),
+                mod("Flywheel", { uuid: "flywheel-uuid", namespace: "flywheel" }),
+            ],
+        }));
+        assert.deepEqual(problems, []);
+    });
+
+    it("ignores a soft dependency, which the runtime loads without", () => {
+        const problems = diagnoseProfile(input({
+            modIds: ["Amethyst-Runtime", "Create"],
+            mods: [
+                mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
+                mod("Create", {
+                    uuid: "create-uuid",
+                    namespace: "create",
+                    dependencies: [{ uuid: "optional-uuid", namespace: "optional", versionRange: ">=1.0.0", isSoft: true }],
+                }),
+            ],
+        }));
+        assert.deepEqual(problems, []);
+    });
+
+    it("does not accuse a mod of a missing dependency that is still downloading", () => {
+        const problems = diagnoseProfile(input({
+            modIds: ["Amethyst-Runtime", "Create", "Flywheel"],
+            mods: [
+                mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
+                mod("Create", {
+                    uuid: "create-uuid",
+                    namespace: "create",
+                    dependencies: [{ uuid: "flywheel-uuid", namespace: "flywheel", versionRange: ">=1.0.0", isSoft: false }],
+                }),
+            ],
+            downloading: ["Flywheel"],
+        }));
+        assert.deepEqual(problems, []);
+    });
+
     it("reports more than one runtime, naming them", () => {
         const problems = diagnoseProfile(input({
             modIds: ["A", "B"],
@@ -130,5 +218,104 @@ describe("profile diagnosis", () => {
                 assert.ok(describeProblem(problem).trim().length > 0);
             }
         }
+    });
+});
+
+describe("dependency version ranges", () => {
+    const profile = (dependency: ModDependencyStatus, provider: Partial<ModStatus> | null, over: Partial<ProfileDiagnosisInput> = {}): ProfileDiagnosisInput =>
+        input({
+            modIds: provider === null ? ["Amethyst-Runtime", "Create"] : ["Amethyst-Runtime", "Create", "Flywheel"],
+            mods: [
+                mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
+                mod("Create", { uuid: "create-uuid", namespace: "create", version: "1.0.0", dependencies: [dependency] }),
+                ...(provider === null ? [] : [mod("Flywheel", { uuid: "flywheel-uuid", namespace: "flywheel", ...provider })]),
+            ],
+            ...over,
+        });
+
+    const requires = (versionRange: string, isSoft = false): ModDependencyStatus => ({
+        uuid: "flywheel-uuid",
+        namespace: "flywheel",
+        versionRange,
+        isSoft,
+    });
+
+    it("accepts an installed version inside the range", () => {
+        assert.deepEqual(diagnoseProfile(profile(requires(">=1.0.0 <2.0.0"), { version: "1.4.2" })), []);
+    });
+
+    it("accepts a version in either half of an alternation", () => {
+        assert.deepEqual(diagnoseProfile(profile(requires(">=1.0.0 <2.0.0 || >=3.0.0"), { version: "3.1.0" })), []);
+    });
+
+    // What the launcher used to miss: present, so not missing, and rejected by the runtime anyway.
+    it("reports an installed version outside the range", () => {
+        const problems = diagnoseProfile(profile(requires(">=2.0.0"), { version: "1.4.2" }));
+
+        const problem = problemFor(problems, "Create");
+        assert.equal(problem?.kind, "dependency-version");
+        assert.equal(problem?.blocksLaunch, true);
+    });
+
+    it("says who needs what, what was asked for, and what is installed", () => {
+        const problems = diagnoseProfile(profile(requires(">=2.0.0"), { version: "1.4.2" }));
+        const told = describeProblem(problemFor(problems, "Create")!);
+
+        assert.match(told, /Create/);
+        assert.match(told, /flywheel/);
+        assert.match(told, />=2\.0\.0/);
+        assert.match(told, /1\.4\.2/);
+    });
+
+    it("asks nothing of the version when the dependency states no range", () => {
+        assert.deepEqual(diagnoseProfile(profile(requires(""), { version: "0.1.0" })), []);
+    });
+
+    // The runtime cannot read `^`, `~` or `1.2.x`, and falls back to `>=0.0.0` for them, so the
+    // launcher must not enforce a range the load will never apply.
+    it("asks nothing of the version when the range is one the runtime cannot read", () => {
+        for (const range of ["^2.0.0", "~2.0.0", "2.x", "latest"]) {
+            assert.deepEqual(diagnoseProfile(profile(requires(range), { version: "1.4.2" })), [], range);
+        }
+    });
+
+    it("lets a dev build answer any range, as ModDependency::MatchesVersion does", () => {
+        assert.deepEqual(diagnoseProfile(profile(requires(">=2.0.0"), { version: "1.4.2-dev" })), []);
+    });
+
+    it("holds a prerelease to the range unless the range named one itself", () => {
+        assert.equal(diagnoseProfile(profile(requires(">=1.0.0"), { version: "2.0.0-beta.1" }))[0]?.kind, "dependency-version");
+        assert.deepEqual(diagnoseProfile(profile(requires(">=2.0.0-alpha"), { version: "2.0.0-beta.1" })), []);
+    });
+
+    it("ignores a soft dependency at the wrong version, which the runtime loads past", () => {
+        assert.deepEqual(diagnoseProfile(profile(requires(">=2.0.0", true), { version: "1.4.2" })), []);
+    });
+
+    it("says nothing about versions while a listed mod is still downloading", () => {
+        const problems = diagnoseProfile(profile(requires(">=2.0.0"), { version: "1.4.2" }, { downloading: ["Flywheel"] }));
+        assert.deepEqual(problems, []);
+    });
+
+    it("still calls an absent dependency missing rather than wrongly versioned", () => {
+        const problems = diagnoseProfile(profile(requires(">=2.0.0"), null));
+        assert.equal(problemFor(problems, "Create")?.kind, "dependency-missing");
+    });
+
+    it("takes the satisfying one when more than one mod answers the dependency", () => {
+        const problems = diagnoseProfile(input({
+            modIds: ["Amethyst-Runtime", "Create", "Flywheel-Old", "Flywheel-New"],
+            mods: [
+                mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
+                mod("Create", {
+                    uuid: "create-uuid",
+                    namespace: "create",
+                    dependencies: [{ uuid: "", namespace: "flywheel", versionRange: ">=2.0.0", isSoft: false }],
+                }),
+                mod("Flywheel-Old", { uuid: "old-uuid", namespace: "flywheel", version: "1.0.0" }),
+                mod("Flywheel-New", { uuid: "new-uuid", namespace: "flywheel", version: "2.1.0" }),
+            ],
+        }));
+        assert.deepEqual(problems, []);
     });
 });

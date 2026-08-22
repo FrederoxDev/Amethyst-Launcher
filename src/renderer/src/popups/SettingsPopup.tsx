@@ -1,4 +1,5 @@
-import { PopupPanel, usePopupClose } from "@renderer/components/PopupPanel";
+import { PopupPanel } from "@renderer/components/PopupPanel";
+import { usePopupClose } from "@renderer/components/PopupCloseContext";
 import { GeneralSettingsTab } from "@renderer/pages/SettingsPage";
 import { PopupUseArguments } from "@renderer/states/PopupStore";
 

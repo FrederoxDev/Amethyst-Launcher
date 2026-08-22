@@ -18,8 +18,8 @@
 
 .mod-sort-select {
     height: 34px;
-    background-color: #313233;
-    border: 3px solid #1E1E1F;
+    background-color: var(--color-surface-sunken);
+    border: 3px solid var(--color-outline);
     color: white;
     font-size: 12px;
     padding: 0 8px;
@@ -32,8 +32,8 @@
     display: flex;
     align-items: center;
     height: 34px;
-    background-color: #313233;
-    border: 3px solid #1E1E1F;
+    background-color: var(--color-surface-sunken);
+    border: 3px solid var(--color-outline);
     padding: 0 8px;
     gap: 8px;
     flex: 1;
@@ -69,8 +69,8 @@
 }
 
 .mod-card {
-    background-color: #48494A;
-    border: 3px solid #1E1E1F;
+    background-color: var(--color-surface);
+    border: 3px solid var(--color-outline);
     padding: 12px;
     cursor: pointer;
     transition: border-color 0.1s, transform 0.1s ease;
@@ -202,7 +202,7 @@
 }
 
 .mod-md-blockquote {
-    border-left: 4px solid #5a5b5c;
+    border-left: 4px solid var(--color-surface-hover);
     padding-left: 16px;
     font-style: italic;
     color: #BCBEC0;
@@ -210,7 +210,7 @@
 
 .mod-md-table {
     border-collapse: collapse;
-    border: 1px solid #5a5b5c;
+    border: 1px solid var(--color-surface-hover);
     margin: 12px 0;
     width: 100%;
     text-align: left;
@@ -221,7 +221,7 @@
 }
 
 .mod-md-tr {
-    border-bottom: 1px solid #5a5b5c;
+    border-bottom: 1px solid var(--color-surface-hover);
 }
 
 .mod-md-th {
@@ -229,14 +229,14 @@
     font-size: 14px;
     font-weight: 700;
     padding: 8px 12px;
-    border: 1px solid #5a5b5c;
+    border: 1px solid var(--color-surface-hover);
 }
 
 .mod-md-td {
     color: #BCBEC0;
     font-size: 14px;
     padding: 8px 12px;
-    border: 1px solid #5a5b5c;
+    border: 1px solid var(--color-surface-hover);
 }
 
 .mod-md-img {
@@ -255,56 +255,50 @@
     font-size: 14px;
 }
 
-.mod-release-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
 .mod-release-info {
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .mod-release-name {
     color: white;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .mod-release-date {
+    color: var(--color-text-muted);
+    font-size: 11px;
+}
+
+.mod-refresh-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    background-color: var(--color-surface-sunken);
+    border: 3px solid var(--color-outline);
+    color: #BCBEC0;
+    cursor: pointer;
+}
+
+.mod-refresh-button:hover {
+    color: white;
+    border-color: #6b6c6d;
+}
+
+.mod-picker-empty {
+    color: var(--color-text-muted);
+    padding: 12px;
+    text-align: center;
+}
+
+.mod-confirm-text {
     color: #BCBEC0;
     font-size: 12px;
-}
-
-.mod-release-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.mod-install-button {
-    background-color: #2563eb;
-    color: white;
-    padding: 4px 12px;
-    border-radius: 4px;
-    font-size: 14px;
-    margin-right: 8px;
-}
-
-.mod-install-button:hover {
-    background-color: #1d4ed8;
-}
-
-.mod-uninstall-button {
-    background-color: #dc2626;
-    color: white;
-    padding: 4px 12px;
-    border-radius: 4px;
-    font-size: 14px;
-    margin-right: 8px;
-}
-
-.mod-uninstall-button:hover {
-    background-color: #b91c1c;
+    line-height: 1.5;
 }
 
 .mod-details-header {
@@ -337,7 +331,7 @@
 }
 
 .mod-card-skeleton:hover {
-    border-color: #1E1E1F;
+    border-color: var(--color-outline);
 }
 
 .mod-card-skeleton-icon {

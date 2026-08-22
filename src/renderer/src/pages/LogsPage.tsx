@@ -1,16 +1,18 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-import { describeError } from "@shared/diagnostics/Log";
-import { MinecraftButton, GRAY_MINECRAFT_BUTTON } from "@renderer/components/MinecraftButton";
+import { describeError, userMessage } from "@shared/diagnostics/Log";
+import { MinecraftButton } from "@renderer/components/MinecraftButton";
+import { GRAY_MINECRAFT_BUTTON } from "@renderer/components/MinecraftButtonPalette";
 import { useAppStore } from "@renderer/states/AppStore";
 import { log } from "@renderer/scripts/LauncherLog";
+import { errnoCode } from "@renderer/scripts/Directories";
 import { launcherLogPath } from "@renderer/scripts/diagnostics/RendererLog";
 import { confirmAction } from "@renderer/popups/ConfirmPopup";
 import { FULL_PROGRESS_RESET_OPTIONS, ProgressBar } from "@renderer/states/ProgressBarStore";
 
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
-const { shell } = window.require("electron");
+const { shell } = window.require("electron") as typeof import("electron");
 
 interface LogFile {
     name: string;
@@ -21,6 +23,9 @@ interface LogFile {
 
 const LINE_HEIGHT = 18;
 const OVERSCAN_LINES = 12;
+/** A runtime crash log can reach hundreds of megabytes; only the tail of one is worth reading. */
+const MAX_VIEW_BYTES = 4 * 1024 * 1024;
+const SEARCH_DEBOUNCE_MS = 200;
 
 function formatSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
@@ -71,6 +76,27 @@ function parseLine(rawLine: string): ParsedLine {
     if (!match) return { raw: line, time: null, thread: null, mod: null, level: "INFO", rest: null };
     const [, time, thread, mod, level, rest] = match;
     return { raw: line, time: time ?? null, thread, mod, level: level ?? "INFO", rest: rest ?? null };
+}
+
+interface LogTail {
+    lines: ParsedLine[];
+    /** Full size of the file when only its last `MAX_VIEW_BYTES` were loaded. */
+    truncatedFrom: number | null;
+}
+
+async function readLogTail(file: string): Promise<LogTail> {
+    const handle = await fs.promises.open(file, "r");
+    try {
+        const { size } = await handle.stat();
+        const length = Math.min(size, MAX_VIEW_BYTES);
+        const buffer = Buffer.alloc(length);
+        await handle.read(buffer, 0, length, size - length);
+        const text = buffer.toString("utf-8");
+        if (length === size) return { lines: text.split("\n").map(parseLine), truncatedFrom: null };
+        return { lines: text.slice(text.indexOf("\n") + 1).split("\n").map(parseLine), truncatedFrom: size };
+    } finally {
+        await handle.close();
+    }
 }
 
 function levelClass(level: string): string {
@@ -145,12 +171,16 @@ function VirtualLogView({ lines, query }: VirtualLogViewProps) {
         };
     }, []);
 
-    // reset scroll position when the underlying line set changes
+    const [shownLines, setShownLines] = useState(lines);
+    if (shownLines !== lines) {
+        setShownLines(lines);
+        setScrollTop(0);
+    }
+
+    // The virtual window follows `scrollTop`, so the node has to be moved back to match it.
     useLayoutEffect(() => {
         const el = containerRef.current;
-        if (!el) return;
-        el.scrollTop = 0;
-        setScrollTop(0);
+        if (el) el.scrollTop = 0;
     }, [lines]);
 
     const totalH = lines.length * LINE_HEIGHT;
@@ -165,7 +195,7 @@ function VirtualLogView({ lines, query }: VirtualLogViewProps) {
     return (
         <div ref={containerRef} className="logs-viewer-content scrollbar">
             <div style={{ height: totalH, position: "relative" }}>
-                <div style={{ position: "absolute", top: start * LINE_HEIGHT, left: 0, right: 0 }}>
+                <div style={{ position: "absolute", top: start * LINE_HEIGHT, left: 0, minWidth: "100%" }}>
                     {visible}
                 </div>
             </div>
@@ -237,14 +267,16 @@ function CheckboxFilter({ label, options, selected, setSelected }: CheckboxFilte
 
 export function LogsPage() {
     const platform = useAppStore(state => state.platform);
+    const setError = useAppStore(state => state.setError);
     const logsDir = useMemo(() => path.join(platform.getPaths().amethystPath, "Launcher", "Logs"), [platform]);
 
     const [files, setFiles] = useState<LogFile[]>([]);
     const [selected, setSelected] = useState<string | null>(null);
-    const [content, setContent] = useState<string>("");
-    const [error, setError] = useState<string>("");
+    const [lines, setLines] = useState<ParsedLine[]>([]);
+    const [truncatedFrom, setTruncatedFrom] = useState<number | null>(null);
     const [fileQuery, setFileQuery] = useState<string>("");
     const [contentQuery, setContentQuery] = useState<string>("");
+    const [activeQuery, setActiveQuery] = useState<string>("");
     const [threadFilter, setThreadFilter] = useState<Set<string>>(new Set());
     const [modFilter, setModFilter] = useState<Set<string>>(new Set());
     const [levelFilter, setLevelFilter] = useState<Set<string>>(new Set());
@@ -281,14 +313,11 @@ export function LogsPage() {
         try {
             await fs.promises.unlink(file.path);
             log("LogsPage", `Deleted log ${file.path}`);
-            if (selected === file.path) {
-                setSelected(null);
-                setContent("");
-            }
+            if (selected === file.path) setSelected(null);
             refresh();
         } catch (e) {
             log("LogsPage", `Could not delete ${file.path}: ${describeError(e)}`);
-            setError((e as Error).message);
+            setError(`Could not delete ${file.name}: ${userMessage(e)}`);
         }
     };
 
@@ -297,7 +326,7 @@ export function LogsPage() {
             await navigator.clipboard.writeText(file.path);
         } catch (e) {
             log("LogsPage", `Could not copy ${file.path} to the clipboard: ${describeError(e)}`);
-            setError((e as Error).message);
+            setError(`Could not copy the path to ${file.name}: ${userMessage(e)}`);
         }
         setContextMenu(null);
     };
@@ -307,28 +336,25 @@ export function LogsPage() {
             shell.showItemInFolder(file.path);
         } catch (e) {
             log("LogsPage", `Could not show ${file.path} in the file manager: ${describeError(e)}`);
-            setError((e as Error).message);
+            setError(`Could not show ${file.name} in the file manager: ${userMessage(e)}`);
         }
         setContextMenu(null);
     };
 
-    const refresh = async () => {
+    const refresh = useCallback(async () => {
         try {
             let entries: string[];
             try {
                 entries = await fs.promises.readdir(logsDir);
-            } catch (e: any) {
-                if (e?.code === "ENOENT") {
+            } catch (e) {
+                if (errnoCode(e) === "ENOENT") {
                     log("LogsPage", `No logs folder at ${logsDir} yet`);
                     setFiles([]);
                     return;
                 }
                 throw e;
             }
-            // One entry per run. Every run also writes a .jsonl sidecar holding the same lines
-            // for tooling to read, and listing it here showed every run twice, half of them as
-            // JSON nobody can read in the viewer. It is deleted alongside its .log instead.
-            const loaded = (await Promise.all(entries.filter(name => name.endsWith(".log")).map(async name => {
+            const loaded = (await Promise.all(entries.map(async name => {
                 const full = path.join(logsDir, name);
                 try {
                     const stat = await fs.promises.stat(full);
@@ -341,31 +367,47 @@ export function LogsPage() {
             }))).filter((f): f is LogFile => f !== null);
             loaded.sort((a, b) => b.mtimeMs - a.mtimeMs);
             setFiles(loaded);
-            setError("");
         } catch (e) {
             log("LogsPage", `Could not list ${logsDir}: ${describeError(e)}`);
-            setError((e as Error).message);
+            setError(`Could not list the logs folder: ${userMessage(e)}`);
         }
-    };
+    }, [logsDir, setError]);
 
     useEffect(() => {
         refresh();
-    }, [logsDir]);
+    }, [refresh]);
 
     useEffect(() => {
+        setThreadFilter(new Set());
+        setModFilter(new Set());
+        setLevelFilter(new Set());
+        setTruncatedFrom(null);
+        setContentQuery("");
+        setActiveQuery("");
         if (!selected) {
-            setContent("");
+            setLines([]);
             return;
         }
         let cancelled = false;
-        fs.promises.readFile(selected, "utf-8")
-            .then(text => { if (!cancelled) setContent(text); })
+        readLogTail(selected)
+            .then(tail => {
+                if (cancelled) return;
+                setLines(tail.lines);
+                setTruncatedFrom(tail.truncatedFrom);
+            })
             .catch(e => {
                 log("LogsPage", `Could not read ${selected}: ${describeError(e)}`);
-                if (!cancelled) setContent(`Failed to read file: ${(e as Error).message}`);
+                if (cancelled) return;
+                setLines([]);
+                setError(`Could not read ${path.basename(selected)}: ${userMessage(e)}`);
             });
         return () => { cancelled = true; };
-    }, [selected]);
+    }, [selected, setError]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setActiveQuery(contentQuery), SEARCH_DEBOUNCE_MS);
+        return () => clearTimeout(timer);
+    }, [contentQuery]);
 
     const deleteAllLogs = async () => {
         // The run in progress is still being written to, so deleting it accomplishes nothing:
@@ -390,21 +432,19 @@ export function LogsPage() {
             return;
         }
         try {
-            await ProgressBar.useAsync(async (state) => {
+            await ProgressBar.runAsync(async (state) => {
                 state.setMessage(`Clearing ${deletable.length} log(s)...`);
                 log("LogsPage", `Deleting ${deletable.length} log(s) in ${logsDir}, keeping the run in progress`);
-                await Promise.all(deletable.flatMap(f => [f.path, `${f.path.slice(0, -".log".length)}.jsonl`]
-                    .map(target => fs.promises.unlink(target).catch(e => {
-                        if ((e as { code?: string }).code === "ENOENT") return;
-                        log("LogsPage", `Could not delete ${target}: ${describeError(e)}`);
-                    }))));
+                await Promise.all(deletable.map(f => fs.promises.unlink(f.path).catch(e => {
+                    if ((e as { code?: string }).code === "ENOENT") return;
+                    log("LogsPage", `Could not delete ${f.path}: ${describeError(e)}`);
+                })));
             }, true, FULL_PROGRESS_RESET_OPTIONS);
             setSelected(null);
-            setContent("");
             await refresh();
         } catch (e) {
             log("LogsPage", `Clearing the logs folder failed: ${describeError(e)}`);
-            setError((e as Error).message);
+            setError(`Could not clear the logs folder: ${userMessage(e)}`);
         }
     };
 
@@ -415,13 +455,19 @@ export function LogsPage() {
             log("LogsPage", openError ? `Could not open ${logsDir}: ${openError}` : `Opened ${logsDir}`);
         } catch (e) {
             log("LogsPage", `Could not open ${logsDir}: ${describeError(e)}`);
-            setError((e as Error).message);
+            setError(`Could not open the logs folder: ${userMessage(e)}`);
         }
     };
 
     const copySelected = async () => {
-        if (!content) return;
-        await navigator.clipboard.writeText(content);
+        if (!selected) return;
+        try {
+            await navigator.clipboard.writeText(await fs.promises.readFile(selected, "utf-8"));
+            log("LogsPage", `Copied ${selected} to the clipboard`);
+        } catch (e) {
+            log("LogsPage", `Could not copy ${selected} to the clipboard: ${describeError(e)}`);
+            setError(`Could not copy ${path.basename(selected)}: ${userMessage(e)}`);
+        }
     };
 
     const filteredFiles = useMemo(() => {
@@ -430,44 +476,37 @@ export function LogsPage() {
         return files.filter(f => f.name.toLowerCase().includes(q));
     }, [files, fileQuery]);
 
-    const parsedLines = useMemo(() => content.split("\n").map(parseLine), [content]);
-
-    const threadOptions = useMemo(() => {
-        const set = new Set<string>();
-        for (const p of parsedLines) if (p.thread) set.add(p.thread);
-        return Array.from(set).sort();
-    }, [parsedLines]);
-
-    const modOptions = useMemo(() => {
-        const set = new Set<string>();
-        for (const p of parsedLines) if (p.mod) set.add(p.mod);
-        return Array.from(set).sort();
-    }, [parsedLines]);
-
-    const levelOptions = useMemo(() => {
-        const set = new Set<string>();
-        for (const p of parsedLines) set.add(p.level);
-        return Array.from(set).sort();
-    }, [parsedLines]);
-
-    useEffect(() => { setThreadFilter(new Set()); setModFilter(new Set()); setLevelFilter(new Set()); }, [selected]);
+    const filterOptions = useMemo(() => {
+        const threads = new Set<string>();
+        const mods = new Set<string>();
+        const levels = new Set<string>();
+        for (const p of lines) {
+            if (p.thread) threads.add(p.thread);
+            if (p.mod) mods.add(p.mod);
+            levels.add(p.level);
+        }
+        return {
+            threads: Array.from(threads).sort(),
+            mods: Array.from(mods).sort(),
+            levels: Array.from(levels).sort(),
+        };
+    }, [lines]);
 
     const filteredLines = useMemo(() => {
         if (threadFilter.size === 0 && modFilter.size === 0 && levelFilter.size === 0) {
-            return parsedLines;
+            return lines;
         }
-        return parsedLines.filter(p => {
+        return lines.filter(p => {
             if (threadFilter.size > 0 && (!p.thread || !threadFilter.has(p.thread))) return false;
             if (modFilter.size > 0 && (!p.mod || !modFilter.has(p.mod))) return false;
             if (levelFilter.size > 0 && !levelFilter.has(p.level)) return false;
             return true;
         });
-    }, [parsedLines, threadFilter, modFilter, levelFilter]);
+    }, [lines, threadFilter, modFilter, levelFilter]);
 
-    const lowerContentQuery = contentQuery.toLowerCase();
     const matchCount = useMemo(
-        () => countMatches(filteredLines, lowerContentQuery),
-        [filteredLines, lowerContentQuery]
+        () => countMatches(filteredLines, activeQuery.toLowerCase()),
+        [filteredLines, activeQuery]
     );
 
     return (
@@ -481,8 +520,6 @@ export function LogsPage() {
                     <MinecraftButton text="Delete All" colorPallete={GRAY_MINECRAFT_BUTTON} onClick={deleteAllLogs} style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "110px" }} />
                 </div>
             </div>
-
-            {error && <p className="minecraft-seven logs-error">{error}</p>}
 
             <div className="logs-body">
                 <div className="logs-list-column">
@@ -536,7 +573,7 @@ export function LogsPage() {
                                         value={contentQuery}
                                         onChange={e => setContentQuery(e.target.value)}
                                     />
-                                    {contentQuery && (
+                                    {activeQuery && (
                                         <span className="minecraft-seven logs-viewer-match-count">
                                             {matchCount} {matchCount === 1 ? "match" : "matches"}
                                         </span>
@@ -545,14 +582,19 @@ export function LogsPage() {
                                 <MinecraftButton text="Copy" colorPallete={GRAY_MINECRAFT_BUTTON} onClick={copySelected} style={{ "--mc-button-container-h": "28px", "--mc-button-container-w": "80px" }} />
                             </div>
                             <div className="logs-viewer-filters">
-                                <CheckboxFilter label="Level" options={levelOptions} selected={levelFilter} setSelected={setLevelFilter} />
-                                <CheckboxFilter label="Thread" options={threadOptions} selected={threadFilter} setSelected={setThreadFilter} />
-                                <CheckboxFilter label="Mod" options={modOptions} selected={modFilter} setSelected={setModFilter} />
+                                <CheckboxFilter label="Level" options={filterOptions.levels} selected={levelFilter} setSelected={setLevelFilter} />
+                                <CheckboxFilter label="Thread" options={filterOptions.threads} selected={threadFilter} setSelected={setThreadFilter} />
+                                <CheckboxFilter label="Mod" options={filterOptions.mods} selected={modFilter} setSelected={setModFilter} />
                                 {(threadFilter.size > 0 || modFilter.size > 0 || levelFilter.size > 0) && (
                                     <span className="minecraft-seven logs-viewer-filter-clear" onClick={() => { setThreadFilter(new Set()); setModFilter(new Set()); setLevelFilter(new Set()); }}>Clear</span>
                                 )}
                             </div>
-                            <VirtualLogView lines={filteredLines} query={contentQuery} />
+                            {truncatedFrom !== null && (
+                                <p className="minecraft-seven logs-viewer-truncated">
+                                    Showing the last {formatSize(MAX_VIEW_BYTES)} of {formatSize(truncatedFrom)}. Copy or open the file for the rest.
+                                </p>
+                            )}
+                            <VirtualLogView lines={filteredLines} query={activeQuery} />
                         </>
                     ) : (
                         <p className="minecraft-seven logs-empty">Select a log to view.</p>

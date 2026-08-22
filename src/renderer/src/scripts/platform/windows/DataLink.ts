@@ -50,6 +50,16 @@ function firstEntries(dir: string, limit = 6): string {
     }
 }
 
+/** The one message for a folder Windows will not talk about, whichever call it refused. */
+function unreadable(channel: Channel, p: string, e: unknown): Error {
+    log("DataLink", `Could not read ${p} for ${channel}: ${describe(e)}`);
+    return new Error(
+        `Minecraft's ${channel} data folder could not be read, so this profile cannot be set up.\n\n`
+        + `${FOLDER_IN_USE_NEXT_STEP}\n\n"${p}"`,
+        { cause: e }
+    );
+}
+
 export function readLink(channel: Channel): LinkState {
     const p = roamingPath(channel);
 
@@ -61,16 +71,16 @@ export function readLink(channel: Channel): LinkState {
             log("DataLink", `${channel} game data folder ${p} does not exist`);
             return { kind: "absent" };
         }
-        log("DataLink", `Could not read ${p} for ${channel}: ${describe(e)}`);
-        throw new Error(
-            `Minecraft's ${channel} data folder could not be read, so this profile cannot be set up.\n\n`
-            + `${FOLDER_IN_USE_NEXT_STEP}\n\n"${p}"`,
-            { cause: e }
-        );
+        throw unreadable(channel, p, e);
     }
 
     if (st.isSymbolicLink()) {
-        const target = stripNtPrefix(fs.readlinkSync(p));
+        let target: string;
+        try {
+            target = stripNtPrefix(fs.readlinkSync(p));
+        } catch (e) {
+            throw unreadable(channel, p, e);
+        }
         log("DataLink", `${channel} game data folder ${p} is a junction to ${target}`);
         return { kind: "linked", target };
     }
@@ -80,7 +90,14 @@ export function readLink(channel: Channel): LinkState {
         return { kind: "blocked-by-file" };
     }
 
-    if (isDirEmpty(p)) {
+    let empty: boolean;
+    try {
+        empty = isDirEmpty(p);
+    } catch (e) {
+        throw unreadable(channel, p, e);
+    }
+
+    if (empty) {
         log("DataLink", `${channel} game data folder ${p} is a real, empty folder`);
         return { kind: "empty-dir" };
     }
@@ -108,6 +125,34 @@ export function link(channel: Channel, target: string): void {
         );
     }
     log("DataLink", `Junction created: ${p} -> ${path.resolve(target)}`);
+}
+
+/**
+ * Repointing is two steps and the folder is somebody's worlds. Left as unlink-then-link, a
+ * refused second step takes the working junction with it, the next Store launch creates an empty
+ * folder in its place, and every world the profile had appears to be gone.
+ */
+export function relink(channel: Channel, target: string, previous: string): void {
+    unlink(channel);
+
+    try {
+        link(channel, target);
+    } catch (e) {
+        try {
+            link(channel, previous);
+        } catch (restoreError) {
+            log("DataLink", `Could not put the ${channel} junction back to ${previous}: ${describe(restoreError)}`);
+            throw new Error(
+                `Minecraft's ${channel} data folder could not be pointed at this profile, and the link to the `
+                + `profile that was using it could not be put back.\n\n`
+                + `No worlds have been deleted - they are still in that profile's own folder. Restart the `
+                + `computer and press Play again.\n\n"${previous}"`,
+                { cause: e }
+            );
+        }
+        log("DataLink", `Put the ${channel} junction back to ${previous} after the repoint failed`);
+        throw e;
+    }
 }
 
 /** Removes the junction only; the target keeps its contents. */

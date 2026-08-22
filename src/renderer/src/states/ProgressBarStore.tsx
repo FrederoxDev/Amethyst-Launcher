@@ -26,25 +26,11 @@ type ProgressResetOptions = {
     show: boolean;
 }
 
-export const DEFAULT_PROGRESS_RESET_OPTIONS: ProgressResetOptions = {
-    status: true,
-    message: false,
-    progress: false,
-    show: false
-}
-
 export const FULL_PROGRESS_RESET_OPTIONS: ProgressResetOptions = {
     status: true,
     message: true,
     progress: true,
     show: true
-}
-
-export class ProgressBusyError extends Error {
-    constructor() {
-        super("Another launcher operation is already in progress. Wait for it to finish and try again.");
-        this.name = "ProgressBusyError";
-    }
 }
 
 export class ProgressBar {
@@ -108,39 +94,49 @@ export class ProgressBar {
         return selector ? this.state(selector) : this.state();
     }
 
-    static use(callback: (state: ProgressBarState) => void, showProgressBar: boolean = true, resetOptions: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS): void {
-        // Re-entrant: a nested use() (e.g. XVDTool.decryptFile called from extractVersionByPath)
-        // inherits the outer call's lifecycle instead of throwing. The outer call owns
-        // busy/show; the inner one just runs and any state it sets persists.
-        if (this.getState().busy) {
-            callback(this.getState());
-            return;
+    /**
+     * The first caller in owns the bar; anyone who joins while it is busy (a nested
+     * decrypt, or an unrelated download) shares that lifecycle. The bar is released
+     * once the owner *and* every joiner has finished, on the owner's reset terms.
+     */
+    private static owner: symbol | null = null;
+    private static ownerReset: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS;
+    private static participants = 0;
+
+    private static enter(showProgressBar: boolean, resetOptions: ProgressResetOptions): void {
+        if (this.owner === null) {
+            this.owner = Symbol("progress-owner");
+            this.ownerReset = resetOptions;
+            this.getState().update({ busy: true, show: showProgressBar, progress: 0, message: "" });
         }
+        this.participants++;
+    }
 
-        const state = this.getState();
-        state.update({ busy: true, show: showProgressBar, progress: 0, message: "" });
+    private static leave(): void {
+        this.participants = Math.max(0, this.participants - 1);
+        if (this.participants > 0) return;
 
+        const resetOptions = this.ownerReset;
+        this.owner = null;
+        this.ownerReset = FULL_PROGRESS_RESET_OPTIONS;
+        this.applyReset(resetOptions);
+    }
+
+    static run(callback: (state: ProgressBarState) => void, showProgressBar: boolean = true, resetOptions: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS): void {
+        this.enter(showProgressBar, resetOptions);
         try {
-            callback(state);
+            callback(this.getState());
         } finally {
-            this.applyReset(resetOptions);
+            this.leave();
         }
     }
 
-    static async useAsync(callback: (state: ProgressBarState) => Promise<void>, showProgressBar: boolean = true, resetOptions: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS): Promise<void> {
-        // Re-entrant: see use() above.
-        if (this.getState().busy) {
-            await callback(this.getState());
-            return;
-        }
-
-        const state = this.getState();
-        state.update({ busy: true, show: showProgressBar, progress: 0, message: "" });
-
+    static async runAsync(callback: (state: ProgressBarState) => Promise<void>, showProgressBar: boolean = true, resetOptions: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS): Promise<void> {
+        this.enter(showProgressBar, resetOptions);
         try {
-            await callback(state);
+            await callback(this.getState());
         } finally {
-            this.applyReset(resetOptions);
+            this.leave();
         }
     }
 
@@ -157,6 +153,9 @@ export class ProgressBar {
     }
 
     static reset(): void {
+        this.owner = null;
+        this.ownerReset = FULL_PROGRESS_RESET_OPTIONS;
+        this.participants = 0;
         this.getState().reset();
     }
 

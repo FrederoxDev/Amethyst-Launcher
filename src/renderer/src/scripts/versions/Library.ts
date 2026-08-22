@@ -1,7 +1,9 @@
-import { describeError } from "@shared/diagnostics/Log";
+import { describeError, userMessage } from "@shared/diagnostics/Log";
+import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 import { errnoCode } from "@renderer/scripts/Directories";
+import { Channel, channelLabel, parseChannel } from "@renderer/scripts/domain/Channel";
 import { log } from "@renderer/scripts/LauncherLog";
-import { inspectStamp, quarantineFile, stampFields, tryReadJsonFile } from "@renderer/scripts/Utility";
+import { inspectStamp, quarantineFile, stampFields, tryReadJsonFile, writeJsonAtomic } from "@renderer/scripts/Utility";
 import { InstalledVersion, deserialize, serialize } from "./InstalledVersion";
 
 const fs = window.require("fs") as typeof import("fs");
@@ -13,6 +15,66 @@ const FORMAT_VERSION = 1;
 /** Plain words for the user, since a quarantine notice reaches them as well as the log. */
 const WHAT = "list of installed Minecraft versions";
 
+/** The appx identity of each channel, for a migrated folder whose manifest cannot be read. */
+const FAMILY_BY_CHANNEL: Record<Channel, string> = {
+    release: "Microsoft.MinecraftUWP",
+    preview: "Microsoft.MinecraftWindowsBeta",
+};
+
+const VERSION_IN_TEXT = /\d+\.\d+\.\d+(?:\.\d+)?/;
+
+/** Records from before labels, versions and channels were kept: `{uuid, name, path, type, imported, installed_from}`. */
+function isLegacyEntry(raw: unknown): raw is Record<string, unknown> {
+    if (typeof raw !== "object" || raw === null) return false;
+    const o = raw as Record<string, unknown>;
+    return o.label === undefined && typeof o.uuid === "string" && typeof o.name === "string" && typeof o.path === "string";
+}
+
+function packageFamilyOf(versionPath: string, channel: Channel): string {
+    const manifest = path.join(versionPath, "appxmanifest.xml");
+    try {
+        const family = fs.readFileSync(manifest, "utf-8").match(/<Identity\s+Name="([^"]+)"/)?.[1];
+        if (family) return family;
+        log("Library", `${manifest} has no <Identity Name>, assuming ${FAMILY_BY_CHANNEL[channel]}`);
+    } catch (e) {
+        log("Library", `Could not read ${manifest} (${describeError(e)}), assuming ${FAMILY_BY_CHANNEL[channel]}`);
+    }
+    return FAMILY_BY_CHANNEL[channel];
+}
+
+/**
+ * Rebuilds the fields the old format never held out of the ones it did. The folder these point
+ * at holds a game download, so a record that is only partly recoverable still beats no record.
+ */
+function migrateLegacyEntry(o: Record<string, unknown>, where: string): InstalledVersion {
+    const name = o.name as string;
+    const versionPath = o.path as string;
+
+    const channel = parseChannel(o.type)
+        ?? (/preview|beta/i.test(`${name} ${versionPath}`) ? "preview" : "release");
+
+    const found = `${name} ${path.basename(versionPath)}`.match(VERSION_IN_TEXT)?.[0];
+    const version = found ? SemVersion.fromString(found) : new SemVersion(0, 0, 0, 0);
+
+    const migrated: InstalledVersion = {
+        uuid: o.uuid as string,
+        label: name || `Minecraft ${version.toString()} (${channelLabel(channel)})`,
+        channel,
+        version,
+        path: versionPath,
+        packageFamily: packageFamilyOf(versionPath, channel),
+        imported: o.imported === true,
+    };
+
+    log(
+        "Library",
+        `Migrated ${where} from the old format: "${migrated.label}" (${migrated.uuid}) at ${migrated.path}, `
+        + `channel ${migrated.channel} from type=${String(o.type)}, version ${migrated.version.toString()}`
+        + `${found ? "" : " which no name or folder in the record carried"}, family ${migrated.packageFamily}`
+    );
+    return migrated;
+}
+
 /**
  * The installed-version records. Reads are pure - pruning records whose folder has
  * vanished is an explicit call, so it can never fire from a React render.
@@ -20,6 +82,7 @@ const WHAT = "list of installed Minecraft versions";
 export class Library {
     private versions: InstalledVersion[] = [];
     private loaded = false;
+    private sealed = false;
 
     constructor(private readonly versionsPath: string) {}
 
@@ -34,6 +97,7 @@ export class Library {
      */
     load(): void {
         this.loaded = true;
+        this.sealed = false;
         this.versions = [];
 
         if (!fs.existsSync(this.file)) {
@@ -42,30 +106,37 @@ export class Library {
         }
 
         const read = tryReadJsonFile<unknown>("Library", this.file);
-        if (!read.ok) {
-            quarantineFile("Library", this.file, WHAT, read.reason);
-            return;
-        }
+        if (!read.ok) return this.reject(read.reason);
 
         const stamp = inspectStamp("Library", this.file, read.value, FORMAT, FORMAT_VERSION);
-        if (stamp.state === "mismatch") {
-            quarantineFile("Library", this.file, WHAT, stamp.reason);
-            return;
-        }
+        if (stamp.state === "mismatch") return this.reject(stamp.reason);
 
         const entries = (read.value as { versions?: unknown } | null)?.versions;
         if (!Array.isArray(entries)) {
-            quarantineFile("Library", this.file, WHAT, `"versions" must be an array, not ${typeof entries}`);
-            return;
+            return this.reject(`"versions" must be an array, not ${typeof entries}`);
         }
 
+        let migrated = 0;
         try {
-            this.versions = entries.map((entry, index) => deserialize(entry, `${this.file}[${index}]`));
+            this.versions = entries.map((entry, index) => {
+                const where = `${this.file}[${index}]`;
+                if (!isLegacyEntry(entry)) return deserialize(entry, where);
+                migrated++;
+                return migrateLegacyEntry(entry, where);
+            });
         } catch (e) {
             this.versions = [];
             log("Library", `An entry in ${this.file} could not be read: ${describeError(e)}`);
-            quarantineFile("Library", this.file, WHAT, (e as Error).message ?? String(e));
-            return;
+            return this.reject(userMessage(e));
+        }
+
+        if (migrated > 0) {
+            try {
+                this.save();
+                log("Library", `Rewrote ${this.file} with ${migrated} of ${this.versions.length} record(s) migrated from the old format`);
+            } catch (e) {
+                log("Library", `Migrated ${migrated} record(s) but could not rewrite ${this.file}: ${describeError(e)}`);
+            }
         }
 
         log(
@@ -80,13 +151,24 @@ export class Library {
         if (!this.loaded) this.load();
     }
 
+    /**
+     * A record that could not be read and could not be moved aside is the only trace of where
+     * the user's installed builds are, so it is left alone rather than rewritten from nothing.
+     */
+    private reject(reason: string): void {
+        if (!quarantineFile("Library", this.file, WHAT, reason)) this.sealed = true;
+    }
+
     private save(): void {
+        if (this.sealed) {
+            log("Library", `REFUSING to write ${this.file}: it could not be read and could not be moved aside`);
+            return;
+        }
         fs.mkdirSync(this.versionsPath, { recursive: true });
-        const body = {
+        writeJsonAtomic(this.file, {
             ...stampFields(FORMAT, FORMAT_VERSION),
             versions: this.versions.map(serialize),
-        };
-        fs.writeFileSync(this.file, JSON.stringify(body, undefined, 4), "utf-8");
+        });
     }
 
     list(): readonly InstalledVersion[] {

@@ -15,10 +15,37 @@ export interface LauncherPaths {
     profileDataPath: string;
 }
 
+/** Which entries name a directory and which name a file, so each is created correctly. */
+export const DIRECTORY_PATHS = [
+    "amethystPath",
+    "launcherPath",
+    "versionsPath",
+    "modsPath",
+    "toolsPath",
+    "profileDataPath",
+] as const satisfies readonly (keyof LauncherPaths)[];
+
+export const FILE_PATHS = [
+    "versionsFilePath",
+    "cachedVersionsFilePath",
+    "profilesFilePath",
+    "launcherConfigPath",
+] as const satisfies readonly (keyof LauncherPaths)[];
+
 export interface ProcessInfo {
     pid: number;
     /** Full image path, so a running game can be traced back to the build it came from. */
     executablePath: string;
+}
+
+/**
+ * How a launch ended. A launch nobody could confirm is neither a success nor a failure, and
+ * reporting it as either leaves the user with no idea whether to press Play again.
+ */
+export interface LaunchOutcome {
+    confirmed: boolean;
+    /** What to tell the user when the launch could not be confirmed. Empty when it was. */
+    unconfirmedMessage: string;
 }
 
 export interface LaunchRequest {
@@ -63,8 +90,6 @@ export class SystemSetupRequiredError extends Error {
 export interface ILauncherPlatform {
     getPlatformFullName(): string;
     getPaths(): LauncherPaths;
-    /** Every live process with this image name. Both games run the same executable name. */
-    listProcesses(executableName: string): Promise<ProcessInfo[]>;
 
     /** Where a profile's game data lives. */
     profileDataDir(profileUuid: string): string;
@@ -81,5 +106,5 @@ export interface ILauncherPlatform {
     /** Which profile's data a channel currently points at, or null. */
     liveProfileFor(channel: Channel): string | null;
 
-    launch(request: LaunchRequest, onStatus?: (message: string) => void): Promise<void>;
+    launch(request: LaunchRequest, onStatus?: (message: string) => void): Promise<LaunchOutcome>;
 }

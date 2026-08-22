@@ -1,14 +1,13 @@
 import { Channel } from "@renderer/scripts/domain/Channel";
 import { errnoCode } from "@renderer/scripts/Directories";
 import { log, logBlock } from "@renderer/scripts/LauncherLog";
-import { describeError, describeResult, readMarker, runPowerShell } from "@shared/diagnostics/ProcessRunner";
+import { describeResult, psQuote, readMarker, runPowerShell } from "@shared/diagnostics/ProcessRunner";
+import { describeError } from "@shared/diagnostics/Log";
 import { ForeignGameDataError, ProcessInfo, SystemSetupRequiredError } from "../LauncherPlatform";
-import * as Activation from "./Activation";
 import * as DataLink from "./DataLink";
 import {
     classifyLaunch,
     classifyMachineReadiness,
-    describeHresult,
     launchFailureMessage,
     LaunchFacts,
 } from "./LaunchDiagnostics";
@@ -41,14 +40,6 @@ export interface DesiredState {
     modded: boolean;
 }
 
-function samePath(a: string, b: string): boolean {
-    return path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
-}
-
-function sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 /** What Windows said about a set of processes, including that it would not say. */
 export interface ProcessProbe {
     processes: ProcessInfo[];
@@ -67,8 +58,14 @@ export interface ProcessProbe {
  * running" on machines where nothing was running.
  */
 export async function probeProcesses(executableName: string): Promise<ProcessProbe> {
+    // Two grammars, one after the other: the name is escaped for a WQL string literal, and the
+    // whole filter is then escaped for the PowerShell single-quoted string that carries it. A
+    // double-quoted string here would interpolate whatever `$` or backtick the name held.
+    const filter = `Name='${executableName.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
+
     const result = await runPowerShell(
-        `$found = @(Get-CimInstance Win32_Process -Filter "Name='${executableName.replace(/'/g, "''")}'" `
+        `$filter = '${psQuote(filter)}'\n`
+        + `$found = @(Get-CimInstance Win32_Process -Filter $filter `
         + `-Property ProcessId,ThreadCount,ExecutablePath)\n`
         + `foreach ($p in $found) {\n`
         + `    Write-Output ('PROC=' + $p.ProcessId + '|' + $p.ThreadCount + '|' + $p.ExecutablePath)\n`
@@ -129,14 +126,14 @@ function reconcileDataLink(desired: DesiredState, status: (m: string) => void): 
             throw new ForeignGameDataError(desired.channel, roaming);
 
         case "linked":
-            if (samePath(state.target, desired.dataDir)) {
+            if (Packages.samePath(state.target, desired.dataDir)) {
                 log("Machine", `${desired.channel} game data already points at this profile, leaving it: ${roaming} -> ${state.target}`);
                 return;
             }
             log("Machine", `${desired.channel} game data points at ${state.target}, repointing it at ${desired.dataDir}`);
             status("Switching game data to this profile...");
-            DataLink.unlink(desired.channel);
-            break;
+            DataLink.relink(desired.channel, desired.dataDir, state.target);
+            return;
 
         case "empty-dir":
             log("Machine", `${desired.channel} game data is an empty real folder, replacing it with a junction to ${desired.dataDir}`);
@@ -244,8 +241,9 @@ async function dropRegistration(versionPath: string, status: (m: string) => void
 }
 
 /**
- * The repair runs after Developer Mode is already on, so a registry read that fails here must
- * not throw away a fix the user has just consented to and been prompted for.
+ * Every caller is on the launch path, where a registry read that fails is a reason to register
+ * again rather than a reason to stop - and where the raw failure would otherwise reach the user
+ * as a stack trace in the launch banner instead of something to do about it.
  */
 function listRegisteredSafely(): Packages.RegisteredPackage[] {
     try {
@@ -296,7 +294,7 @@ async function repairAndRetry(
     if (failure.blocker === "package-in-use") {
         log("Machine", "Windows still holds the package, waiting 4s and registering once more");
         status("Waiting for Windows to release the previous Minecraft...");
-        await new Promise(resolve => setTimeout(resolve, 4000));
+        await Licence.sleep(4000);
         try {
             await Packages.register(desired.versionPath);
             log("Machine", "Registration succeeded on the retry after the package was released");
@@ -350,10 +348,10 @@ async function repairAndRetry(
 /** Touches only this build's own family; another channel's registration is never disturbed. */
 async function reconcilePackage(desired: DesiredState, status: (m: string) => void): Promise<void> {
     const wantFamily = packageFamilyFor(desired.versionPath).toLowerCase();
-    const registered = Packages.listRegistered();
+    const registered = listRegisteredSafely();
     const sameFamily = registered.filter(pkg => pkg.family.toLowerCase() === wantFamily);
 
-    if (sameFamily.some(pkg => samePath(pkg.installPath, desired.versionPath))) {
+    if (sameFamily.some(pkg => Packages.samePath(pkg.installPath, desired.versionPath))) {
         log("Machine", `${wantFamily} is already registered to ${desired.versionPath}, leaving the registration alone`);
         return;
     }
@@ -429,8 +427,11 @@ export function currentDataTarget(channel: Channel): string | null {
 /** Points a channel's game data folder at a profile, replacing whatever is there. */
 export function linkChannel(channel: Channel, dataDir: string): void {
     const state = DataLink.readLink(channel);
-    if (state.kind === "linked") DataLink.unlink(channel);
-    else if (state.kind === "empty-dir") DataLink.removeEmptyDir(channel);
+    if (state.kind === "linked") {
+        DataLink.relink(channel, dataDir, state.target);
+        return;
+    }
+    if (state.kind === "empty-dir") DataLink.removeEmptyDir(channel);
     DataLink.link(channel, dataDir);
 }
 
@@ -458,112 +459,43 @@ export function foreignDataPath(channel: Channel): string | null {
  * By AUMID rather than protocol - `Add-AppxPackage -Register` leaves
  * `HKCU\Software\Classes\<proto>` a stub with no `shell\open\command`.
  */
-export async function activate(
+/**
+ * Starts the build's own executable. Registration still happens, so Windows keeps the package on
+ * file and its Start menu entry works; this is only about which process the Play button creates.
+ */
+export async function startGame(
     versionPath: string,
-    dataDir: string,
     onStatus?: (m: string) => void
 ): Promise<boolean> {
     const status = onStatus ?? (() => {});
-    const wantFamily = packageFamilyFor(versionPath).toLowerCase();
-    const registered = Packages.listRegistered();
-    const pkg = registered.find(p => p.family.toLowerCase() === wantFamily);
+    const executable = path.join(versionPath, GAME_EXECUTABLE);
 
-    if (!pkg) {
-        const seen = registered.length === 0
-            ? "no Minecraft packages are registered"
-            : registered.map(p => `${p.family} -> ${p.installPath}`).join("; ");
-        log(
-            "Machine",
-            `Cannot activate ${wantFamily}: ${seen}. Expected it to be registered to ${versionPath} `
-            + `by the reconcile step that just ran`
-        );
-        throw new Error(
-            "Minecraft was set up but Windows has no record of it, so it cannot be started.\n\n"
-            + "Press Play again. If that does not help, restart the computer and try once more."
-        );
-    }
+    log("Machine", `Starting ${executable}`);
+    log("Machine", `Build holds ${VersionFiles.describePayload(versionPath)}`);
 
-    // A resolvable app id is the other half of "registered": the family comes from the registry
-    // and the application id from the build, and an activation with either half wrong resolves
-    // to nothing at all while still reporting a success.
-    let applicationId: string;
+    let spawned: import("child_process").ChildProcess;
     try {
-        applicationId = Packages.readApplicationId(versionPath);
+        spawned = child.spawn(executable, [], { cwd: versionPath, detached: true, stdio: "ignore" });
+        spawned.unref();
     } catch (e) {
-        log("Machine", `Cannot build an app id for ${versionPath}: ${describeError(e)}`);
+        log("Machine", `Could not start ${executable}: ${describeError(e)}`);
         throw new Error(
-            "This Minecraft version is missing the file Windows needs in order to start it.\n\n"
-            + "Delete this version in the launcher and download it again.",
+            "Minecraft could not be started. Check that antivirus software is not blocking it, then press Play again.",
             { cause: e }
         );
     }
 
-    const aumid = `${pkg.familyName}!${applicationId}`;
-    log("Machine", `Activating ${aumid}`);
-    log("Machine", `Build holds ${VersionFiles.describePayload(versionPath)}`);
-
-    // The activation manager is tried first because it is the only path that returns a reason,
-    // but it is never allowed to be the only path: any refusal falls through to the shell, which
-    // is what has always worked here, so a machine that launches today still launches today.
-    const outcome = await Activation.activateByAumid(aumid);
-    let launchedBy: string;
-    let shellSpawnError = "";
-
-    if (outcome.ok) {
-        launchedBy = `the activation manager, which created process ${outcome.pid}`;
-        log("Machine", `Activation manager started ${aumid} as pid ${outcome.pid} (HRESULT ${outcome.hresult})`);
-    } else {
-        launchedBy = "the shell, after the activation manager refused";
-        logBlock(
-            "Machine",
-            `Activation manager would not start ${aumid} (HRESULT ${outcome.hresult || "none"}, `
-            + `${describeHresult(outcome.hresult)}), falling back to the shell`,
-            outcome.detail
-        );
-        shellSpawnError = await activateViaShell(aumid);
+    const pid = spawned.pid ?? 0;
+    if (pid === 0) {
+        log("Machine", `${executable} spawned without a pid, so it cannot be waited on`);
+        return false;
     }
+    log("Machine", `${executable} started as pid ${pid}`);
 
     status("Waiting for Minecraft to start...");
-    return confirmStarted(aumid, versionPath, dataDir, pkg, outcome, launchedBy, shellSpawnError);
+    return confirmStarted(executable, versionPath, pid);
 }
 
-/** Resolves once explorer.exe is up, or with the reason it could not be started. */
-function activateViaShell(aumid: string): Promise<string> {
-    return new Promise(resolve => {
-        let settled = false;
-        const settle = (failure: string): void => {
-            if (settled) return;
-            settled = true;
-            resolve(failure);
-        };
-
-        // spawn throws synchronously for the errors raised before the child exists - EPERM from
-        // an antivirus or policy hook among them - and a throw inside this executor rejects the
-        // promise instead of reaching the error handler below, which is how a raw "spawn EPERM"
-        // reached the user in place of a launch failure that says what to do about it.
-        let explorer: import("child_process").ChildProcess;
-        try {
-            explorer = child.spawn("explorer.exe", [`shell:AppsFolder\\${aumid}`], {
-                detached: true,
-                stdio: "ignore",
-            });
-        } catch (e) {
-            log("Machine", `explorer.exe could not be started to activate ${aumid}: ${describeError(e)}`);
-            settle(describeError(e));
-            return;
-        }
-
-        explorer.on("error", error => {
-            log("Machine", `explorer.exe could not be started to activate ${aumid}: ${describeError(error)}`);
-            settle(describeError(error));
-        });
-        explorer.on("spawn", () => {
-            log("Machine", `explorer.exe shell:AppsFolder\\${aumid} started as pid ${explorer.pid ?? "unknown"}`);
-            settle("");
-        });
-        explorer.unref();
-    });
-}
 
 /**
  * Whether a process id Windows handed back is still alive, without disturbing it.
@@ -587,17 +519,6 @@ function isAlive(pid: number): boolean {
     }
 }
 
-/**
- * Whether the process Windows says it created is still there. Two witnesses, and either one is
- * enough: the process list only ever sees the game, so a live process id it does not hold is
- * still a live process, and calling that a crash is the mistake worth being careful about.
- */
-function activationPidAlive(pid: number, probe: ProcessProbe): boolean {
-    if (pid <= 0) return false;
-    if (!probe.queryFailed && probe.processes.some(p => p.pid === pid)) return true;
-    return isAlive(pid);
-}
-
 /** A setting Windows would not report reads as unknown, never as the safe-looking answer. */
 function describeSetting(value: boolean | null, yes: string, no: string): string {
     if (value === null) return "Windows would not say";
@@ -613,25 +534,17 @@ function describeSetting(value: boolean | null, yes: string, no: string): string
  * problems with three different fixes, so the verdict is decided from the facts in one place
  * rather than described as one failure with several possible causes.
  */
-async function confirmStarted(
-    aumid: string,
-    versionPath: string,
-    dataDir: string,
-    pkg: Packages.RegisteredPackage,
-    outcome: Activation.ActivationOutcome,
-    launchedBy: string,
-    shellSpawnError: string
-): Promise<boolean> {
+async function confirmStarted(executable: string, versionPath: string, pid: number): Promise<boolean> {
     const startedAt = Date.now();
     let probe: ProcessProbe = { processes: [], queryFailed: true, detail: "not checked yet" };
 
     const facts = (): LaunchFacts => ({
         versionPath,
-        hresult: outcome.hresult,
-        activationPid: outcome.pid,
-        activationPidAlive: activationPidAlive(outcome.pid, probe),
-        usedShellFallback: !outcome.ok,
-        shellSpawnError,
+        hresult: "",
+        activationPid: pid,
+        activationPidAlive: isAlive(pid),
+        usedShellFallback: false,
+        shellSpawnError: "",
         processes: probe.processes,
         probeFailed: probe.queryFailed,
     });
@@ -639,17 +552,17 @@ async function confirmStarted(
     let verdict = classifyLaunch(facts());
 
     while (Date.now() - startedAt < ACTIVATION_TIMEOUT_MS) {
-        await sleep(ACTIVATION_POLL_MS);
+        await Licence.sleep(ACTIVATION_POLL_MS);
         probe = await probeProcesses(GAME_EXECUTABLE);
         verdict = classifyLaunch(facts());
 
         if (verdict.kind === "running") {
-            log("Machine", `${aumid} is up: ${verdict.summary}, via ${launchedBy}`);
+            log("Machine", `${executable} is up: ${verdict.summary}`);
             return true;
         }
 
-        // A process id Windows handed back that is already gone is a finished answer, not a
-        // slow one, so the user is told it crashed now instead of in fifteen seconds' time.
+        // A process id that is already gone is a finished answer, not a slow one, so the user is
+        // told it crashed now instead of in fifteen seconds' time.
         if (verdict.kind === "exited-immediately") break;
     }
 
@@ -657,46 +570,29 @@ async function confirmStarted(
     // user a game is running when the question could not be answered is how a failed launch
     // reached them as "started" with nothing on screen.
     if (verdict.started) {
-        log("Machine", `${aumid} was started via ${launchedBy}, but ${verdict.summary}`);
+        log("Machine", `${executable} was started as pid ${pid}, but ${verdict.summary}`);
         return false;
     }
 
     const seen = probe.processes.length === 0
         ? "none"
-        : probe.processes.map(p => `${p.pid} ${p.executablePath || "(image path unreadable)"}`).join("; ");
-
-    const createdProcess = outcome.pid > 0
-        ? `Windows created process ${outcome.pid}, which ${activationPidAlive(outcome.pid, probe) ? "is still running" : "has already exited"}`
-        : "Windows created no process";
+        : probe.processes.map(p => `pid ${p.pid} (${p.executablePath || "path unknown"})`).join(", ");
 
     const detail =
-        `Outcome: ${verdict.kind}, ${verdict.summary}\n`
-        + `App id: ${aumid}\n`
-        + `Started by: ${launchedBy}\n`
-        + `Activation result: ${outcome.hresult || "none"} (${describeHresult(outcome.hresult)})\n`
-        + `${createdProcess}\n`
-        + (shellSpawnError ? `Shell fallback: ${shellSpawnError}\n` : "")
-        + `Waited: ${Math.round((Date.now() - startedAt) / 1000)}s\n`
-        + `Expected build: ${versionPath}\n`
-        + `Build holds: ${VersionFiles.describePayload(versionPath)}\n`
-        + `Registered as: ${pkg.family} -> ${pkg.installPath}\n`
-        + `Licence files in ${dataDir}: ${Licence.describeEntitlements(dataDir)}\n`
-        + `Developer Mode: ${describeSetting(Packages.readDeveloperMode(), "on", "off")}\n`
-        + `Sideloading blocked by this computer's policy: `
-        + `${describeSetting(Packages.readSideloadingPolicyBlock(), "yes", "no")}\n`
-        + `Minecraft processes running: ${seen}\n`
+        `Outcome: ${verdict.kind}, ${verdict.summary}
+`
+        + `Started: ${executable} as pid ${pid}, still alive: ${isAlive(pid) ? "yes" : "no"}
+`
+        + `Waited: ${Math.round((Date.now() - startedAt) / 1000)}s
+`
+        + `Build holds: ${VersionFiles.describePayload(versionPath)}
+`
+        + `Developer Mode: ${describeSetting(Packages.readDeveloperMode(), "on", "off")}
+`
+        + `Minecraft processes running: ${seen}
+`
         + `Process query: ${probe.detail}`;
 
-    logBlock("Machine", `${aumid} did not end up running: ${verdict.kind}`, detail);
-
-    // Windows keeps its own account of the activation, and it is routinely the only place the
-    // real reason is written down. A tester cannot be asked to go and read Event Viewer. Skipped
-    // when the game itself crashed, because that reason is in the game's log and not in Windows'.
-    if (verdict.kind !== "exited-immediately") {
-        const sinceSeconds = Math.round((Date.now() - startedAt) / 1000) + 30;
-        const events = await Activation.recentAppModelEvents(sinceSeconds);
-        logBlock("Machine", `What Windows recorded in the last ${sinceSeconds} seconds`, events);
-    }
-
+    logBlock("Machine", `${executable} did not end up running: ${verdict.kind}`, detail);
     throw new Error(launchFailureMessage(verdict));
 }

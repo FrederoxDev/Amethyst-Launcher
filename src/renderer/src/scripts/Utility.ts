@@ -5,7 +5,7 @@ const { clearTimeout } = window.require("timers") as typeof import("timers");
 const { ipcRenderer } = window.require("electron") as typeof import("electron");
 const fs = window.require("fs") as typeof import("fs");
 
-export function fetchWithTimeout(url: string, options: RequestInit = {}, timeout: number = 5000) {
+export function fetchWithTimeout(url: string, options: RequestInit = {}, timeout: number = 5000): Promise<Response> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(`Timeout reached! (timeout = ${timeout}ms)`), timeout);
     return fetch(url, { ...options, signal: controller.signal })
@@ -56,6 +56,16 @@ export function tryReadJsonFile<T = unknown>(scope: string, filePath: string): J
         );
         return { ok: false, reason: `it is not valid JSON (${(e as Error).message})` };
     }
+}
+
+/**
+ * A half-written file is worse than no file, because the reader quarantines it and the user
+ * loses everything it held. The rename is the only step that can be observed.
+ */
+export function writeJsonAtomic(filePath: string, body: unknown, indent = 4): void {
+    const tmp = `${filePath}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(body, undefined, indent), "utf-8");
+    fs.renameSync(tmp, filePath);
 }
 
 export interface FormatStamp {
@@ -127,8 +137,11 @@ function timestampSuffix(): string {
 /**
  * Anything the user created is renamed, never deleted. `what` names it in plain words, because
  * it reaches the user as well as the log.
+ *
+ * Returns whether the file was moved. A caller that keeps running over a file still sitting
+ * where it was would overwrite the very data it could not read.
  */
-export function quarantineFile(scope: string, filePath: string, what: string, reason: string): void {
+export function quarantineFile(scope: string, filePath: string, what: string, reason: string): boolean {
     const target = `${filePath}.stale-${timestampSuffix()}`;
     try {
         fs.renameSync(filePath, target);
@@ -137,12 +150,14 @@ export function quarantineFile(scope: string, filePath: string, what: string, re
             `Your saved ${what} could not be read, so the launcher started without it. `
             + `The old file was kept as ${target}`
         );
+        return true;
     } catch (e) {
         log(scope, `Could not move ${filePath} aside (${describeError(e)}); it stays in place. It was rejected because ${reason}`);
         recordStartupNotice(
-            `Your saved ${what} could not be read, so the launcher started without it. `
-            + `The file is still at ${filePath}`
+            `Your saved ${what} could not be read, and the launcher could not move it aside, `
+            + `so it started without it and will not save over ${filePath}`
         );
+        return false;
     }
 }
 

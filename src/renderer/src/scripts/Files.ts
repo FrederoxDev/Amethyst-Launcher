@@ -1,13 +1,15 @@
 import * as fs from "fs";
 
-const path = window.require("path");
+import { errnoCode } from "@renderer/scripts/Directories";
+
+const path = window.require("path") as typeof import("path");
 
 export async function CopyRecursive(source_path: string, target_path: string): Promise<void> {
     let st: import("fs").Stats;
     try {
         st = await fs.promises.lstat(source_path);
-    } catch (e: any) {
-        if (e?.code === "ENOENT") throw new Error(`start_path: '${source_path}' does not exist!`);
+    } catch (e) {
+        if (errnoCode(e) === "ENOENT") throw new Error(`start_path: '${source_path}' does not exist!`);
         throw e;
     }
 
