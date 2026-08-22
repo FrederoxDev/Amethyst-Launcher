@@ -18,13 +18,10 @@ function pad(value: number, width: number): string {
     return value.toString().padStart(width, "0");
 }
 
+/** The runtime's own line prefix, so the Logs viewer parses launcher and runtime files alike. */
 export function clockStamp(time: number): string {
     const d = new Date(time);
     return `${pad(d.getHours(), 2)}:${pad(d.getMinutes(), 2)}:${pad(d.getSeconds(), 2)}.${pad(d.getMilliseconds(), 3)}`;
-}
-
-export function isoStamp(time: number): string {
-    return new Date(time).toISOString();
 }
 
 /** Matches the runtime's own log file naming so both sort together in the Logs list. */
@@ -36,10 +33,30 @@ export function fileStamp(time: number): string {
     );
 }
 
-/** `HH:MM:SS.mmm [source] [scope] [LEVEL] message`, with the tag omitted for INFO as the runtime does. */
+/**
+ * `HH:MM:SS.mmm [source] [scope] [LEVEL] message`, with the tag omitted for INFO as the runtime
+ * does. A stack trace or an indented block repeats the prefix on every line, because the viewer
+ * filters line by line and an untagged continuation line is a line the user cannot see.
+ */
 export function formatEntry(entry: LogEntry): string {
     const tag = entry.level === "INFO" ? "" : ` [${entry.level}]`;
-    return `${isoStamp(entry.time)} [${entry.source}] [${entry.scope}]${tag} ${entry.message}`;
+    const prefix = `${clockStamp(entry.time)} [${entry.source}] [${entry.scope}]${tag} `;
+    return entry.message.split(/\r?\n/).map(line => `${prefix}${line}`).join("\n");
+}
+
+/**
+ * What the user reads. The outer message is written for them; the first cause that says
+ * something different carries the detail that tells them which step failed. Stacks stay in
+ * the log, which is where `describeError` puts them.
+ */
+export function userMessage(value: unknown): string {
+    const outer = value instanceof Error ? value.message.trim() : "";
+    if (outer === "") return "Something went wrong. A full report was saved to the launcher log.";
+
+    const cause = (value as { cause?: unknown }).cause;
+    const inner = cause instanceof Error ? cause.message.trim() : typeof cause === "string" ? cause.trim() : "";
+    if (inner === "" || outer.includes(inner)) return outer;
+    return `${outer} (${inner})`;
 }
 
 export function describeError(value: unknown): string {

@@ -25,6 +25,7 @@ export interface ProcessResult {
 
 export interface RunOptions {
     cwd?: string;
+    /** Merged over the launcher's own environment, never used in place of it. */
     env?: NodeJS.ProcessEnv;
     timeoutMs?: number;
     /** Called with each complete line of stdout and stderr as it arrives. */
@@ -41,8 +42,53 @@ export const DEFAULT_TIMEOUT_MS = 60_000;
 /** How long a killed process gets to die politely before it is killed outright. */
 const KILL_GRACE_MS = 2_000;
 
-export function describeError(error: unknown): string {
+/**
+ * Per-stream character cap. A tool that logs a line per file walks into hundreds of megabytes
+ * held in the renderer heap, and nothing downstream reads more than the tail of a failure.
+ */
+const MAX_STREAM_CHARS = 1_000_000;
+
+function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * Keeps the most recent {@link MAX_STREAM_CHARS} characters. The tail rather than the head:
+ * the markers {@link readMarker} reads and a script's own error text are both written last.
+ */
+function makeCappedBuffer(): { push(text: string): void; value(): string } {
+    let kept = "";
+    let dropped = 0;
+
+    return {
+        push(text) {
+            kept += text;
+            if (kept.length > MAX_STREAM_CHARS) {
+                const excess = kept.length - MAX_STREAM_CHARS;
+                kept = kept.slice(excess);
+                dropped += excess;
+            }
+        },
+        value() {
+            return dropped > 0 ? `...(${dropped} earlier characters dropped)\n${kept}` : kept;
+        },
+    };
+}
+
+/**
+ * Kills the whole tree rather than the process we spawned. msiexec and powershell.exe do their
+ * work in grandchildren that outlive the parent, keep holding the installer lock, and make the
+ * retry fail with "another installation is in progress".
+ */
+function killTree(proc: import("child_process").ChildProcess): void {
+    if (process.platform !== "win32" || proc.pid === undefined) {
+        proc.kill();
+        return;
+    }
+
+    child.execFile("taskkill", ["/T", "/F", "/PID", String(proc.pid)], { windowsHide: true }, error => {
+        if (error) proc.kill();
+    });
 }
 
 function decodeClixmlErrors(blob: string): string {
@@ -117,8 +163,8 @@ export function run(command: string, args: string[], options: RunOptions = {}): 
         // next stderr line and report a message neither stream ever produced.
         const outReader = options.onLine ? makeLineReader(options.onLine) : null;
         const errReader = options.onLine ? makeLineReader(options.onLine) : null;
-        let stdout = "";
-        let stderr = "";
+        const outBuffer = makeCappedBuffer();
+        const errBuffer = makeCappedBuffer();
         let spawnError: string | undefined;
         let timedOut = false;
         let settled = false;
@@ -131,7 +177,8 @@ export function run(command: string, args: string[], options: RunOptions = {}): 
             outReader?.flush();
             errReader?.flush();
 
-            const cleanStderr = stripClixml(stderr);
+            const stdout = outBuffer.value();
+            const cleanStderr = stripClixml(errBuffer.value());
             resolve({
                 command,
                 args,
@@ -150,34 +197,39 @@ export function run(command: string, args: string[], options: RunOptions = {}): 
         try {
             proc = child.spawn(command, args, {
                 cwd: options.cwd,
-                env: options.env,
+                // Merged, not replaced: an env of just the caller's keys drops PATH and
+                // SystemRoot, and spawn then fails with an ENOENT that names nothing.
+                env: { ...process.env, ...options.env },
+                // stdin is closed rather than piped, so a child that reads it sees EOF at once
+                // instead of blocking until the deadline.
+                stdio: ["ignore", "pipe", "pipe"],
                 windowsHide: true,
             });
         } catch (error) {
-            settle(-1, describeError(error));
+            settle(-1, errorMessage(error));
             return;
         }
 
         proc.stdout?.on("data", (data: Buffer | string) => {
             const text = data.toString();
-            stdout += text;
+            outBuffer.push(text);
             outReader?.push(text);
         });
         proc.stderr?.on("data", (data: Buffer | string) => {
             const text = data.toString();
-            stderr += text;
+            errBuffer.push(text);
             errReader?.push(text);
         });
 
         proc.on("error", error => {
-            spawnError = describeError(error);
+            spawnError = errorMessage(error);
             settle(-1);
         });
         proc.on("close", code => settle(code ?? -1));
 
         timers.push(setTimeout(() => {
             timedOut = true;
-            proc.kill();
+            killTree(proc);
             // Settles even if the kill does not take, so a wedged child can never wedge the caller.
             timers.push(setTimeout(() => {
                 proc.kill("SIGKILL");

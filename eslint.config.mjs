@@ -26,7 +26,28 @@ export default defineConfig(
         rules: {
             ...eslintPluginReactHooks.configs.recommended.rules,
             ...eslintPluginReactRefresh.configs.vite.rules,
+            "@typescript-eslint/no-unused-vars": [
+                "error",
+                {
+                    argsIgnorePattern: "^_",
+                    varsIgnorePattern: "^_",
+                    caughtErrorsIgnorePattern: "^_",
+                },
+            ],
         },
     },
-    eslintConfigPrettier
+    {
+        files: ["**/*.tsx"],
+        rules: {
+            "@typescript-eslint/explicit-function-return-type": "off",
+        },
+    },
+    eslintConfigPrettier,
+    {
+        // Formatting is `npm run format`, not a lint result. Reported here it was 1700 warnings
+        // nobody acted on, which buries the ones that mean something.
+        rules: {
+            "prettier/prettier": "off",
+        },
+    }
 );

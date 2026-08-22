@@ -1,9 +1,10 @@
 import { useAppStore } from "@renderer/states/AppStore";
 import { Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { describeError } from "@shared/diagnostics/Log";
+import { describeError, userMessage } from "@shared/diagnostics/Log";
 import { Popup } from "@renderer/states/PopupStore";
-import { createProfileFlow } from "@renderer/scripts/flows/CreateProfile";
-import { adoptAllForeignGameData } from "@renderer/scripts/flows/AdoptGameData";
+import { createProfileFlow } from "@renderer/flows/CreateProfile";
+import { adoptAllForeignGameData } from "@renderer/flows/AdoptGameData";
+import { removeRetiredDotnet } from "@renderer/scripts/backend/RetiredTools";
 import { isModded } from "@renderer/scripts/domain/Profile";
 import { log } from "@renderer/scripts/LauncherLog";
 
@@ -24,7 +25,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import LoadingSpinnerRenderer from "./components/LoadingSpinnerRenderer";
 import ProgressBarRenderer from "./components/ProgressBarRenderer";
-import { useDownloadStore } from "@renderer/states/DownloadStore";
+import { removePendingDownload, useDownloadStore } from "@renderer/states/DownloadStore";
 import { MOD_DISCOVERY_ENABLED } from "@renderer/scripts/FeatureFlags";
 
 const fs = window.require("fs") as typeof import("fs");
@@ -60,7 +61,7 @@ function DownloadManagerButton() {
         };
         document.addEventListener("mousedown", handleClick);
         return () => document.removeEventListener("mousedown", handleClick);
-    }, [panelOpen]);
+    }, [panelOpen, setPanelOpen]);
 
     useEffect(() => {
         if (!panelOpen || !btnRef.current) return;
@@ -71,6 +72,8 @@ function DownloadManagerButton() {
         });
     }, [panelOpen]);
 
+    // Cancelling has to clear the crash-recovery record too, or the next start resumes what
+    // the user just stopped.
     const cancelDownload = (id: string) => {
         const dl = downloads.find(d => d.id === id);
         if (!dl) {
@@ -83,6 +86,7 @@ function DownloadManagerButton() {
         else {
             log("Downloads", `Removed "${dl.name}" (${id}) from the list; status ${dl.status} carries nothing to abort`);
         }
+        removePendingDownload(id);
         removeDownload(id);
     };
 
@@ -146,19 +150,14 @@ function DownloadManagerButton() {
 function AnimatedRoutes() {
     const location = useLocation();
     const [displayLocation, setDisplayLocation] = useState(location);
-    const [transitionClass, setTransitionClass] = useState("page-enter-active");
+    const isExiting = location.pathname !== displayLocation.pathname;
+    const transitionClass = isExiting ? "page-exit-active" : "page-enter-active";
 
     useEffect(() => {
-        if (location.pathname !== displayLocation.pathname) {
-            setTransitionClass("page-exit-active");
-            const timer = setTimeout(() => {
-                setDisplayLocation(location);
-                setTransitionClass("page-enter-active");
-            }, 80);
-            return () => clearTimeout(timer);
-        }
-        return undefined;
-    }, [location, displayLocation]);
+        if (!isExiting) return undefined;
+        const timer = setTimeout(() => setDisplayLocation(location), 80);
+        return () => clearTimeout(timer);
+    }, [location, isExiting]);
 
     return (
         <div className={`page-transition ${transitionClass}`}>
@@ -187,6 +186,9 @@ export default function App() {
             useAppStore.getState().versions.cleanupStaleLocks().catch(e => {
                 log("App", `Stale lock sweep failed: ${describeError(e)}`);
             });
+            removeRetiredDotnet().catch(e => {
+                log("App", `Retired .NET sweep failed: ${describeError(e)}`);
+            });
         }, 0);
     }, []);
 
@@ -201,7 +203,7 @@ export default function App() {
         onboardingStarted.current = true;
         adoptAllForeignGameData().catch(e => {
             log("App", `Resolving existing game data failed: ${describeError(e)}`);
-            useAppStore.getState().setError(`Could not resolve existing game data: ${(e as Error).message ?? e}`);
+            useAppStore.getState().setError(`Could not resolve existing game data: ${userMessage(e)}`);
         });
     }, []);
 
@@ -320,7 +322,7 @@ export default function App() {
                             <DownloadManagerButton />
 
                             <div className="app-settings-button" onClick={() => {
-                                Popup.useAsync<void>(props => <SettingsPopup {...props} />);
+                                Popup.ask<void>(props => <SettingsPopup {...props} />);
                             }}>
                                 <img
                                     src={settingsIcon}

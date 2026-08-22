@@ -2,29 +2,22 @@ import { useEffect, useMemo, useState } from "react";
 
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { MinecraftToggle } from "@renderer/components/MinecraftToggle";
-import { PopupPanel, usePopupClose } from "@renderer/components/PopupPanel";
-import { TextInput } from "@renderer/components/TextInput";
-import { Dropdown } from "@renderer/components/Dropdown";
-import { SemVersion } from "@renderer/scripts/classes/SemVersion";
-import { PathUtils } from "@renderer/scripts/PathUtils";
-import { Channel, channelLabel, parseChannel } from "@renderer/scripts/domain/Channel";
-import { CatalogVersion, catalogLabel, channelFromFilename, prettifyVersionFromFilename } from "@renderer/scripts/versions/Catalog";
-import { describeError } from "@shared/diagnostics/Log";
+import { PopupPanel } from "@renderer/components/PopupPanel";
+import { usePopupClose } from "@renderer/components/PopupCloseContext";
+import { ImportVersionPopup } from "@renderer/popups/ImportVersionPopup";
+import { pickMsixvcFile } from "@renderer/scripts/versions/MsixvcPicker";
+import { Channel, channelLabel } from "@renderer/scripts/domain/Channel";
+import { CatalogVersion, catalogLabel } from "@renderer/scripts/versions/Catalog";
+import { ImportRequest } from "@renderer/scripts/versions/VersionService";
+import { describeError, userMessage } from "@shared/diagnostics/Log";
 import { log } from "@renderer/scripts/LauncherLog";
 import { useAppStore } from "@renderer/states/AppStore";
 import { PopupUseArguments } from "@renderer/states/PopupStore";
 
-const { ipcRenderer, shell } = window.require("electron") as typeof import("electron");
-const fs = window.require("fs") as typeof import("fs");
-const path = window.require("path") as typeof import("path");
+const { shell } = window.require("electron") as typeof import("electron");
 
-export interface PendingImport {
-    label: string;
-    version: SemVersion;
-    channel: Channel;
-    uuid: string;
-    file: string;
-}
+/** A local `.msixvc` the user picked, waiting to be installed. */
+export type PendingImport = ImportRequest;
 
 export interface VersionChoice {
     versionUuid: string;
@@ -39,15 +32,7 @@ interface Props extends PopupUseArguments<VersionChoice | null> {
     restrictToChannel?: Channel;
 }
 
-interface UploadDraft {
-    file: string;
-    label: string;
-    channel: Channel;
-    version: string;
-    uuid: string;
-}
-
-export function VersionPickerPopup({ submit: rawSubmit, restrictToChannel }: Props) {
+export function VersionPickerPopup({ submit: rawSubmit, state, restrictToChannel }: Props) {
     const animateClose = usePopupClose();
     const submit = (result: VersionChoice | null) => animateClose(() => rawSubmit(result));
 
@@ -56,7 +41,7 @@ export function VersionPickerPopup({ submit: rawSubmit, restrictToChannel }: Pro
 
     const [catalog, setCatalog] = useState<readonly CatalogVersion[]>([]);
     const [fetching, setFetching] = useState(true);
-    const [upload, setUpload] = useState<UploadDraft | null>(null);
+    const [importFile, setImportFile] = useState<string | null>(null);
     const [showPreviews, setShowPreviews] = useState(
         () => restrictToChannel === "preview" || localStorage.getItem("version-picker-show-previews") === "true"
     );
@@ -100,110 +85,30 @@ export function VersionPickerPopup({ submit: rawSubmit, restrictToChannel }: Pro
     }, [catalog, showPreviews, restrictToChannel]);
 
     const openFilePicker = async () => {
-        const picked = await ipcRenderer.invoke("dialog:openFile", [
-            { name: "MSIXVC Files", extensions: ["msixvc"] },
-        ]) as string | null;
-
-        if (!picked) {
-            log("VersionPicker", "File picker closed without a .msixvc");
-            return;
-        }
-        try {
-            if (!fs.statSync(picked).isFile()) {
-                log("VersionPicker", `Ignoring ${picked}: it is not a file`);
-                return;
-            }
-        } catch (e) {
-            log("VersionPicker", `Ignoring ${picked}: it could not be read: ${describeError(e)}`);
-            return;
-        }
-
-        const fileName = path.basename(picked, ".msixvc");
-        const detectedVersion = prettifyVersionFromFilename(fileName)
-            ?? fileName.match(/\d+\.\d+\.\d+\.\d+/)?.[0]
-            ?? "";
-
-        setUpload({
-            file: picked,
-            label: detectedVersion ? `${detectedVersion} (Imported)` : "",
-            channel: channelFromFilename(fileName) ?? restrictToChannel ?? "release",
-            version: detectedVersion,
-            uuid: crypto.randomUUID(),
-        });
+        const picked = await pickMsixvcFile("VersionPicker");
+        if (picked) setImportFile(picked);
     };
 
-    const versionIsValid = (text: string) => {
-        try {
-            SemVersion.fromString(text);
-            return true;
-        } catch {
-            return false;
-        }
-    };
-
-    const canImport = upload !== null
-        && upload.label !== ""
-        && PathUtils.isValidFileName(upload.label)
-        && versionIsValid(upload.version);
-
-    if (upload) {
+    if (importFile) {
         return (
-            <PopupPanel
-                title="Import Version"
-                onClose={() => setUpload(null)}
-                size="lg"
-                footerAlign="between"
-                footer={
-                    <>
-                        <MinecraftButton text="Back" style={{ "--mc-button-container-w": "100px" }} onClick={() => setUpload(null)} />
-                        <MinecraftButton
-                            text="Continue"
-                            disabled={!canImport}
-                            style={{ "--mc-button-container-w": "100px" }}
-                            onClick={() => submit({
-                                versionUuid: upload.uuid,
-                                channel: upload.channel,
-                                label: upload.label,
-                                pendingImport: {
-                                    label: upload.label,
-                                    version: SemVersion.fromString(upload.version),
-                                    channel: upload.channel,
-                                    uuid: upload.uuid,
-                                    file: upload.file,
-                                },
-                            })}
-                        />
-                    </>
-                }
-            >
-                <TextInput
-                    label="Version Name"
-                    text={upload.label}
-                    setText={v => setUpload({ ...upload, label: typeof v === "function" ? v(upload.label) : v })}
-                    style={{ width: "100%" }}
-                />
-                <TextInput
-                    label="Version"
-                    text={upload.version}
-                    setText={v => setUpload({ ...upload, version: typeof v === "function" ? v(upload.version) : v })}
-                    style={{ width: "100%" }}
-                />
-                {!versionIsValid(upload.version) && (
-                    <p style={{ fontSize: "12px", color: "red" }}>
-                        Version must look like 1.21.60.5 or 26.30.03.
-                    </p>
-                )}
-                <Dropdown
-                    id="import-channel"
-                    labelText="Channel"
-                    options={["Release", "Preview"]}
-                    value={channelLabel(upload.channel)}
-                    setValue={value => setUpload({ ...upload, channel: parseChannel(value) ?? "release" })}
-                />
-                <p className="minecraft-seven" style={{ fontSize: "11px", color: "#9f9f9f", wordBreak: "break-all" }}>
-                    File: {upload.file}
-                </p>
-            </PopupPanel>
+            <ImportVersionPopup
+                state={state}
+                initialFile={importFile}
+                defaultChannel={restrictToChannel}
+                onBack={() => setImportFile(null)}
+                submit={request => {
+                    if (!request) {
+                        setImportFile(null);
+                        return;
+                    }
+                    submit({
+                        versionUuid: request.uuid,
+                        channel: request.channel,
+                        label: request.label,
+                        pendingImport: request,
+                    });
+                }}
+            />
         );
     }
 
@@ -256,7 +161,7 @@ export function VersionPickerPopup({ submit: rawSubmit, restrictToChannel }: Pro
                                         versions.uninstall(v.uuid).catch(error => {
                                             log("VersionPicker", `Uninstalling "${v.label}" failed: ${describeError(error)}`);
                                             useAppStore.getState().setError(
-                                                `Could not delete ${v.label}: ${(error as Error).message ?? error}`
+                                                `Could not delete ${v.label}: ${userMessage(error)}`
                                             );
                                         });
                                     }}

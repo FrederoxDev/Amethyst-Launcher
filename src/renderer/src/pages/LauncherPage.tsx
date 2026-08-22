@@ -1,25 +1,26 @@
-import { describeError } from "@shared/diagnostics/Log";
+import { describeError, userMessage } from "@shared/diagnostics/Log";
 import { log } from "@renderer/scripts/LauncherLog";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { useAppStore } from "@renderer/states/AppStore";
 import { useShallow } from "zustand/shallow";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
-import { launchErrorMessage, launchProfile } from "@renderer/scripts/flows/Launch";
+import { launchErrorMessage, launchProfile } from "@renderer/flows/Launch";
 import { useNavigate } from "react-router-dom";
 import { channelLabel } from "@renderer/scripts/domain/Channel";
 import { Profile, isModded } from "@renderer/scripts/domain/Profile";
 import { describeProblem, diagnoseProfile, launchBlocker } from "@renderer/scripts/domain/ProfileDiagnosis";
 import { toModStatus } from "@renderer/scripts/Mods";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { createProfileFlow } from "@renderer/scripts/flows/CreateProfile";
+import { createProfileFlow } from "@renderer/flows/CreateProfile";
 import {
     confirmProfileDeletion,
     deleteProfile as removeProfile,
     displayVersion,
     openDataFolder,
     openInstallFolder,
-} from "@renderer/scripts/flows/ProfileActions";
+} from "@renderer/flows/ProfileActions";
+import "@renderer/flows/ProtocolLinks";
 
 const ProfileCardMenu = ({ onEdit, onDelete, onOpenInstallFolder, onOpenDataFolder }: {
     onEdit: () => void;
@@ -163,7 +164,7 @@ export function LauncherPage() {
     ] = useAppStore(useShallow(state => [
         state.profiles,
         state.lastLaunchedProfileUuid,
-        state.setEditingProfileIndex,
+        state.setEditingProfileUuid,
         state.setProfiles,
         state.saveData,
         state.setError,
@@ -182,12 +183,34 @@ export function LauncherPage() {
     const [dragUuid, _setDragUuid] = useState<string | null>(null);
     const dragUuidRef = useRef<string | null>(null);
     const reorderCooldown = useRef(false);
-    const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
     const dragSizeRef = useRef({ width: 0, height: 0 });
+    const dragPosRef = useRef({ x: 0, y: 0 });
+    const dragOverlayRef = useRef<HTMLDivElement>(null);
+    const dragStartOrderRef = useRef<string[] | null>(null);
 
     const setDragUuid = (uuid: string | null) => {
         dragUuidRef.current = uuid;
         _setDragUuid(uuid);
+    };
+
+    /**
+     * Written straight to the node rather than to state: a drag emits `dragover` at pointer rate,
+     * and every profile card would re-render behind the one that moved.
+     */
+    const trackPointer = (x: number, y: number) => {
+        dragPosRef.current = { x, y };
+        const overlay = dragOverlayRef.current;
+        if (!overlay) return;
+        overlay.style.left = `${x - dragSizeRef.current.width / 2}px`;
+        overlay.style.top = `${y - dragSizeRef.current.height / 2}px`;
+    };
+
+    const attachDragOverlay = (overlay: HTMLDivElement | null) => {
+        dragOverlayRef.current = overlay;
+        if (!overlay) return;
+        overlay.style.width = `${dragSizeRef.current.width}px`;
+        overlay.style.height = `${dragSizeRef.current.height}px`;
+        trackPointer(dragPosRef.current.x, dragPosRef.current.y);
     };
 
     const snapshotPositions = useCallback(() => {
@@ -254,7 +277,7 @@ export function LauncherPage() {
             await removeProfile(profile);
         } catch (e) {
             log("LauncherPage", `Deleting "${profile.name}" failed: ${describeError(e)}`);
-            setError(`Could not delete ${profile.name}: ${(e as Error).message ?? e}`);
+            setError(`Could not delete ${profile.name}: ${userMessage(e)}`);
         }
     };
 
@@ -284,23 +307,29 @@ export function LauncherPage() {
         }
     };
 
+    const modStatuses = useMemo(() => toModStatus(allMods), [allMods]);
+
     /** The profile's own reason, not a guess at it: an invalid runtime is not a missing one. */
-    const getRuntimeWarning = (profile: Profile): string | null => {
-        const blocker = launchBlocker(diagnoseProfile({
-            modded: isModded(profile),
-            modIds: profile.mods,
-            mods: toModStatus(allMods),
-            downloading: downloadingMods,
-        }));
-        return blocker === null ? null : describeProblem(blocker);
-    };
+    const runtimeWarnings = useMemo(() => {
+        const warnings = new Map<string, string>();
+        for (const profile of allProfiles) {
+            const blocker = launchBlocker(diagnoseProfile({
+                modded: isModded(profile),
+                modIds: profile.mods,
+                mods: modStatuses,
+                downloading: downloadingMods,
+            }));
+            if (blocker !== null) warnings.set(profile.uuid, describeProblem(blocker));
+        }
+        return warnings;
+    }, [allProfiles, modStatuses, downloadingMods]);
 
     return (
         <div className="launcher-page">
             {/* Profile Grid */}
-            <div className="launcher-profile-grid" ref={gridRef} onDragOver={(e) => { e.preventDefault(); setDragPos({ x: e.clientX, y: e.clientY }); }} onDrop={(e) => e.preventDefault()}>
+            <div className="launcher-profile-grid" ref={gridRef} onDragOver={(e) => { e.preventDefault(); trackPointer(e.clientX, e.clientY); }} onDrop={(e) => e.preventDefault()}>
                 {allProfiles.map((profile, index) => {
-                    const runtimeWarning = getRuntimeWarning(profile);
+                    const runtimeWarning = runtimeWarnings.get(profile.uuid) ?? null;
 
                     return <div
                         key={profile.uuid}
@@ -316,7 +345,8 @@ export function LauncherPage() {
                             e.dataTransfer.setDragImage(empty, 0, 0);
                             const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                             dragSizeRef.current = { width: rect.width, height: rect.height };
-                            setDragPos({ x: e.clientX, y: e.clientY });
+                            dragStartOrderRef.current = allProfiles.map(p => p.uuid);
+                            trackPointer(e.clientX, e.clientY);
                             _setDragUuid(profile.uuid);
                         }}
                         onDragOver={(e) => {
@@ -324,19 +354,19 @@ export function LauncherPage() {
                             e.dataTransfer.dropEffect = "move";
                             handleReorder(profile.uuid);
                         }}
-                        onDrop={(e) => {
-                            e.preventDefault();
-                            if (dragUuidRef.current) {
-                                log("LauncherPage", `Profile order saved: ${allProfiles.map(p => p.name).join(", ")}`);
-                            }
-                            setDragUuid(null);
-                            saveData();
-                        }}
+                        onDrop={(e) => e.preventDefault()}
                         onDragEnd={() => {
-                            if (dragUuidRef.current) {
-                                log("LauncherPage", `Profile order saved: ${allProfiles.map(p => p.name).join(", ")}`);
-                            }
+                            const startOrder = dragStartOrderRef.current;
+                            dragStartOrderRef.current = null;
                             setDragUuid(null);
+
+                            // `dragend` fires for an abandoned drag too, and the reorder itself
+                            // happens on `dragover`, so only a changed order is a save.
+                            if (!startOrder) return;
+                            const order = allProfiles.map(p => p.uuid);
+                            if (order.length === startOrder.length && order.every((uuid, i) => uuid === startOrder[i])) return;
+
+                            log("LauncherPage", `Profile order saved: ${allProfiles.map(p => p.name).join(", ")}`);
                             saveData();
                         }}
                     >
@@ -348,7 +378,7 @@ export function LauncherPage() {
                             canPlay={canLaunch && !runtimeWarning}
                             onEdit={() => {
                                 log("LauncherPage", `Opening the editor for "${profile.name}" (${profile.uuid})`);
-                                setEditingProfile(index);
+                                setEditingProfile(profile.uuid);
                                 navigate("/profile-editor");
                             }}
                             onPlay={() => launchGame(profile)}
@@ -366,7 +396,7 @@ export function LauncherPage() {
                         navigate(isModded(result.profile) ? "/profile-editor" : "/");
                     } catch (e) {
                         log("LauncherPage", `Profile creation failed: ${describeError(e)}`);
-                        setError(`Could not create the profile: ${(e as Error).message ?? e}`);
+                        setError(`Could not create the profile: ${userMessage(e)}`);
                     }
                 }}>
                     <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
@@ -381,16 +411,11 @@ export function LauncherPage() {
                     const dragProfile = allProfiles.find(p => p.uuid === dragUuid);
                     if (!dragProfile) return null;
                     return (
-                        <div className="launcher-drag-overlay" style={{
-                            left: dragPos.x - dragSizeRef.current.width / 2,
-                            top: dragPos.y - dragSizeRef.current.height / 2,
-                            width: dragSizeRef.current.width,
-                            height: dragSizeRef.current.height,
-                        }}>
+                        <div className="launcher-drag-overlay" ref={attachDragOverlay}>
                             <ProfileCard
                                 profile={dragProfile}
                                 versionName={displayVersion(dragProfile)}
-                                runtimeWarning={getRuntimeWarning(dragProfile)}
+                                runtimeWarning={runtimeWarnings.get(dragProfile.uuid) ?? null}
                                 isSelected={lastLaunchedProfileUuid === dragProfile.uuid}
                                 canPlay={false}
                                 onEdit={() => {}}

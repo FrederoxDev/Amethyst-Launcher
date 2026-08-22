@@ -34,32 +34,3 @@ export function PanelIndent({ children, className, style }: PanelIndentProps) {
         </div>
     );
 }
-
-interface PanelButtonProps extends MainPanelProps {
-    onClick: () => void;
-    className?: string;
-}
-
-export function PanelButton({ children, onClick, className }: PanelButtonProps) {
-    return (
-        <div className="panel-card" onClick={onClick}>
-            <div className={`panel-card-inner ${className}`}>
-                {children}
-            </div>
-        </div>
-    );
-}
-
-interface PanelSectionProps extends MainPanelProps {
-    className?: string;
-}
-
-export function PanelSection({ children, className }: PanelSectionProps) {
-    return (
-        <div className="panel-card">
-            <div className={`panel-card-inner ${className}`}>
-                {children}
-            </div>
-        </div>
-    );
-}

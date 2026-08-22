@@ -1,8 +1,8 @@
-import { describeError } from "@shared/diagnostics/Log";
+import { describeError, userMessage } from "@shared/diagnostics/Log";
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 import { Channel, channelLabel, isChannel } from "@renderer/scripts/domain/Channel";
 import { log } from "@renderer/scripts/LauncherLog";
-import { discardCacheFile, inspectStamp, stampFields, tryReadJsonFile } from "@renderer/scripts/Utility";
+import { discardCacheFile, inspectStamp, stampFields, tryReadJsonFile, writeJsonAtomic } from "@renderer/scripts/Utility";
 
 const fs = window.require("fs") as typeof import("fs");
 
@@ -27,10 +27,15 @@ export function catalogLabel(v: CatalogVersion): string {
     return `${channelLabel(v.channel)} ${v.version.toString()}`;
 }
 
-interface RemoteContract {
-    file_version: number;
-    previewVersions: { version: string; urls: string[] }[];
-    releaseVersions: { version: string; urls: string[] }[];
+/**
+ * A refresh either never arrived or arrived unreadable, and the user can only act on the first
+ * of those, so the two are never worded the same.
+ */
+class CatalogFetchError extends Error {
+    constructor(readonly kind: "unreachable" | "malformed", message: string, options?: ErrorOptions) {
+        super(message, options);
+        this.name = "CatalogFetchError";
+    }
 }
 
 interface CachedCatalog {
@@ -64,8 +69,8 @@ export function channelFromFilename(name: string): Channel | null {
     return null;
 }
 
-function serialize(cache: CachedCatalog): string {
-    return JSON.stringify({
+function serialize(cache: CachedCatalog): unknown {
+    return {
         ...stampFields(FORMAT, FORMAT_VERSION),
         versions: cache.versions.map(v => ({
             uuid: v.uuid,
@@ -75,7 +80,7 @@ function serialize(cache: CachedCatalog): string {
         })),
         fetched_at: cache.fetchedAt.toISOString(),
         file_version: cache.fileVersion,
-    }, undefined, 4);
+    };
 }
 
 function deserialize(o: Record<string, unknown>, where: string): CachedCatalog {
@@ -101,31 +106,92 @@ function deserialize(o: Record<string, unknown>, where: string): CachedCatalog {
     return { versions, fetchedAt, fileVersion: o.file_version };
 }
 
-async function fetchRemote(): Promise<CachedCatalog> {
-    log("Catalog", `Fetching the version database from ${DATABASE_URL}`);
-    const response = await fetch(DATABASE_URL);
-    if (!response.ok) {
-        log("Catalog", `Version database returned ${response.status} ${response.statusText}`);
-        throw new Error(`Version database returned ${response.status} ${response.statusText}`);
+/** One unusable upstream entry is one version the user cannot download, not a refresh that failed. */
+function buildRemote(raw: unknown, channel: Channel, field: string): CatalogVersion[] {
+    if (!Array.isArray(raw)) {
+        throw new CatalogFetchError("malformed", `"${field}" must be an array, not ${typeof raw}`);
     }
-    const data = await response.json() as RemoteContract;
 
-    const build = (entries: { version: string; urls: string[] }[], channel: Channel): CatalogVersion[] =>
-        entries.map(e => {
-            const uuid = e.urls[0]?.match(UUID_PATTERN)?.at(-1);
-            if (!uuid) throw new Error(`Version database entry "${e.version}" has no UUID in its download URL`);
-            return {
+    const versions: CatalogVersion[] = [];
+    const skipped: string[] = [];
+
+    raw.forEach((entry, index) => {
+        const at = `${field}[${index}]`;
+        const e = entry as Record<string, unknown> | null | undefined;
+
+        if (typeof e?.version !== "string") {
+            skipped.push(`${at}: "version" must be a string, not ${typeof e?.version}`);
+            return;
+        }
+        if (!Array.isArray(e.urls) || !e.urls.every(u => typeof u === "string")) {
+            skipped.push(`${at} ("${e.version}"): "urls" must be an array of strings`);
+            return;
+        }
+
+        const urls = e.urls as string[];
+        const uuid = urls[0]?.match(UUID_PATTERN)?.at(-1);
+        if (!uuid) {
+            skipped.push(`${at} ("${e.version}"): no UUID in its download URL`);
+            return;
+        }
+
+        try {
+            versions.push({
                 uuid,
                 channel,
                 version: SemVersion.fromString(e.version.replace("Release ", "").replace("Preview ", "")),
-                urls: e.urls,
-            };
-        });
+                urls,
+            });
+        } catch (parseError) {
+            skipped.push(`${at}: ${userMessage(parseError)}`);
+        }
+    });
+
+    if (skipped.length > 0) {
+        log("Catalog", `Skipped ${skipped.length} unusable ${field} entries: ${skipped.join("; ")}`);
+    }
+    return versions;
+}
+
+async function fetchRemote(): Promise<CachedCatalog> {
+    log("Catalog", `Fetching the version database from ${DATABASE_URL}`);
+
+    let response: Response;
+    try {
+        response = await fetch(DATABASE_URL);
+    } catch (e) {
+        log("Catalog", `${DATABASE_URL} could not be reached: ${describeError(e)}`);
+        throw new CatalogFetchError("unreachable", `${DATABASE_URL} could not be reached`, { cause: e });
+    }
+
+    if (!response.ok) {
+        log("Catalog", `Version database returned ${response.status} ${response.statusText}`);
+        throw new CatalogFetchError("unreachable", `Version database returned ${response.status} ${response.statusText}`);
+    }
+
+    let data: Record<string, unknown>;
+    try {
+        data = await response.json() as Record<string, unknown>;
+    } catch (e) {
+        log("Catalog", `${DATABASE_URL} did not return JSON: ${describeError(e)}`);
+        throw new CatalogFetchError("malformed", "the version database is not valid JSON", { cause: e });
+    }
+
+    if (typeof data !== "object" || data === null || Array.isArray(data)) {
+        throw new CatalogFetchError("malformed", `the version database is a ${Array.isArray(data) ? "array" : typeof data}, not an object`);
+    }
+
+    if (typeof data.file_version !== "number") {
+        log("Catalog", `Version database has no numeric "file_version" (${typeof data.file_version}), recording -1`);
+    }
 
     return {
-        versions: [...build(data.releaseVersions, "release"), ...build(data.previewVersions, "preview")],
+        versions: [
+            ...buildRemote(data.releaseVersions, "release", "releaseVersions"),
+            ...buildRemote(data.previewVersions, "preview", "previewVersions"),
+        ],
         fetchedAt: new Date(),
-        fileVersion: data.file_version,
+        fileVersion: typeof data.file_version === "number" ? data.file_version : -1,
     };
 }
 
@@ -171,7 +237,7 @@ export class Catalog {
         try {
             return deserialize(read.value as Record<string, unknown>, this.cacheFilePath);
         } catch (e) {
-            discardCacheFile("Catalog", this.cacheFilePath, (e as Error).message);
+            discardCacheFile("Catalog", this.cacheFilePath, userMessage(e));
             return null;
         }
     }
@@ -198,7 +264,7 @@ export class Catalog {
             // Caching is best effort: a fetched list that could not be written is still a
             // fetched list, and failing here would be reported as an unreachable database.
             try {
-                fs.writeFileSync(this.cacheFilePath, serialize(this.cache), "utf-8");
+                writeJsonAtomic(this.cacheFilePath, serialize(this.cache));
                 log("Catalog", `Refreshed: ${this.cache.versions.length} versions cached to ${this.cacheFilePath}`);
             } catch (writeError) {
                 log(
@@ -210,7 +276,13 @@ export class Catalog {
         } catch (e) {
             if (!onDisk) {
                 log("Catalog", `Refresh failed and no cache exists at ${this.cacheFilePath}: ${describeError(e)}`);
-                throw new Error(`Could not reach the version database and no cache is available. ${e}`);
+                const malformed = e instanceof CatalogFetchError && e.kind === "malformed";
+                throw new Error(
+                    malformed
+                        ? `The version list was downloaded but could not be read (${userMessage(e)}), and no cache is available.`
+                        : `Could not reach the version database (${userMessage(e)}), and no cache is available. Check your internet connection and try again.`,
+                    { cause: e }
+                );
             }
             log(
                 "Catalog",

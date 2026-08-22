@@ -2,8 +2,8 @@ import { log } from "@renderer/scripts/LauncherLog";
 import { PathUtils } from "@renderer/scripts/PathUtils";
 import { SESSION_SCHEMA, writeSession } from "@renderer/scripts/session/Session";
 import { LauncherTools } from "@renderer/scripts/backend/tools/LauncherTools";
-import { describeError } from "@shared/diagnostics/ProcessRunner";
-import { ILauncherPlatform, LauncherPaths, LaunchRequest, ProcessInfo } from "./LauncherPlatform";
+import { describeError } from "@shared/diagnostics/Log";
+import { DIRECTORY_PATHS, FILE_PATHS, ILauncherPlatform, LauncherPaths, LaunchOutcome, LaunchRequest, ProcessInfo } from "./LauncherPlatform";
 
 const fs = window.require("fs") as typeof import("fs");
 const os = window.require("os") as typeof import("os");
@@ -47,14 +47,15 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
             profileDataPath: path.join(launcher, "profile_data"),
         };
 
-        for (const p of Object.values(paths)) PathUtils.ValidatePath(p);
+        for (const key of DIRECTORY_PATHS) PathUtils.ensureDirectory(paths[key]);
+        for (const key of FILE_PATHS) PathUtils.ensureParentDirectory(paths[key]);
         LinuxLauncherPlatform.cachedPaths = paths;
         log("Paths", `Resolved from home ${os.homedir()}: ${Object.entries(paths).map(([k, v]) => `${k}=${v}`).join(", ")}`);
         return paths;
     }
 
     /** One line for the whole /proc sweep: a per-pid line would be hundreds of them. */
-    async listProcesses(executableName: string): Promise<ProcessInfo[]> {
+    private async listProcesses(executableName: string): Promise<ProcessInfo[]> {
         const found: ProcessInfo[] = [];
         let scanned = 0;
         let unreadable = 0;
@@ -115,7 +116,7 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
         return false;
     }
 
-    async launch(request: LaunchRequest, onStatus?: (message: string) => void): Promise<void> {
+    async launch(request: LaunchRequest, onStatus?: (message: string) => void): Promise<LaunchOutcome> {
         const status = onStatus ?? (() => {});
         const { profile, version } = request;
 
@@ -158,5 +159,9 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
             WINEPREFIX: prefix,
         });
         log("Launch", `"${profile.name}" is running`);
+
+        // Each profile has its own prefix, so no other way of starting the game can reach this
+        // manifest and there is nothing for a stale one to leak into.
+        return { confirmed: true, unconfirmedMessage: "" };
     }
 }

@@ -8,6 +8,8 @@
         "src/shared/**/*"
     ],
     "compilerOptions": {
+        "allowImportingTsExtensions": true,
+        "noImplicitAny": true,
         "composite": true,
         "jsx": "react-jsx",
         "paths": {

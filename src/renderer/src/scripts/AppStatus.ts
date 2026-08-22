@@ -18,5 +18,8 @@ export const BLOCKED_ACTIONS: Record<AppStatusType, ActionType[]> = {
     launching: ["launch", "download", "extract", "decrypt"],
     importing: ["launch", "download", "extract", "decrypt"],
     deleting: ["launch", "download", "extract", "decrypt"],
-    other: [],
+    // A step the launcher has no better word for is still a step it is in the middle of, so it
+    // blocks everything the named ones block. An empty list here is what let a second Play press
+    // through while the first was still working out which version it needed.
+    other: ["launch", "download", "extract", "decrypt"],
 };

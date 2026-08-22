@@ -7,14 +7,14 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: #000000BB;
+    background-color: var(--color-scrim);
     z-index: 100;
 }
 
 .popup-box {
     position: relative;
-    background-color: #48494A;
-    border: 3px solid #1E1E1F;
+    background-color: var(--color-surface);
+    border: 3px solid var(--color-outline);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -40,13 +40,17 @@
     to { opacity: 0; transform: scale(0.9); }
 }
 
+.popup-box-closing {
+    animation: popup-scale-out 0.1s ease-in forwards;
+}
+
 .popup-panel-closing {
     animation: popup-backdrop-out 0.1s ease-in forwards;
 }
 
 @keyframes popup-backdrop-out {
-    from { background-color: #000000BB; }
-    to { background-color: #00000000; }
+    from { background-color: var(--color-scrim); }
+    to { background-color: var(--color-scrim-clear); }
 }
 
 .popup-header {
@@ -72,7 +76,7 @@
 }
 
 .popup-close:hover {
-    background-color: #5a5b5c;
+    background-color: var(--color-surface-hover);
 }
 
 .popup-close:active {
@@ -81,7 +85,7 @@
 
 .popup-divider {
     height: 3px;
-    background-color: #1E1E1F;
+    background-color: var(--color-outline);
     flex-shrink: 0;
 }
 
@@ -131,14 +135,14 @@
     overflow-y: auto;
     flex: 1 1 auto;
     min-height: 0;
-    background-color: #313233;
+    background-color: var(--color-surface-sunken);
     padding: 8px 16px;
     scroll-behavior: smooth;
 }
 
 .version-picker-section-title {
     font-size: 12px;
-    color: #9f9f9f;
+    color: var(--color-text-muted);
     padding: 8px 8px 4px 8px;
 }
 
@@ -147,7 +151,7 @@
     min-height: 40px;
     box-sizing: border-box;
     cursor: pointer;
-    color: #FFFFFF;
+    color: var(--color-text);
     font-size: 14px;
     border-radius: 3px;
     transition: background-color 0.1s, transform 0.1s ease;
@@ -158,11 +162,11 @@
 
 .version-picker-item-tag {
     font-size: 11px;
-    color: #9f9f9f;
+    color: var(--color-text-muted);
 }
 
 .version-picker-item:hover {
-    background-color: #5a5b5c;
+    background-color: var(--color-surface-hover);
 }
 
 .version-picker-item:active:not(:has(.version-picker-item-btn:active)) {
@@ -184,7 +188,7 @@
     height: 24px;
     border-radius: 3px;
     cursor: pointer;
-    color: #FFFFFF;
+    color: var(--color-text);
     transition: background-color 0.1s, transform 0.1s ease;
 }
 
@@ -193,7 +197,7 @@
 }
 
 .version-picker-item-btn:hover {
-    background-color: #6e6f70;
+    background-color: var(--color-surface-hover-strong);
 }
 
 .version-picker-item-btn:active {
@@ -202,7 +206,7 @@
 
 .version-picker-item-btn--danger:hover {
     background-color: rgba(255, 0, 0, 0.3);
-    color: #ff6b6b;
+    color: var(--color-danger-text);
 }
 
 .version-picker-toggle {
@@ -210,7 +214,7 @@
     align-items: center;
     gap: 8px;
     font-size: 14px;
-    color: #FFFFFF;
+    color: var(--color-text);
     cursor: pointer;
     user-select: none;
 }
@@ -223,7 +227,7 @@
 .version-picker-skeleton-text {
     height: 14px;
     border-radius: 3px;
-    background-color: #48494A;
+    background-color: var(--color-surface);
     animation: skeleton-pulse 1s ease-in-out infinite;
 }
 
@@ -231,7 +235,7 @@
     width: 40px;
     height: 11px;
     border-radius: 3px;
-    background-color: #48494A;
+    background-color: var(--color-surface);
     animation: skeleton-pulse 1s ease-in-out infinite;
 }
 
@@ -244,28 +248,10 @@
     overflow: hidden;
 }
 
-.preview-enter {
-    animation: preview-slide-in 0.15s cubic-bezier(0.2, 0, 0, 1) both;
-}
-
-.preview-exit {
-    animation: preview-slide-out 0.15s cubic-bezier(0.2, 0, 0, 1) both;
-}
-
-@keyframes preview-slide-in {
-    from { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
-    to { opacity: 1; max-height: 40px; padding-top: 8px; padding-bottom: 8px; }
-}
-
-@keyframes preview-slide-out {
-    from { opacity: 1; max-height: 40px; padding-top: 8px; padding-bottom: 8px; }
-    to { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
-}
-
 .new-instance-version-field {
-    border: 3px solid #1E1E1F;
+    border: 3px solid var(--color-outline);
     height: 32px;
-    background-color: #313233;
+    background-color: var(--color-surface-sunken);
     display: flex;
     align-items: center;
     padding-left: 4px;

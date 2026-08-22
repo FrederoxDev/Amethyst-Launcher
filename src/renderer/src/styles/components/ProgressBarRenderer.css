@@ -1,5 +1,5 @@
 .launcher-progress {
-    background-color: #313233;
+    background-color: var(--color-surface-sunken);
     width: 100%;
     position: relative;
     flex-shrink: 0;
@@ -18,7 +18,7 @@
 }
 
 .launcher-progress-bar {
-    background-color: #3C8527;
+    background-color: var(--color-confirm);
     position: absolute;
     
 }

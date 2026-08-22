@@ -1,3 +1,5 @@
+import { clickable } from "./Clickable";
+
 type RadialButtonProperties = {
     text: string;
     value: string;
@@ -8,7 +10,10 @@ type RadialButtonProperties = {
 
 export function MinecraftRadialButton({ text, value, selected, className, onChange }: RadialButtonProperties) {
     return (
-        <div className={`radial_button_base ${className}`} onClick={() => onChange(value)}>
+        <div
+            className={`radial_button_base ${className}`}
+            {...clickable(() => onChange(value), { role: "radio", checked: selected, label: text })}
+        >
             <div className={`radial_button_border ${selected ? "selected" : ""}`}>
                 <div className={`radial_button_top ${selected ? "selected" : ""}`}>
                     <p className={`radial_button_text ${selected ? "selected" : ""}`}>{text}</p>

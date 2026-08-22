@@ -18,27 +18,52 @@ export interface PendingDownload {
     name: string;
     type: "mod" | "version";
     url: string;
-    /** For mods: the profile index to add the mod to */
-    profileIndex?: number;
     /** For versions: the version UUID */
     versionUuid?: string;
 }
 
 const PENDING_KEY = "amethyst_pending_downloads";
 
+function isPendingDownload(raw: unknown): raw is PendingDownload {
+    if (typeof raw !== "object" || raw === null) return false;
+    const o = raw as Record<string, unknown>;
+    return typeof o.id === "string"
+        && typeof o.name === "string"
+        && (o.type === "mod" || o.type === "version")
+        && typeof o.url === "string"
+        && (o.versionUuid === undefined || typeof o.versionUuid === "string");
+}
+
 function loadPending(): PendingDownload[] {
     const raw = localStorage.getItem(PENDING_KEY);
     if (raw === null) return [];
+
+    let parsed: unknown;
     try {
-        return JSON.parse(raw);
+        parsed = JSON.parse(raw);
     } catch (e) {
         // Dropping the record silently would lose downloads with no trace of why.
         log("Downloads", `Discarding unreadable ${PENDING_KEY} (${describeError(e)}); it held: ${raw.slice(0, 400)}`);
         return [];
     }
+
+    if (!Array.isArray(parsed)) {
+        log("Downloads", `Discarding ${PENDING_KEY}: it holds a ${typeof parsed}, not an array; it held: ${raw.slice(0, 400)}`);
+        return [];
+    }
+
+    const usable = parsed.filter(isPendingDownload);
+    if (usable.length !== parsed.length) {
+        log(
+            "Downloads",
+            `Dropped ${parsed.length - usable.length} of ${parsed.length} entries in ${PENDING_KEY} that are not `
+            + `pending downloads: ${JSON.stringify(parsed.filter(e => !isPendingDownload(e))).slice(0, 400)}`
+        );
+    }
+    return usable;
 }
 
-function savePending(pending: PendingDownload[]) {
+function savePending(pending: PendingDownload[]): void {
     try {
         localStorage.setItem(PENDING_KEY, JSON.stringify(pending));
     } catch (e) {
@@ -46,14 +71,14 @@ function savePending(pending: PendingDownload[]) {
     }
 }
 
-export function addPendingDownload(entry: PendingDownload) {
+export function addPendingDownload(entry: PendingDownload): void {
     const pending = loadPending();
     pending.push(entry);
     savePending(pending);
     log("Downloads", `Recorded pending ${entry.type} "${entry.name}" (${entry.id}) from ${entry.url} for crash recovery`);
 }
 
-export function removePendingDownload(id: string) {
+export function removePendingDownload(id: string): void {
     const before = loadPending();
     const pending = before.filter(p => p.id !== id);
     if (pending.length === before.length) return;
@@ -63,10 +88,6 @@ export function removePendingDownload(id: string) {
 
 export function getPendingDownloads(): PendingDownload[] {
     return loadPending();
-}
-
-export function clearAllPending() {
-    localStorage.removeItem(PENDING_KEY);
 }
 
 interface DownloadStoreState {

@@ -1,5 +1,6 @@
 import { log } from "./LauncherLog";
-import { inspectStamp, quarantineFile, stampFields, tryReadJsonFile } from "./Utility";
+import { userMessage } from "@shared/diagnostics/Log";
+import { inspectStamp, quarantineFile, stampFields, tryReadJsonFile, writeJsonAtomic } from "./Utility";
 
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
@@ -71,7 +72,7 @@ export function readLauncherConfig(filePath: string): LauncherConfig {
     try {
         config = parseConfig(read.value as Record<string, unknown>);
     } catch (e) {
-        quarantineFile("Config", filePath, WHAT, (e as Error).message);
+        quarantineFile("Config", filePath, WHAT, userMessage(e));
         return { ...DEFAULTS };
     }
 
@@ -88,6 +89,5 @@ export function writeLauncherConfig(filePath: string, config: LauncherConfig): v
     // Not logged: every profile-editor keystroke saves, and the settings writes that matter
     // are already logged as old -> new by the store that made them.
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    const body = { ...stampFields(FORMAT, FORMAT_VERSION), ...config };
-    fs.writeFileSync(filePath, JSON.stringify(body, undefined, 4), "utf-8");
+    writeJsonAtomic(filePath, { ...stampFields(FORMAT, FORMAT_VERSION), ...config });
 }

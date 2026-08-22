@@ -8,8 +8,6 @@ interface LoadSpinnerState {
     setText(text: string | null): void;
 }
 
-type LoadSpinnerUseArguments = { setText: (text: string | null) => void, state: LoadSpinnerState };
-
 export class LoadSpinner {
     private static state = create<LoadSpinnerState>((set) => ({
         visible: false,
@@ -30,19 +28,5 @@ export class LoadSpinner {
 
     static getState() {
         return this.state.getState();
-    }
-
-    static async useAsync<T>(text: string | null, promise: (args: LoadSpinnerUseArguments) => Promise<T>): Promise<T> {
-        return new Promise<T>(async (resolve) => {
-            this.state.getState().setText(text);
-            this.state.getState().setVisible(true);
-            const result = await promise({
-                setText: (text: string | null) => this.state.getState().setText(text),
-                state: this.state.getState()
-            });
-
-            this.state.getState().setVisible(false);
-            resolve(result);
-        });
     }
 }

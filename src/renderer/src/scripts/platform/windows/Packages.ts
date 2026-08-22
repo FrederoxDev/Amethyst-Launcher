@@ -1,7 +1,7 @@
 import { log, logBlock } from "@renderer/scripts/LauncherLog";
 import { describeError } from "@shared/diagnostics/Log";
+import { describeResult, psQuote, readMarker, runPowerShell } from "@shared/diagnostics/ProcessRunner";
 
-const child = window.require("child_process") as typeof import("child_process");
 const fs = window.require("fs") as typeof import("fs");
 const os = window.require("os") as typeof import("os");
 const path = window.require("path") as typeof import("path");
@@ -14,6 +14,12 @@ const PACKAGES_KEY =
 
 const APP_MODEL_UNLOCK_KEY = "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock";
 const APPX_POLICY_KEY = "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Appx";
+
+/** Deployment goes through AppXSvc, which is slow on a cold machine and wedged on a broken one. */
+const REGISTER_TIMEOUT_MS = 5 * 60_000;
+const UNREGISTER_TIMEOUT_MS = 2 * 60_000;
+/** The elevated step waits on a person answering a prompt, so this bounds being ignored, not work. */
+const ELEVATION_TIMEOUT_MS = 5 * 60_000;
 
 /** Any Minecraft Bedrock package family, not a fixed list: release, preview, and whatever ships next. */
 const MINECRAFT_FAMILY_PREFIX = "microsoft.minecraft";
@@ -88,49 +94,6 @@ function regedit(): RegeditModule {
     return window.require("regedit-rs") as RegeditModule;
 }
 
-interface PowerShellResult {
-    code: number;
-    stdout: string;
-    stderr: string;
-    /** stdout and stderr together, which is what the failure text has to be read out of. */
-    output: string;
-}
-
-/**
- * Base64 rather than a quoted `-Command` string: the script carries manifest paths and
- * nested scripts, and cmd/PowerShell quoting mangles those (it silently ate an earlier
- * version of this very script). Never rejects, so callers classify the exit code themselves.
- */
-/**
- * powershell.exe serialises its progress stream onto stderr as a multi-kilobyte CLIXML blob.
- * It is noise, and left in it swamps the log and the message the user sees. Every diagnostic
- * this module cares about is written to stdout deliberately, so dropping the tail is safe.
- */
-function stripClixml(text: string): string {
-    return text.replace(/#<\s*CLIXML[\s\S]*$/, "").trim();
-}
-
-function runPowerShell(script: string): Promise<PowerShellResult> {
-    const encoded = Buffer.from(script, "utf16le").toString("base64");
-    return new Promise(resolve => {
-        child.execFile(
-            "powershell.exe",
-            ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encoded],
-            { maxBuffer: 8 * 1024 * 1024 },
-            (error, stdout, stderr) => {
-                const code = error ? ((error as { code?: number }).code ?? 1) : 0;
-                const cleanStderr = stripClixml(stderr);
-                const output = [stdout.trim(), cleanStderr].filter(Boolean).join("\n");
-                resolve({ code, stdout, stderr: cleanStderr, output });
-            }
-        );
-    });
-}
-
-function quote(value: string): string {
-    return value.replace(/'/g, "''");
-}
-
 /** `undefined` when the registry could not be read at all, which is not the same as absent. */
 function readDword(key: string, name: string): number | null | undefined {
     let listed: ReturnType<RegeditModule["listSync"]>[string];
@@ -162,10 +125,6 @@ export function readDeveloperMode(): boolean | null {
     return value === undefined ? null : value === 1;
 }
 
-export function isDeveloperModeEnabled(): boolean {
-    return readDeveloperMode() === true;
-}
-
 /**
  * Group policy or an MDM/Intune profile overrides AppModelUnlock. When it does, writing
  * AppModelUnlock ourselves is pointless: the policy wins and gets re-applied. This is the
@@ -178,8 +137,9 @@ export function readSideloadingPolicyBlock(): boolean | null {
     return allTrusted === 0 || withoutLicense === 0;
 }
 
-export function isSideloadingBlockedByPolicy(): boolean {
-    return readSideloadingPolicyBlock() === true;
+/** A setting Windows would not report reads as unknown, never as the safe-looking answer. */
+function settingText(value: boolean | null): string {
+    return value === null ? "unknown" : String(value);
 }
 
 /** The package family a build registers as, read from the build itself. */
@@ -228,57 +188,103 @@ export function listRegistered(): RegisteredPackage[] {
     return out;
 }
 
-function samePath(a: string, b: string): boolean {
+export function samePath(a: string, b: string): boolean {
     return path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
 }
 
-/** The registration `activate()` will later look for, so this is exactly the postcondition that matters. */
-function findRegistration(identity: string, versionPath: string): RegisteredPackage | null {
-    return listRegistered().find(
-        pkg => pkg.family.toLowerCase() === identity.toLowerCase() && samePath(pkg.installPath, versionPath)
-    ) ?? null;
+/** `undefined` when the registry would not say, which is not the same as nothing being registered. */
+function registrationsFor(family: string): RegisteredPackage[] | undefined {
+    const wanted = family.toLowerCase();
+    try {
+        return listRegistered().filter(pkg => pkg.family.toLowerCase() === wanted);
+    } catch (e) {
+        log("Packages", `Could not read which packages are registered as ${family}: ${describeError(e)}`);
+        return undefined;
+    }
 }
 
+/** The registration `activate()` will later look for, so this is exactly the postcondition that matters. */
+function findRegistration(identity: string, versionPath: string): RegisteredPackage | null | undefined {
+    const matches = registrationsFor(identity);
+    if (matches === undefined) return undefined;
+    return matches.find(pkg => samePath(pkg.installPath, versionPath)) ?? null;
+}
+
+/**
+ * The codes Windows returns for the refusals this launcher can act on, both as the HRESULT the
+ * error carries and as the signed integer the same value reads as. Codes rather than wording,
+ * because the wording is translated: on a non-English Windows the substring pass below matches
+ * nothing, every refusal came back "unknown", and the repair that would have fixed it was skipped.
+ */
+const BLOCKER_BY_CODE: [string, RegistrationBlocker][] = [
+    ["0X80073D02", "package-in-use"],
+    ["-2147009278", "package-in-use"],
+    ["0X80073CFF", "developer-mode"],
+    ["-2147009281", "developer-mode"],
+    ["0X80073CFB", "conflicting-registration"],
+    ["-2147009285", "conflicting-registration"],
+    ["0X80073D06", "conflicting-registration"],
+    ["-2147009274", "conflicting-registration"],
+    ["0X80073CF6", "conflicting-registration"],
+    ["-2147009290", "conflicting-registration"],
+];
+
+function codedBlocker(output: string): RegistrationBlocker | null {
+    const upper = output.toUpperCase();
+    return BLOCKER_BY_CODE.find(([code]) => upper.includes(code))?.[1] ?? null;
+}
+
+/**
+ * A registry read that failed says nothing about Developer Mode, so only an answer of `false`
+ * blames it. Reading an unanswered question as "off" sent the user round the permission prompt
+ * for a setting that was never the problem, forever.
+ */
 function classify(output: string): RegistrationBlocker {
-    const text = output.toLowerCase();
+    const coded = codedBlocker(output);
 
     // Unambiguous enough to outrank the registry checks, and true regardless of them.
-    if (text.includes("0x80073d02") || text.includes("need to be closed") || text.includes("currently in use")) {
-        return "package-in-use";
-    }
+    if (coded === "package-in-use") return coded;
 
-    if (isSideloadingBlockedByPolicy()) return "sideloading-policy";
-    if (!isDeveloperModeEnabled()) return "developer-mode";
+    if (readSideloadingPolicyBlock() === true) return "sideloading-policy";
+    if (readDeveloperMode() === false) return "developer-mode";
+    if (coded !== null) return coded;
 
-    if (text.includes("0x80073cff") || text.includes("developer license") || text.includes("sideload")) {
-        return "developer-mode";
-    }
-    if (
-        text.includes("0x80073cfb") || text.includes("0x80073d06") || text.includes("0x80073cf6")
-        || text.includes("already exists") || text.includes("already installed")
-    ) {
-        return "conflicting-registration";
-    }
+    // Last resort: an English-language Windows saying in words what it did not say in codes.
+    const text = output.toLowerCase();
+    if (text.includes("need to be closed") || text.includes("currently in use")) return "package-in-use";
+    if (text.includes("developer license") || text.includes("sideload")) return "developer-mode";
+    if (text.includes("already exists") || text.includes("already installed")) return "conflicting-registration";
     return "unknown";
 }
 
+/**
+ * An empty `Get-AppxPackage` pipeline removes nothing and still exits 0, and the registry the
+ * rest of this module reads outlives a half-removed package, so the removal is read back rather
+ * than trusted - exactly as `register` reads its own registration back.
+ */
 export async function unregister(family: string): Promise<void> {
     const result = await runPowerShell(
-        `$ErrorActionPreference = 'Stop'\n`
-        + `try {\n`
-        + `    Get-AppxPackage '${quote(family)}' | Remove-AppxPackage -PreserveRoamableApplicationData -ErrorAction Stop\n`
-        + `}\n`
-        + `catch {\n`
-        + `    Write-Output ('HRESULT=0x{0:X8}' -f $_.Exception.HResult)\n`
-        + `    Write-Output ('MESSAGE=' + ($_.Exception.Message -replace '\\r?\\n', ' '))\n`
-        + `    exit 1\n`
-        + `}\n`
+        `Get-AppxPackage '${psQuote(family)}' | Remove-AppxPackage -PreserveRoamableApplicationData -ErrorAction Stop`,
+        { timeoutMs: UNREGISTER_TIMEOUT_MS }
     );
 
     if (result.code !== 0) {
-        logBlock("Packages", `Unregister ${family} failed (exit ${result.code})`, result.output);
+        logBlock("Packages", `Unregister ${family} failed`, describeResult(result));
         throw new Error(`Could not remove the existing ${family} registration. ${result.output}`);
     }
+
+    const remaining = registrationsFor(family);
+    if (remaining === undefined) {
+        log("Packages", `Removed ${family}, though the registry would not confirm it is gone`);
+        return;
+    }
+
+    if (remaining.length > 0) {
+        const listed = remaining.map(pkg => pkg.installPath).join("; ");
+        logBlock("Packages", `Remove-AppxPackage reported success but ${family} is still registered`, listed);
+        throw new Error(`Windows reported that ${family} was removed, but it is still registered at ${listed}.`);
+    }
+
     log("Packages", `Unregistered ${family}`);
 }
 
@@ -295,44 +301,53 @@ export async function register(versionPath: string): Promise<void> {
 
     log("Packages", `Registering ${identity} from ${versionPath}`);
 
+    // The inner catch adds the two locale-invariant fields the shared wrapper does not carry,
+    // then rethrows so the wrapper still writes the HRESULT and the message alongside them.
     const result = await runPowerShell(
-        `$ErrorActionPreference = 'Stop'\n`
-        + `try {\n`
-        + `    Add-AppxPackage -Path '${quote(manifest)}' -Register -ErrorAction Stop\n`
+        `try {\n`
+        + `    Add-AppxPackage -Path '${psQuote(manifest)}' -Register -ErrorAction Stop\n`
         + `}\n`
         + `catch {\n`
-        + `    Write-Output ('HRESULT=0x{0:X8}' -f $_.Exception.HResult)\n`
-        + `    Write-Output ('ERRORID=' + $_.FullyQualifiedErrorId)\n`
-        + `    Write-Output ('MESSAGE=' + ($_.Exception.Message -replace '\\r?\\n', ' '))\n`
-        + `    exit 1\n`
-        + `}\n`
+        + `    Write-Output ('NATIVEERROR=' + $_.Exception.NativeErrorCode)\n`
+        + `    Write-Output ('APPXERRORID=' + $_.FullyQualifiedErrorId)\n`
+        + `    throw\n`
+        + `}`,
+        { timeoutMs: REGISTER_TIMEOUT_MS }
     );
 
-    const devMode = isDeveloperModeEnabled();
-    const policyBlocked = isSideloadingBlockedByPolicy();
+    const settings = `developerMode ${settingText(readDeveloperMode())}, `
+        + `policyBlocked ${settingText(readSideloadingPolicyBlock())}`;
 
     if (result.code !== 0) {
         const blocker = classify(result.output);
-        logBlock(
-            "Packages",
-            `Add-AppxPackage failed for ${identity} (exit ${result.code}, blocker ${blocker}, `
-            + `developerMode ${devMode}, policyBlocked ${policyBlocked})`,
-            result.output
+        logBlock("Packages", `Add-AppxPackage failed for ${identity} (blocker ${blocker}, ${settings})`, describeResult(result));
+        throw new PackageRegistrationError(
+            blocker,
+            describeResult(result),
+            result.timedOut
+                ? `Windows never finished registering ${identity}.`
+                : `Windows refused to register ${identity}.`
         );
-        throw new PackageRegistrationError(blocker, result.output, `Windows refused to register ${identity}.`);
     }
 
-    if (!findRegistration(identity, versionPath)) {
+    const registration = findRegistration(identity, versionPath);
+
+    if (registration === undefined) {
+        log("Packages", `Registered ${identity} from ${versionPath}, though the registry would not confirm it`);
+        return;
+    }
+
+    if (registration === null) {
         const blocker = classify(result.output);
         logBlock(
             "Packages",
             `Add-AppxPackage exited 0 but ${identity} is not registered to ${versionPath} `
-            + `(blocker ${blocker}, developerMode ${devMode}, policyBlocked ${policyBlocked})`,
-            result.output || "(no output)"
+            + `(blocker ${blocker}, ${settings})`,
+            describeResult(result)
         );
         throw new PackageRegistrationError(
             blocker,
-            result.output,
+            describeResult(result),
             `Windows reported success but ${identity} is still not registered.`
         );
     }
@@ -372,7 +387,7 @@ export async function enableDeveloperMode(): Promise<void> {
         + `    New-ItemProperty -Path $key -Name 'AllowAllTrustedApps' -Value 1 -PropertyType DWord -Force | Out-Null\n`
         + `}\n`
         + `catch {\n`
-        + `    Set-Content -LiteralPath '${quote(reportPath)}' -Value $_.Exception.Message -Encoding utf8\n`
+        + `    Set-Content -LiteralPath '${psQuote(reportPath)}' -Value $_.Exception.Message -Encoding utf8\n`
         + `    exit 1\n`
         + `}\n`;
 
@@ -380,18 +395,15 @@ export async function enableDeveloperMode(): Promise<void> {
 
     log("Packages", "Requesting administrator rights to turn on Developer Mode");
 
+    // The marker separates "the prompt never appeared" from "the elevated script failed": both
+    // exit non-zero, and only the first of them is something the user just declined.
     const result = await runPowerShell(
-        `$ErrorActionPreference = 'Stop'\n`
-        + `try {\n`
-        + `    $p = Start-Process -FilePath 'powershell.exe' -ArgumentList `
+        `$p = Start-Process -FilePath 'powershell.exe' -ArgumentList `
         + `'-NoProfile','-ExecutionPolicy','Bypass','-EncodedCommand','${innerEncoded}' `
         + `-Verb RunAs -Wait -PassThru\n`
-        + `    exit $p.ExitCode\n`
-        + `}\n`
-        + `catch {\n`
-        + `    Write-Output ('LAUNCH=' + ($_.Exception.Message -replace '\\r?\\n', ' '))\n`
-        + `    exit 2\n`
-        + `}\n`
+        + `Write-Output ('ELEVATED=' + $p.ExitCode)\n`
+        + `exit $p.ExitCode`,
+        { timeoutMs: ELEVATION_TIMEOUT_MS }
     );
 
     let elevatedError = "";
@@ -402,19 +414,20 @@ export async function enableDeveloperMode(): Promise<void> {
         // No report file means the elevated step never got far enough to write one.
     }
 
-    if (result.code === 2) {
-        logBlock("Packages", "Elevation did not start", result.output);
-        // ERROR_CANCELLED from ShellExecute is how a dismissed UAC prompt comes back.
-        if (/cancel/i.test(result.output)) throw new ElevationDeclinedError();
+    if (readMarker(result.output, "ELEVATED") === null) {
+        logBlock("Packages", "Elevation did not start", describeResult(result));
+        if (declinedElevation(result.output)) throw new ElevationDeclinedError();
         throw new Error(`Windows would not show the permission prompt.\n\n${DEVELOPER_MODE_BY_HAND}`);
     }
 
     if (result.code !== 0) {
-        logBlock("Packages", `Elevated Developer Mode write failed (exit ${result.code})`, elevatedError || result.output);
+        logBlock("Packages", `Elevated Developer Mode write failed (exit ${result.code})`, elevatedError || describeResult(result));
         throw new Error(`Developer Mode could not be turned on.\n\n${DEVELOPER_MODE_BY_HAND}`);
     }
 
-    if (!isDeveloperModeEnabled()) {
+    const developerMode = readDeveloperMode();
+
+    if (developerMode === false) {
         log("Packages", "Developer Mode still reads as off after the elevated write");
         throw new Error(
             "Developer Mode was turned on but Windows still reports it as off.\n\n"
@@ -422,5 +435,20 @@ export async function enableDeveloperMode(): Promise<void> {
         );
     }
 
+    if (developerMode === null) {
+        log(
+            "Packages",
+            "Windows would not say whether Developer Mode is on after the elevated write, so the launch carries "
+            + "on and lets registration give the real answer"
+        );
+        return;
+    }
+
     log("Packages", "Developer Mode is now on");
+}
+
+/** ERROR_CANCELLED, which is how a dismissed UAC prompt comes back, by code before by wording. */
+function declinedElevation(output: string): boolean {
+    if (output.toUpperCase().includes("0X800704C7") || /(^|\D)1223(\D|$)/.test(output)) return true;
+    return /cancel/i.test(output);
 }

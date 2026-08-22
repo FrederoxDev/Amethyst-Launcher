@@ -1,6 +1,6 @@
 import { log } from "@renderer/scripts/LauncherLog";
-import { describeError } from "@shared/diagnostics/ProcessRunner";
-import { addImport, importsDll, PeFormatError } from "./PeImports";
+import { describeError } from "@shared/diagnostics/Log";
+import { addImport, AlreadyImportedError, importsDll, PeFormatError } from "./PeImports";
 
 const fs = window.require("fs") as typeof import("fs");
 const path = window.require("path") as typeof import("path");
@@ -28,18 +28,20 @@ function describeFile(target: string): string {
     }
 }
 
-export function preloadDllPath(versionPath: string): string {
+function preloadDllPath(versionPath: string): string {
     return path.join(versionPath, PRELOAD_DLL);
 }
 
-export function sourcePreloadDllPath(): string {
+function sourcePreloadDllPath(): string {
     const base = import.meta.env.DEV ? path.join(process.cwd(), "resources") : process.resourcesPath;
     return path.join(base, "preload", PRELOAD_DLL);
 }
 
-export function gameExecutablePath(versionPath: string, executableName: string): string {
+function gameExecutablePath(versionPath: string, executableName: string): string {
     return path.join(versionPath, executableName);
 }
+
+type PatchState = "patched" | "unpatched" | "unreadable";
 
 /**
  * Whether the build's import table already names the preload DLL.
@@ -47,13 +49,16 @@ export function gameExecutablePath(versionPath: string, executableName: string):
  * Read from the image itself rather than trusted to a marker file beside it: a marker cannot
  * notice that the build was re-extracted or repaired underneath it, and a build that is believed
  * to be patched but is not starts vanilla with no mods and no explanation.
+ *
+ * A read that failed is its own answer. Antivirus holding the executable open is routine, and
+ * calling that "unpatched" patches an image that was already patched, which cannot be undone.
  */
-export function isBuildPatched(exePath: string): boolean {
+function buildPatchState(exePath: string): PatchState {
     try {
-        return importsDll(exePath, PRELOAD_DLL);
+        return importsDll(exePath, PRELOAD_DLL) ? "patched" : "unpatched";
     } catch (e) {
-        log("Preload", `Could not read the import table of ${exePath}, treating it as unpatched: ${describeError(e)}`);
-        return false;
+        log("Preload", `Could not read the import table of ${exePath}: ${describeError(e)}`);
+        return "unreadable";
     }
 }
 
@@ -101,16 +106,28 @@ export function ensurePreload(
     removeLauncherProxy(versionPath);
 
     const exePath = gameExecutablePath(versionPath, executableName);
-    const patched = isBuildPatched(exePath);
+    const state = buildPatchState(exePath);
 
-    if (!modded && !patched) {
+    if (state === "unreadable") {
+        if (!modded) {
+            log("Preload", `Leaving ${versionPath} alone: this profile is unmodded and the build could not be read`);
+            return;
+        }
+        throw new Error(
+            "This Minecraft version could not be prepared for mods, because its program file could not be read.\n\n" +
+                "Close anything else using it, check that antivirus software is not blocking the launcher, then " +
+                `press Play again.\n\n${exePath}`
+        );
+    }
+
+    if (!modded && state === "unpatched") {
         log("Preload", `${versionPath} is unpatched and this profile is unmodded, leaving the build alone`);
         return;
     }
 
     installPreloadDll(versionPath);
 
-    if (patched) {
+    if (state === "patched") {
         log("Preload", `${exePath} already imports ${PRELOAD_DLL}, leaving it as is`);
         return;
     }
@@ -126,6 +143,10 @@ export function ensurePreload(
                 `${result.bytesAppended} bytes appended at RVA 0x${result.sectionRva.toString(16)}`
         );
     } catch (e) {
+        if (e instanceof AlreadyImportedError) {
+            log("Preload", `${exePath} already imports ${PRELOAD_DLL} after all, leaving it as is`);
+            return;
+        }
         log("Preload", `Could not add the import to ${exePath}: ${describeError(e)}`);
         throw new Error(
             e instanceof PeFormatError
@@ -138,7 +159,7 @@ export function ensurePreload(
         );
     }
 
-    if (!isBuildPatched(exePath)) {
+    if (buildPatchState(exePath) === "unpatched") {
         log("Preload", `${exePath} still does not import ${PRELOAD_DLL} after patching it`);
         throw new Error(
             "This Minecraft version could not be prepared for mods, and the change did not take.\n\n" +
@@ -152,7 +173,7 @@ export function ensurePreload(
  * there. ReShade and friends install under exactly this name, and deleting one of those would
  * take a working setup away from someone who never asked the launcher to touch it.
  */
-export function isLauncherProxy(dllPath: string): boolean {
+function isLauncherProxy(dllPath: string): boolean {
     try {
         const stat = fs.statSync(dllPath);
         if (!stat.isFile() || stat.size > LEGACY_PROXY_MAX_BYTES) return false;
@@ -170,7 +191,7 @@ export function isLauncherProxy(dllPath: string): boolean {
  * forever otherwise, and while it is there it is still what a package-activated launch loads,
  * which would run two mod loaders at once.
  */
-export function removeLauncherProxy(versionPath: string): void {
+function removeLauncherProxy(versionPath: string): void {
     const target = path.join(versionPath, "dxgi.dll");
     if (!fs.existsSync(target)) return;
 

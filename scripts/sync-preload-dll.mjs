@@ -7,9 +7,13 @@ const targetDir = path.join(root, "resources", "preload");
 const target = path.join(targetDir, "Amethyst-Preload.dll");
 
 if (!fs.existsSync(source)) {
-    console.warn("[sync-preload-dll] Source preload DLL not found, skipping copy:", source);
-    console.warn("[sync-preload-dll] Build it first: (cd preload && xmake f -m release -a x64 && xmake)");
-    process.exit(0);
+    if (fs.existsSync(target)) {
+        console.log("[sync-preload-dll] No xmake output; keeping the committed", target);
+        process.exit(0);
+    }
+    console.error("[sync-preload-dll] Preload DLL not found:", source);
+    console.error("[sync-preload-dll] Build it first: (cd preload && xmake f -m release -a x64 && xmake)");
+    process.exit(1);
 }
 
 fs.mkdirSync(targetDir, { recursive: true });

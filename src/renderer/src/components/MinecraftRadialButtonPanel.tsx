@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 import { MinecraftRadialButton } from "@renderer/components/MinecraftRadialButton";
 
 type RadialButtonPanelProperties = {
@@ -9,6 +7,7 @@ type RadialButtonPanelProperties = {
         className?: string;
     }[];
 
+    /** The selected value. Controlled: the panel renders what it is given, nothing else. */
     default_selected_value?: string;
 
     onChange: (selected_value: string) => void;
@@ -19,29 +18,18 @@ export function MinecraftRadialButtonPanel({
     default_selected_value,
     onChange,
 }: RadialButtonPanelProperties) {
-    const [selected_value, setSelectedValue] = useState(default_selected_value);
-
-    function handleSelect(value: string) {
-        setSelectedValue(value);
-        onChange(value);
-    }
-
     return (
-        <>
-            <div className="radial-button-panel">
-                {elements.map(element => {
-                    return (
-                        <MinecraftRadialButton
-                            key={element.value}
-                            text={element.text}
-                            value={element.value}
-                            selected={selected_value === element.value}
-                            className={element.className}
-                            onChange={handleSelect}
-                        />
-                    );
-                })}
-            </div>
-        </>
+        <div className="radial-button-panel" role="radiogroup">
+            {elements.map(element => (
+                <MinecraftRadialButton
+                    key={element.value}
+                    text={element.text}
+                    value={element.value}
+                    selected={default_selected_value === element.value}
+                    className={element.className}
+                    onChange={onChange}
+                />
+            ))}
+        </div>
     );
 }

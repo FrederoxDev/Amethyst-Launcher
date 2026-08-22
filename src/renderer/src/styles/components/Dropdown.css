@@ -9,8 +9,8 @@
 }
 
 .dropdown-select {
-    border: 3px solid #1E1E1F;
-    background-color: #313233;
+    border: 3px solid var(--color-outline);
+    background-color: var(--color-surface-sunken);
     width: 100%;
     height: 25px;
     color: white;
@@ -18,8 +18,8 @@
 }
 
 .dropdown-empty {
-    border: 3px solid #1E1E1F;
-    background-color: #313233;
+    border: 3px solid var(--color-outline);
+    background-color: var(--color-surface-sunken);
     width: 100%;
     height: 25px;
 }

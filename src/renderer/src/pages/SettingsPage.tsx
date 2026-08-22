@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { MinecraftRadialButtonPanel } from "@renderer/components/MinecraftRadialButtonPanel";
 import { MinecraftToggle } from "@renderer/components/MinecraftToggle";
 import { ReadOnlyTextBox } from "@renderer/components/ReadOnlyTextBox";
 
-import { describeError } from "@shared/diagnostics/Log";
+import { describeError, userMessage } from "@shared/diagnostics/Log";
 import { log } from "@renderer/scripts/LauncherLog";
 import { useAppStore } from "@renderer/states/AppStore";
 
@@ -15,38 +15,30 @@ export function GeneralSettingsTab() {
     const setKeepLauncherOpen = useAppStore(state => state.setKeepLauncherOpen);
     const developerMode = useAppStore(state => state.developerMode);
     const setDeveloperMode = useAppStore(state => state.setDeveloperMode);
-    const profiles = useAppStore(state => state.profiles);
     const lastLaunchedProfileUuid = useAppStore(state => state.lastLaunchedProfileUuid);
     const UITheme = useAppStore(state => state.UITheme);
     const setUITheme = useAppStore(state => state.setUITheme);
     const platform = useAppStore(state => state.platform);
     const paths = platform.getPaths();
-    const [ 
-        launcherCfg,
-        setLauncherCfg
-    ] = useState<string>("");
-
-    const updateCfgText = () => {
-        if (!fs.existsSync(paths.launcherConfigPath)) {
-            log("Settings", `No launcher config to show at ${paths.launcherConfigPath}`);
-            setLauncherCfg("No launcher config has been saved yet.");
-            return;
-        }
-
-        try {
-            setLauncherCfg(fs.readFileSync(paths.launcherConfigPath, "utf-8"));
-        } catch (e) {
-            // Reading for display must never throw out of the effect and blank the screen.
-            log("Settings", `Could not read ${paths.launcherConfigPath} for display: ${describeError(e)}`);
-            setLauncherCfg(`The launcher config could not be read.\n\n${paths.launcherConfigPath}`);
-        }
-    };
+    const [launcherCfg, setLauncherCfg] = useState<string>("");
 
     useEffect(() => {
-        const timer = setTimeout(updateCfgText, 0);
-        return () => clearTimeout(timer);
-    }, [profiles, lastLaunchedProfileUuid, keepLauncherOpen, developerMode, UITheme]);
-    
+        let cancelled = false;
+        fs.promises.readFile(paths.launcherConfigPath, "utf-8")
+            .then(text => { if (!cancelled) setLauncherCfg(text); })
+            .catch(e => {
+                if (cancelled) return;
+                if ((e as { code?: string }).code === "ENOENT") {
+                    log("Settings", `No launcher config to show at ${paths.launcherConfigPath}`);
+                    setLauncherCfg("No launcher config has been saved yet.");
+                    return;
+                }
+                log("Settings", `Could not read ${paths.launcherConfigPath} for display: ${describeError(e)}`);
+                setLauncherCfg(`${paths.launcherConfigPath}\n\nCould not be read: ${userMessage(e)}`);
+            });
+        return () => { cancelled = true; };
+    }, [paths.launcherConfigPath, lastLaunchedProfileUuid, keepLauncherOpen, developerMode, UITheme]);
+
     return (
         <div className="settings-page settings-scroll-hidden">
             <div className="settings-section">
@@ -105,33 +97,5 @@ export function GeneralSettingsTab() {
 }
 
 export function SettingsPage() {
-    const [tab, setTab] = useState<string>("general_tab");
-    let node: React.ReactNode | null = null;
-    switch (tab) {
-        case "general_tab":
-            node = <GeneralSettingsTab />;
-            break;
-        default:
-            node = <GeneralSettingsTab />;
-            break;
-    }
-
-    return (
-        <div style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-        }}>
-            <MinecraftRadialButtonPanel
-                elements={[
-                    { text: "General", value: "general_tab" }
-                ]}
-                default_selected_value={"general_tab"}
-                onChange={value => {
-                    setTab(value);
-                }}
-            />
-            {node}
-        </div>
-    );
+    return <GeneralSettingsTab />;
 }

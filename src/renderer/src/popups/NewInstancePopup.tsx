@@ -2,7 +2,8 @@ import { useState } from "react";
 
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { MinecraftRadialButtonPanel } from "@renderer/components/MinecraftRadialButtonPanel";
-import { PopupPanel, usePopupClose } from "@renderer/components/PopupPanel";
+import { PopupPanel } from "@renderer/components/PopupPanel";
+import { usePopupClose } from "@renderer/components/PopupCloseContext";
 import { TextInput } from "@renderer/components/TextInput";
 import { PathUtils } from "@renderer/scripts/PathUtils";
 import { Channel, channelLabel } from "@renderer/scripts/domain/Channel";

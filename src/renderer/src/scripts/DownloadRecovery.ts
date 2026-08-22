@@ -1,7 +1,7 @@
 import { describeError } from "@shared/diagnostics/Log";
 import { useAppStore } from "@renderer/states/AppStore";
 import { useDownloadStore, getPendingDownloads, removePendingDownload, PendingDownload } from "@renderer/states/DownloadStore";
-import { ImportModArchive, modArchiveExtension } from "@renderer/scripts/flows/ImportMod";
+import { ImportModArchive, modArchiveExtension } from "@renderer/flows/ImportMod";
 import { log } from "@renderer/scripts/LauncherLog";
 import { Downloader } from "@renderer/scripts/backend/Downloader";
 

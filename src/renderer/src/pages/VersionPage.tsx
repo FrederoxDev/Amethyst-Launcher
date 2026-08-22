@@ -1,4 +1,4 @@
-import { describeError } from "@shared/diagnostics/Log";
+import { describeError, userMessage } from "@shared/diagnostics/Log";
 import { useAppStore } from "@renderer/states/AppStore";
 import { log } from "@renderer/scripts/LauncherLog";
 import { channelLabel } from "@renderer/scripts/domain/Channel";
@@ -13,9 +13,6 @@ import { ImportRequest } from "@renderer/scripts/versions/VersionService";
 import DeleteIconAsset from "@renderer/assets/images/icons/delete-icon.png";
 import OpenFolderIconAsset from "@renderer/assets/images/icons/open-folder-icon.png";
 import InfoIconAsset from "@renderer/assets/images/icons/info-icon.png";
-
-import "@renderer/styles/pages/SettingsPage.css";
-import "@renderer/styles/pages/LauncherPage.css";
 
 const { shell: { openPath } } = window.require("electron") as typeof import("electron");
 
@@ -75,7 +72,7 @@ export function VersionPage() {
             return;
         }
 
-        const request = await Popup.useAsync<ImportRequest | null>(props => <ImportVersionPopup {...props} />);
+        const request = await Popup.ask<ImportRequest | null>(props => <ImportVersionPopup {...props} />);
         if (!request) {
             log("VersionPage", "Import popup closed without a file");
             return;
@@ -85,12 +82,12 @@ export function VersionPage() {
             await versions.importMsixvc(request);
         } catch (e) {
             log("VersionPage", `Import of "${request.label}" from ${request.file} failed: ${describeError(e)}`);
-            setError(`Could not import ${request.label}: ${(e as Error).message ?? e}`);
+            setError(`Could not import ${request.label}: ${userMessage(e)}`);
         }
     };
 
     const inspect = async (version: InstalledVersion) => {
-        await Popup.useAsync<void>(({ submit }) => (
+        await Popup.ask<void>(({ submit }) => (
             <PopupPanel title={version.label} onClose={() => submit()} size="lg">
                 <p className="minecraft-seven" style={{ fontSize: "12px", wordBreak: "break-all" }}>
                     {version.path}
@@ -120,7 +117,7 @@ export function VersionPage() {
             await versions.uninstall(version.uuid);
         } catch (e) {
             log("VersionPage", `Deleting "${version.label}" at ${version.path} failed: ${describeError(e)}`);
-            setError(`Could not delete ${version.label}: ${(e as Error).message ?? e}`);
+            setError(`Could not delete ${version.label}: ${userMessage(e)}`);
         }
     };
 

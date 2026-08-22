@@ -14,7 +14,6 @@ import {
     fileStamp,
     formatEntry,
     installConsoleForwarder,
-    isoStamp,
 } from "../../shared/diagnostics/Log";
 
 /** Enough runs to still hold the evidence after a tester reproduces a bug a few times. */
@@ -23,51 +22,76 @@ const KEEP_RUNS = 20;
 /** How long the header waits on the renderer before writing what it has. */
 const MACHINE_BLOCK_TIMEOUT_MS = 20_000;
 
+/**
+ * A runaway render loop pipes megabytes a second through the console forwarder. Past this the
+ * run is unreadable, unuploadable, and the only thing worth keeping is that it happened.
+ */
+const MAX_RUN_BYTES = 64 * 1024 * 1024;
+
 const LABEL_WIDTH = 12;
 
 export interface MachineReport {
     appx: string;
     registered: string[];
-    dotnet: string;
     state: string;
 }
 
 const startedAt = Date.now();
 const logsDir = path.join(app.getPath("appData"), "Amethyst", "Launcher", "Logs");
 const logFile = path.join(logsDir, `launcher_${fileStamp(startedAt)}.log`);
-const jsonlFile = path.join(logsDir, `launcher_${fileStamp(startedAt)}.jsonl`);
 
 let writable = true;
-let machineBlockWritten = false;
+let capped = false;
+let bytesWritten = 0;
+let runDiscarded = false;
 
-function appendRaw(text: string): void {
-    if (!writable) return;
+/**
+ * A Windows profile folder is the user's real name, and these files get pasted into public
+ * Discord threads. Matching every separator spelling keeps the path readable as a path.
+ */
+const homePattern = ((): RegExp | null => {
+    const home = probeValue(() => os.homedir(), "");
+    const parts = home.split(/[\\/]/).filter(part => part !== "");
+    if (home.length < 4 || parts.length < 2) return null;
+    const escaped = parts.map(part => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    return new RegExp(escaped.join("[\\\\/]"), "gi");
+})();
+
+function redactHome(text: string): string {
+    return homePattern === null ? text : text.replace(homePattern, "%USERPROFILE%");
+}
+
+function write(text: string): void {
     try {
         fs.appendFileSync(logFile, text, "utf-8");
+        bytesWritten += Buffer.byteLength(text, "utf-8");
     } catch {
         // A full or read-only disk must not take the launcher down with it.
         writable = false;
     }
 }
 
-function appendJsonl(entry: LogEntry): void {
-    if (!writable) return;
-    try {
-        const record = {
-            timestamp: isoStamp(entry.time),
-            level: entry.level,
-            thread: entry.source,
-            source: entry.scope,
-            message: entry.message,
-        };
-        fs.appendFileSync(jsonlFile, `${JSON.stringify(record)}\n`, "utf-8");
-    } catch {
+function appendRaw(text: string): void {
+    if (!writable || capped) return;
+
+    const payload = redactHome(text);
+    if (bytesWritten + Buffer.byteLength(payload, "utf-8") > MAX_RUN_BYTES) {
+        capped = true;
+        write(`${formatEntry({
+            time: Date.now(),
+            source: "main",
+            scope: "log",
+            level: "ERROR",
+            message: `Log reached its ${formatBytes(MAX_RUN_BYTES)} cap; the rest of this run is not recorded.`,
+        })}\n`);
+        return;
     }
+
+    write(payload);
 }
 
 export function writeEntry(entry: LogEntry): void {
     appendRaw(`${formatEntry(entry)}\n`);
-    appendJsonl(entry);
 }
 
 export function mainLog(level: LogLevel, scope: string, message: string): void {
@@ -84,10 +108,10 @@ export function launcherLogPath(): string {
  */
 export function discardRun(): void {
     writable = false;
-    machineBlockWritten = true;
+    runDiscarded = true;
+    environmentState = "settled";
     try {
         fs.rmSync(logFile, { force: true });
-        fs.rmSync(jsonlFile, { force: true });
     } catch {
         // Worst case it stays as one header-only file.
     }
@@ -105,12 +129,12 @@ function rotate(): void {
         return;
     }
 
-    const files = entries.filter(name => /^launcher_.*\.(log|jsonl)$/i.test(name));
-    const stems = [...new Set(files.map(name => name.replace(/\.(log|jsonl)$/i, "")))].sort();
-    const staleStems = new Set(stems.slice(0, Math.max(0, stems.length - (KEEP_RUNS - 1))));
+    const current = path.basename(logFile);
+    const files = entries.filter(name => /^launcher_.*\.log$/i.test(name)).sort();
+    const stale = files.slice(0, Math.max(0, files.length - KEEP_RUNS));
 
-    for (const name of files) {
-        if (!staleStems.has(name.replace(/\.(log|jsonl)$/i, ""))) continue;
+    for (const name of stale) {
+        if (name === current) continue;
         try {
             fs.rmSync(path.join(logsDir, name), { force: true });
         } catch {
@@ -216,16 +240,35 @@ function writeHeader(): void {
     appendRaw(`${lines.join("\n")}\n`);
 }
 
+type EnvironmentState = "pending" | "placeholder" | "reported" | "settled";
+
+let environmentState: EnvironmentState = "pending";
+let environmentSignature = "";
+
 /**
  * The second half of the header. Developer Mode, package registrations, .NET and the launcher's
  * own state all live behind renderer-side probes, so it lands once the window reports them, or
  * as `unknown` if the renderer never gets that far.
+ *
+ * A machine slow enough to miss the timeout is the machine whose environment matters most, so a
+ * real report supersedes the placeholder, and a later report that differs is written again:
+ * turning Developer Mode on mid-session is exactly the state change the log has to show.
  */
 export function writeMachineBlock(report: MachineReport | null): void {
-    if (machineBlockWritten) return;
-    machineBlockWritten = true;
+    if (environmentState === "settled") return;
 
-    const lines: string[] = [];
+    if (report === null) {
+        if (environmentState !== "pending") return;
+        environmentState = "placeholder";
+    }
+    else {
+        const signature = JSON.stringify(report);
+        if (signature === environmentSignature) return;
+        environmentSignature = signature;
+        environmentState = "reported";
+    }
+
+    const lines: string[] = ["=== environment ==="];
     lines.push(`${label("appx")}${report?.appx ?? "unknown"}`);
 
     const registered = report?.registered ?? [];
@@ -235,12 +278,26 @@ export function writeMachineBlock(report: MachineReport | null): void {
     else {
         registered.forEach((line, index) => lines.push(`${index === 0 ? label("registered") : continuation()}${line}`));
     }
-
-    lines.push(`${label("dotnet")}${report?.dotnet ?? "unknown"}`);
     lines.push(`${label("state")}${report?.state ?? "unknown"}`);
     lines.push("=== end environment ===");
 
     appendRaw(`${lines.join("\n")}\n`);
+}
+
+/** The payload crosses IPC from a renderer that may be mid-failure; the header still has to hold. */
+function parseMachineReport(value: unknown): MachineReport | null {
+    if (typeof value !== "object" || value === null) return null;
+
+    const candidate = value as Partial<MachineReport>;
+    if (typeof candidate.appx !== "string" || typeof candidate.state !== "string") return null;
+
+    return {
+        appx: candidate.appx,
+        registered: Array.isArray(candidate.registered)
+            ? candidate.registered.filter((line): line is string => typeof line === "string")
+            : [],
+        state: candidate.state,
+    };
 }
 
 function installGlobalHandlers(): void {
@@ -252,8 +309,7 @@ function installGlobalHandlers(): void {
         mainLog("ERROR", "process", `unhandledRejection: ${describeError(reason)}`);
     });
 
-    // Nothing is coming from the renderer once it is gone, and nothing is coming at all once
-    // the app is quitting, so those are the two moments the header has to settle for what it has.
+    // Nothing is coming from a renderer that is gone, so the header writes what it has.
     app.on("render-process-gone", (_event, _contents, details) => {
         mainLog("ERROR", "process", `render-process-gone: reason=${details.reason}, exitCode=${details.exitCode}`);
         writeMachineBlock(null);
@@ -268,7 +324,11 @@ function installGlobalHandlers(): void {
         );
     });
 
-    app.on("before-quit", () => writeMachineBlock(null));
+    // Nothing can still be learned about the machine once the app is on its way out.
+    app.on("before-quit", () => {
+        writeMachineBlock(null);
+        environmentState = "settled";
+    });
 }
 
 function installIpc(): void {
@@ -295,7 +355,14 @@ function installIpc(): void {
         }
     });
 
-    ipcMain.on(LOG_IPC_ENVIRONMENT, (_event, report) => writeMachineBlock(report as MachineReport));
+    ipcMain.on(LOG_IPC_ENVIRONMENT, (_event, report) => {
+        const parsed = parseMachineReport(report);
+        if (parsed === null) {
+            mainLog("WARN", "log", "Environment report ignored: the renderer sent a payload of the wrong shape");
+            return;
+        }
+        writeMachineBlock(parsed);
+    });
 
     ipcMain.on(LOG_IPC_PATH, event => {
         event.returnValue = logFile;
@@ -304,12 +371,24 @@ function installIpc(): void {
 
 try {
     fs.mkdirSync(logsDir, { recursive: true });
-    rotate();
 } catch {
     writable = false;
 }
 
 writeHeader();
+
+/**
+ * A second instance hands its argv over and quits before `ready`, so rotating here is what keeps
+ * a deep link or a double-clicked `.amethyst` file from spending a rotation slot on a run that
+ * never happened.
+ */
+app.whenReady().then(() => {
+    if (runDiscarded) return;
+    rotate();
+}).catch(() => {
+    // The app is not starting; the old logs surviving one more run is the least of it.
+});
+
 installConsoleForwarder((level, message) => mainLog(level, "console", message));
 installGlobalHandlers();
 installIpc();

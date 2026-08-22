@@ -27,5 +27,8 @@ build
 /out
 /out/renderer
 /out/renderer/assets
-/proxy/.cache
-proxy/compile_commands.json
+
+# Tool caches
+.eslintcache
+*.tsbuildinfo
+preload/compile_commands.json

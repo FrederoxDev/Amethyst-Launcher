@@ -5,11 +5,11 @@ import { useAppStore } from "@renderer/states/AppStore";
 
 import { describeError } from "@shared/diagnostics/Log";
 import { CopyRecursive } from "@renderer/scripts/Files";
-import { ImportModArchive, isModArchive } from "@renderer/scripts/flows/ImportMod";
+import { ImportModArchive, isModArchive } from "@renderer/flows/ImportMod";
 import { log } from "@renderer/scripts/LauncherLog";
 import { FULL_PROGRESS_RESET_OPTIONS, ProgressBar } from "@renderer/states/ProgressBarStore";
 
-const path = window.require("path");
+const path = window.require("path") as typeof import("path");
 const { ipcRenderer } = window.require("electron") as typeof import("electron");
 
 export function DropWindow() {
@@ -63,7 +63,7 @@ export function DropWindow() {
 
             // Reject drops while the launcher is busy with another operation
             // (onboarding, launch prep, version install/uninstall, profile delete).
-            // Allowing a drop would race ProgressBar.useAsync and clobber state.
+            // Allowing a drop would race ProgressBar.runAsync and clobber state.
             if (ProgressBar.isBusy()) {
                 log(
                     "DropWindow",
@@ -134,7 +134,7 @@ export function DropWindow() {
         async function ImportFolder(folder_path: string) {
             log("DropWindow", `Copying the folder ${folder_path} into ${paths.modsPath}`);
             try {
-                await ProgressBar.useAsync(async (state) => {
+                await ProgressBar.runAsync(async (state) => {
                     state.setMessage(`Importing ${path.basename(folder_path)}...`);
                     await CopyRecursive(folder_path, paths.modsPath);
                 }, true, FULL_PROGRESS_RESET_OPTIONS);
@@ -160,7 +160,7 @@ export function DropWindow() {
             window.removeEventListener("drop", drop);
             ipcRenderer.off("AMETHYST_OPEN_FILE", openFile);
         };
-    }, [setError, refreshAllMods]);
+    }, [setError, refreshAllMods, paths.modsPath]);
 
     return (
         <div

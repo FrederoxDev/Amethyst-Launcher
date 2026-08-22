@@ -1,17 +1,14 @@
 import { AppStatusType } from "@renderer/scripts/AppStatus";
 import { log } from "@renderer/scripts/LauncherLog";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
+import { describeError } from "@shared/diagnostics/Log";
 import { describeResult, run } from "@shared/diagnostics/ProcessRunner";
 import { GithubRelease } from "../github/GithubRelease";
-import { CheckAction, DefaultCheckOptions, ToolArtifact, ToolCheckResult, ToolInstalledContext } from "./ToolArtifact";
+import { DefaultCheckOptions, ToolArtifact, ToolInstalledContext } from "./ToolArtifact";
 import { GithubAsset } from "../github/GithubAsset";
-import { DotnetRequirement, DotnetRuntime } from "../DotnetRuntime";
 
 const fs = window.require("fs") as typeof import("fs");
 const semver = window.require("semver") as typeof import("semver");
-
-/** XVDTool.runtimeconfig.json pins `Microsoft.NETCore.App 8.0.0`, and roll-forward never crosses a major. */
-const XVDTOOL_RUNTIME: DotnetRequirement = { major: 8, channel: "8.0", toolName: "XVDTool" };
 
 /** Generous, because a full msixvc runs for many minutes, but never unbounded. */
 const XVDTOOL_TIMEOUT_MS = 60 * 60_000;
@@ -56,9 +53,9 @@ interface OutputModel {
  * ```
  */
 export class XVDTool extends ToolArtifact {
-    readonly name: string = "xvdtool";
-    /** GitHub repository that hosts XVDTool releases. */
-    readonly repository: string = "AmethystAPI/xvdtool";
+    constructor() {
+        super("xvdtool", "AmethystAPI/xvdtool");
+    }
 
     /**
      * XVDTool only ships binaries for Windows x64 and Linux x64.
@@ -72,24 +69,16 @@ export class XVDTool extends ToolArtifact {
     }
 
     /**
-     * Overrides the base `check()` to supply XVDTool-specific defaults:
-     * - `promptForUpdate`: `true` - always ask before updating.
-     * - `allowOutdated`: `true` - tolerate an older version when GitHub is unreachable.
-     * - `releaseFetchTimeout`: `1500` ms.
-     *
-     * Also makes sure the .NET runtime XVDTool needs is present, since XVDTool
-     * is a framework-dependent .NET application and cannot start without it.
+     * XVDTool asks before updating, tolerates an older build when GitHub is unreachable, and
+     * gives the release lookup 1500ms.
      */
-    async check(options?: DefaultCheckOptions | undefined): Promise<ToolCheckResult> {
-        const resolvedOptions = {
-            promptForUpdate: options?.promptForUpdate ?? true,
-            allowOutdated: options?.allowOutdated ?? true,
-            releaseFetchTimeout: options?.releaseFetchTimeout ?? 1500,
-            checkForUpdates: options?.checkForUpdates ?? true
+    protected checkDefaults(): DefaultCheckOptions {
+        return {
+            promptForUpdate: true,
+            allowOutdated: true,
+            releaseFetchTimeout: 1500,
+            checkForUpdates: true
         };
-        const result = await super.check(resolvedOptions);
-        await DotnetRuntime.ensure(XVDTOOL_RUNTIME);
-        return result;
     }
 
     /** The installation folder is simply named after the tool. */
@@ -150,16 +139,6 @@ export class XVDTool extends ToolArtifact {
         }
     }
 
-    /** Builds the standard {@link ToolCheckResult} returned by `check()`. */
-    protected buildResult(version: string, toolPath: string, executable: string, action: CheckAction): ToolCheckResult {
-        return {
-            version,
-            path: toolPath,
-            executable,
-            action
-        };
-    }
-
     /**
      * Post-install hook: on Linux, marks the XVDTool executable as executable
      * (`chmod 755`) since GitHub release tarballs do not preserve permissions.
@@ -193,12 +172,7 @@ export class XVDTool extends ToolArtifact {
         log(this.name, `Decrypting '${inputFile}' with ${Object.keys(cikKeys).length} known CIK keys, checkForUpdates=${checkForUpdates}`);
 
         // Ensure XVDTool is installed (and optionally up-to-date) before running.
-        const { executable: xvdtoolExecutable } = await this.check({
-            allowOutdated: true,
-            promptForUpdate: true,
-            releaseFetchTimeout: 1500,
-            checkForUpdates
-        });
+        const { executable: xvdtoolExecutable } = await this.check({ checkForUpdates });
 
         const entries = Object.entries(cikKeys);
         if (entries.length === 0) {
@@ -206,10 +180,27 @@ export class XVDTool extends ToolArtifact {
             throw new Error("Decryption failed: no CIK keys were provided.");
         }
 
+        // `-nd -eu` rewrites the input in place. A key that fails after touching the file leaves
+        // the remaining keys nothing valid to work on, so the state is recorded before each try.
+        const original = await this.fileState(inputFile);
+
         let lastError = "";
         let attempt = 0;
         for (const [cikUuid, cikData] of entries) {
             attempt += 1;
+
+            if (attempt > 1) {
+                const current = await this.fileState(inputFile);
+                if (current !== original) {
+                    log(this.name, `'${inputFile}' changed from ${original} to ${current} during the first ${attempt - 1} attempt(s)`);
+                    throw new Error(
+                        `Decryption failed: a CIK key rewrote "${inputFile}" before failing, so the remaining `
+                        + `${entries.length - attempt + 1} key(s) cannot be tried against it. `
+                        + `Delete the file and download it again. Last error: ${lastError}`
+                    );
+                }
+            }
+
             log(this.name, `Trying CIK ${cikUuid} (${attempt} of ${entries.length}) on '${inputFile}'`);
             try {
                 await this.runTool("decrypting", xvdtoolExecutable, [
@@ -227,6 +218,17 @@ export class XVDTool extends ToolArtifact {
         throw new Error(`Decryption failed: none of the ${entries.length} known CIK keys worked. Last error: ${lastError}`);
     }
 
+    /** Size and modification time, which is what tells an untouched file from a rewritten one. */
+    private async fileState(file: string): Promise<string> {
+        try {
+            const stats = await fs.promises.stat(file);
+            return `${stats.size} bytes at ${stats.mtimeMs}`;
+        } catch (error) {
+            log(this.name, `Could not stat '${file}': ${describeError(error)}`);
+            return "unreadable";
+        }
+    }
+
     /**
      * Runs XVDTool once and reports what it did. Every exit is an outcome: a tool that cannot
      * start, one that reports an error line, one that ends non-zero and one that stops
@@ -235,7 +237,7 @@ export class XVDTool extends ToolArtifact {
     private async runTool(status: AppStatusType, executable: string, args: string[]): Promise<void> {
         log(this.name, `Running ${executable} ${redactCik(args).join(" ")}`);
 
-        await ProgressBar.useAsync(async ({ setStatus, setMessage, setProgress }) => {
+        await ProgressBar.runAsync(async ({ setStatus, setMessage, setProgress }) => {
             setStatus(status);
             const toolErrors: string[] = [];
 
@@ -321,12 +323,7 @@ export class XVDTool extends ToolArtifact {
         log(this.name, `Extracting '${inputFile}' to '${outputFolder}', checkForUpdates=${checkForUpdates}`);
 
         // Ensure XVDTool is installed (and optionally up-to-date) before running.
-        const { executable: xvdtoolExecutable } = await this.check({
-            allowOutdated: true,
-            promptForUpdate: true,
-            releaseFetchTimeout: 1500,
-            checkForUpdates
-        });
+        const { executable: xvdtoolExecutable } = await this.check({ checkForUpdates });
 
         await this.runTool("extracting", xvdtoolExecutable, ["-nd", "-xf", outputFolder, inputFile]);
 
