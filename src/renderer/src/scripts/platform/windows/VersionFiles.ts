@@ -18,7 +18,10 @@ const PLACEHOLDER_PNG = Buffer.from(
     "base64"
 );
 
-const CHANNEL_IDS: Record<Channel, { displayName: string; protocol: string; titleId: string; storeId: string; msaAppId: string }> = {
+const CHANNEL_IDS: Record<
+    Channel,
+    { displayName: string; protocol: string; titleId: string; storeId: string; msaAppId: string }
+> = {
     release: {
         displayName: "Minecraft for Windows",
         protocol: "minecraft",
@@ -52,8 +55,8 @@ function patchManifest(versionPath: string): string {
     } catch (e) {
         log("VersionFiles", `Could not read ${manifestPath}: ${describe(e)}`);
         throw new Error(
-            `This Minecraft version cannot be prepared because its manifest could not be read.\n\n`
-            + `${manifestPath} (${describe(e)})`,
+            `This Minecraft version cannot be prepared because its manifest could not be read.\n\n` +
+                `${manifestPath} (${describe(e)})`,
             { cause: e }
         );
     }
@@ -73,15 +76,12 @@ function patchManifest(versionPath: string): string {
     } catch (e) {
         log("VersionFiles", `Could not write the patched ${manifestPath}: ${describe(e)}`);
         throw new Error(
-            `This Minecraft version cannot be prepared because its manifest could not be written.\n\n`
-            + `${manifestPath} (${describe(e)})`,
+            `This Minecraft version cannot be prepared because its manifest could not be written.\n\n` +
+                `${manifestPath} (${describe(e)})`,
             { cause: e }
         );
     }
-    log(
-        "VersionFiles",
-        `Stripped customInstall from ${manifestPath} (${original.length} chars to ${patched.length})`
-    );
+    log("VersionFiles", `Stripped customInstall from ${manifestPath} (${original.length} chars to ${patched.length})`);
     return patched;
 }
 
@@ -103,8 +103,8 @@ function ensureManifestAssets(versionPath: string, manifestXml: string): void {
         } catch (e) {
             log("VersionFiles", `Could not create the placeholder asset ${full}: ${describe(e)}`);
             throw new Error(
-                `This Minecraft version cannot be prepared because an image it lists could not be created.\n\n`
-                + `${full} (${describe(e)})`,
+                `This Minecraft version cannot be prepared because an image it lists could not be created.\n\n` +
+                    `${full} (${describe(e)})`,
                 { cause: e }
             );
         }
@@ -178,14 +178,17 @@ function ensureGameConfig(versionPath: string, manifestXml: string, channel: Cha
         }
         log(
             "VersionFiles",
-            `MicrosoftGame.Config at ${configPath} was written by an older launcher build, writing it again `
-            + `(${describeFile(configPath)})`
+            `MicrosoftGame.Config at ${configPath} was written by an older launcher build, writing it again ` +
+                `(${describeFile(configPath)})`
         );
     }
 
     const identity = manifestXml.match(/<Identity\s+Name="([^"]+)"\s+Publisher="([^"]+)"\s+Version="([^"]+)"/);
     if (!identity) {
-        log("VersionFiles", `No usable <Identity> in the manifest at ${versionPath}, cannot generate MicrosoftGame.Config`);
+        log(
+            "VersionFiles",
+            `No usable <Identity> in the manifest at ${versionPath}, cannot generate MicrosoftGame.Config`
+        );
         throw new Error(`${versionPath}: appxmanifest.xml has no usable <Identity>`);
     }
     const [, packageName, publisher, version] = identity;
@@ -207,9 +210,9 @@ function ensureGameConfig(versionPath: string, manifestXml: string, channel: Cha
 
     log(
         "VersionFiles",
-        `Generating MicrosoftGame.Config for ${channel}: identity ${packageName} ${version} by ${publisher}, `
-        + `title id ${titleId} (${buildTitleId ? "from the build" : `from the ${channel} default`}), `
-        + `${languages.size} languages`
+        `Generating MicrosoftGame.Config for ${channel}: identity ${packageName} ${version} by ${publisher}, ` +
+            `title id ${titleId} (${buildTitleId ? "from the build" : `from the ${channel} default`}), ` +
+            `${languages.size} languages`
     );
 
     const config = `<?xml version="1.0" encoding="utf-8"?>
@@ -288,8 +291,8 @@ ${[...languages].map(l => `    <Resource Language="${l}"/>`).join("\n")}
     } catch (e) {
         log("VersionFiles", `Could not write ${configPath}: ${describe(e)}`);
         throw new Error(
-            `This Minecraft version cannot be prepared because its game config could not be written.\n\n`
-            + `${configPath} (${describe(e)})`,
+            `This Minecraft version cannot be prepared because its game config could not be written.\n\n` +
+                `${configPath} (${describe(e)})`,
             { cause: e }
         );
     }
@@ -311,8 +314,9 @@ export function describePayload(versionPath: string): string {
             return `${name} absent`;
         }
     };
-    return [describe(GAME_EXECUTABLE), describe("appxmanifest.xml"), describe(PRELOAD_DLL), describe("dxgi.dll")]
-        .join(", ");
+    return [describe(GAME_EXECUTABLE), describe("appxmanifest.xml"), describe(PRELOAD_DLL), describe("dxgi.dll")].join(
+        ", "
+    );
 }
 
 /**
@@ -354,7 +358,10 @@ function isGameInputInstalled(): boolean {
 
 async function ensureGameInput(versionPath: string, status: (message: string) => void): Promise<void> {
     if (isGameInputInstalled()) {
-        log("VersionFiles", `GameInput already installed, skipping: ${gameInputDllPath()} (${describeFile(gameInputDllPath())})`);
+        log(
+            "VersionFiles",
+            `GameInput already installed, skipping: ${gameInputDllPath()} (${describeFile(gameInputDllPath())})`
+        );
         return;
     }
 
@@ -371,8 +378,8 @@ async function ensureGameInput(versionPath: string, status: (message: string) =>
     if (result.code !== 0 && result.code !== MSI_REBOOT_REQUIRED) {
         log("VersionFiles", `GameInput install failed.\n${describeResult(result)}`);
         throw new Error(
-            `GameInput could not be installed from ${msi}. Try running the launcher as administrator. `
-            + `(${result.timedOut ? "the installer never finished" : `installer result ${result.code}`})`
+            `GameInput could not be installed from ${msi}. Try running the launcher as administrator. ` +
+                `(${result.timedOut ? "the installer never finished" : `installer result ${result.code}`})`
         );
     }
 

@@ -16,13 +16,17 @@
 .spinner {
     width: var(--spinner-size);
     height: var(--spinner-size);
-    background: url('@renderer/assets/images/loading_spin.png') no-repeat center;
+    background: url("@renderer/assets/images/loading_spin.png") no-repeat center;
     background-size: calc(var(--spinner-size) * var(--spinner-frames));
     animation: spin 1s steps(var(--spinner-frames)) infinite;
     image-rendering: pixelated;
 }
 
 @keyframes spin {
-    from { background-position: 0px; }
-    to   { background-position: calc(var(--spinner-size) * var(--spinner-frames) * -1); }
+    from {
+        background-position: 0px;
+    }
+    to {
+        background-position: calc(var(--spinner-size) * var(--spinner-frames) * -1);
+    }
 }

@@ -77,13 +77,15 @@ function appendRaw(text: string): void {
     const payload = redactHome(text);
     if (bytesWritten + Buffer.byteLength(payload, "utf-8") > MAX_RUN_BYTES) {
         capped = true;
-        write(`${formatEntry({
-            time: Date.now(),
-            source: "main",
-            scope: "log",
-            level: "ERROR",
-            message: `Log reached its ${formatBytes(MAX_RUN_BYTES)} cap; the rest of this run is not recorded.`,
-        })}\n`);
+        write(
+            `${formatEntry({
+                time: Date.now(),
+                source: "main",
+                scope: "log",
+                level: "ERROR",
+                message: `Log reached its ${formatBytes(MAX_RUN_BYTES)} cap; the rest of this run is not recorded.`,
+            })}\n`
+        );
         return;
     }
 
@@ -171,9 +173,13 @@ function localTime(time: number): string {
     const d = new Date(time);
     const offset = -d.getTimezoneOffset();
     const sign = offset < 0 ? "-" : "+";
-    const hours = Math.floor(Math.abs(offset) / 60).toString().padStart(2, "0");
+    const hours = Math.floor(Math.abs(offset) / 60)
+        .toString()
+        .padStart(2, "0");
     const minutes = (Math.abs(offset) % 60).toString().padStart(2, "0");
-    const stamp = fileStamp(time).replace("_", " ").replace(/-(\d{2})-(\d{2})$/, ":$1:$2");
+    const stamp = fileStamp(time)
+        .replace("_", " ")
+        .replace(/-(\d{2})-(\d{2})$/, ":$1:$2");
     return `${stamp} (UTC${sign}${hours}:${minutes})`;
 }
 
@@ -220,15 +226,20 @@ function writeHeader(): void {
     const lines: string[] = [`=== Amethyst Launcher ${probe(() => app.getVersion())} ===`];
 
     lines.push(`${label("started")}${probe(() => localTime(startedAt))}`);
-    lines.push(`${label("os")}${probe(() => `${os.version()}, ${os.release()}, ${os.arch()}, locale ${Intl.DateTimeFormat().resolvedOptions().locale}`)}`);
-    lines.push(`${label("electron")}${probe(() => `electron ${process.versions.electron}, chrome ${process.versions.chrome}, node ${process.versions.node}`)}`);
-    lines.push(`${label("process")}${probe(() => `elevated=${isElevated()}, packaged=${app.isPackaged}, pid=${process.pid}, argv=[${process.argv.slice(1).join(" ")}]`)}`);
+    lines.push(
+        `${label("os")}${probe(() => `${os.version()}, ${os.release()}, ${os.arch()}, locale ${Intl.DateTimeFormat().resolvedOptions().locale}`)}`
+    );
+    lines.push(
+        `${label("electron")}${probe(() => `electron ${process.versions.electron}, chrome ${process.versions.chrome}, node ${process.versions.node}`)}`
+    );
+    lines.push(
+        `${label("process")}${probe(() => `elevated=${isElevated()}, packaged=${app.isPackaged}, pid=${process.pid}, argv=[${process.argv.slice(1).join(" ")}]`)}`
+    );
 
     const paths = probeValue<Record<string, string> | null>(launcherPaths, null);
     if (!paths) {
         lines.push(`${label("paths")}unknown`);
-    }
-    else {
+    } else {
         let first = true;
         for (const [name, value] of Object.entries(paths)) {
             lines.push(`${first ? label("paths") : continuation()}${name.padEnd(10, " ")}${value}`);
@@ -260,8 +271,7 @@ export function writeMachineBlock(report: MachineReport | null): void {
     if (report === null) {
         if (environmentState !== "pending") return;
         environmentState = "placeholder";
-    }
-    else {
+    } else {
         const signature = JSON.stringify(report);
         if (signature === environmentSignature) return;
         environmentSignature = signature;
@@ -274,8 +284,7 @@ export function writeMachineBlock(report: MachineReport | null): void {
     const registered = report?.registered ?? [];
     if (registered.length === 0) {
         lines.push(`${label("registered")}${report ? "none" : "unknown"}`);
-    }
-    else {
+    } else {
         registered.forEach((line, index) => lines.push(`${index === 0 ? label("registered") : continuation()}${line}`));
     }
     lines.push(`${label("state")}${report?.state ?? "unknown"}`);
@@ -319,8 +328,8 @@ function installGlobalHandlers(): void {
         mainLog(
             "ERROR",
             "process",
-            `child-process-gone: type=${details.type}, reason=${details.reason}, exitCode=${details.exitCode}`
-            + `${details.name ? `, name=${details.name}` : ""}`
+            `child-process-gone: type=${details.type}, reason=${details.reason}, exitCode=${details.exitCode}` +
+                `${details.name ? `, name=${details.name}` : ""}`
         );
     });
 
@@ -382,12 +391,14 @@ writeHeader();
  * a deep link or a double-clicked `.amethyst` file from spending a rotation slot on a run that
  * never happened.
  */
-app.whenReady().then(() => {
-    if (runDiscarded) return;
-    rotate();
-}).catch(() => {
-    // The app is not starting; the old logs surviving one more run is the least of it.
-});
+app.whenReady()
+    .then(() => {
+        if (runDiscarded) return;
+        rotate();
+    })
+    .catch(() => {
+        // The app is not starting; the old logs surviving one more run is the least of it.
+    });
 
 installConsoleForwarder((level, message) => mainLog(level, "console", message));
 installGlobalHandlers();

@@ -22,11 +22,22 @@ export function MinecraftToggle({ isChecked, setIsChecked, label }: MinecraftTog
     };
 
     const toggleClass = hasInteracted
-        ? (isChecked ? " toggle-anim-on" : " toggle-anim-off")
-        : (isChecked ? " toggle-no-anim-on" : " toggle-no-anim-off");
+        ? isChecked
+            ? " toggle-anim-on"
+            : " toggle-anim-off"
+        : isChecked
+          ? " toggle-no-anim-on"
+          : " toggle-no-anim-off";
 
     return (
-        <div className="toggle_panel" {...clickable(handleCheckboxChange, { role: "switch", checked: isChecked, label })}>
+        <div
+            className="toggle_panel"
+            {...clickable(handleCheckboxChange, {
+                role: "switch",
+                checked: isChecked,
+                label,
+            })}
+        >
             <div className="toggle_base">
                 <div className="toggle_base_on">
                     <img className="toggle_base_on_image" src={onStateImage} alt="" />

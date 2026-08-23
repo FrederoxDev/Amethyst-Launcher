@@ -25,7 +25,8 @@ const ProfileButton = ({ profile }: { profile: Profile }) => {
             <div className="profile-card-inner">
                 <p className="minecraft-seven profile-card-title">{profile.name}</p>
                 <p className="minecraft-seven profile-card-subtitle">
-                    {displayVersion(profile)} &middot; {channelLabel(profile.channel)} ({isModded(profile) ? "Modded" : "Vanilla"})
+                    {displayVersion(profile)} &middot; {channelLabel(profile.channel)} (
+                    {isModded(profile) ? "Modded" : "Vanilla"})
                 </p>
                 {unknownMods.length > 0 && (
                     <p className="minecraft-seven profile-card-warning">

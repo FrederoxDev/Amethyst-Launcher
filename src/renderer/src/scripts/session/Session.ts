@@ -39,7 +39,9 @@ function writeManifest(target: string, manifest: SessionManifest): void {
 
 function isEntry(value: unknown): value is { id: string; path: string } {
     const entry = value as { id?: unknown; path?: unknown } | null;
-    return typeof entry === "object" && entry !== null && typeof entry.id === "string" && typeof entry.path === "string";
+    return (
+        typeof entry === "object" && entry !== null && typeof entry.id === "string" && typeof entry.path === "string"
+    );
 }
 
 /**
@@ -55,9 +57,9 @@ function parseSession(raw: string): SessionManifest | null {
     if (typeof value.profile?.uuid !== "string" || typeof value.profile.name !== "string") return null;
     if (!isChannel(value.channel)) return null;
     if (
-        typeof value.version?.uuid !== "string"
-        || typeof value.version.label !== "string"
-        || typeof value.version.path !== "string"
+        typeof value.version?.uuid !== "string" ||
+        typeof value.version.label !== "string" ||
+        typeof value.version.path !== "string"
     ) {
         return null;
     }

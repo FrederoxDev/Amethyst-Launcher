@@ -8,7 +8,7 @@ const MODULE_URL = new URL("../src/renderer/src/scripts/versions/InstalledVersio
 let Module: InstalledVersionModule = undefined as unknown as InstalledVersionModule;
 let blocked = "";
 try {
-    Module = await import(MODULE_URL) as InstalledVersionModule;
+    Module = (await import(MODULE_URL)) as InstalledVersionModule;
 } catch (e) {
     blocked = `InstalledVersion.ts cannot be loaded by node --test: ${(e as Error).message}`;
 }
@@ -130,7 +130,11 @@ describe("naming the folder a build is installed into", gate, () => {
 
     it("refuses anything that would escape the versions folder", () => {
         for (const version of ["../1.21.0.3", "1.21.0.3/..", "C:\\evil", "1.21.0.3\\x", "a/b"]) {
-            assert.throws(() => Module.artifactSlug(version, "release", UUID), /cannot be used as a folder name/, version);
+            assert.throws(
+                () => Module.artifactSlug(version, "release", UUID),
+                /cannot be used as a folder name/,
+                version
+            );
         }
     });
 

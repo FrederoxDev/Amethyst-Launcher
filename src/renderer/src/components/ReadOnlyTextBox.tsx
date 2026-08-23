@@ -8,9 +8,7 @@ export function ReadOnlyTextBox({ label, text }: ReadOnlyTextBoxProps) {
         <>
             <p className="minecraft-seven readonly-label">{label}</p>
             <div className="readonly-box">
-                <p className="minecraft-seven readonly-text">
-                    {text || <span>&nbsp;</span>}
-                </p>
+                <p className="minecraft-seven readonly-text">{text || <span>&nbsp;</span>}</p>
             </div>
         </>
     );

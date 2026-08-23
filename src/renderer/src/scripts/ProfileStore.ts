@@ -59,9 +59,7 @@ export class ProfileStore {
         }
 
         // Before stamping, the file was a bare array. Anything else unstamped is not ours.
-        const entries = stamp.state === "legacy"
-            ? read.value
-            : (read.value as StampedProfiles).profiles;
+        const entries = stamp.state === "legacy" ? read.value : (read.value as StampedProfiles).profiles;
 
         if (!Array.isArray(entries)) {
             return this.reject(
@@ -81,9 +79,9 @@ export class ProfileStore {
 
         log(
             "Profiles",
-            `Loaded ${profiles.length} profile(s) from ${this.filePath}`
-            + `${stamp.state === "legacy" ? " as an unstamped file, it gets a stamp on the next save" : ""}: `
-            + `${profiles.map(p => `"${p.name}" (${p.uuid}, ${p.channel}, ${p.mods.length} mods)`).join("; ") || "none"}`
+            `Loaded ${profiles.length} profile(s) from ${this.filePath}` +
+                `${stamp.state === "legacy" ? " as an unstamped file, it gets a stamp on the next save" : ""}: ` +
+                `${profiles.map(p => `"${p.name}" (${p.uuid}, ${p.channel}, ${p.mods.length} mods)`).join("; ") || "none"}`
         );
         return profiles;
     }
@@ -92,8 +90,8 @@ export class ProfileStore {
         if (!this.loaded) {
             log(
                 "Profiles",
-                `REFUSING to write ${profiles.length} profile(s) to ${this.filePath}: it has not been read yet, `
-                + "so this save holds startup state rather than the user's profiles"
+                `REFUSING to write ${profiles.length} profile(s) to ${this.filePath}: it has not been read yet, ` +
+                    "so this save holds startup state rather than the user's profiles"
             );
             return;
         }

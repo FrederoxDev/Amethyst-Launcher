@@ -4,7 +4,11 @@ import { Profile, isModded } from "@renderer/scripts/domain/Profile";
 import { describeProblem, diagnoseProfile, launchBlocker } from "@renderer/scripts/domain/ProfileDiagnosis";
 import { toModStatus } from "@renderer/scripts/Mods";
 import { log } from "@renderer/scripts/LauncherLog";
-import { ForeignGameDataError, LaunchOutcome, SystemSetupRequiredError } from "@renderer/scripts/platform/LauncherPlatform";
+import {
+    ForeignGameDataError,
+    LaunchOutcome,
+    SystemSetupRequiredError,
+} from "@renderer/scripts/platform/LauncherPlatform";
 import { InstalledVersion } from "@renderer/scripts/versions/InstalledVersion";
 import { useAppStore } from "@renderer/states/AppStore";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
@@ -56,8 +60,8 @@ function resolveMods(profile: Profile): ResolvedMods {
     if (blocker) {
         log(
             "Launch",
-            `"${profile.name}" cannot start (${blocker.kind}${blocker.modId ? `, ${blocker.modId}` : ""}): `
-            + `${describeProblem(blocker).replace(/\n+/g, " ")}`
+            `"${profile.name}" cannot start (${blocker.kind}${blocker.modId ? `, ${blocker.modId}` : ""}): ` +
+                `${describeProblem(blocker).replace(/\n+/g, " ")}`
         );
         throw new Error(`${describeProblem(blocker)}\n\nOpen the profile to fix it.`);
     }
@@ -72,8 +76,8 @@ function resolveMods(profile: Profile): ResolvedMods {
     };
     log(
         "Launch",
-        `Resolved mods for "${profile.name}": runtime ${resolved.runtime?.id ?? "none (vanilla)"}, `
-        + `mods [${resolved.mods.map(m => m.id).join(", ") || "none"}] from ${modsPath}`
+        `Resolved mods for "${profile.name}": runtime ${resolved.runtime?.id ?? "none (vanilla)"}, ` +
+            `mods [${resolved.mods.map(m => m.id).join(", ") || "none"}] from ${modsPath}`
     );
     return resolved;
 }
@@ -99,8 +103,8 @@ async function resolveVersion(profile: Profile): Promise<InstalledVersion> {
     if (!resolved) {
         log("Launch", `resolveOrInstall(${profile.versionUuid}) returned nothing for "${profile.name}"`);
         throw new Error(
-            `${profile.versionLabel || "This profile's Minecraft version"} could not be prepared.\n\n`
-            + "Open Versions, download it again, then press Play."
+            `${profile.versionLabel || "This profile's Minecraft version"} could not be prepared.\n\n` +
+                "Open Versions, download it again, then press Play."
         );
     }
 
@@ -108,12 +112,12 @@ async function resolveVersion(profile: Profile): Promise<InstalledVersion> {
     if (version.channel !== profile.channel) {
         log(
             "Launch",
-            `Channel mismatch: profile "${profile.name}" is ${profile.channel} but its version `
-            + `"${version.label}" (${version.uuid}) is ${version.channel}`
+            `Channel mismatch: profile "${profile.name}" is ${profile.channel} but its version ` +
+                `"${version.label}" (${version.uuid}) is ${version.channel}`
         );
         throw new Error(
-            `This profile is set to ${profile.channel} but "${version.label}" is a ${version.channel} build. `
-            + `Pick a ${profile.channel} version, or create a ${version.channel} profile.`
+            `This profile is set to ${profile.channel} but "${version.label}" is a ${version.channel} build. ` +
+                `Pick a ${profile.channel} version, or create a ${version.channel} profile.`
         );
     }
     log("Launch", `Version resolved to "${version.label}" (${version.uuid}) at ${version.path}`);
@@ -123,9 +127,9 @@ async function resolveVersion(profile: Profile): Promise<InstalledVersion> {
 export async function launchProfile(profile: Profile): Promise<LaunchOutcome> {
     log(
         "Launch",
-        `Launch requested for "${profile.name}" (${profile.uuid}): ${profile.channel}, `
-        + `version ${profile.versionLabel || "unset"} (${profile.versionUuid || "unset"}), `
-        + `${isModded(profile) ? "modded" : "vanilla"}, mods [${profile.mods.join(", ") || "none"}]`
+        `Launch requested for "${profile.name}" (${profile.uuid}): ${profile.channel}, ` +
+            `version ${profile.versionLabel || "unset"} (${profile.versionUuid || "unset"}), ` +
+            `${isModded(profile) ? "modded" : "vanilla"}, mods [${profile.mods.join(", ") || "none"}]`
     );
 
     // Silently doing nothing here reads as a dead Play button, so say what is holding it, and
@@ -134,8 +138,8 @@ export async function launchProfile(profile: Profile): Promise<LaunchOutcome> {
     if (launchInFlight) {
         log("Launch", `Launch of "${profile.name}" refused: another launch is already running`);
         throw new Error(
-            `The launcher is already starting Minecraft, so "${profile.name}" was not started.\n\n`
-            + "Wait for that to finish, then press Play again."
+            `The launcher is already starting Minecraft, so "${profile.name}" was not started.\n\n` +
+                "Wait for that to finish, then press Play again."
         );
     }
 
@@ -143,12 +147,12 @@ export async function launchProfile(profile: Profile): Promise<LaunchOutcome> {
         const { currentStatus, message } = ProgressBar.getState();
         log(
             "Launch",
-            `Launch of "${profile.name}" refused: the launcher is "${currentStatus}" `
-            + `(${message || "no message"}), which blocks the launch action`
+            `Launch of "${profile.name}" refused: the launcher is "${currentStatus}" ` +
+                `(${message || "no message"}), which blocks the launch action`
         );
         throw new Error(
-            `The launcher is busy ${BUSY_WORDING[currentStatus] ?? "with something else"}, so "${profile.name}" `
-            + "was not started.\n\nWait for that to finish, then press Play again."
+            `The launcher is busy ${BUSY_WORDING[currentStatus] ?? "with something else"}, so "${profile.name}" ` +
+                "was not started.\n\nWait for that to finish, then press Play again."
         );
     }
 
@@ -184,10 +188,13 @@ async function runLaunch(profile: Profile): Promise<LaunchOutcome> {
                 setStatus("launching");
                 setProgress(0.5);
                 setMessage(`Preparing ${version.label}...`);
-                Object.assign(outcome, await store.platform.launch(
-                    { profile, version, developerMode: store.developerMode, ...resolvedMods },
-                    setMessage
-                ));
+                Object.assign(
+                    outcome,
+                    await store.platform.launch(
+                        { profile, version, developerMode: store.developerMode, ...resolvedMods },
+                        setMessage
+                    )
+                );
             }, true);
             log("Launch", `"${profile.name}" started on "${version.label}"`);
 
@@ -201,7 +208,10 @@ async function runLaunch(profile: Profile): Promise<LaunchOutcome> {
         } catch (e) {
             if (e instanceof ForeignGameDataError) {
                 if (adopted) {
-                    log("Launch", `Unowned ${e.channel} game data is still in the way after one adoption pass; giving up`);
+                    log(
+                        "Launch",
+                        `Unowned ${e.channel} game data is still in the way after one adoption pass; giving up`
+                    );
                     throw e;
                 }
                 adopted = true;
@@ -214,8 +224,8 @@ async function runLaunch(profile: Profile): Promise<LaunchOutcome> {
                 if (systemSetupDone) {
                     log("Launch", `"${e.title}" is still unsatisfied after one repair attempt; giving up`);
                     throw new Error(
-                        "The launcher could not finish setting Windows up, so Minecraft was not started.\n\n"
-                        + e.manualStep
+                        "The launcher could not finish setting Windows up, so Minecraft was not started.\n\n" +
+                            e.manualStep
                     );
                 }
                 systemSetupDone = true;
@@ -233,11 +243,15 @@ async function runLaunch(profile: Profile): Promise<LaunchOutcome> {
 export async function launchProfileByUuid(profileUuid: string): Promise<LaunchOutcome> {
     const profile = useAppStore.getState().profiles.find(p => p.uuid === profileUuid);
     if (!profile) {
-        const known = useAppStore.getState().profiles.map(p => p.uuid).join(", ") || "none";
+        const known =
+            useAppStore
+                .getState()
+                .profiles.map(p => p.uuid)
+                .join(", ") || "none";
         log("Launch", `No profile with UUID ${profileUuid}; known profiles: ${known}`);
         throw new Error(
-            "That profile no longer exists, so it could not be started.\n\n"
-            + "Pick a profile in the launcher and press Play."
+            "That profile no longer exists, so it could not be started.\n\n" +
+                "Pick a profile in the launcher and press Play."
         );
     }
     return await launchProfile(profile);
@@ -253,7 +267,7 @@ export function launchErrorMessage(e: unknown): string {
     if (message !== "") return message;
 
     return (
-        "Minecraft could not be started, and the reason did not come back in a form that can be shown here.\n\n"
-        + "Open Logs and send the newest launcher log."
+        "Minecraft could not be started, and the reason did not come back in a form that can be shown here.\n\n" +
+        "Open Logs and send the newest launcher log."
     );
 }

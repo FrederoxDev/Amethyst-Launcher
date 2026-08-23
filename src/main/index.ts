@@ -6,6 +6,7 @@ import { is } from "@electron-toolkit/utils";
 import { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, nativeTheme, shell } from "electron";
 import { autoUpdater } from "electron-updater";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import { fileURLToPath } from "url";
 
@@ -14,6 +15,43 @@ import { registerDownloadIpc } from "./net/DownloadService";
 import { registerIconScheme, serveIcons } from "./protocol/IconProtocol";
 
 process.env["ELECTRON_DISABLE_SECURITY_WARNINGS"] = "true";
+
+/**
+ * Reads the launcher config straight off disk. Used during early startup
+ * (before the renderer/store exist) to honor window-related settings.
+ */
+function readLauncherConfig(): Record<string, unknown> {
+    const launcherConfigPath =
+        process.platform === "win32"
+            ? path.join(
+                  process.env.APPDATA ?? path.join(os.homedir(), "AppData", "Roaming"),
+                  "Amethyst",
+                  "Launcher",
+                  "launcher_config.json"
+              )
+            : path.join(os.homedir(), ".amethyst", "launcher", "launcher_config.json");
+
+    try {
+        if (fs.existsSync(launcherConfigPath)) {
+            return JSON.parse(fs.readFileSync(launcherConfigPath, "utf-8"));
+        }
+    } catch (e) {
+        console.error("[main] Failed to read launcher config:", e);
+    }
+    return {};
+}
+
+const launcherConfig = readLauncherConfig();
+
+// Honor the persisted hardware-acceleration setting. This MUST run before the
+// app "ready" event.
+if (launcherConfig.hardware_acceleration === false) {
+    app.disableHardwareAcceleration();
+    console.log("[main] Hardware acceleration disabled via launcher config.");
+}
+
+// When enabled, use the OS native window frame instead of the custom titlebar.
+const useNativeDecorations = launcherConfig.native_decorations === true;
 
 registerIconScheme();
 
@@ -127,10 +165,10 @@ app.on("web-contents-created", (_event, contents) => guardNavigation(contents));
 
 function createWindow(): BrowserWindow {
     const win = new BrowserWindow({
-        width: 800,
-        height: 600,
-        minWidth: 600,
-        minHeight: 400,
+        width: 1400,
+        height: 780,
+        minWidth: 1060,
+        minHeight: 600,
         backgroundColor: "#1E1E1F",
         show: false,
         webPreferences: {
@@ -138,7 +176,7 @@ function createWindow(): BrowserWindow {
             nodeIntegration: true,
             contextIsolation: false,
         },
-        frame: false,
+        frame: useNativeDecorations,
     });
 
     win.setMenuBarVisibility(false);
@@ -239,7 +277,7 @@ function handle<T>(
 
 // Sync because every file the renderer writes stamps the version that wrote it, and the write
 // paths are not async.
-ipcMain.on("get-app-version-sync", (event) => {
+ipcMain.on("get-app-version-sync", event => {
     event.returnValue = app.getVersion();
 });
 
@@ -281,8 +319,7 @@ function extractModFilePath(argv: string[]): string | null {
 
     if (match) {
         mainLog("INFO", "fileopen", `argv holds mod archive "${match}"`);
-    }
-    else if (candidates.length > 0) {
+    } else if (candidates.length > 0) {
         mainLog(
             "INFO",
             "fileopen",
@@ -313,7 +350,11 @@ function handleModFilePath(file_path: string): void {
 
 // Other window is open, so don't create a new one
 if (hasSingleInstanceLock === false) {
-    mainLog("INFO", "startup", `Another instance holds the lock; handing over argv [${process.argv.slice(1).join(" ")}] and quitting`);
+    mainLog(
+        "INFO",
+        "startup",
+        `Another instance holds the lock; handing over argv [${process.argv.slice(1).join(" ")}] and quitting`
+    );
     discardRun();
     app.quit();
 }
@@ -343,9 +384,21 @@ else {
         serveIcons();
         mainWindow = createWindow();
 
-        mainWindow.once("ready-to-show", () => {
-            mainLog("INFO", "window", "Window ready to show");
-            mainWindow!.show();
+        // The window is created hidden (show: false) and revealed by whichever of the triggers
+        // below fires first. `showWindow` is idempotent (the isVisible guard), so racing triggers
+        // are safe. backgroundColor on the window already prevents a white flash, so revealing
+        // slightly early is harmless.
+        let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+
+        const showWindow = (trigger: string): void => {
+            if (!mainWindow || mainWindow.isVisible()) return;
+            if (fallbackTimer) {
+                clearTimeout(fallbackTimer);
+                fallbackTimer = null;
+            }
+            mainLog("INFO", "window", `Showing the window (${trigger})`);
+            mainWindow.show();
+
             // Handle the case where the app was cold-started via a protocol URL.
             const url = extractProtocolUrl(process.argv);
             if (url) handleProtocolUrl(url);
@@ -355,7 +408,20 @@ else {
             const filePath = extractModFilePath(process.argv) ?? pendingModFilePath;
             pendingModFilePath = null;
             if (filePath) handleModFilePath(filePath);
-        });
+        };
+
+        // Primary path: the renderer signals once its store has hydrated and it has painted real
+        // content. This runs from JS, so unlike "ready-to-show" it does not depend on the
+        // GPU/compositor and fires reliably even when hardware acceleration is misbehaving
+        // (e.g. some Debian/Wayland setups).
+        ipcMain.once("RENDERER_READY", () => showWindow("the renderer finished hydrating"));
+
+        // Fast path on healthy systems: the compositor's first frame is ready.
+        mainWindow.once("ready-to-show", () => showWindow("ready-to-show"));
+
+        // Hard guarantee: if neither signal arrives (broken GPU plus a renderer that never
+        // finished hydrating), reveal anyway so the window can never be stuck permanently hidden.
+        fallbackTimer = setTimeout(() => showWindow("the 3s fallback timer"), 3000);
     });
 
     app.on("second-instance", (_event, commandLine) => {
@@ -364,8 +430,7 @@ else {
         if (mainWindow) {
             if (mainWindow.isMinimized()) mainWindow.restore();
             mainWindow.focus();
-        }
-        else {
+        } else {
             mainLog("WARN", "startup", "second-instance arrived before this instance had a window");
         }
 
@@ -381,29 +446,49 @@ else {
 
 registerDownloadIpc();
 
-handle("get-app-version", () => app.getVersion(), result => result);
+handle(
+    "get-app-version",
+    () => app.getVersion(),
+    result => result
+);
 
-handle("check-for-updates", () => {
-    autoUpdater.checkForUpdates().catch(e => {
-        mainLog("ERROR", "update", `checkForUpdates failed: ${describeError(e)}`);
-    });
-    return "check started";
-}, result => result);
+handle(
+    "check-for-updates",
+    () => {
+        autoUpdater.checkForUpdates().catch(e => {
+            mainLog("ERROR", "update", `checkForUpdates failed: ${describeError(e)}`);
+        });
+        return "check started";
+    },
+    result => result
+);
 
-handle("set-auto-download", (value: boolean) => {
-    autoUpdater.autoDownload = value;
-    return value;
-}, result => `autoDownload=${result}`);
+handle(
+    "set-auto-download",
+    (value: boolean) => {
+        autoUpdater.autoDownload = value;
+        return value;
+    },
+    result => `autoDownload=${result}`
+);
 
-handle("set-auto-install-on-app-quit", (value: boolean) => {
-    autoUpdater.autoInstallOnAppQuit = value;
-    return value;
-}, result => `autoInstallOnAppQuit=${result}`);
+handle(
+    "set-auto-install-on-app-quit",
+    (value: boolean) => {
+        autoUpdater.autoInstallOnAppQuit = value;
+        return value;
+    },
+    result => `autoInstallOnAppQuit=${result}`
+);
 
-handle("update-download", async () => {
-    const files = await autoUpdater.downloadUpdate();
-    return files;
-}, result => `downloaded ${Array.isArray(result) ? result.join(", ") : String(result)}`);
+handle(
+    "update-download",
+    async () => {
+        const files = await autoUpdater.downloadUpdate();
+        return files;
+    },
+    result => `downloaded ${Array.isArray(result) ? result.join(", ") : String(result)}`
+);
 
 handle(
     "dialog:openFile",

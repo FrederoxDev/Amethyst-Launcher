@@ -1,15 +1,27 @@
 import { useEffect, useState } from "react";
 
+import { useAppStore } from "@renderer/states/AppStore";
+
 const { ipcRenderer } = window.require("electron") as typeof import("electron");
 
 export default function Header() {
     const [appVersion, setAppVersion] = useState("-");
+    // Read the persisted value once at startup — it reflects the frame the main
+    // process actually created. We deliberately don't react to live toggles
+    // since the OS frame only changes after a restart; hiding the custom bar
+    // early would otherwise leave the window with no titlebar at all.
+    // From the store, not a mount-time snapshot: the config is hydrated asynchronously, so a
+    // snapshot taken on first render would always read the default rather than the user's choice.
+    const nativeDecorations = useAppStore(state => state.nativeDecorations);
 
     useEffect(() => {
         ipcRenderer.invoke("get-app-version").then(version => {
             setAppVersion(version);
         });
     }, []);
+
+    // Native frame is in use — the OS draws the title bar, so skip ours.
+    if (nativeDecorations) return null;
 
     function ToggleMaximized() {
         ipcRenderer.send("TITLE_BAR_ACTION", "TOGGLE_MAXIMIZED");
@@ -29,19 +41,34 @@ export default function Header() {
                     <p className="title_text_sub minecraft-seven">{appVersion}</p>
                 </div>
                 <div className="window_button_panel">
-                    <div className="window_button window_button_hover" tabIndex={-1} onClick={Minimize}>
+                    <div
+                        className="window_button window_button_hover"
+                        data-tooltip="Minimize"
+                        tabIndex={-1}
+                        onClick={Minimize}
+                    >
                         <svg width="20" height="20" viewBox="0 0 12 12">
                             <rect className="window_button_svg" width="10" height="1" x="1" y="5.5" />
                         </svg>
                     </div>
 
-                    <div className="window_button window_button_hover" tabIndex={-1} onClick={ToggleMaximized}>
+                    <div
+                        className="window_button window_button_hover"
+                        data-tooltip="Maximize"
+                        tabIndex={-1}
+                        onClick={ToggleMaximized}
+                    >
                         <svg width="20" height="20" viewBox="0 0 12 12">
                             <rect className="window_button_svg_box" width="10" height="10" x="1" y="1" />
                         </svg>
                     </div>
 
-                    <div className="window_button close_button_hover adaptive" tabIndex={-1} onClick={Close}>
+                    <div
+                        className="window_button close_button_hover adaptive"
+                        data-tooltip="Close"
+                        tabIndex={-1}
+                        onClick={Close}
+                    >
                         <svg width="20" height="20" viewBox="0 0 12 12">
                             <polygon
                                 className="window_button_svg"

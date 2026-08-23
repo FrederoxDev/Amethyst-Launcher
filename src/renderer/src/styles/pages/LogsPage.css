@@ -107,7 +107,7 @@
 }
 
 .logs-viewer-highlight {
-    background-color: #F3C642;
+    background-color: #f3c642;
     color: var(--color-outline);
     padding: 0;
 }
@@ -309,13 +309,14 @@
     margin: 0;
     padding: 10px;
     color: #dddddd;
-    font-family: 'Courier New', monospace;
+    font-family: "Courier New", monospace;
     font-size: 13px;
     line-height: 18px;
     overflow: auto;
 }
 
-.logs-viewer-content, .logs-viewer-content * {
+.logs-viewer-content,
+.logs-viewer-content * {
     user-select: text;
 }
 
@@ -328,7 +329,7 @@
 }
 
 .logs-viewer-truncated {
-    color: #F3C642;
+    color: #f3c642;
     font-size: 11px;
     margin: 0;
     padding: 6px 10px;
@@ -345,7 +346,7 @@
 }
 
 .logs-line-level-warn {
-    color: #F3C642;
+    color: #f3c642;
 }
 
 .logs-line-level-debug {

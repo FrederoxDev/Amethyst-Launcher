@@ -92,10 +92,7 @@ describe("machine readiness", () => {
 
 describe("build integrity", () => {
     it("accepts a build that holds both files", () => {
-        assert.equal(
-            classifyBuild({ folderExists: true, gameExecutable: true, manifest: true }).kind,
-            "usable"
-        );
+        assert.equal(classifyBuild({ folderExists: true, gameExecutable: true, manifest: true }).kind, "usable");
     });
 
     it("separates a folder that is gone from one that is short of files", () => {
@@ -142,21 +139,25 @@ describe("path comparison", () => {
 
 describe("launch outcome", () => {
     it("calls it running when the game is there, whatever else happened", () => {
-        const verdict = classifyLaunch(facts({
-            hresult: "0x8027025B",
-            processes: [{ pid: 42, executablePath: `${BUILD}\\Minecraft.Windows.exe` }],
-        }));
+        const verdict = classifyLaunch(
+            facts({
+                hresult: "0x8027025B",
+                processes: [{ pid: 42, executablePath: `${BUILD}\\Minecraft.Windows.exe` }],
+            })
+        );
         assert.equal(verdict.kind, "running");
         assert.equal(verdict.started, true);
     });
 
     it("counts a game on screen over the process id Windows named and that has since gone", () => {
-        const verdict = classifyLaunch(facts({
-            activationPid: 5150,
-            activationPidAlive: false,
-            shellSpawnError: "spawn explorer.exe ENOENT",
-            processes: [{ pid: 42, executablePath: `${BUILD}\\Minecraft.Windows.exe` }],
-        }));
+        const verdict = classifyLaunch(
+            facts({
+                activationPid: 5150,
+                activationPidAlive: false,
+                shellSpawnError: "spawn explorer.exe ENOENT",
+                processes: [{ pid: 42, executablePath: `${BUILD}\\Minecraft.Windows.exe` }],
+            })
+        );
         assert.equal(verdict.kind, "running");
     });
 
@@ -177,21 +178,25 @@ describe("launch outcome", () => {
     });
 
     it("does not report a success when neither way of asking got anywhere and nothing can be checked", () => {
-        const verdict = classifyLaunch(facts({
-            probeFailed: true,
-            hresult: "0x80270254",
-            usedShellFallback: true,
-            shellSpawnError: "spawn explorer.exe ENOENT",
-        }));
+        const verdict = classifyLaunch(
+            facts({
+                probeFailed: true,
+                hresult: "0x80270254",
+                usedShellFallback: true,
+                shellSpawnError: "spawn explorer.exe ENOENT",
+            })
+        );
         assert.equal(verdict.kind, "activation-refused");
         assert.equal(verdict.started, false);
     });
 
     it("does not say Windows refused a request it accepted", () => {
-        const verdict = classifyLaunch(facts({
-            usedShellFallback: true,
-            shellSpawnError: "spawn explorer.exe ENOENT",
-        }));
+        const verdict = classifyLaunch(
+            facts({
+                usedShellFallback: true,
+                shellSpawnError: "spawn explorer.exe ENOENT",
+            })
+        );
         assert.equal(verdict.kind, "activation-refused");
         assert.doesNotMatch(verdict.summary, /refused/);
         assert.match(verdict.summary, /accepted/);
@@ -208,18 +213,17 @@ describe("launch outcome", () => {
     it("records that the shell was tried after a refusal, so the log says both were", () => {
         const verdict = classifyLaunch(facts({ hresult: "0x80270254", usedShellFallback: true }));
         assert.match(verdict.summary, /shell was asked instead/);
-        assert.doesNotMatch(
-            classifyLaunch(facts({ hresult: "0x80270254" })).summary,
-            /shell was asked instead/
-        );
+        assert.doesNotMatch(classifyLaunch(facts({ hresult: "0x80270254" })).summary, /shell was asked instead/);
     });
 
     it("reports a shell fallback that could not even start", () => {
-        const verdict = classifyLaunch(facts({
-            hresult: "0x80070005",
-            usedShellFallback: true,
-            shellSpawnError: "spawn explorer.exe ENOENT",
-        }));
+        const verdict = classifyLaunch(
+            facts({
+                hresult: "0x80070005",
+                usedShellFallback: true,
+                shellSpawnError: "spawn explorer.exe ENOENT",
+            })
+        );
         assert.equal(verdict.kind, "activation-refused");
         assert.match(verdict.summary, /ENOENT/);
     });
@@ -244,9 +248,11 @@ describe("launch outcome", () => {
     });
 
     it("separates a Minecraft running from another build", () => {
-        const verdict = classifyLaunch(facts({
-            processes: [{ pid: 77, executablePath: "D:\\Other\\Minecraft.Windows.exe" }],
-        }));
+        const verdict = classifyLaunch(
+            facts({
+                processes: [{ pid: 77, executablePath: "D:\\Other\\Minecraft.Windows.exe" }],
+            })
+        );
         assert.equal(verdict.kind, "other-build-running");
         assert.match(verdict.nextStep, /Close/);
     });
@@ -258,11 +264,13 @@ describe("launch outcome", () => {
     });
 
     it("prefers the crash over a stranger's Minecraft, because the crash is this launch's", () => {
-        const verdict = classifyLaunch(facts({
-            activationPid: 5150,
-            activationPidAlive: false,
-            processes: [{ pid: 77, executablePath: "D:\\Other\\Minecraft.Windows.exe" }],
-        }));
+        const verdict = classifyLaunch(
+            facts({
+                activationPid: 5150,
+                activationPidAlive: false,
+                processes: [{ pid: 77, executablePath: "D:\\Other\\Minecraft.Windows.exe" }],
+            })
+        );
         assert.equal(verdict.kind, "exited-immediately");
     });
 

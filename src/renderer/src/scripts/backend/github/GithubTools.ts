@@ -76,8 +76,8 @@ export class GithubTools {
                 if (stale) {
                     log(
                         "Github",
-                        `Falling back to the ${stale.release.tagName} record of ${repo} cached `
-                        + `${Math.round((Date.now() - stale.fetchedAt) / 1000)}s ago: ${describeError(error)}`
+                        `Falling back to the ${stale.release.tagName} record of ${repo} cached ` +
+                            `${Math.round((Date.now() - stale.fetchedAt) / 1000)}s ago: ${describeError(error)}`
                     );
                     return stale.release;
                 }
@@ -109,31 +109,36 @@ export class GithubTools {
         throw lastError;
     }
 
-    private static async readRelease(apiUrl: string, timeout: number | undefined, startedAt: number): Promise<GithubRelease> {
+    private static async readRelease(
+        apiUrl: string,
+        timeout: number | undefined,
+        startedAt: number
+    ): Promise<GithubRelease> {
         const response = timeout ? await fetchWithTimeout(apiUrl, {}, timeout) : await fetch(apiUrl);
         if (!response.ok) {
             const rateLimited = rateLimitDetail(response);
-            const message = `GitHub API error: ${response.status} ${response.statusText}`
-                + ` after ${Date.now() - startedAt}ms${rateLimited ? `, ${rateLimited}` : ""}`;
+            const message =
+                `GitHub API error: ${response.status} ${response.statusText}` +
+                ` after ${Date.now() - startedAt}ms${rateLimited ? `, ${rateLimited}` : ""}`;
             throw rateLimited ? new RateLimitedError(message) : new Error(message);
         }
 
-        const data = await response.json() as ReleasePayload;
+        const data = (await response.json()) as ReleasePayload;
 
         const release: GithubRelease = {
             tagName: data.tag_name,
             assets: (data.assets ?? []).map(asset => ({
                 name: asset.name,
                 downloadUrl: asset.browser_download_url,
-                size: typeof asset.size === "number" ? asset.size : 0
-            }))
+                size: typeof asset.size === "number" ? asset.size : 0,
+            })),
         };
 
         log(
             "Github",
-            `GET ${apiUrl} returned ${response.status} in ${Date.now() - startedAt}ms: `
-            + `latest is ${release.tagName} with ${release.assets.length} assets `
-            + `(${release.assets.map(a => a.name).join(", ") || "none"})`
+            `GET ${apiUrl} returned ${response.status} in ${Date.now() - startedAt}ms: ` +
+                `latest is ${release.tagName} with ${release.assets.length} assets ` +
+                `(${release.assets.map(a => a.name).join(", ") || "none"})`
         );
         return release;
     }

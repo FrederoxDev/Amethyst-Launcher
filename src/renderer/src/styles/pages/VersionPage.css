@@ -111,10 +111,9 @@
 }
 
 .version-icon-action-delete:hover {
-    background-color: #FF000080;
+    background-color: #ff000080;
 }
 
 .version-icon-action-neutral:hover {
     background-color: var(--color-surface-hover);
 }
-

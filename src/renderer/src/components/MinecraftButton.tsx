@@ -2,7 +2,12 @@ import "@renderer/styles/components/MinecraftButton.css";
 import { CSSProperties } from "react";
 import { clickable } from "./Clickable";
 import { MinecraftButtonStyle } from "./MinecraftButtonStyle";
-import { DISABLED_MINECRAFT_BUTTON, GREEN_MINECRAFT_BUTTON, MinecraftButtonColorPallete, RED_MINECRAFT_BUTTON } from "./MinecraftButtonPalette";
+import {
+    DISABLED_MINECRAFT_BUTTON,
+    GREEN_MINECRAFT_BUTTON,
+    MinecraftButtonColorPallete,
+    RED_MINECRAFT_BUTTON,
+} from "./MinecraftButtonPalette";
 
 type MinecraftCSSVariables = CSSProperties & {
     [key: `--${string}`]: string | number | undefined;
@@ -17,11 +22,18 @@ type MinecraftButtonProps = {
     buttonStyle?: MinecraftButtonStyle;
 };
 
-export function MinecraftButton({ text, onClick, disabled = false, style = {}, colorPallete = GREEN_MINECRAFT_BUTTON, buttonStyle }: MinecraftButtonProps) {
+export function MinecraftButton({
+    text,
+    onClick,
+    disabled = false,
+    style = {},
+    colorPallete = GREEN_MINECRAFT_BUTTON,
+    buttonStyle,
+}: MinecraftButtonProps) {
     if (buttonStyle === MinecraftButtonStyle.Warn) {
         colorPallete = RED_MINECRAFT_BUTTON;
     }
-    colorPallete = disabled ? DISABLED_MINECRAFT_BUTTON : (colorPallete || GREEN_MINECRAFT_BUTTON);
+    colorPallete = disabled ? DISABLED_MINECRAFT_BUTTON : colorPallete || GREEN_MINECRAFT_BUTTON;
     const cssVars: MinecraftCSSVariables = {
         "--mc-button-container-h": "48px",
         "--mc-button-container-w": "100%",
@@ -34,7 +46,7 @@ export function MinecraftButton({ text, onClick, disabled = false, style = {}, c
         "--mc-button-base-hover-bg-color": colorPallete?.baseHoverBgColor,
         "--mc-button-shadow-size": "4px",
         "--mc-button-text-color": colorPallete?.textColor,
-        ...style
+        ...style,
     };
 
     return (

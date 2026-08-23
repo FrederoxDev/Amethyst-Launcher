@@ -1,7 +1,7 @@
 declare global {
     interface Window {
-        require: NodeRequire
+        require: NodeRequire;
     }
 }
 
-export {}
+export {};

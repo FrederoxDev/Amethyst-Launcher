@@ -43,9 +43,11 @@ export function attachModToProfile(profileUuid: string, modName: string): Attach
 
 function reportAttachFailure(outcome: AttachOutcome, modName: string): void {
     if (outcome !== "profile-missing") return;
-    useAppStore.getState().setError(
-        `${modName} is installed, but the profile it was meant for no longer exists. Add it from the profile editor.`
-    );
+    useAppStore
+        .getState()
+        .setError(
+            `${modName} is installed, but the profile it was meant for no longer exists. Add it from the profile editor.`
+        );
 }
 
 export function attachInstalledMod(profileUuid: string, modName: string): void {

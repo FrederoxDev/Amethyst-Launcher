@@ -83,21 +83,39 @@ function stateLine(): string {
 
     // Mirrors ProfileStore.load: stamped files nest the array under `profiles`, and only files
     // written before stamping existed are a bare array.
-    const profiles = paths === null ? "unknown" : probe(() => String(countArray(
-        paths.profilesFilePath,
-        parsed => (Array.isArray(parsed) ? parsed : (parsed as { profiles?: unknown })?.profiles)
-    )));
+    const profiles =
+        paths === null
+            ? "unknown"
+            : probe(() =>
+                  String(
+                      countArray(paths.profilesFilePath, parsed =>
+                          Array.isArray(parsed) ? parsed : (parsed as { profiles?: unknown })?.profiles
+                      )
+                  )
+              );
 
-    const versions = paths === null ? "unknown" : probe(() => String(countArray(
-        path.join(paths.versionsPath, "installed_versions.json"),
-        parsed => (parsed as { versions?: unknown }).versions
-    )));
+    const versions =
+        paths === null
+            ? "unknown"
+            : probe(() =>
+                  String(
+                      countArray(
+                          path.join(paths.versionsPath, "installed_versions.json"),
+                          parsed => (parsed as { versions?: unknown }).versions
+                      )
+                  )
+              );
 
-    const mods = paths === null ? "unknown" : probe(() =>
-        String(fs.existsSync(paths.modsPath)
-            ? fs.readdirSync(paths.modsPath, { withFileTypes: true }).filter(e => e.isDirectory()).length
-            : 0)
-    );
+    const mods =
+        paths === null
+            ? "unknown"
+            : probe(() =>
+                  String(
+                      fs.existsSync(paths.modsPath)
+                          ? fs.readdirSync(paths.modsPath, { withFileTypes: true }).filter(e => e.isDirectory()).length
+                          : 0
+                  )
+              );
 
     return `profiles=${profiles}, installedVersions=${versions}, mods=${mods}`;
 }

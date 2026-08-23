@@ -71,25 +71,28 @@ export function ImportVersionPopup({ submit, initialFile, defaultChannel, onBack
             footerAlign={onBack ? "between" : "end"}
             footer={
                 <>
-                    {onBack && <MinecraftButton text="Back" style={{ "--mc-button-container-w": "100px" }} onClick={onBack} />}
+                    {onBack && (
+                        <MinecraftButton text="Back" style={{ "--mc-button-container-w": "100px" }} onClick={onBack} />
+                    )}
                     <MinecraftButton
                         text="Import!"
                         disabled={!canImport}
                         style={{ "--mc-button-container-w": "100px" }}
                         onClick={() => {
                             if (!canImport || !file) return;
-                            submit({ label, channel, version: SemVersion.fromString(versionText), uuid, file });
+                            submit({
+                                label,
+                                channel,
+                                version: SemVersion.fromString(versionText),
+                                uuid,
+                                file,
+                            });
                         }}
                     />
                 </>
             }
         >
-            <TextInput
-                label="Version Name"
-                text={label}
-                setText={setLabelOverride}
-                style={{ width: "100%" }}
-            />
+            <TextInput label="Version Name" text={label} setText={setLabelOverride} style={{ width: "100%" }} />
             {!labelValid && <p style={{ fontSize: "12px", color: "var(--color-danger-text)" }}>Invalid version name</p>}
 
             <Dropdown
@@ -104,7 +107,13 @@ export function ImportVersionPopup({ submit, initialFile, defaultChannel, onBack
             {versionError && <p style={{ fontSize: "12px", color: "var(--color-danger-text)" }}>{versionError}</p>}
 
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                    }}
+                >
                     <p className="minecraft-seven text-input-label">Version file</p>
                     <div
                         className="version-icon-action version-icon-action-neutral"
@@ -117,12 +126,36 @@ export function ImportVersionPopup({ submit, initialFile, defaultChannel, onBack
                             event.preventDefault();
                             pickFile();
                         }}
-                        style={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+                        style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                        }}
                     >
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="M12 12v6" /><path d="m15 15-3-3-3 3" /></svg>
+                        <svg
+                            width="22"
+                            height="22"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="white"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
+                            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+                            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                            <path d="M12 12v6" />
+                            <path d="m15 15-3-3-3 3" />
+                        </svg>
                     </div>
                 </div>
-                <p style={{ fontSize: "12px", color: file ? "var(--color-text-muted)" : "var(--color-danger-text)", wordBreak: "break-all" }}>
+                <p
+                    style={{
+                        fontSize: "12px",
+                        color: file ? "var(--color-text-muted)" : "var(--color-danger-text)",
+                        wordBreak: "break-all",
+                    }}
+                >
                     {file || "No version file selected"}
                 </p>
             </div>

@@ -11,6 +11,10 @@ export function log(scope: string, message: string): void {
 
 /** Multi-line detail (PowerShell error text, command output) indented under its own heading. */
 export function logBlock(scope: string, heading: string, body: string): void {
-    const indented = body.trim().split(/\r?\n/).map(l => `    ${l}`).join("\n");
+    const indented = body
+        .trim()
+        .split(/\r?\n/)
+        .map(l => `    ${l}`)
+        .join("\n");
     log(scope, `${heading}\n${indented}`);
 }

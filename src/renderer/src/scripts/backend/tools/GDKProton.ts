@@ -18,8 +18,8 @@ export class GDKProton extends ArchiveToolArtifact {
                 promptForUpdate: false,
                 allowOutdated: true,
                 releaseFetchTimeout: 1000,
-                checkForUpdates: true
-            }
+                checkForUpdates: true,
+            },
         });
     }
 }

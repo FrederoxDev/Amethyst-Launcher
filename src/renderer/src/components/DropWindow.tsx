@@ -57,7 +57,10 @@ export function DropWindow() {
             dragCount = 0;
 
             if (!event.dataTransfer || !event.dataTransfer.types.includes("Files")) {
-                log("DropWindow", `Ignoring a drop that carries no files (types: ${event.dataTransfer?.types ?? "none"})`);
+                log(
+                    "DropWindow",
+                    `Ignoring a drop that carries no files (types: ${event.dataTransfer?.types ?? "none"})`
+                );
                 return;
             }
 
@@ -67,8 +70,8 @@ export function DropWindow() {
             if (ProgressBar.isBusy()) {
                 log(
                     "DropWindow",
-                    `Rejecting a drop of ${event.dataTransfer.files.length} item(s): the launcher is `
-                    + `"${ProgressBar.getState().currentStatus}"`
+                    `Rejecting a drop of ${event.dataTransfer.files.length} item(s): the launcher is ` +
+                        `"${ProgressBar.getState().currentStatus}"`
                 );
                 setError("Wait for the current operation to finish before importing.");
                 return;
@@ -76,7 +79,12 @@ export function DropWindow() {
 
             type ElectronFile = File & { path: string };
             const items = event.dataTransfer.files as unknown as ElectronFile[];
-            log("DropWindow", `Dropped ${items.length} item(s): ${Array.from(items).map(f => f.path).join(", ")}`);
+            log(
+                "DropWindow",
+                `Dropped ${items.length} item(s): ${Array.from(items)
+                    .map(f => f.path)
+                    .join(", ")}`
+            );
 
             // Serialize folder imports so they queue cleanly through ProgressBar.
             // Archive imports go through Extractor (no ProgressBar contention) so they
@@ -119,10 +127,7 @@ export function DropWindow() {
         function openFile(_event: unknown, file_path: string) {
             log("DropWindow", `Opening ${file_path} handed over by the operating system`);
             if (ProgressBar.isBusy()) {
-                log(
-                    "DropWindow",
-                    `Rejecting ${file_path}: the launcher is "${ProgressBar.getState().currentStatus}"`
-                );
+                log("DropWindow", `Rejecting ${file_path}: the launcher is "${ProgressBar.getState().currentStatus}"`);
                 setError("Wait for the current operation to finish before importing.");
                 return;
             }
@@ -134,10 +139,14 @@ export function DropWindow() {
         async function ImportFolder(folder_path: string) {
             log("DropWindow", `Copying the folder ${folder_path} into ${paths.modsPath}`);
             try {
-                await ProgressBar.runAsync(async (state) => {
-                    state.setMessage(`Importing ${path.basename(folder_path)}...`);
-                    await CopyRecursive(folder_path, paths.modsPath);
-                }, true, FULL_PROGRESS_RESET_OPTIONS);
+                await ProgressBar.runAsync(
+                    async state => {
+                        state.setMessage(`Importing ${path.basename(folder_path)}...`);
+                        await CopyRecursive(folder_path, paths.modsPath);
+                    },
+                    true,
+                    FULL_PROGRESS_RESET_OPTIONS
+                );
                 log("DropWindow", `Copied ${folder_path} into ${paths.modsPath}`);
                 refreshAllMods();
             } catch (error) {
@@ -163,14 +172,10 @@ export function DropWindow() {
     }, [setError, refreshAllMods, paths.modsPath]);
 
     return (
-        <div
-            className={`drop-window ${hovered ? "drop-window-visible" : "drop-window-hidden"}`}
-        >
+        <div className={`drop-window ${hovered ? "drop-window-visible" : "drop-window-hidden"}`}>
             <div className="drop-window-backdrop" />
 
-            <h1 className="minecraft-seven drop-window-text">
-                Drop mod file or folder to import
-            </h1>
+            <h1 className="minecraft-seven drop-window-text">Drop mod file or folder to import</h1>
         </div>
     );
 }

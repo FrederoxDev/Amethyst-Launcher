@@ -74,7 +74,13 @@ export function headRequest(url: string, timeoutMs: number = HEAD_TIMEOUT_MS): P
 
         const timer = setTimeout(() => {
             request.abort();
-            answer({ ok: false, status: 0, statusText: "", contentLength: 0, error: `no answer within ${timeoutMs}ms` });
+            answer({
+                ok: false,
+                status: 0,
+                statusText: "",
+                contentLength: 0,
+                error: `no answer within ${timeoutMs}ms`,
+            });
         }, timeoutMs);
 
         request.on("response", response => {
@@ -186,7 +192,9 @@ class Attempt {
         if (this.response === null) {
             const elapsed = Date.now() - this.startedAt;
             mainLog("ERROR", "download", `GET ${this.job.url} never answered after ${elapsed}ms: ${describe(error)}`);
-            this.fail(new RetryableDownloadError(`Download of ${this.job.url} failed: ${describe(error)}`, { cause: error }));
+            this.fail(
+                new RetryableDownloadError(`Download of ${this.job.url} failed: ${describe(error)}`, { cause: error })
+            );
             return;
         }
         this.failTransfer(error);
@@ -215,13 +223,15 @@ class Attempt {
         mainLog(
             "INFO",
             "download",
-            `GET ${this.job.url} returned ${this.status}, `
-            + `${declared > 0
-                ? `${declared} bytes`
-                : this.expected > 0
-                    ? `no declared length, ${this.expected} bytes expected by the caller`
-                    : "no declared length"}, `
-            + `type ${headerValue(response.headers, "content-type") ?? "unstated"}`
+            `GET ${this.job.url} returned ${this.status}, ` +
+                `${
+                    declared > 0
+                        ? `${declared} bytes`
+                        : this.expected > 0
+                          ? `no declared length, ${this.expected} bytes expected by the caller`
+                          : "no declared length"
+                }, ` +
+                `type ${headerValue(response.headers, "content-type") ?? "unstated"}`
         );
 
         void this.startWriting(body);
@@ -231,8 +241,14 @@ class Attempt {
         try {
             await fs.promises.rm(this.partPath, { force: true });
         } catch (error) {
-            mainLog("ERROR", "download", `Could not clear the leftover part file "${this.partPath}": ${describeError(error)}`);
-            this.fail(new Error(`Could not start the download of ${this.job.url}: ${describe(error)}`, { cause: error }));
+            mainLog(
+                "ERROR",
+                "download",
+                `Could not clear the leftover part file "${this.partPath}": ${describeError(error)}`
+            );
+            this.fail(
+                new Error(`Could not start the download of ${this.job.url}: ${describe(error)}`, { cause: error })
+            );
             return;
         }
         if (this.settled) return;
@@ -281,7 +297,9 @@ class Attempt {
     private async finish(): Promise<void> {
         try {
             if (this.expected > 0 && this.received !== this.expected) {
-                throw new RetryableDownloadError(`the connection closed after ${this.received} of ${this.expected} bytes`);
+                throw new RetryableDownloadError(
+                    `the connection closed after ${this.received} of ${this.expected} bytes`
+                );
             }
             if (this.expected === 0 && this.received === 0) {
                 throw new RetryableDownloadError("the response carried no bytes and declared no length");
@@ -305,7 +323,11 @@ class Attempt {
                 "download",
                 `Could not move "${this.partPath}" to "${this.job.destination}": ${describeError(error)}`
             );
-            this.reject(new Error(`Could not save the download to "${this.job.destination}": ${describe(error)}`, { cause: error }));
+            this.reject(
+                new Error(`Could not save the download to "${this.job.destination}": ${describe(error)}`, {
+                    cause: error,
+                })
+            );
             return;
         }
 
@@ -313,8 +335,8 @@ class Attempt {
         mainLog(
             "INFO",
             "download",
-            `Saved ${this.received} bytes from ${this.job.url} to "${this.job.destination}" `
-            + `in ${Date.now() - this.startedAt}ms`
+            `Saved ${this.received} bytes from ${this.job.url} to "${this.job.destination}" ` +
+                `in ${Date.now() - this.startedAt}ms`
         );
         this.disarm();
         this.settled = true;
@@ -329,9 +351,9 @@ class Attempt {
         mainLog(
             "ERROR",
             "download",
-            `Download of ${this.job.url} to "${this.job.destination}" failed after ${this.received} of `
-            + `${this.expected > 0 ? this.expected : "an unstated number of"} bytes `
-            + `(HTTP ${this.status} ${this.statusText}, ${Date.now() - this.startedAt}ms): ${describeError(failure)}`
+            `Download of ${this.job.url} to "${this.job.destination}" failed after ${this.received} of ` +
+                `${this.expected > 0 ? this.expected : "an unstated number of"} bytes ` +
+                `(HTTP ${this.status} ${this.statusText}, ${Date.now() - this.startedAt}ms): ${describeError(failure)}`
         );
 
         const wrapped = `Download of ${this.job.url} failed: ${describe(failure)}`;
@@ -386,7 +408,10 @@ export class Download {
     private attempt: Attempt | null = null;
     private readonly cancelSignal = { cancelled: false };
 
-    constructor(private readonly request: DownloadRequest, private readonly onProgress: ProgressSink) {}
+    constructor(
+        private readonly request: DownloadRequest,
+        private readonly onProgress: ProgressSink
+    ) {}
 
     cancel(): void {
         this.cancelSignal.cancelled = true;
@@ -414,8 +439,8 @@ export class Download {
                 mainLog(
                     "WARN",
                     "download",
-                    `Attempt ${attempt} of ${attempts} for ${this.request.url} failed, `
-                    + `retrying in ${backoff}ms: ${describe(error)}`
+                    `Attempt ${attempt} of ${attempts} for ${this.request.url} failed, ` +
+                        `retrying in ${backoff}ms: ${describe(error)}`
                 );
                 await backoffDelay(backoff, this.cancelSignal);
             }

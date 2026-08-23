@@ -17,24 +17,24 @@ interface ProgressBarState {
     /** Apply multiple field updates in a single zustand `set()` so subscribers see one consistent change. */
     update(partial: Partial<Pick<ProgressBarState, "busy" | "currentStatus" | "message" | "progress" | "show">>): void;
     reset(): void;
-};
+}
 
 type ProgressResetOptions = {
     status: boolean;
     message: boolean;
     progress: boolean;
     show: boolean;
-}
+};
 
 export const FULL_PROGRESS_RESET_OPTIONS: ProgressResetOptions = {
     status: true,
     message: true,
     progress: true,
-    show: true
-}
+    show: true,
+};
 
 export class ProgressBar {
-    private static state = create<ProgressBarState>((set) => ({
+    private static state = create<ProgressBarState>(set => ({
         busy: false,
         currentStatus: "idle",
         message: "",
@@ -44,29 +44,29 @@ export class ProgressBar {
         // Status is the coarse state that gates launching, downloading and dropping files, so
         // each transition is recorded. Message and progress are not: they change per chunk.
         setStatus(status) {
-            set((state) => {
+            set(state => {
                 const next = StateUtils.resolveSetStateAction(status, state.currentStatus);
                 if (next !== state.currentStatus) log("Progress", `Status: ${state.currentStatus} -> ${next}`);
                 return { currentStatus: next };
             });
         },
         setMessage(message) {
-            set((state) => ({
-                message: StateUtils.resolveSetStateAction(message, state.message)
+            set(state => ({
+                message: StateUtils.resolveSetStateAction(message, state.message),
             }));
         },
         setProgress(progress) {
-            set((state) => ({
-                progress: StateUtils.resolveSetStateAction(progress, state.progress)
+            set(state => ({
+                progress: StateUtils.resolveSetStateAction(progress, state.progress),
             }));
         },
         setShow(show) {
-            set((state) => ({
-                show: StateUtils.resolveSetStateAction(show, state.show)
+            set(state => ({
+                show: StateUtils.resolveSetStateAction(show, state.show),
             }));
         },
         update(partial) {
-            set((state) => {
+            set(state => {
                 if (partial.currentStatus !== undefined && partial.currentStatus !== state.currentStatus) {
                     log("Progress", `Status: ${state.currentStatus} -> ${partial.currentStatus}`);
                 }
@@ -79,14 +79,14 @@ export class ProgressBar {
                 currentStatus: "idle",
                 message: "",
                 progress: 0,
-                show: false
+                show: false,
             });
-        }
+        },
     }));
 
     static getState(): ProgressBarState {
         return this.state.getState();
-    };
+    }
 
     static useState(): ProgressBarState;
     static useState<T>(selector: (state: ProgressBarState) => T): T;
@@ -107,7 +107,12 @@ export class ProgressBar {
         if (this.owner === null) {
             this.owner = Symbol("progress-owner");
             this.ownerReset = resetOptions;
-            this.getState().update({ busy: true, show: showProgressBar, progress: 0, message: "" });
+            this.getState().update({
+                busy: true,
+                show: showProgressBar,
+                progress: 0,
+                message: "",
+            });
         }
         this.participants++;
     }
@@ -122,7 +127,11 @@ export class ProgressBar {
         this.applyReset(resetOptions);
     }
 
-    static run(callback: (state: ProgressBarState) => void, showProgressBar: boolean = true, resetOptions: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS): void {
+    static run(
+        callback: (state: ProgressBarState) => void,
+        showProgressBar: boolean = true,
+        resetOptions: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS
+    ): void {
         this.enter(showProgressBar, resetOptions);
         try {
             callback(this.getState());
@@ -131,7 +140,11 @@ export class ProgressBar {
         }
     }
 
-    static async runAsync(callback: (state: ProgressBarState) => Promise<void>, showProgressBar: boolean = true, resetOptions: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS): Promise<void> {
+    static async runAsync(
+        callback: (state: ProgressBarState) => Promise<void>,
+        showProgressBar: boolean = true,
+        resetOptions: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS
+    ): Promise<void> {
         this.enter(showProgressBar, resetOptions);
         try {
             await callback(this.getState());

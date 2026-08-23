@@ -11,6 +11,12 @@
     z-index: 100;
 }
 
+/* Stacked popups: only the topmost popup paints the dark backdrop so the ones
+   below don't compound into an ever-darker overlay. */
+.popup-panel-no-overlay {
+    background-color: transparent;
+}
+
 .popup-box {
     position: relative;
     background-color: var(--color-surface);
@@ -24,20 +30,42 @@
     animation: popup-scale-in 0.1s ease-out;
 }
 
-.popup-box--sm { width: 380px; }
-.popup-box--md { width: 450px; }
-.popup-box--lg { width: 600px; }
-.popup-box--xl { width: 900px; }
-.popup-box--xxl { width: 1100px; }
+.popup-box--sm {
+    width: 380px;
+}
+.popup-box--md {
+    width: 450px;
+}
+.popup-box--lg {
+    width: 600px;
+}
+.popup-box--xl {
+    width: 900px;
+}
+.popup-box--xxl {
+    width: 1100px;
+}
 
 @keyframes popup-scale-in {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 @keyframes popup-scale-out {
-    from { opacity: 1; transform: scale(1); }
-    to { opacity: 0; transform: scale(0.9); }
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.9);
+    }
 }
 
 .popup-box-closing {
@@ -49,8 +77,12 @@
 }
 
 @keyframes popup-backdrop-out {
-    from { background-color: var(--color-scrim); }
-    to { background-color: var(--color-scrim-clear); }
+    from {
+        background-color: var(--color-scrim);
+    }
+    to {
+        background-color: var(--color-scrim-clear);
+    }
 }
 
 .popup-header {
@@ -72,7 +104,9 @@
     align-items: center;
     cursor: pointer;
     border-radius: 3px;
-    transition: background-color 0.1s, transform 0.1s ease;
+    transition:
+        background-color 0.1s,
+        transform 0.1s ease;
 }
 
 .popup-close:hover {
@@ -116,9 +150,15 @@
     flex-shrink: 0;
 }
 
-.popup-footer--start    { justify-content: flex-start; }
-.popup-footer--end      { justify-content: flex-end; }
-.popup-footer--between  { justify-content: space-between; }
+.popup-footer--start {
+    justify-content: flex-start;
+}
+.popup-footer--end {
+    justify-content: flex-end;
+}
+.popup-footer--between {
+    justify-content: space-between;
+}
 
 .popup-box .text-input-box {
     height: 32px;
@@ -154,7 +194,9 @@
     color: var(--color-text);
     font-size: 14px;
     border-radius: 3px;
-    transition: background-color 0.1s, transform 0.1s ease;
+    transition:
+        background-color 0.1s,
+        transform 0.1s ease;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -189,7 +231,9 @@
     border-radius: 3px;
     cursor: pointer;
     color: var(--color-text);
-    transition: background-color 0.1s, transform 0.1s ease;
+    transition:
+        background-color 0.1s,
+        transform 0.1s ease;
 }
 
 .version-picker-item:hover .version-picker-item-btn {
@@ -240,8 +284,13 @@
 }
 
 @keyframes skeleton-pulse {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 1; }
+    0%,
+    100% {
+        opacity: 0.4;
+    }
+    50% {
+        opacity: 1;
+    }
 }
 
 .version-picker-preview-item {

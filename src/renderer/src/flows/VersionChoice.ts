@@ -11,8 +11,8 @@ export function startPendingImport(choice: VersionChoice): void {
     if (!choice.pendingImport) {
         log(
             "VersionChoice",
-            `Nothing to import for "${choice.label}" (${choice.versionUuid}): the pick was an installed or `
-            + `catalog version, not a local .msixvc`
+            `Nothing to import for "${choice.label}" (${choice.versionUuid}): the pick was an installed or ` +
+                `catalog version, not a local .msixvc`
         );
         return;
     }
@@ -23,7 +23,8 @@ export function startPendingImport(choice: VersionChoice): void {
     );
 
     const { versions, setError } = useAppStore.getState();
-    versions.importMsixvc(choice.pendingImport)
+    versions
+        .importMsixvc(choice.pendingImport)
         .then(installed => log("VersionChoice", `Background import of "${installed.label}" finished`))
         .catch(e => {
             log("VersionChoice", `Background import of "${choice.pendingImport!.label}" failed: ${describeError(e)}`);

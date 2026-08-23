@@ -9,15 +9,17 @@ interface LoadSpinnerState {
 }
 
 export class LoadSpinner {
-    private static state = create<LoadSpinnerState>((set) => ({
+    private static state = create<LoadSpinnerState>(set => ({
         visible: false,
         text: "",
-        setVisible: (visible) => set((state) => ({
-            visible: StateUtils.resolveSetStateAction(visible, state.visible)
-        })),
-        setText: (text) => set((state) => ({
-            text: StateUtils.resolveSetStateAction(text, state.text)
-        }))
+        setVisible: visible =>
+            set(state => ({
+                visible: StateUtils.resolveSetStateAction(visible, state.visible),
+            })),
+        setText: text =>
+            set(state => ({
+                text: StateUtils.resolveSetStateAction(text, state.text),
+            })),
     }));
 
     static useState(): LoadSpinnerState;

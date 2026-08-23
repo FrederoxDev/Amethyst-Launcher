@@ -53,7 +53,11 @@ export function serveIcons(): void {
         try {
             target = path.resolve(decodeURIComponent(new URL(request.url).pathname.slice(1)));
         } catch (e) {
-            mainLog("WARN", "protocol", `Refusing ${request.url}: it does not carry a readable path (${describeError(e)})`);
+            mainLog(
+                "WARN",
+                "protocol",
+                `Refusing ${request.url}: it does not carry a readable path (${describeError(e)})`
+            );
             return notFound();
         }
 

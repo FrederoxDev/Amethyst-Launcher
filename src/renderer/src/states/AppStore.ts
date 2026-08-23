@@ -1,3 +1,4 @@
+import { Analytics, getAnalytics } from "firebase/analytics";
 import { create } from "zustand";
 
 import { describeError, userMessage } from "@shared/diagnostics/Log";
@@ -17,8 +18,31 @@ import { FileLocker } from "@renderer/scripts/FileLocker";
 import { takeStartupNotices } from "@renderer/scripts/Utility";
 import { StateSetter, StateUtils } from "./StateUtils";
 import { resumePendingDownloads } from "@renderer/scripts/DownloadRecovery";
+import { firebaseApp } from "@renderer/firebase/Firebase";
 
 const { ipcRenderer } = window.require("electron") as typeof import("electron");
+
+export enum AnalyticsConsent {
+    Unknown = "Unknown",
+    Accepted = "Accepted",
+    Declined = "Declined",
+}
+
+/**
+ * Consent lives in localStorage rather than the launcher config: it must be known before the
+ * config is read, and a quarantined config must never silently re-enable analytics.
+ */
+function getInitialAnalyticsConsent(): AnalyticsConsent {
+    const stored = localStorage.getItem("analyticsConsent");
+    if (stored === AnalyticsConsent.Accepted) return AnalyticsConsent.Accepted;
+    if (stored === AnalyticsConsent.Declined) return AnalyticsConsent.Declined;
+    return AnalyticsConsent.Unknown;
+}
+
+function getAnalyticsInstanceForConsent(consent: AnalyticsConsent): Analytics | null {
+    if (consent !== AnalyticsConsent.Accepted) return null;
+    return getAnalytics(firebaseApp);
+}
 
 function createPlatform(): ILauncherPlatform {
     if (process.platform === "win32") {
@@ -60,6 +84,29 @@ interface AppStore {
 
     developerMode: boolean;
     setDeveloperMode: StateSetter<boolean>;
+
+    autoCheckUpdates: boolean;
+    setAutoCheckUpdates: StateSetter<boolean>;
+
+    confirmDelete: boolean;
+    setConfirmDelete: StateSetter<boolean>;
+
+    trustAllMods: boolean;
+    setTrustAllMods: StateSetter<boolean>;
+
+    showConsole: boolean;
+    setShowConsole: StateSetter<boolean>;
+
+    hardwareAcceleration: boolean;
+    setHardwareAcceleration: StateSetter<boolean>;
+
+    nativeDecorations: boolean;
+    setNativeDecorations: StateSetter<boolean>;
+
+    analyticsConsent: AnalyticsConsent;
+    setAnalyticsConsent: StateSetter<AnalyticsConsent>;
+
+    analyticsInstance: Analytics | null;
 
     error: string;
     setError: StateSetter<string>;
@@ -105,6 +152,7 @@ export const useAppStore = create<AppStore>((set, get) => {
     const platform = createPlatform();
     const paths = platform.getPaths();
     const versions = new VersionService(paths);
+    const initialConsent = getInitialAnalyticsConsent();
 
     return {
         allMods: [],
@@ -118,6 +166,14 @@ export const useAppStore = create<AppStore>((set, get) => {
         UITheme: "System",
         keepLauncherOpen: true,
         developerMode: false,
+        autoCheckUpdates: true,
+        confirmDelete: true,
+        trustAllMods: false,
+        showConsole: false,
+        hardwareAcceleration: true,
+        nativeDecorations: false,
+        analyticsConsent: initialConsent,
+        analyticsInstance: getAnalyticsInstanceForConsent(initialConsent),
         error: "",
         downloadingMods: [],
         installingForProfile: null,
@@ -149,7 +205,8 @@ export const useAppStore = create<AppStore>((set, get) => {
         setKeepLauncherOpen: value => {
             set(state => {
                 const next = StateUtils.resolveSetStateAction(value, state.keepLauncherOpen);
-                if (next !== state.keepLauncherOpen) log("Settings", `Keep launcher open: ${state.keepLauncherOpen} -> ${next}`);
+                if (next !== state.keepLauncherOpen)
+                    log("Settings", `Keep launcher open: ${state.keepLauncherOpen} -> ${next}`);
                 return { keepLauncherOpen: next };
             });
             get().saveData();
@@ -165,21 +222,71 @@ export const useAppStore = create<AppStore>((set, get) => {
             updateLiveSessionsDeveloperMode(platform, get().developerMode);
         },
 
+        setAutoCheckUpdates: value => {
+            set(state => ({ autoCheckUpdates: StateUtils.resolveSetStateAction(value, state.autoCheckUpdates) }));
+            get().saveData();
+        },
+
+        setConfirmDelete: value => {
+            set(state => ({ confirmDelete: StateUtils.resolveSetStateAction(value, state.confirmDelete) }));
+            get().saveData();
+        },
+
+        setTrustAllMods: value => {
+            set(state => ({ trustAllMods: StateUtils.resolveSetStateAction(value, state.trustAllMods) }));
+            get().saveData();
+        },
+
+        setShowConsole: value => {
+            set(state => ({ showConsole: StateUtils.resolveSetStateAction(value, state.showConsole) }));
+            get().saveData();
+        },
+
+        setHardwareAcceleration: value => {
+            set(state => ({
+                hardwareAcceleration: StateUtils.resolveSetStateAction(value, state.hardwareAcceleration),
+            }));
+            get().saveData();
+        },
+
+        setNativeDecorations: value => {
+            set(state => ({
+                nativeDecorations: StateUtils.resolveSetStateAction(value, state.nativeDecorations),
+            }));
+            get().saveData();
+        },
+
+        // Not written through saveData: consent has to hold even when the write gate is shut.
+        setAnalyticsConsent: value =>
+            set(state => {
+                const nextConsent = StateUtils.resolveSetStateAction(value, state.analyticsConsent);
+
+                if (nextConsent !== AnalyticsConsent.Unknown) {
+                    localStorage.setItem("analyticsConsent", nextConsent);
+                }
+
+                return {
+                    analyticsConsent: nextConsent,
+                    analyticsInstance: getAnalyticsInstanceForConsent(nextConsent),
+                };
+            }),
+
         // Every banner the user is shown is recorded, so a screenshot of one can be matched
         // to the run that produced it.
-        setError: value => set(state => {
-            const next = StateUtils.resolveSetStateAction(value, state.error);
-            if (next === "") {
-                stickyError = "";
-                return { error: "" };
-            }
-            if (stickyError !== "" && next !== stickyError) {
-                log("AppStore", `Not replacing the banner "${stickyError}" with: ${next}`);
-                return { error: stickyError };
-            }
-            if (next !== state.error) log("AppStore", `Showing error banner: ${next}`);
-            return { error: next };
-        }),
+        setError: value =>
+            set(state => {
+                const next = StateUtils.resolveSetStateAction(value, state.error);
+                if (next === "") {
+                    stickyError = "";
+                    return { error: "" };
+                }
+                if (stickyError !== "" && next !== stickyError) {
+                    log("AppStore", `Not replacing the banner "${stickyError}" with: ${next}`);
+                    return { error: stickyError };
+                }
+                if (next !== state.error) log("AppStore", `Showing error banner: ${next}`);
+                return { error: next };
+            }),
 
         setFatalError: message => {
             stickyError = message;
@@ -191,7 +298,9 @@ export const useAppStore = create<AppStore>((set, get) => {
             set(state => ({ downloadingMods: StateUtils.resolveSetStateAction(value, state.downloadingMods) })),
 
         setInstallingForProfile: value =>
-            set(state => ({ installingForProfile: StateUtils.resolveSetStateAction(value, state.installingForProfile) })),
+            set(state => ({
+                installingForProfile: StateUtils.resolveSetStateAction(value, state.installingForProfile),
+            })),
 
         refreshAllMods: () => {
             const mods = GetAllMods();
@@ -219,6 +328,12 @@ export const useAppStore = create<AppStore>((set, get) => {
                 ui_theme: state.UITheme,
                 developer_mode: state.developerMode,
                 last_launched_profile_uuid: state.lastLaunchedProfileUuid,
+                auto_check_updates: state.autoCheckUpdates,
+                confirm_delete: state.confirmDelete,
+                trust_all_mods: state.trustAllMods,
+                show_console: state.showConsole,
+                hardware_acceleration: state.hardwareAcceleration,
+                native_decorations: state.nativeDecorations,
             };
             writeLauncherConfig(paths.launcherConfigPath, config);
         },
@@ -257,6 +372,12 @@ async function hydrate(): Promise<void> {
         developerMode: config.developer_mode,
         UITheme: config.ui_theme,
         lastLaunchedProfileUuid: config.last_launched_profile_uuid,
+        autoCheckUpdates: config.auto_check_updates,
+        confirmDelete: config.confirm_delete,
+        trustAllMods: config.trust_all_mods,
+        showConsole: config.show_console,
+        hardwareAcceleration: config.hardware_acceleration,
+        nativeDecorations: config.native_decorations,
     });
 
     writeGate = "open";
@@ -274,9 +395,9 @@ async function hydrate(): Promise<void> {
     const state = useAppStore.getState();
     log(
         "AppStore",
-        `Startup finished: ${state.profiles.length} profiles, ${state.installedVersions.length} installed versions, `
-        + `${state.allValidMods.length} valid mods, ${state.allInvalidMods.length} invalid mods, `
-        + `last launched ${state.lastLaunchedProfileUuid ?? "none"}`
+        `Startup finished: ${state.profiles.length} profiles, ${state.installedVersions.length} installed versions, ` +
+            `${state.allValidMods.length} valid mods, ${state.allInvalidMods.length} invalid mods, ` +
+            `last launched ${state.lastLaunchedProfileUuid ?? "none"}`
     );
 
     // Anything a loader had to move aside is the user's to know about, in their own words.
@@ -297,11 +418,20 @@ export function initializeAppState(): void {
         } catch (e) {
             writeGate = "closed by a failed startup";
             log("AppStore", `Startup failed while ${hydratePhase}: ${describeError(e)}`);
-            useAppStore.getState().setFatalError(
-                `Startup failed while ${hydratePhase}: ${userMessage(e)}. `
-                + "Nothing you change will be saved until this is fixed, so your files stay as they are."
-            );
+            useAppStore
+                .getState()
+                .setFatalError(
+                    `Startup failed while ${hydratePhase}: ${userMessage(e)}. ` +
+                        "Nothing you change will be saved until this is fixed, so your files stay as they are."
+                );
             return;
+        } finally {
+            // Tell the main process the renderer has hydrated and is painting real content, so it
+            // can reveal the window. This runs from JS, so unlike "ready-to-show" it does not
+            // depend on the GPU/compositor - that event never fires on some Linux setups, which
+            // left the window hidden forever. In `finally` so a failed startup still shows the
+            // error banner instead of nothing at all.
+            requestAnimationFrame(() => ipcRenderer.send("RENDERER_READY"));
         }
         resumePendingDownloads();
     });

@@ -227,15 +227,19 @@ export function run(command: string, args: string[], options: RunOptions = {}): 
         });
         proc.on("close", code => settle(code ?? -1));
 
-        timers.push(setTimeout(() => {
-            timedOut = true;
-            killTree(proc);
-            // Settles even if the kill does not take, so a wedged child can never wedge the caller.
-            timers.push(setTimeout(() => {
-                proc.kill("SIGKILL");
-                settle(-1);
-            }, KILL_GRACE_MS));
-        }, timeoutMs));
+        timers.push(
+            setTimeout(() => {
+                timedOut = true;
+                killTree(proc);
+                // Settles even if the kill does not take, so a wedged child can never wedge the caller.
+                timers.push(
+                    setTimeout(() => {
+                        proc.kill("SIGKILL");
+                        settle(-1);
+                    }, KILL_GRACE_MS)
+                );
+            }, timeoutMs)
+        );
     });
 }
 
@@ -248,12 +252,17 @@ export function describeResult(result: ProcessResult): string {
     const outcome = result.spawnError
         ? `could not start: ${result.spawnError}`
         : result.timedOut
-            ? `timed out after ${result.durationMs}ms`
-            : `exit ${result.code} in ${result.durationMs}ms`;
+          ? `timed out after ${result.durationMs}ms`
+          : `exit ${result.code} in ${result.durationMs}ms`;
 
     const command = [result.command, ...result.loggableArgs.map(abbreviate)].join(" ");
     const body = result.output.trim();
-    const detail = body ? `\n${body.split(/\r?\n/).map(line => `    ${line}`).join("\n")}` : "";
+    const detail = body
+        ? `\n${body
+              .split(/\r?\n/)
+              .map(line => `    ${line}`)
+              .join("\n")}`
+        : "";
     return `${command}\n  ${outcome}${detail}`;
 }
 
@@ -270,16 +279,20 @@ export function psQuote(value: string): string {
  */
 export function runPowerShell(body: string, options: RunOptions = {}): Promise<ProcessResult> {
     const script =
-        `$ErrorActionPreference = 'Stop'\n`
-        + `try {\n`
-        + `${body.trim().split("\n").map(line => `    ${line}`).join("\n")}\n`
-        + `}\n`
-        + `catch {\n`
-        + `    Write-Output ('HRESULT=0x{0:X8}' -f $_.Exception.HResult)\n`
-        + `    Write-Output ('ERRORID=' + $_.FullyQualifiedErrorId)\n`
-        + `    Write-Output ('MESSAGE=' + ($_.Exception.Message -replace '\\r?\\n', ' '))\n`
-        + `    exit 1\n`
-        + `}\n`;
+        `$ErrorActionPreference = 'Stop'\n` +
+        `try {\n` +
+        `${body
+            .trim()
+            .split("\n")
+            .map(line => `    ${line}`)
+            .join("\n")}\n` +
+        `}\n` +
+        `catch {\n` +
+        `    Write-Output ('HRESULT=0x{0:X8}' -f $_.Exception.HResult)\n` +
+        `    Write-Output ('ERRORID=' + $_.FullyQualifiedErrorId)\n` +
+        `    Write-Output ('MESSAGE=' + ($_.Exception.Message -replace '\\r?\\n', ' '))\n` +
+        `    exit 1\n` +
+        `}\n`;
 
     const encoded = Buffer.from(script, "utf16le").toString("base64");
     return run(

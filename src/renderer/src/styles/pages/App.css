@@ -27,6 +27,13 @@
     height: calc(100% - 64px);
 }
 
+/* Native window frame: no custom titlebar is rendered, so use the full height
+   instead of reserving 64px for it (which would otherwise leave a gap). */
+.app-contents--native {
+    top: 0;
+    height: 100%;
+}
+
 .app-navbar-container {
     height: 100%;
     width: 68px;
@@ -56,8 +63,17 @@
     height: 46px;
     border-width: 3px;
     border-color: var(--color-outline);
-    transition: transform 0.1s ease;
+    transition:
+        transform 0.1s ease,
+        border-color 0.1s ease;
     cursor: pointer;
+}
+
+/* Hover feedback for inactive icons: lighten the border + nudge up slightly.
+   Active icons keep their white border (see .nav-icon--active). */
+.nav-icon:not(.nav-icon--active):hover {
+    border-color: #8a8b8c;
+    transform: scale(1.05);
 }
 
 .nav-icon:active {
@@ -85,21 +101,6 @@
 
 .nav-icon-add:hover {
     opacity: 1;
-}
-
-.app-settings-button {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 46px;
-    height: 46px;
-    cursor: pointer;
-    transition: transform 0.1s ease;
-}
-
-.app-settings-button:active {
-    transform: scale(0.85, 0.8);
 }
 
 .app-settings-icon {
@@ -137,24 +138,11 @@
     opacity: 0;
 }
 
-/* Download Manager */
-.app-logs-button {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 46px;
-    height: 46px;
-    cursor: pointer;
-    opacity: 0.6;
-    transition: opacity 0.1s;
-}
-
-.app-logs-button:hover,
-.app-logs-button--active {
-    opacity: 1;
-}
-
-.download-manager-btn {
+/* The three buttons at the foot of the navbar share one interaction: dimmed until
+   pointed at, and squashed while held. */
+.app-logs-button,
+.download-manager-btn,
+.app-settings-button {
     position: relative;
     display: flex;
     justify-content: center;
@@ -163,11 +151,23 @@
     height: 46px;
     cursor: pointer;
     opacity: 0.6;
-    transition: opacity 0.1s;
+    transition:
+        opacity 0.1s ease,
+        transform 0.1s ease;
 }
 
-.download-manager-btn:hover {
+.app-logs-button:hover,
+.download-manager-btn:hover,
+.app-settings-button:hover,
+/* The logs button also stays lit while its page is the one on screen. */
+.app-logs-button--active {
     opacity: 1;
+}
+
+.app-logs-button:active,
+.download-manager-btn:active,
+.app-settings-button:active {
+    transform: scale(0.85, 0.8);
 }
 
 .download-manager-badge {

@@ -19,15 +19,23 @@ export function askToolUpdate({ name, currentVersion, latestVersion }: ToolUpdat
             footer={
                 <>
                     <MinecraftButton text="Update!" onClick={() => submit(true)} />
-                    <MinecraftButton text="Don't update!" buttonStyle={MinecraftButtonStyle.Warn} onClick={() => submit(false)} />
+                    <MinecraftButton
+                        text="Don't update!"
+                        buttonStyle={MinecraftButtonStyle.Warn}
+                        onClick={() => submit(false)}
+                    />
                 </>
             }
         >
             <p className="minecraft-seven" style={{ fontSize: "12px", lineHeight: 1.5 }}>
                 {name} is outdated, do you want to update it?
             </p>
-            <p className="minecraft-seven" style={{ fontSize: "12px" }}>Current version: {currentVersion}</p>
-            <p className="minecraft-seven" style={{ fontSize: "12px" }}>Latest version: {latestVersion}</p>
+            <p className="minecraft-seven" style={{ fontSize: "12px" }}>
+                Current version: {currentVersion}
+            </p>
+            <p className="minecraft-seven" style={{ fontSize: "12px" }}>
+                Latest version: {latestVersion}
+            </p>
         </PopupPanel>
     ));
 }

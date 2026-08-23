@@ -76,7 +76,7 @@ export class Downloader {
 
         let outcome: DownloadOutcome;
         try {
-            outcome = await ipcRenderer.invoke(NET_DOWNLOAD_START, request) as DownloadOutcome;
+            outcome = (await ipcRenderer.invoke(NET_DOWNLOAD_START, request)) as DownloadOutcome;
         } finally {
             listeners.delete(id);
             signal?.removeEventListener("abort", cancel);

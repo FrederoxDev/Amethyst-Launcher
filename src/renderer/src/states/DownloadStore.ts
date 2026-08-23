@@ -27,11 +27,13 @@ const PENDING_KEY = "amethyst_pending_downloads";
 function isPendingDownload(raw: unknown): raw is PendingDownload {
     if (typeof raw !== "object" || raw === null) return false;
     const o = raw as Record<string, unknown>;
-    return typeof o.id === "string"
-        && typeof o.name === "string"
-        && (o.type === "mod" || o.type === "version")
-        && typeof o.url === "string"
-        && (o.versionUuid === undefined || typeof o.versionUuid === "string");
+    return (
+        typeof o.id === "string" &&
+        typeof o.name === "string" &&
+        (o.type === "mod" || o.type === "version") &&
+        typeof o.url === "string" &&
+        (o.versionUuid === undefined || typeof o.versionUuid === "string")
+    );
 }
 
 function loadPending(): PendingDownload[] {
@@ -48,7 +50,10 @@ function loadPending(): PendingDownload[] {
     }
 
     if (!Array.isArray(parsed)) {
-        log("Downloads", `Discarding ${PENDING_KEY}: it holds a ${typeof parsed}, not an array; it held: ${raw.slice(0, 400)}`);
+        log(
+            "Downloads",
+            `Discarding ${PENDING_KEY}: it holds a ${typeof parsed}, not an array; it held: ${raw.slice(0, 400)}`
+        );
         return [];
     }
 
@@ -56,8 +61,8 @@ function loadPending(): PendingDownload[] {
     if (usable.length !== parsed.length) {
         log(
             "Downloads",
-            `Dropped ${parsed.length - usable.length} of ${parsed.length} entries in ${PENDING_KEY} that are not `
-            + `pending downloads: ${JSON.stringify(parsed.filter(e => !isPendingDownload(e))).slice(0, 400)}`
+            `Dropped ${parsed.length - usable.length} of ${parsed.length} entries in ${PENDING_KEY} that are not ` +
+                `pending downloads: ${JSON.stringify(parsed.filter(e => !isPendingDownload(e))).slice(0, 400)}`
         );
     }
     return usable;
@@ -75,7 +80,10 @@ export function addPendingDownload(entry: PendingDownload): void {
     const pending = loadPending();
     pending.push(entry);
     savePending(pending);
-    log("Downloads", `Recorded pending ${entry.type} "${entry.name}" (${entry.id}) from ${entry.url} for crash recovery`);
+    log(
+        "Downloads",
+        `Recorded pending ${entry.type} "${entry.name}" (${entry.id}) from ${entry.url} for crash recovery`
+    );
 }
 
 export function removePendingDownload(id: string): void {
@@ -100,11 +108,11 @@ interface DownloadStoreState {
     clearCompleted: () => void;
 }
 
-export const useDownloadStore = create<DownloadStoreState>((set) => ({
+export const useDownloadStore = create<DownloadStoreState>(set => ({
     downloads: [],
     panelOpen: false,
-    setPanelOpen: (open) => set({ panelOpen: open }),
-    addDownload: (item) =>
+    setPanelOpen: open => set({ panelOpen: open }),
+    addDownload: item =>
         set(state => ({
             downloads: [...state.downloads, item],
             panelOpen: true,
@@ -118,9 +126,11 @@ export const useDownloadStore = create<DownloadStoreState>((set) => ({
                     log("Downloads", `"${current.name}" (${id}): ${current.status} -> ${partial.status}`);
                 }
             }
-            return { downloads: state.downloads.map(d => d.id === id ? { ...d, ...partial } : d) };
+            return {
+                downloads: state.downloads.map(d => (d.id === id ? { ...d, ...partial } : d)),
+            };
         }),
-    removeDownload: (id) =>
+    removeDownload: id =>
         set(state => ({
             downloads: state.downloads.filter(d => d.id !== id),
         })),

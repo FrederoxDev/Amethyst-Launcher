@@ -14,9 +14,16 @@ import DeleteIconAsset from "@renderer/assets/images/icons/delete-icon.png";
 import OpenFolderIconAsset from "@renderer/assets/images/icons/open-folder-icon.png";
 import InfoIconAsset from "@renderer/assets/images/icons/info-icon.png";
 
-const { shell: { openPath } } = window.require("electron") as typeof import("electron");
+const {
+    shell: { openPath },
+} = window.require("electron") as typeof import("electron");
 
-const VersionCard = ({ version, canDelete, onInspect, onDelete }: {
+const VersionCard = ({
+    version,
+    canDelete,
+    onInspect,
+    onDelete,
+}: {
     version: InstalledVersion;
     canDelete: boolean;
     onInspect: (version: InstalledVersion) => void;
@@ -37,16 +44,23 @@ const VersionCard = ({ version, canDelete, onInspect, onDelete }: {
                 <div
                     className="version-icon-action version-icon-action-delete"
                     style={canDelete ? undefined : { opacity: 0.4, cursor: "not-allowed", pointerEvents: "none" }}
-                    onClick={() => { if (canDelete) onDelete(version); }}
+                    onClick={() => {
+                        if (canDelete) onDelete(version);
+                    }}
                 >
                     <img src={DeleteIconAsset} alt="" />
                 </div>
-                <div className="version-icon-action version-icon-action-neutral" onClick={() => {
-                    openPath(version.path).then(error => log(
-                        "VersionPage",
-                        error ? `Could not open ${version.path}: ${error}` : `Opened ${version.path}`
-                    ));
-                }}>
+                <div
+                    className="version-icon-action version-icon-action-neutral"
+                    onClick={() => {
+                        openPath(version.path).then(error =>
+                            log(
+                                "VersionPage",
+                                error ? `Could not open ${version.path}: ${error}` : `Opened ${version.path}`
+                            )
+                        );
+                    }}
+                >
                     <img src={OpenFolderIconAsset} alt="" />
                 </div>
                 <div className="version-icon-action version-icon-action-neutral" onClick={() => onInspect(version)}>
@@ -102,12 +116,15 @@ export function VersionPage() {
     };
 
     const remove = async (version: InstalledVersion) => {
-        const ok = await confirmAction({
-            title: "Delete version?",
-            message: `You are about to delete "${version.label}". You can download or import it again later.`,
-            confirmText: "Yeah, do it!",
-            cancelText: "No, don't do it!",
-        });
+        // "Confirm before deleting" off means the user has already said they do not want to be asked.
+        const ok =
+            !useAppStore.getState().confirmDelete ||
+            (await confirmAction({
+                title: "Delete version?",
+                message: `You are about to delete "${version.label}". You can download or import it again later.`,
+                confirmText: "Yeah, do it!",
+                cancelText: "No, don't do it!",
+            }));
         if (!ok) {
             log("VersionPage", `Deletion of "${version.label}" (${version.uuid}) cancelled by the user`);
             return;
@@ -129,10 +146,22 @@ export function VersionPage() {
                     <div className="version-header-actions">
                         <div
                             className="version-icon-action version-icon-action-neutral"
-                            style={canManage ? undefined : { opacity: 0.4, cursor: "not-allowed", pointerEvents: "none" }}
+                            style={
+                                canManage ? undefined : { opacity: 0.4, cursor: "not-allowed", pointerEvents: "none" }
+                            }
                             onClick={startImport}
                         >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+                            <svg
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="white"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                            >
+                                <path d="M12 5v14M5 12h14" />
+                            </svg>
                         </div>
                     </div>
                 </div>

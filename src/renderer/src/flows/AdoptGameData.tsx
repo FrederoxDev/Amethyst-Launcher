@@ -24,8 +24,10 @@ function describeFolder(target: string): string {
         const dirs = entries.filter(e => e.isDirectory()).map(e => e.name);
         const files = entries.filter(e => e.isFile()).map(e => e.name);
         const licences = files.filter(name => name.toLowerCase().endsWith(".ent"));
-        return `folders: [${dirs.join(", ") || "none"}]; files: [${files.join(", ") || "none"}]; `
-            + `licence files: [${licences.join(", ") || "none"}]`;
+        return (
+            `folders: [${dirs.join(", ") || "none"}]; files: [${files.join(", ") || "none"}]; ` +
+            `licence files: [${licences.join(", ") || "none"}]`
+        );
     } catch (e) {
         return `unreadable (${describeError(e)})`;
     }
@@ -36,9 +38,11 @@ function describeFsError(e: unknown, contextPath: string): string {
     const code = (e as { code?: string } | null)?.code;
 
     if (code === "EBUSY" || code === "EPERM" || code === "EACCES") {
-        return `"${contextPath}" is in use by another program.\n\n`
-            + `Close Minecraft, any Explorer window showing this folder, OneDrive sync and the Windows Search indexer, then try again.\n\n`
-            + `(${message})`;
+        return (
+            `"${contextPath}" is in use by another program.\n\n` +
+            `Close Minecraft, any Explorer window showing this folder, OneDrive sync and the Windows Search indexer, then try again.\n\n` +
+            `(${message})`
+        );
     }
     if (code === "ENOSPC") return `Not enough disk space.\n\n(${message})`;
     return message;
@@ -89,12 +93,16 @@ export async function adoptGameData(channel: Channel): Promise<void> {
             }
 
             try {
-                await ProgressBar.runAsync(async ({ setStatus, setMessage }) => {
-                    setStatus("deleting");
-                    setMessage(`Deleting ${dataPath}...`);
-                    log("Adopt", `Deleting ${dataPath} permanently; it held ${describeFolder(dataPath)}`);
-                    await fs.promises.rm(dataPath, { recursive: true, force: true });
-                }, true, FULL_PROGRESS_RESET_OPTIONS);
+                await ProgressBar.runAsync(
+                    async ({ setStatus, setMessage }) => {
+                        setStatus("deleting");
+                        setMessage(`Deleting ${dataPath}...`);
+                        log("Adopt", `Deleting ${dataPath} permanently; it held ${describeFolder(dataPath)}`);
+                        await fs.promises.rm(dataPath, { recursive: true, force: true });
+                    },
+                    true,
+                    FULL_PROGRESS_RESET_OPTIONS
+                );
                 log("Adopt", `Deleted ${dataPath}`);
                 return;
             } catch (e) {
@@ -112,21 +120,25 @@ export async function adoptGameData(channel: Channel): Promise<void> {
         }
 
         try {
-            await ProgressBar.runAsync(async ({ setStatus, setMessage }) => {
-                setStatus("importing");
-                setMessage(`Moving existing data into "${created.profile.name}"...`);
-                log(
-                    "Adopt",
-                    `Moving ${channel} data from ${dataPath} into profile "${created.profile.name}" `
-                    + `(${created.profile.uuid}); source holds ${describeFolder(dataPath)}`
-                );
-                await platform.adoptGameData(channel, created.profile.uuid);
-            }, true, FULL_PROGRESS_RESET_OPTIONS);
+            await ProgressBar.runAsync(
+                async ({ setStatus, setMessage }) => {
+                    setStatus("importing");
+                    setMessage(`Moving existing data into "${created.profile.name}"...`);
+                    log(
+                        "Adopt",
+                        `Moving ${channel} data from ${dataPath} into profile "${created.profile.name}" ` +
+                            `(${created.profile.uuid}); source holds ${describeFolder(dataPath)}`
+                    );
+                    await platform.adoptGameData(channel, created.profile.uuid);
+                },
+                true,
+                FULL_PROGRESS_RESET_OPTIONS
+            );
             const adoptedInto = platform.profileDataDir(created.profile.uuid);
             log(
                 "Adopt",
-                `Adoption finished: "${created.profile.name}" (${created.profile.uuid}) now owns ${adoptedInto}; `
-                + `it holds ${describeFolder(adoptedInto)}`
+                `Adoption finished: "${created.profile.name}" (${created.profile.uuid}) now owns ${adoptedInto}; ` +
+                    `it holds ${describeFolder(adoptedInto)}`
             );
             return;
         } catch (e) {
@@ -153,8 +165,8 @@ async function rollbackAdoption(channel: Channel, profile: Profile): Promise<voi
     if (!platform.foreignGameData(channel)) {
         log(
             "Adopt",
-            `Keeping "${profile.name}" (${profile.uuid}): the ${channel} data is no longer where it came from, `
-            + `so ${copied} holds the only copy of it`
+            `Keeping "${profile.name}" (${profile.uuid}): the ${channel} data is no longer where it came from, ` +
+                `so ${copied} holds the only copy of it`
         );
         return;
     }

@@ -3,7 +3,15 @@ import { PathUtils } from "@renderer/scripts/PathUtils";
 import { SESSION_SCHEMA, writeSession } from "@renderer/scripts/session/Session";
 import { LauncherTools } from "@renderer/scripts/backend/tools/LauncherTools";
 import { describeError } from "@shared/diagnostics/Log";
-import { DIRECTORY_PATHS, FILE_PATHS, ILauncherPlatform, LauncherPaths, LaunchOutcome, LaunchRequest, ProcessInfo } from "./LauncherPlatform";
+import {
+    DIRECTORY_PATHS,
+    FILE_PATHS,
+    ILauncherPlatform,
+    LauncherPaths,
+    LaunchOutcome,
+    LaunchRequest,
+    ProcessInfo,
+} from "./LauncherPlatform";
 
 const fs = window.require("fs") as typeof import("fs");
 const os = window.require("os") as typeof import("os");
@@ -50,7 +58,12 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
         for (const key of DIRECTORY_PATHS) PathUtils.ensureDirectory(paths[key]);
         for (const key of FILE_PATHS) PathUtils.ensureParentDirectory(paths[key]);
         LinuxLauncherPlatform.cachedPaths = paths;
-        log("Paths", `Resolved from home ${os.homedir()}: ${Object.entries(paths).map(([k, v]) => `${k}=${v}`).join(", ")}`);
+        log(
+            "Paths",
+            `Resolved from home ${os.homedir()}: ${Object.entries(paths)
+                .map(([k, v]) => `${k}=${v}`)
+                .join(", ")}`
+        );
         return paths;
     }
 
@@ -75,9 +88,9 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
 
         log(
             "Processes",
-            `${found.length} running ${executableName} out of ${scanned} processes `
-            + `(${unreadable} could not be read)`
-            + found.map(p => `\n    ${p.pid} ${p.executablePath}`).join("")
+            `${found.length} running ${executableName} out of ${scanned} processes ` +
+                `(${unreadable} could not be read)` +
+                found.map(p => `\n    ${p.pid} ${p.executablePath}`).join("")
         );
         return found;
     }
@@ -125,17 +138,20 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
 
         log(
             "Launch",
-            `Launching "${profile.name}" (${profile.uuid}) on ${profile.channel}: build ${version.label} at ${version.path}, `
-            + `prefix ${prefix}, runtime ${request.runtime ? `${request.runtime.id} from ${request.runtime.path}` : "none"}, `
-            + `${request.mods.length} mods${request.mods.length > 0 ? ` (${request.mods.map(m => m.id).join(", ")})` : ""}, `
-            + `developer mode ${request.developerMode ? "on" : "off"}`
+            `Launching "${profile.name}" (${profile.uuid}) on ${profile.channel}: build ${version.label} at ${version.path}, ` +
+                `prefix ${prefix}, runtime ${request.runtime ? `${request.runtime.id} from ${request.runtime.path}` : "none"}, ` +
+                `${request.mods.length} mods${request.mods.length > 0 ? ` (${request.mods.map(m => m.id).join(", ")})` : ""}, ` +
+                `developer mode ${request.developerMode ? "on" : "off"}`
         );
 
         status("Checking whether this profile is running...");
         const running = await this.listProcesses(GAME_EXECUTABLE);
         const own = running.find(p => p.executablePath.startsWith(prefix));
         if (own) {
-            log("Launch", `Refusing to launch "${profile.name}": pid ${own.pid} already runs from its prefix ${prefix}`);
+            log(
+                "Launch",
+                `Refusing to launch "${profile.name}": pid ${own.pid} already runs from its prefix ${prefix}`
+            );
             throw new Error(`"${profile.name}" is already running.`);
         }
 

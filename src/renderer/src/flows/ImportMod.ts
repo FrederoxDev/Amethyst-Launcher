@@ -30,8 +30,8 @@ export async function ImportModArchive(archive_path: string): Promise<void> {
     const replacingExisting = fs.existsSync(extracted_folder_path);
     log(
         "ImportMod",
-        `Installing ${archive_path} into ${extracted_folder_path}, `
-        + `${replacingExisting ? "replacing the folder already there" : "as a new folder"}`
+        `Installing ${archive_path} into ${extracted_folder_path}, ` +
+            `${replacingExisting ? "replacing the folder already there" : "as a new folder"}`
     );
 
     try {
@@ -44,12 +44,12 @@ export async function ImportModArchive(archive_path: string): Promise<void> {
             // Someone else's files live here; a half-written folder is bad but deleting it is worse.
             log(
                 "ImportMod",
-                `Leaving ${extracted_folder_path} in place: it existed before this import, so it may now hold `
-                + `a mix of the old and new mod`
+                `Leaving ${extracted_folder_path} in place: it existed before this import, so it may now hold ` +
+                    `a mix of the old and new mod`
             );
             throw new Error(
                 `Could not install ${archive_name}: ${reason} ` +
-                `The existing files in "${extracted_folder_path}" may be a mix of old and new - reinstall the mod.`,
+                    `The existing files in "${extracted_folder_path}" may be a mix of old and new - reinstall the mod.`,
                 { cause: error }
             );
         }

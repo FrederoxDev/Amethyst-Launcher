@@ -29,8 +29,8 @@ export class UMULauncher extends ArchiveToolArtifact {
                 promptForUpdate: false,
                 allowOutdated: true,
                 releaseFetchTimeout: 1000,
-                checkForUpdates: true
-            }
+                checkForUpdates: true,
+            },
         });
     }
 
@@ -45,13 +45,15 @@ export class UMULauncher extends ArchiveToolArtifact {
         log(this.name, `Starting '${gamePath}' through Proton, checkForUpdates=${checkForUpdates}`);
 
         const { executable } = await this.check({ checkForUpdates });
-        const { path: gdkProtonPath } = await LauncherTools.GDKProton.check({ checkForUpdates });
+        const { path: gdkProtonPath } = await LauncherTools.GDKProton.check({
+            checkForUpdates,
+        });
 
         const envs = await shellEnv();
         const env = {
             ...envs,
             ...envVars,
-            "PROTONPATH": gdkProtonPath
+            PROTONPATH: gdkProtonPath,
         };
 
         // The launcher's own additions only. The inherited shell environment is not logged:
@@ -59,16 +61,18 @@ export class UMULauncher extends ArchiveToolArtifact {
         const ownEnv = { ...envVars, PROTONPATH: gdkProtonPath };
         log(
             this.name,
-            `Spawning ${executable} ${gamePath} in ${path.dirname(gamePath)} with `
-            + `${Object.entries(ownEnv).map(([k, v]) => `${k}=${v}`).join(", ")} `
-            + `on top of ${Object.keys(envs).length} inherited variables`
+            `Spawning ${executable} ${gamePath} in ${path.dirname(gamePath)} with ` +
+                `${Object.entries(ownEnv)
+                    .map(([k, v]) => `${k}=${v}`)
+                    .join(", ")} ` +
+                `on top of ${Object.keys(envs).length} inherited variables`
         );
 
         const proc = child.spawn(executable, [gamePath], {
             env: env,
             cwd: path.dirname(gamePath),
             stdio: ["ignore", "pipe", "pipe"],
-            detached: true
+            detached: true,
         });
 
         // Piped output has to be read. Left unread the pipe fills and the game blocks on its own

@@ -35,7 +35,10 @@ export class Extractor {
         onProgress: ExtractProgress = (): void => {}
     ): Promise<void> {
         const startedAt = Date.now();
-        log("Extract", `Extracting "${file}" to "${to}"${excludes.length > 0 ? `, excluding ${excludes.join(", ")}` : ""}`);
+        log(
+            "Extract",
+            `Extracting "${file}" to "${to}"${excludes.length > 0 ? `, excluding ${excludes.join(", ")}` : ""}`
+        );
 
         try {
             await fs.promises.mkdir(to, { recursive: true });
@@ -60,8 +63,8 @@ export class Extractor {
         const entries = all.filter(([name, entry]) => !entry.dir && !excluded.has(name));
         log(
             "Extract",
-            `"${file}" is ${archiveBytes} bytes holding ${all.length} entries, `
-            + `${entries.length} of them files to write`
+            `"${file}" is ${archiveBytes} bytes holding ${all.length} entries, ` +
+                `${entries.length} of them files to write`
         );
 
         const root = path.resolve(to);
@@ -90,12 +93,12 @@ export class Extractor {
             } catch (error) {
                 log(
                     "Extract",
-                    `Failed on entry "${name}" of "${file}" bound for "${target}" `
-                    + `after ${extracted} of ${total} entries (${bytes} bytes): ${describe(error)}`
+                    `Failed on entry "${name}" of "${file}" bound for "${target}" ` +
+                        `after ${extracted} of ${total} entries (${bytes} bytes): ${describe(error)}`
                 );
                 throw new Error(
                     `Could not extract "${name}" from "${path.basename(file)}" ` +
-                    `(${extracted} of ${total} entries done): ${describe(error)}`,
+                        `(${extracted} of ${total} entries done): ${describe(error)}`,
                     { cause: error }
                 );
             }
@@ -104,6 +107,9 @@ export class Extractor {
             onProgress(extracted, total, name);
         }
 
-        log("Extract", `Extracted ${extracted} entries (${bytes} bytes) from "${file}" to "${to}" in ${Date.now() - startedAt}ms`);
+        log(
+            "Extract",
+            `Extracted ${extracted} entries (${bytes} bytes) from "${file}" to "${to}" in ${Date.now() - startedAt}ms`
+        );
     }
 }

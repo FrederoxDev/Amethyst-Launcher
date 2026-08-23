@@ -5,12 +5,7 @@ import { describeResult, psQuote, readMarker, runPowerShell } from "@shared/diag
 import { describeError } from "@shared/diagnostics/Log";
 import { ForeignGameDataError, ProcessInfo, SystemSetupRequiredError } from "../LauncherPlatform";
 import * as DataLink from "./DataLink";
-import {
-    classifyLaunch,
-    classifyMachineReadiness,
-    launchFailureMessage,
-    LaunchFacts,
-} from "./LaunchDiagnostics";
+import { classifyLaunch, classifyMachineReadiness, launchFailureMessage, LaunchFacts } from "./LaunchDiagnostics";
 import * as Licence from "./Licence";
 import * as Packages from "./Packages";
 import * as Preload from "./Preload";
@@ -26,7 +21,6 @@ const PROCESS_QUERY_TIMEOUT_MS = 15_000;
 /** How long the game gets to appear after activation before the launch is called a failure. */
 const ACTIVATION_TIMEOUT_MS = 15_000;
 const ACTIVATION_POLL_MS = 1_000;
-
 
 /**
  * The slots one launch owns. Every one is scoped to a single channel or a single build:
@@ -64,13 +58,13 @@ export async function probeProcesses(executableName: string): Promise<ProcessPro
     const filter = `Name='${executableName.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
 
     const result = await runPowerShell(
-        `$filter = '${psQuote(filter)}'\n`
-        + `$found = @(Get-CimInstance Win32_Process -Filter $filter `
-        + `-Property ProcessId,ThreadCount,ExecutablePath)\n`
-        + `foreach ($p in $found) {\n`
-        + `    Write-Output ('PROC=' + $p.ProcessId + '|' + $p.ThreadCount + '|' + $p.ExecutablePath)\n`
-        + `}\n`
-        + `Write-Output 'STATE=ok'`,
+        `$filter = '${psQuote(filter)}'\n` +
+            `$found = @(Get-CimInstance Win32_Process -Filter $filter ` +
+            `-Property ProcessId,ThreadCount,ExecutablePath)\n` +
+            `foreach ($p in $found) {\n` +
+            `    Write-Output ('PROC=' + $p.ProcessId + '|' + $p.ThreadCount + '|' + $p.ExecutablePath)\n` +
+            `}\n` +
+            `Write-Output 'STATE=ok'`,
         { timeoutMs: PROCESS_QUERY_TIMEOUT_MS }
     );
 
@@ -102,9 +96,10 @@ export async function probeProcesses(executableName: string): Promise<ProcessPro
         processes.push({ pid, executablePath: rest.join("|").trim() });
     }
 
-    const detail = `${processes.length} live ${executableName}`
-        + (tombstones > 0 ? `, ${tombstones} already exited` : "")
-        + processes.map(p => `\n    ${p.pid} ${p.executablePath || "(image path unreadable)"}`).join("");
+    const detail =
+        `${processes.length} live ${executableName}` +
+        (tombstones > 0 ? `, ${tombstones} already exited` : "") +
+        processes.map(p => `\n    ${p.pid} ${p.executablePath || "(image path unreadable)"}`).join("");
     log("Machine", `Windows reports ${detail}`);
     return { processes, queryFailed: false, detail };
 }
@@ -117,8 +112,8 @@ function reconcileDataLink(desired: DesiredState, status: (m: string) => void): 
         case "blocked-by-file":
             log("Machine", `Cannot link ${desired.channel} game data: ${roaming} is a file`);
             throw new Error(
-                `Minecraft's ${desired.channel} data cannot be set up because a file is sitting where its `
-                + `folder belongs.\n\nRename or delete that file, then press Play again.\n\n"${roaming}"`
+                `Minecraft's ${desired.channel} data cannot be set up because a file is sitting where its ` +
+                    `folder belongs.\n\nRename or delete that file, then press Play again.\n\n"${roaming}"`
             );
 
         case "foreign-data":
@@ -127,22 +122,34 @@ function reconcileDataLink(desired: DesiredState, status: (m: string) => void): 
 
         case "linked":
             if (Packages.samePath(state.target, desired.dataDir)) {
-                log("Machine", `${desired.channel} game data already points at this profile, leaving it: ${roaming} -> ${state.target}`);
+                log(
+                    "Machine",
+                    `${desired.channel} game data already points at this profile, leaving it: ${roaming} -> ${state.target}`
+                );
                 return;
             }
-            log("Machine", `${desired.channel} game data points at ${state.target}, repointing it at ${desired.dataDir}`);
+            log(
+                "Machine",
+                `${desired.channel} game data points at ${state.target}, repointing it at ${desired.dataDir}`
+            );
             status("Switching game data to this profile...");
             DataLink.relink(desired.channel, desired.dataDir, state.target);
             return;
 
         case "empty-dir":
-            log("Machine", `${desired.channel} game data is an empty real folder, replacing it with a junction to ${desired.dataDir}`);
+            log(
+                "Machine",
+                `${desired.channel} game data is an empty real folder, replacing it with a junction to ${desired.dataDir}`
+            );
             status("Linking game data to this profile...");
             DataLink.removeEmptyDir(desired.channel);
             break;
 
         case "absent":
-            log("Machine", `${desired.channel} game data folder does not exist, creating a junction to ${desired.dataDir}`);
+            log(
+                "Machine",
+                `${desired.channel} game data folder does not exist, creating a junction to ${desired.dataDir}`
+            );
             status("Creating game data folder...");
             break;
     }
@@ -152,8 +159,8 @@ function reconcileDataLink(desired: DesiredState, status: (m: string) => void): 
 
 /** Every registration failure ends somewhere a user can go next, whatever Windows said. */
 const SETUP_NEXT_STEP =
-    "Close Minecraft if it is open, restart the computer, then press Play again. If it still will not "
-    + "set up, open Logs and send the log file, which holds what Windows said.";
+    "Close Minecraft if it is open, restart the computer, then press Play again. If it still will not " +
+    "set up, open Logs and send the log file, which holds what Windows said.";
 
 /**
  * The two machine-wide settings Windows checks every time a loose-registered package is run,
@@ -168,8 +175,8 @@ function assertMachineReady(desired: DesiredState): void {
     if (developerMode === null || sideloadingBlockedByPolicy === null) {
         log(
             "Machine",
-            "Windows would not say whether Developer Mode is on or whether policy blocks sideloading, so the "
-            + "launch carries on and lets registration or activation give the real answer"
+            "Windows would not say whether Developer Mode is on or whether policy blocks sideloading, so the " +
+                "launch carries on and lets registration or activation give the real answer"
         );
         return;
     }
@@ -178,9 +185,9 @@ function assertMachineReady(desired: DesiredState): void {
 
     log(
         "Machine",
-        `Machine preconditions: Developer Mode ${developerMode ? "on" : "off"}, `
-        + `sideloading blocked by this computer's policy ${sideloadingBlockedByPolicy ? "yes" : "no"}, `
-        + `verdict "${readiness.kind}"`
+        `Machine preconditions: Developer Mode ${developerMode ? "on" : "off"}, ` +
+            `sideloading blocked by this computer's policy ${sideloadingBlockedByPolicy ? "yes" : "no"}, ` +
+            `verdict "${readiness.kind}"`
     );
 
     if (readiness.kind === "ready") return;
@@ -196,7 +203,7 @@ function assertMachineReady(desired: DesiredState): void {
         async status => {
             await Packages.enableDeveloperMode();
             await dropRegistration(desired.versionPath, status);
-        },
+        }
     );
 }
 
@@ -262,7 +269,7 @@ function listRegisteredSafely(): Packages.RegisteredPackage[] {
 async function repairAndRetry(
     failure: Packages.PackageRegistrationError,
     desired: DesiredState,
-    status: (m: string) => void,
+    status: (m: string) => void
 ): Promise<void> {
     logBlock(
         "Machine",
@@ -280,12 +287,15 @@ async function repairAndRetry(
     // branch is decided by what Windows said and not by re-reading the setting.
     if (failure.blocker === "developer-mode") {
         const readiness = classifyMachineReadiness({ developerMode: false, sideloadingBlockedByPolicy: false });
-        log("Machine", "Windows refused the registration for want of Developer Mode, asking for permission to turn it on");
+        log(
+            "Machine",
+            "Windows refused the registration for want of Developer Mode, asking for permission to turn it on"
+        );
         throw new SystemSetupRequiredError(
             readiness.headline,
             `${readiness.explanation}\n\n${readiness.nextStep}`,
             readiness.manualStep,
-            () => Packages.enableDeveloperMode(),
+            () => Packages.enableDeveloperMode()
         );
     }
 
@@ -306,8 +316,8 @@ async function repairAndRetry(
             }
             logBlock("Machine", `Windows still holds the package after the wait (blocker ${e.blocker})`, e.detail);
             throw new Error(
-                "Minecraft is still open, or Windows has not finished closing it.\n\n"
-                + "Close Minecraft, wait a few seconds, then press Play again."
+                "Minecraft is still open, or Windows has not finished closing it.\n\n" +
+                    "Close Minecraft, wait a few seconds, then press Play again."
             );
         }
     }
@@ -319,7 +329,10 @@ async function repairAndRetry(
         try {
             await Packages.unregister(family);
         } catch (e) {
-            log("Machine", `Could not clear the conflicting ${family} registration, registering anyway: ${describeError(e)}`);
+            log(
+                "Machine",
+                `Could not clear the conflicting ${family} registration, registering anyway: ${describeError(e)}`
+            );
         }
 
         status("Registering Minecraft...");
@@ -333,16 +346,12 @@ async function repairAndRetry(
                 throw e;
             }
             logBlock("Machine", `Registration still refused after clearing ${family} (blocker ${e.blocker})`, e.detail);
-            throw new Error(
-                `Minecraft could not be set up on this computer.\n\n${e.message}\n\n${SETUP_NEXT_STEP}`
-            );
+            throw new Error(`Minecraft could not be set up on this computer.\n\n${e.message}\n\n${SETUP_NEXT_STEP}`);
         }
     }
 
     logBlock("Machine", `No repair exists for blocker "${failure.blocker}", giving up on registration`, failure.detail);
-    throw new Error(
-        `Minecraft could not be set up on this computer.\n\n${failure.message}\n\n${SETUP_NEXT_STEP}`
-    );
+    throw new Error(`Minecraft could not be set up on this computer.\n\n${failure.message}\n\n${SETUP_NEXT_STEP}`);
 }
 
 /** Touches only this build's own family; another channel's registration is never disturbed. */
@@ -356,9 +365,10 @@ async function reconcilePackage(desired: DesiredState, status: (m: string) => vo
         return;
     }
 
-    const seen = registered.length === 0
-        ? "no Minecraft packages are registered"
-        : registered.map(p => `${p.family} -> ${p.installPath}`).join("; ");
+    const seen =
+        registered.length === 0
+            ? "no Minecraft packages are registered"
+            : registered.map(p => `${p.family} -> ${p.installPath}`).join("; ");
     log("Machine", `${wantFamily} is not registered to ${desired.versionPath}. Registry holds: ${seen}`);
 
     // Best effort: a stale entry that will not come off is not itself fatal, because the
@@ -399,8 +409,8 @@ export async function reconcile(desired: DesiredState, onStatus?: (m: string) =>
 
     log(
         "Machine",
-        `Reconciling ${desired.channel}: build ${desired.versionPath}, data ${desired.dataDir}, `
-        + `mods ${desired.modded ? "on" : "off"}`
+        `Reconciling ${desired.channel}: build ${desired.versionPath}, data ${desired.dataDir}, ` +
+            `mods ${desired.modded ? "on" : "off"}`
     );
 
     // First, and on every launch: it is the one blocker that costs nothing to read, and a launch
@@ -463,10 +473,7 @@ export function foreignDataPath(channel: Channel): string | null {
  * Starts the build's own executable. Registration still happens, so Windows keeps the package on
  * file and its Start menu entry works; this is only about which process the Play button creates.
  */
-export async function startGame(
-    versionPath: string,
-    onStatus?: (m: string) => void
-): Promise<boolean> {
+export async function startGame(versionPath: string, onStatus?: (m: string) => void): Promise<boolean> {
     const status = onStatus ?? (() => {});
     const executable = path.join(versionPath, GAME_EXECUTABLE);
 
@@ -495,7 +502,6 @@ export async function startGame(
     status("Waiting for Minecraft to start...");
     return confirmStarted(executable, versionPath, pid);
 }
-
 
 /**
  * Whether a process id Windows handed back is still alive, without disturbing it.
@@ -574,24 +580,25 @@ async function confirmStarted(executable: string, versionPath: string, pid: numb
         return false;
     }
 
-    const seen = probe.processes.length === 0
-        ? "none"
-        : probe.processes.map(p => `pid ${p.pid} (${p.executablePath || "path unknown"})`).join(", ");
+    const seen =
+        probe.processes.length === 0
+            ? "none"
+            : probe.processes.map(p => `pid ${p.pid} (${p.executablePath || "path unknown"})`).join(", ");
 
     const detail =
         `Outcome: ${verdict.kind}, ${verdict.summary}
-`
-        + `Started: ${executable} as pid ${pid}, still alive: ${isAlive(pid) ? "yes" : "no"}
-`
-        + `Waited: ${Math.round((Date.now() - startedAt) / 1000)}s
-`
-        + `Build holds: ${VersionFiles.describePayload(versionPath)}
-`
-        + `Developer Mode: ${describeSetting(Packages.readDeveloperMode(), "on", "off")}
-`
-        + `Minecraft processes running: ${seen}
-`
-        + `Process query: ${probe.detail}`;
+` +
+        `Started: ${executable} as pid ${pid}, still alive: ${isAlive(pid) ? "yes" : "no"}
+` +
+        `Waited: ${Math.round((Date.now() - startedAt) / 1000)}s
+` +
+        `Build holds: ${VersionFiles.describePayload(versionPath)}
+` +
+        `Developer Mode: ${describeSetting(Packages.readDeveloperMode(), "on", "off")}
+` +
+        `Minecraft processes running: ${seen}
+` +
+        `Process query: ${probe.detail}`;
 
     logBlock("Machine", `${executable} did not end up running: ${verdict.kind}`, detail);
     throw new Error(launchFailureMessage(verdict));

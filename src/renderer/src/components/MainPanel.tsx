@@ -15,9 +15,7 @@ interface MainPanelSectionProps extends MainPanelProps {
 export function MainPanelSection({ children, className }: MainPanelSectionProps) {
     return (
         <MainPanel>
-            <div className={`main-panel-section ${className}`}>
-                {children}
-            </div>
+            <div className={`main-panel-section ${className}`}>{children}</div>
         </MainPanel>
     );
 }

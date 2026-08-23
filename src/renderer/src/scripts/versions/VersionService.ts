@@ -54,18 +54,20 @@ function readPackageFamily(versionPath: string): string {
 }
 
 async function fastestMirror(urls: string[]): Promise<string> {
-    const probes = await Promise.all(urls.map(async url => {
-        const response = await head(url);
-        if (response.error !== null) {
-            log("Versions", `Mirror ${url} did not answer: ${response.error}`);
-            return null;
-        }
-        if (!response.ok) {
-            log("Versions", `Mirror ${url} answered ${response.status} ${response.statusText}, skipping it`);
-            return null;
-        }
-        return { url, ms: response.ms, size: response.contentLength };
-    }));
+    const probes = await Promise.all(
+        urls.map(async url => {
+            const response = await head(url);
+            if (response.error !== null) {
+                log("Versions", `Mirror ${url} did not answer: ${response.error}`);
+                return null;
+            }
+            if (!response.ok) {
+                log("Versions", `Mirror ${url} answered ${response.status} ${response.statusText}, skipping it`);
+                return null;
+            }
+            return { url, ms: response.ms, size: response.contentLength };
+        })
+    );
 
     const live = probes.filter((p): p is { url: string; ms: number; size: number } => p !== null);
     if (live.length === 0) {
@@ -75,8 +77,8 @@ async function fastestMirror(urls: string[]): Promise<string> {
     live.sort((a, b) => a.ms - b.ms);
     log(
         "Versions",
-        `Picked mirror ${live[0].url} at ${live[0].ms.toFixed(0)}ms, ${mb(live[0].size)}; `
-        + `${live.length} of ${urls.length} mirrors answered`
+        `Picked mirror ${live[0].url} at ${live[0].ms.toFixed(0)}ms, ${mb(live[0].size)}; ` +
+            `${live.length} of ${urls.length} mirrors answered`
     );
     return live[0].url;
 }
@@ -111,7 +113,10 @@ export class VersionService {
         const folder = path.join(this.paths.versionsPath, slug);
         const parent = path.dirname(path.resolve(folder));
         if (parent !== path.resolve(this.paths.versionsPath)) {
-            log("Versions", `Refusing "${slug}": it resolves to ${folder}, which is not directly inside ${this.paths.versionsPath}`);
+            log(
+                "Versions",
+                `Refusing "${slug}": it resolves to ${folder}, which is not directly inside ${this.paths.versionsPath}`
+            );
             throw new Error(`"${slug}" is not a valid version folder name.`);
         }
         return {
@@ -221,15 +226,15 @@ export class VersionService {
         if (!VersionService.wasBeingDecrypted(msixvc)) {
             log(
                 "Versions",
-                `Keeping ${msixvc} (${await VersionService.sizeOf(msixvc)}): the decrypt of ${label} never started, `
-                + `so the downloaded archive is still good`
+                `Keeping ${msixvc} (${await VersionService.sizeOf(msixvc)}): the decrypt of ${label} never started, ` +
+                    `so the downloaded archive is still good`
             );
             return;
         }
         log(
             "Versions",
-            `Deleting ${msixvc} (${await VersionService.sizeOf(msixvc)}): a decrypt of ${label} started and did not `
-            + `finish, so the file is part-decrypted and cannot be reused`
+            `Deleting ${msixvc} (${await VersionService.sizeOf(msixvc)}): a decrypt of ${label} started and did not ` +
+                `finish, so the file is part-decrypted and cannot be reused`
         );
         await fs.promises.rm(msixvc, { force: true });
         await VersionService.clearDecryptMarker(msixvc);
@@ -270,7 +275,10 @@ export class VersionService {
             log("Versions", `${installed.path} is recorded as "${installed.label}" but is not a folder`);
         } catch (e) {
             if (errnoCode(e) !== "ENOENT") {
-                log("Versions", `Could not check ${installed.path}, treating "${installed.label}" as installed: ${describeError(e)}`);
+                log(
+                    "Versions",
+                    `Could not check ${installed.path}, treating "${installed.label}" as installed: ${describeError(e)}`
+                );
                 return true;
             }
             log("Versions", `"${installed.label}" (${installed.uuid}) is recorded at ${installed.path}, which is gone`);
@@ -284,11 +292,11 @@ export class VersionService {
     /** Downloads, extracts and registers a catalog version. Resolves to the installed record. */
     async install(catalogVersion: CatalogVersion): Promise<InstalledVersion> {
         const existing = this.library.byUuid(catalogVersion.uuid);
-        if (existing && await this.stillOnDisk(existing)) {
+        if (existing && (await this.stillOnDisk(existing))) {
             log(
                 "Versions",
-                `Install of ${catalogLabel(catalogVersion)} skipped: ${catalogVersion.uuid} is already installed `
-                + `at ${existing.path}`
+                `Install of ${catalogLabel(catalogVersion)} skipped: ${catalogVersion.uuid} is already installed ` +
+                    `at ${existing.path}`
             );
             return existing;
         }
@@ -297,7 +305,10 @@ export class VersionService {
         const slug = artifactSlug(catalogVersion.version.toString(), catalogVersion.channel, catalogVersion.uuid);
         const { msixvc, folder, lockName } = this.artifactPaths(slug);
 
-        log("Versions", `Installing ${label} (${catalogVersion.uuid}) into ${folder} from ${catalogVersion.urls.length} mirror(s)`);
+        log(
+            "Versions",
+            `Installing ${label} (${catalogVersion.uuid}) into ${folder} from ${catalogVersion.urls.length} mirror(s)`
+        );
         fs.mkdirSync(this.paths.versionsPath, { recursive: true });
 
         return this.withLock(lockName, label, async () => {
@@ -318,7 +329,10 @@ Check your internet connection and try again.`
             const expectedSize = chosen.contentLength;
 
             if (VersionService.wasBeingDecrypted(msixvc)) {
-                log("Versions", `${msixvc} was left mid-decrypt by an earlier run, so it is deleted and ${label} downloaded again`);
+                log(
+                    "Versions",
+                    `${msixvc} was left mid-decrypt by an earlier run, so it is deleted and ${label} downloaded again`
+                );
                 await fs.promises.rm(msixvc, { force: true });
                 await VersionService.clearDecryptMarker(msixvc);
             }
@@ -327,40 +341,58 @@ Check your internet connection and try again.`
             const alreadyDownloaded = onDiskSize >= 0 && expectedSize > 0 && onDiskSize === expectedSize;
             log(
                 "Versions",
-                `${msixvc}: ${onDiskSize < 0 ? "not on disk" : `${mb(onDiskSize)} on disk`}, `
-                + `mirror reports ${expectedSize > 0 ? mb(expectedSize) : "no content-length"}, `
-                + `so ${alreadyDownloaded ? "reusing the existing file" : "downloading it"}`
+                `${msixvc}: ${onDiskSize < 0 ? "not on disk" : `${mb(onDiskSize)} on disk`}, ` +
+                    `mirror reports ${expectedSize > 0 ? mb(expectedSize) : "no content-length"}, ` +
+                    `so ${alreadyDownloaded ? "reusing the existing file" : "downloading it"}`
             );
 
             const downloadId = `version-${catalogVersion.uuid}`;
             if (!alreadyDownloaded) {
                 const abortController = new AbortController();
                 useDownloadStore.getState().addDownload({
-                    id: downloadId, name: label, type: "version", progress: 0,
-                    status: "downloading", abortController,
+                    id: downloadId,
+                    name: label,
+                    type: "version",
+                    progress: 0,
+                    status: "downloading",
+                    abortController,
                 });
-                addPendingDownload({ id: downloadId, name: label, type: "version", url: mirror, versionUuid: catalogVersion.uuid });
+                addPendingDownload({
+                    id: downloadId,
+                    name: label,
+                    type: "version",
+                    url: mirror,
+                    versionUuid: catalogVersion.uuid,
+                });
 
                 try {
                     await ProgressBar.runAsync(async ({ setStatus, setMessage, setProgress }) => {
                         setStatus("downloading");
-                        await Downloader.downloadFile(mirror, msixvc, (transferred, total) => {
-                            const progress = total > 0 ? transferred / total : 0;
-                            setMessage(`Downloading ${label}... (${mb(transferred)} / ${mb(total)})`);
-                            setProgress(progress);
-                            useDownloadStore.getState().updateDownload(downloadId, { progress });
-                        }, abortController.signal);
+                        await Downloader.downloadFile(
+                            mirror,
+                            msixvc,
+                            (transferred, total) => {
+                                const progress = total > 0 ? transferred / total : 0;
+                                setMessage(`Downloading ${label}... (${mb(transferred)} / ${mb(total)})`);
+                                setProgress(progress);
+                                useDownloadStore.getState().updateDownload(downloadId, { progress });
+                            },
+                            abortController.signal
+                        );
                     });
                 } catch (e) {
                     log(
                         "Versions",
-                        `Download of ${label} from ${mirror} failed after expecting ${mb(expectedSize)}; `
-                        + `deleting ${msixvc}: ${describeError(e)}`
+                        `Download of ${label} from ${mirror} failed after expecting ${mb(expectedSize)}; ` +
+                            `deleting ${msixvc}: ${describeError(e)}`
                     );
                     useDownloadStore.getState().updateDownload(downloadId, { status: "error" });
                     removePendingDownload(downloadId);
                     await fs.promises.rm(msixvc, { force: true }).catch(cleanupError => {
-                        log("Versions", `Could not delete the failed download ${msixvc}: ${describeError(cleanupError)}`);
+                        log(
+                            "Versions",
+                            `Could not delete the failed download ${msixvc}: ${describeError(cleanupError)}`
+                        );
                     });
                     throw e;
                 }
@@ -369,11 +401,14 @@ Check your internet connection and try again.`
                 if (expectedSize > 0 && downloadedSize !== expectedSize) {
                     log(
                         "Versions",
-                        `${label} downloaded ${downloadedSize} of ${expectedSize} bytes from ${mirror}; `
-                        + `deleting the short file ${msixvc}`
+                        `${label} downloaded ${downloadedSize} of ${expectedSize} bytes from ${mirror}; ` +
+                            `deleting the short file ${msixvc}`
                     );
                     await fs.promises.rm(msixvc, { force: true }).catch(cleanupError => {
-                        log("Versions", `Could not delete the short download ${msixvc}: ${describeError(cleanupError)}`);
+                        log(
+                            "Versions",
+                            `Could not delete the short download ${msixvc}: ${describeError(cleanupError)}`
+                        );
                     });
                     useDownloadStore.getState().updateDownload(downloadId, { status: "error" });
                     removePendingDownload(downloadId);
@@ -415,7 +450,10 @@ Check your internet connection and try again.`
             useDownloadStore.getState().updateDownload(downloadId, { status: "done", progress: 1 });
             removePendingDownload(downloadId);
 
-            log("Versions", `Installed ${label} (${installed.uuid}) at ${installed.path}, family ${installed.packageFamily}`);
+            log(
+                "Versions",
+                `Installed ${label} (${installed.uuid}) at ${installed.path}, family ${installed.packageFamily}`
+            );
             this.emit("installed", installed);
             return installed;
         });
@@ -425,8 +463,8 @@ Check your internet connection and try again.`
     async importMsixvc(request: ImportRequest): Promise<InstalledVersion> {
         log(
             "Versions",
-            `Import requested: "${request.label}" ${request.version.toString()} ${request.channel} `
-            + `(${request.uuid}) from ${request.file}`
+            `Import requested: "${request.label}" ${request.version.toString()} ${request.channel} ` +
+                `(${request.uuid}) from ${request.file}`
         );
 
         if (!request.file.toLowerCase().endsWith(".msixvc")) {
@@ -439,7 +477,10 @@ Check your internet connection and try again.`
         }
         const clash = this.library.byUuid(request.uuid);
         if (clash) {
-            log("Versions", `Import rejected: ${request.uuid} is already installed as "${clash.label}" at ${clash.path}`);
+            log(
+                "Versions",
+                `Import rejected: ${request.uuid} is already installed as "${clash.label}" at ${clash.path}`
+            );
             throw new Error(`Version ${request.uuid} is already installed.`);
         }
 
@@ -448,12 +489,19 @@ Check your internet connection and try again.`
         fs.mkdirSync(this.paths.versionsPath, { recursive: true });
 
         return this.withLock(lockName, request.label, async () => {
-            await ProgressBar.runAsync(async ({ setMessage, setProgress }) => {
-                setMessage(`Copying ${path.basename(request.file)}...`);
-                setProgress(0.5);
-                log("Versions", `Copying ${request.file} (${await VersionService.sizeOf(request.file)}) to ${msixvc}`);
-                await fs.promises.copyFile(request.file, msixvc);
-            }, true, FULL_PROGRESS_RESET_OPTIONS);
+            await ProgressBar.runAsync(
+                async ({ setMessage, setProgress }) => {
+                    setMessage(`Copying ${path.basename(request.file)}...`);
+                    setProgress(0.5);
+                    log(
+                        "Versions",
+                        `Copying ${request.file} (${await VersionService.sizeOf(request.file)}) to ${msixvc}`
+                    );
+                    await fs.promises.copyFile(request.file, msixvc);
+                },
+                true,
+                FULL_PROGRESS_RESET_OPTIONS
+            );
 
             try {
                 log("Versions", `Clearing ${folder} before extracting "${request.label}"`);
@@ -497,20 +545,24 @@ Check your internet connection and try again.`
         this.library.remove(uuid);
         this.emit("uninstalled", uuid);
 
-        await ProgressBar.runAsync(async ({ setStatus, setMessage }) => {
-            setStatus("deleting");
-            setMessage(`Removing ${installed.label}...`);
-            try {
-                await fs.promises.rm(installed.path, { recursive: true, force: true });
-            } catch (e) {
-                log("Versions", `Deleting ${installed.path} failed: ${describeError(e)}`);
-                throw new Error(
-                    `"${installed.label}" was removed from the launcher, but its files at ${installed.path} `
-                    + `could not all be deleted. Delete that folder yourself to free the space.`,
-                    { cause: e }
-                );
-            }
-        }, true, FULL_PROGRESS_RESET_OPTIONS);
+        await ProgressBar.runAsync(
+            async ({ setStatus, setMessage }) => {
+                setStatus("deleting");
+                setMessage(`Removing ${installed.label}...`);
+                try {
+                    await fs.promises.rm(installed.path, { recursive: true, force: true });
+                } catch (e) {
+                    log("Versions", `Deleting ${installed.path} failed: ${describeError(e)}`);
+                    throw new Error(
+                        `"${installed.label}" was removed from the launcher, but its files at ${installed.path} ` +
+                            `could not all be deleted. Delete that folder yourself to free the space.`,
+                        { cause: e }
+                    );
+                }
+            },
+            true,
+            FULL_PROGRESS_RESET_OPTIONS
+        );
 
         log("Versions", `Uninstalled "${installed.label}" (${uuid})`);
     }
@@ -518,7 +570,7 @@ Check your internet connection and try again.`
     /** Resolves a profile's version, downloading it if the catalog knows it but disk doesn't. */
     async resolveOrInstall(versionUuid: string): Promise<InstalledVersion> {
         const installed = this.library.byUuid(versionUuid);
-        if (installed && await this.stillOnDisk(installed)) {
+        if (installed && (await this.stillOnDisk(installed))) {
             log("Versions", `${versionUuid} resolves to the installed "${installed.label}" at ${installed.path}`);
             return installed;
         }
@@ -529,12 +581,12 @@ Check your internet connection and try again.`
         if (!fromCatalog) {
             log(
                 "Versions",
-                `${versionUuid} is in neither the library nor the version database `
-                + `(${this.catalog.all().length} catalog entries known)`
+                `${versionUuid} is in neither the library nor the version database ` +
+                    `(${this.catalog.all().length} catalog entries known)`
             );
             throw new Error(
                 `This profile's Minecraft version (${versionUuid}) isn't installed and isn't in the version database. ` +
-                `Pick a different version in the profile editor.`
+                    `Pick a different version in the profile editor.`
             );
         }
         return this.install(fromCatalog);

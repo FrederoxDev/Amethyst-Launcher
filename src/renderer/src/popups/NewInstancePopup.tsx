@@ -54,7 +54,10 @@ export function NewInstancePopup({ submit: rawSubmit, versionLabel, channel }: P
                     style={{ justifyContent: "space-between", paddingRight: 4, gap: 8 }}
                     onClick={() => submit({ kind: "reselect" })}
                 >
-                    <span className="minecraft-seven" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span
+                        className="minecraft-seven"
+                        style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                    >
                         {versionLabel}
                     </span>
                     <span className="minecraft-seven version-picker-item-tag" style={{ flexShrink: 0 }}>

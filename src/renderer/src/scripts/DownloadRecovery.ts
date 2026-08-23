@@ -1,6 +1,11 @@
 import { describeError } from "@shared/diagnostics/Log";
 import { useAppStore } from "@renderer/states/AppStore";
-import { useDownloadStore, getPendingDownloads, removePendingDownload, PendingDownload } from "@renderer/states/DownloadStore";
+import {
+    useDownloadStore,
+    getPendingDownloads,
+    removePendingDownload,
+    PendingDownload,
+} from "@renderer/states/DownloadStore";
 import { ImportModArchive, modArchiveExtension } from "@renderer/flows/ImportMod";
 import { log } from "@renderer/scripts/LauncherLog";
 import { Downloader } from "@renderer/scripts/backend/Downloader";
@@ -77,7 +82,11 @@ async function resumeModDownload(pending: PendingDownload): Promise<void> {
     const appState = useAppStore.getState();
     appState.setDownloadingMods([...appState.downloadingMods, pending.name]);
 
-    const { ok, path: filePath, error } = await downloadToTemp(
+    const {
+        ok,
+        path: filePath,
+        error,
+    } = await downloadToTemp(
         pending.url,
         pending.name + modArchiveExtension(pending.url),
         (transferred, total) => {
@@ -116,10 +125,15 @@ async function resumeModDownload(pending: PendingDownload): Promise<void> {
 async function resumeVersionDownload(pending: PendingDownload): Promise<void> {
     removePendingDownload(pending.id);
     if (!pending.versionUuid) {
-        log("Recovery", `Dropping pending version "${pending.name}" (${pending.id}): the saved entry carries no versionUuid`);
-        useAppStore.getState().setError(
-            `Could not resume the download of ${pending.name} because the saved entry is incomplete. Install it again from the versions list.`
+        log(
+            "Recovery",
+            `Dropping pending version "${pending.name}" (${pending.id}): the saved entry carries no versionUuid`
         );
+        useAppStore
+            .getState()
+            .setError(
+                `Could not resume the download of ${pending.name} because the saved entry is incomplete. Install it again from the versions list.`
+            );
         return;
     }
 
@@ -143,8 +157,8 @@ export function resumePendingDownloads(): void {
 
     log(
         "Recovery",
-        `Resuming ${pending.length} download(s) left by a previous session: `
-        + `${pending.map(p => `${p.type} "${p.name}" (${p.id})`).join(", ")}`
+        `Resuming ${pending.length} download(s) left by a previous session: ` +
+            `${pending.map(p => `${p.type} "${p.name}" (${p.id})`).join(", ")}`
     );
 
     for (const entry of pending) {

@@ -23,7 +23,9 @@
     border: 3px solid var(--color-outline);
     padding: 12px;
     cursor: pointer;
-    transition: border-color 0.1s, transform 0.1s ease;
+    transition:
+        border-color 0.1s,
+        transform 0.1s ease;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -55,7 +57,6 @@
 .launcher-profile-card-wrapper.dragging {
     opacity: 0;
 }
-
 
 .launcher-create-card {
     flex-direction: column;
@@ -104,7 +105,7 @@
     pointer-events: none;
     background-color: var(--color-surface-sunken);
     border: 2px solid var(--color-outline);
-    color: #F3C642;
+    color: #f3c642;
     font-size: 13px;
     line-height: 1.3;
     padding: 8px 10px;
@@ -112,7 +113,9 @@
     max-width: 280px;
     white-space: normal;
     z-index: 20;
-    transition: opacity 0.12s ease, transform 0.12s ease;
+    transition:
+        opacity 0.12s ease,
+        transform 0.12s ease;
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
 }
 
@@ -232,7 +235,7 @@
     pointer-events: none;
     background-color: var(--color-surface-sunken);
     border: 2px solid var(--color-outline);
-    color: #F3C642;
+    color: #f3c642;
     font-size: 13px;
     line-height: 1.3;
     padding: 8px 10px;
@@ -241,7 +244,9 @@
     /* The reason arrives on its own line under the headline, so the breaks are meaningful. */
     white-space: pre-wrap;
     z-index: 20;
-    transition: opacity 0.12s ease, transform 0.12s ease;
+    transition:
+        opacity 0.12s ease,
+        transform 0.12s ease;
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
 }
 
@@ -301,4 +306,3 @@
 .launcher-drag-overlay > .launcher-profile-card {
     flex: 1;
 }
-

@@ -7,6 +7,7 @@ import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle"
 import { PopupPanel } from "@renderer/components/PopupPanel";
 import { describeError, userMessage } from "@shared/diagnostics/Log";
 import { log } from "@renderer/scripts/LauncherLog";
+import { useAppStore } from "@renderer/states/AppStore";
 
 const { ipcRenderer } = window.require("electron") as typeof import("electron");
 
@@ -45,7 +46,8 @@ export function UpdatePage() {
         setDownloadPercentage(0);
         setDownloadActive(true);
         tell("set-auto-install-on-app-quit", true);
-        ipcRenderer.invoke("update-download")
+        ipcRenderer
+            .invoke("update-download")
             .then(files => log("Update", `Update download finished: ${JSON.stringify(files)}`))
             .catch(e => {
                 log("Update", `Update download failed: ${describeError(e)}`);
@@ -65,7 +67,8 @@ export function UpdatePage() {
     useEffect(() => {
         tell("set-auto-download", false);
         tell("set-auto-install-on-app-quit", true);
-        checkForUpdates();
+        // The user can turn the startup check off; updates are then only ever checked on demand.
+        if (useAppStore.getState().autoCheckUpdates) checkForUpdates();
 
         const onUpdateAvailable = (_: IpcEvent, info: UpdateInfo) => {
             log("Update", `Update ${info?.version} is available, offering it to the user`);
@@ -113,7 +116,8 @@ export function UpdatePage() {
     }, [setUpdateAvailable, setPopupClosed, setDownloadActive, setDownloadPercentage, checkForUpdates]);
 
     useEffect(() => {
-        ipcRenderer.invoke("get-app-version")
+        ipcRenderer
+            .invoke("get-app-version")
             .then(version => setAppVersion(version))
             .catch(e => log("Update", `Could not read the launcher version: ${describeError(e)}`));
     }, []);
@@ -158,7 +162,10 @@ export function UpdatePage() {
                         )}
                         {downloadActive && (
                             <div className="update-popup-body">
-                                <LoadingWheel text={"Downloading update..."} percentage={downloadPercentage}></LoadingWheel>
+                                <LoadingWheel
+                                    text={"Downloading update..."}
+                                    percentage={downloadPercentage}
+                                ></LoadingWheel>
                                 <div className="update-popup-actions">
                                     <MinecraftButton
                                         text="Hide"

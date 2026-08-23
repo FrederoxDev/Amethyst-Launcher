@@ -9,11 +9,13 @@ export type TextInputProps = {
 
 export function TextInput({ label, text, setText, placeholder, style, autoFocus }: TextInputProps) {
     return (
-        <div style={{
+        <div
+            style={{
                 display: "flex",
                 flexDirection: "column",
-                ...style
-            }}>
+                ...style,
+            }}
+        >
             {label && <p className="minecraft-seven text-input-label">{label}</p>}
             <div className="text-input-box">
                 <input

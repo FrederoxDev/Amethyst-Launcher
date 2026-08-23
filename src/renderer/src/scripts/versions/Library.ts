@@ -27,7 +27,9 @@ const VERSION_IN_TEXT = /\d+\.\d+\.\d+(?:\.\d+)?/;
 function isLegacyEntry(raw: unknown): raw is Record<string, unknown> {
     if (typeof raw !== "object" || raw === null) return false;
     const o = raw as Record<string, unknown>;
-    return o.label === undefined && typeof o.uuid === "string" && typeof o.name === "string" && typeof o.path === "string";
+    return (
+        o.label === undefined && typeof o.uuid === "string" && typeof o.name === "string" && typeof o.path === "string"
+    );
 }
 
 function packageFamilyOf(versionPath: string, channel: Channel): string {
@@ -50,8 +52,7 @@ function migrateLegacyEntry(o: Record<string, unknown>, where: string): Installe
     const name = o.name as string;
     const versionPath = o.path as string;
 
-    const channel = parseChannel(o.type)
-        ?? (/preview|beta/i.test(`${name} ${versionPath}`) ? "preview" : "release");
+    const channel = parseChannel(o.type) ?? (/preview|beta/i.test(`${name} ${versionPath}`) ? "preview" : "release");
 
     const found = `${name} ${path.basename(versionPath)}`.match(VERSION_IN_TEXT)?.[0];
     const version = found ? SemVersion.fromString(found) : new SemVersion(0, 0, 0, 0);
@@ -68,9 +69,9 @@ function migrateLegacyEntry(o: Record<string, unknown>, where: string): Installe
 
     log(
         "Library",
-        `Migrated ${where} from the old format: "${migrated.label}" (${migrated.uuid}) at ${migrated.path}, `
-        + `channel ${migrated.channel} from type=${String(o.type)}, version ${migrated.version.toString()}`
-        + `${found ? "" : " which no name or folder in the record carried"}, family ${migrated.packageFamily}`
+        `Migrated ${where} from the old format: "${migrated.label}" (${migrated.uuid}) at ${migrated.path}, ` +
+            `channel ${migrated.channel} from type=${String(o.type)}, version ${migrated.version.toString()}` +
+            `${found ? "" : " which no name or folder in the record carried"}, family ${migrated.packageFamily}`
     );
     return migrated;
 }
@@ -133,17 +134,23 @@ export class Library {
         if (migrated > 0) {
             try {
                 this.save();
-                log("Library", `Rewrote ${this.file} with ${migrated} of ${this.versions.length} record(s) migrated from the old format`);
+                log(
+                    "Library",
+                    `Rewrote ${this.file} with ${migrated} of ${this.versions.length} record(s) migrated from the old format`
+                );
             } catch (e) {
-                log("Library", `Migrated ${migrated} record(s) but could not rewrite ${this.file}: ${describeError(e)}`);
+                log(
+                    "Library",
+                    `Migrated ${migrated} record(s) but could not rewrite ${this.file}: ${describeError(e)}`
+                );
             }
         }
 
         log(
             "Library",
-            `Loaded ${this.versions.length} installed version(s) from ${this.file}`
-            + `${stamp.state === "legacy" ? " as an unstamped file, it gets a stamp on the next save" : ""}: `
-            + `${this.versions.map(v => `"${v.label}" (${v.uuid}) at ${v.path}`).join("; ") || "none"}`
+            `Loaded ${this.versions.length} installed version(s) from ${this.file}` +
+                `${stamp.state === "legacy" ? " as an unstamped file, it gets a stamp on the next save" : ""}: ` +
+                `${this.versions.map(v => `"${v.label}" (${v.uuid}) at ${v.path}`).join("; ") || "none"}`
         );
     }
 
@@ -196,15 +203,19 @@ export class Library {
 
         const clash = this.claimsPath(version.path);
         if (clash) {
-            log("Library", `Refusing to record "${version.label}" at ${version.path}: "${clash.label}" (${clash.uuid}) already claims it`);
-            throw new Error(
-                `"${version.path}" is already used by installed version "${clash.label}" (${clash.uuid}).`
+            log(
+                "Library",
+                `Refusing to record "${version.label}" at ${version.path}: "${clash.label}" (${clash.uuid}) already claims it`
             );
+            throw new Error(`"${version.path}" is already used by installed version "${clash.label}" (${clash.uuid}).`);
         }
 
         this.versions.push(version);
         this.save();
-        log("Library", `Recorded "${version.label}" (${version.uuid}) at ${version.path}; ${this.versions.length} installed`);
+        log(
+            "Library",
+            `Recorded "${version.label}" (${version.uuid}) at ${version.path}; ${this.versions.length} installed`
+        );
     }
 
     update(uuid: string, patch: Partial<InstalledVersion>): void {
@@ -249,8 +260,8 @@ export class Library {
         this.save();
         log(
             "Library",
-            `Pruned ${missing.length} installed version(s) whose folder is gone: `
-            + `${missing.map(v => `"${v.label}" (${v.uuid}) at ${v.path}`).join("; ")}`
+            `Pruned ${missing.length} installed version(s) whose folder is gone: ` +
+                `${missing.map(v => `"${v.label}" (${v.uuid}) at ${v.path}`).join("; ")}`
         );
         return uuids;
     }

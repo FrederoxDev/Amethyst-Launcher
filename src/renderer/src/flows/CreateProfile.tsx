@@ -70,8 +70,8 @@ export async function createProfileFlow(restrictToChannel?: Channel): Promise<Cr
 
         log(
             "CreateProfile",
-            `Created "${profile.name}" (${profile.uuid}) at index ${profiles.length - 1}: ${profile.channel}, `
-            + `version "${profile.versionLabel}" (${profile.versionUuid}), ${profile.modded ? "modded" : "vanilla"}`
+            `Created "${profile.name}" (${profile.uuid}) at index ${profiles.length - 1}: ${profile.channel}, ` +
+                `version "${profile.versionLabel}" (${profile.versionUuid}), ${profile.modded ? "modded" : "vanilla"}`
         );
         return { profile, index: profiles.length - 1 };
     }

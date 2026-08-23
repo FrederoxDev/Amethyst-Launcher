@@ -22,7 +22,12 @@ import {
 } from "@renderer/flows/ProfileActions";
 import "@renderer/flows/ProtocolLinks";
 
-const ProfileCardMenu = ({ onEdit, onDelete, onOpenInstallFolder, onOpenDataFolder }: {
+const ProfileCardMenu = ({
+    onEdit,
+    onDelete,
+    onOpenInstallFolder,
+    onOpenDataFolder,
+}: {
     onEdit: () => void;
     onDelete: () => void;
     onOpenInstallFolder: () => void;
@@ -37,8 +42,10 @@ const ProfileCardMenu = ({ onEdit, onDelete, onOpenInstallFolder, onOpenDataFold
         if (!open) return;
         const handleClick = (e: MouseEvent) => {
             if (
-                dotsRef.current && !dotsRef.current.contains(e.target as Node) &&
-                dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
+                dotsRef.current &&
+                !dotsRef.current.contains(e.target as Node) &&
+                dropdownRef.current &&
+                !dropdownRef.current.contains(e.target as Node)
             ) {
                 setOpen(false);
             }
@@ -57,7 +64,7 @@ const ProfileCardMenu = ({ onEdit, onDelete, onOpenInstallFolder, onOpenDataFold
     }, [open]);
 
     return (
-        <div className="launcher-profile-card-menu" onClick={(e) => e.stopPropagation()}>
+        <div className="launcher-profile-card-menu" onClick={e => e.stopPropagation()}>
             <div className="launcher-profile-card-dots" ref={dotsRef} onClick={() => setOpen(!open)}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <circle cx="8" cy="3" r="1.5" fill="#FFFFFF" />
@@ -65,45 +72,99 @@ const ProfileCardMenu = ({ onEdit, onDelete, onOpenInstallFolder, onOpenDataFold
                     <circle cx="8" cy="13" r="1.5" fill="#FFFFFF" />
                 </svg>
             </div>
-            {open && createPortal(
-                <div
-                    className="launcher-profile-card-dropdown"
-                    ref={dropdownRef}
-                    style={{ top: dropdownPos.top, right: dropdownPos.right }}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="launcher-profile-card-dropdown-item" onClick={() => { onEdit(); setOpen(false); }}>
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                            <path d="M11.293 1.293a1 1 0 0 1 1.414 0l2 2a1 1 0 0 1 0 1.414l-8.5 8.5A1 1 0 0 1 5.5 13.5H3a1 1 0 0 1-1-1V10.5a1 1 0 0 1 .293-.707l8.5-8.5Z" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
-                        </svg>
-                        <p className="minecraft-seven">Edit Profile</p>
-                    </div>
-                    <div className="launcher-profile-card-dropdown-item" onClick={() => { onOpenDataFolder(); setOpen(false); }}>
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                            <path d="M1 3C1 2.44772 1.44772 2 2 2H6.17157C6.43679 2 6.69114 2.10536 6.87868 2.29289L7.70711 3.12132C7.89464 3.30886 8.149 3.41421 8.41421 3.41421H14C14.5523 3.41421 15 3.86193 15 4.41421V13C15 13.5523 14.5523 14 14 14H2C1.44772 14 1 13.5523 1 13V3Z" stroke="#FFFFFF" strokeWidth="1.5" />
-                        </svg>
-                        <p className="minecraft-seven">Open Data Folder</p>
-                    </div>
-                    <div className="launcher-profile-card-dropdown-item" onClick={() => { onOpenInstallFolder(); setOpen(false); }}>
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                            <path d="M1 3C1 2.44772 1.44772 2 2 2H6.17157C6.43679 2 6.69114 2.10536 6.87868 2.29289L7.70711 3.12132C7.89464 3.30886 8.149 3.41421 8.41421 3.41421H14C14.5523 3.41421 15 3.86193 15 4.41421V13C15 13.5523 14.5523 14 14 14H2C1.44772 14 1 13.5523 1 13V3Z" stroke="#FFFFFF" strokeWidth="1.5" />
-                        </svg>
-                        <p className="minecraft-seven">Open Install Folder</p>
-                    </div>
-                    <div className="launcher-profile-card-dropdown-item launcher-profile-card-dropdown-item--danger" onClick={() => { onDelete(); setOpen(false); }}>
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                            <path d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
-                        <p className="minecraft-seven">Delete Profile</p>
-                    </div>
-                </div>,
-                document.body
-            )}
+            {open &&
+                createPortal(
+                    <div
+                        className="launcher-profile-card-dropdown"
+                        ref={dropdownRef}
+                        style={{ top: dropdownPos.top, right: dropdownPos.right }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div
+                            className="launcher-profile-card-dropdown-item"
+                            onClick={() => {
+                                onEdit();
+                                setOpen(false);
+                            }}
+                        >
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                <path
+                                    d="M11.293 1.293a1 1 0 0 1 1.414 0l2 2a1 1 0 0 1 0 1.414l-8.5 8.5A1 1 0 0 1 5.5 13.5H3a1 1 0 0 1-1-1V10.5a1 1 0 0 1 .293-.707l8.5-8.5Z"
+                                    stroke="#FFFFFF"
+                                    strokeWidth="1.5"
+                                    fill="none"
+                                />
+                            </svg>
+                            <p className="minecraft-seven">Edit Profile</p>
+                        </div>
+                        <div
+                            className="launcher-profile-card-dropdown-item"
+                            onClick={() => {
+                                onOpenDataFolder();
+                                setOpen(false);
+                            }}
+                        >
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                <path
+                                    d="M1 3C1 2.44772 1.44772 2 2 2H6.17157C6.43679 2 6.69114 2.10536 6.87868 2.29289L7.70711 3.12132C7.89464 3.30886 8.149 3.41421 8.41421 3.41421H14C14.5523 3.41421 15 3.86193 15 4.41421V13C15 13.5523 14.5523 14 14 14H2C1.44772 14 1 13.5523 1 13V3Z"
+                                    stroke="#FFFFFF"
+                                    strokeWidth="1.5"
+                                />
+                            </svg>
+                            <p className="minecraft-seven">Open Data Folder</p>
+                        </div>
+                        <div
+                            className="launcher-profile-card-dropdown-item"
+                            onClick={() => {
+                                onOpenInstallFolder();
+                                setOpen(false);
+                            }}
+                        >
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                <path
+                                    d="M1 3C1 2.44772 1.44772 2 2 2H6.17157C6.43679 2 6.69114 2.10536 6.87868 2.29289L7.70711 3.12132C7.89464 3.30886 8.149 3.41421 8.41421 3.41421H14C14.5523 3.41421 15 3.86193 15 4.41421V13C15 13.5523 14.5523 14 14 14H2C1.44772 14 1 13.5523 1 13V3Z"
+                                    stroke="#FFFFFF"
+                                    strokeWidth="1.5"
+                                />
+                            </svg>
+                            <p className="minecraft-seven">Open Install Folder</p>
+                        </div>
+                        <div
+                            className="launcher-profile-card-dropdown-item launcher-profile-card-dropdown-item--danger"
+                            onClick={() => {
+                                onDelete();
+                                setOpen(false);
+                            }}
+                        >
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                <path
+                                    d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4"
+                                    stroke="currentColor"
+                                    strokeWidth="1.5"
+                                    strokeLinecap="round"
+                                />
+                            </svg>
+                            <p className="minecraft-seven">Delete Profile</p>
+                        </div>
+                    </div>,
+                    document.body
+                )}
         </div>
     );
 };
 
-const ProfileCard = ({ profile, versionName, runtimeWarning, onEdit, onPlay, onDelete, onOpenInstallFolder, onOpenDataFolder, canPlay, isSelected }: {
+const ProfileCard = ({
+    profile,
+    versionName,
+    runtimeWarning,
+    onEdit,
+    onPlay,
+    onDelete,
+    onOpenInstallFolder,
+    onOpenDataFolder,
+    canPlay,
+    isSelected,
+}: {
     profile: Profile;
     versionName: string;
     runtimeWarning: string | null;
@@ -125,10 +186,22 @@ const ProfileCard = ({ profile, versionName, runtimeWarning, onEdit, onPlay, onD
                     {runtimeWarning && (
                         <div className="launcher-profile-card-warning-inline" role="img" aria-label={runtimeWarning}>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                                <path d="M7.137 2.5a1 1 0 0 1 1.726 0l5.196 9A1 1 0 0 1 13.196 13H2.804a1 1 0 0 1-.863-1.5l5.196-9Z" fill="#F3C642" stroke="#9A7A1A" strokeWidth="1" />
-                                <path d="M8 6v3.2M8 11.5h.01" stroke="#1E1E1F" strokeWidth="1.4" strokeLinecap="round" />
+                                <path
+                                    d="M7.137 2.5a1 1 0 0 1 1.726 0l5.196 9A1 1 0 0 1 13.196 13H2.804a1 1 0 0 1-.863-1.5l5.196-9Z"
+                                    fill="#F3C642"
+                                    stroke="#9A7A1A"
+                                    strokeWidth="1"
+                                />
+                                <path
+                                    d="M8 6v3.2M8 11.5h.01"
+                                    stroke="#1E1E1F"
+                                    strokeWidth="1.4"
+                                    strokeLinecap="round"
+                                />
                             </svg>
-                            <div className="launcher-profile-card-warning-tooltip minecraft-seven">{runtimeWarning}</div>
+                            <div className="launcher-profile-card-warning-tooltip minecraft-seven">
+                                {runtimeWarning}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -136,16 +209,31 @@ const ProfileCard = ({ profile, versionName, runtimeWarning, onEdit, onPlay, onD
                     {versionName} &middot; {channelLabel(profile.channel)} &middot; {profileModeLabel}
                 </p>
             </div>
-            <div className="launcher-profile-card-actions" onClick={(e) => { e.stopPropagation(); }}>
+            <div
+                className="launcher-profile-card-actions"
+                onClick={e => {
+                    e.stopPropagation();
+                }}
+            >
                 <div className="launcher-profile-card-play-wrap">
                     <div className="launcher-profile-card-play">
-                        <MinecraftButton text="Play" onClick={onPlay} disabled={!canPlay} style={{ "--mc-button-container-h": "36px" }} />
+                        <MinecraftButton
+                            text="Play"
+                            onClick={onPlay}
+                            disabled={!canPlay}
+                            style={{ "--mc-button-container-h": "36px" }}
+                        />
                     </div>
                     {runtimeWarning && (
                         <div className="launcher-profile-card-play-tooltip minecraft-seven">{runtimeWarning}</div>
                     )}
                 </div>
-                <ProfileCardMenu onEdit={onEdit} onDelete={onDelete} onOpenInstallFolder={onOpenInstallFolder} onOpenDataFolder={onOpenDataFolder} />
+                <ProfileCardMenu
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onOpenInstallFolder={onOpenInstallFolder}
+                    onOpenDataFolder={onOpenDataFolder}
+                />
             </div>
         </div>
     );
@@ -161,16 +249,18 @@ export function LauncherPage() {
         setError,
         allMods,
         downloadingMods,
-    ] = useAppStore(useShallow(state => [
-        state.profiles,
-        state.lastLaunchedProfileUuid,
-        state.setEditingProfileUuid,
-        state.setProfiles,
-        state.saveData,
-        state.setError,
-        state.allMods,
-        state.downloadingMods,
-    ]));
+    ] = useAppStore(
+        useShallow(state => [
+            state.profiles,
+            state.lastLaunchedProfileUuid,
+            state.setEditingProfileUuid,
+            state.setProfiles,
+            state.saveData,
+            state.setError,
+            state.allMods,
+            state.downloadingMods,
+        ])
+    );
 
     // Subscribe to ProgressBar status so play-button gating updates reactively
     // when long-running ops (launch, import, delete, uninstall) start/finish.
@@ -244,10 +334,13 @@ export function LauncherPage() {
             if (!key) continue;
 
             if (addedUuids.has(key)) {
-                el.animate([
-                    { opacity: 0, transform: "scale(0.9)" },
-                    { opacity: 1, transform: "scale(1)" },
-                ], { duration: 150, easing: "ease-out" });
+                el.animate(
+                    [
+                        { opacity: 0, transform: "scale(0.9)" },
+                        { opacity: 1, transform: "scale(1)" },
+                    ],
+                    { duration: 150, easing: "ease-out" }
+                );
                 continue;
             }
 
@@ -258,10 +351,10 @@ export function LauncherPage() {
             const dy = oldRect.top - newRect.top;
             if (dx === 0 && dy === 0) continue;
 
-            el.animate([
-                { transform: `translate(${dx}px, ${dy}px)` },
-                { transform: "translate(0, 0)" },
-            ], { duration: 200, easing: "cubic-bezier(0.2, 0, 0, 1)" });
+            el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0, 0)" }], {
+                duration: 200,
+                easing: "cubic-bezier(0.2, 0, 0, 1)",
+            });
         }
     }, [allProfiles]);
 
@@ -271,7 +364,7 @@ export function LauncherPage() {
             log("LauncherPage", `Delete ignored: no profile at index ${index} of ${allProfiles.length}`);
             return;
         }
-        if (!await confirmProfileDeletion(profile)) return;
+        if (!(await confirmProfileDeletion(profile))) return;
         snapshotPositions();
         try {
             await removeProfile(profile);
@@ -293,7 +386,9 @@ export function LauncherPage() {
         reordered.splice(toIndex, 0, moved);
         setAllProfiles(reordered);
         reorderCooldown.current = true;
-        setTimeout(() => { reorderCooldown.current = false; }, 200);
+        setTimeout(() => {
+            reorderCooldown.current = false;
+        }, 200);
     };
 
     const launchGame = async (profile: Profile) => {
@@ -313,12 +408,14 @@ export function LauncherPage() {
     const runtimeWarnings = useMemo(() => {
         const warnings = new Map<string, string>();
         for (const profile of allProfiles) {
-            const blocker = launchBlocker(diagnoseProfile({
-                modded: isModded(profile),
-                modIds: profile.mods,
-                mods: modStatuses,
-                downloading: downloadingMods,
-            }));
+            const blocker = launchBlocker(
+                diagnoseProfile({
+                    modded: isModded(profile),
+                    modIds: profile.mods,
+                    mods: modStatuses,
+                    downloading: downloadingMods,
+                })
+            );
             if (blocker !== null) warnings.set(profile.uuid, describeProblem(blocker));
         }
         return warnings;
@@ -327,78 +424,100 @@ export function LauncherPage() {
     return (
         <div className="launcher-page">
             {/* Profile Grid */}
-            <div className="launcher-profile-grid" ref={gridRef} onDragOver={(e) => { e.preventDefault(); trackPointer(e.clientX, e.clientY); }} onDrop={(e) => e.preventDefault()}>
+            <div
+                className="launcher-profile-grid"
+                ref={gridRef}
+                onDragOver={e => {
+                    e.preventDefault();
+                    trackPointer(e.clientX, e.clientY);
+                }}
+                onDrop={e => e.preventDefault()}
+            >
                 {allProfiles.map((profile, index) => {
                     const runtimeWarning = runtimeWarnings.get(profile.uuid) ?? null;
 
-                    return <div
-                        key={profile.uuid}
-                        data-uuid={profile.uuid}
-                        className={`launcher-profile-card-wrapper${dragUuid === profile.uuid ? " dragging" : ""}`}
-                        draggable
-                        onDragStart={(e) => {
-                            dragUuidRef.current = profile.uuid;
-                            e.dataTransfer.setData("text/plain", profile.uuid);
-                            e.dataTransfer.effectAllowed = "move";
-                            const empty = document.createElement("img");
-                            empty.src = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
-                            e.dataTransfer.setDragImage(empty, 0, 0);
-                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                            dragSizeRef.current = { width: rect.width, height: rect.height };
-                            dragStartOrderRef.current = allProfiles.map(p => p.uuid);
-                            trackPointer(e.clientX, e.clientY);
-                            _setDragUuid(profile.uuid);
-                        }}
-                        onDragOver={(e) => {
-                            e.preventDefault();
-                            e.dataTransfer.dropEffect = "move";
-                            handleReorder(profile.uuid);
-                        }}
-                        onDrop={(e) => e.preventDefault()}
-                        onDragEnd={() => {
-                            const startOrder = dragStartOrderRef.current;
-                            dragStartOrderRef.current = null;
-                            setDragUuid(null);
-
-                            // `dragend` fires for an abandoned drag too, and the reorder itself
-                            // happens on `dragover`, so only a changed order is a save.
-                            if (!startOrder) return;
-                            const order = allProfiles.map(p => p.uuid);
-                            if (order.length === startOrder.length && order.every((uuid, i) => uuid === startOrder[i])) return;
-
-                            log("LauncherPage", `Profile order saved: ${allProfiles.map(p => p.name).join(", ")}`);
-                            saveData();
-                        }}
-                    >
-                        <ProfileCard
-                            profile={profile}
-                            versionName={displayVersion(profile)}
-                            runtimeWarning={runtimeWarning}
-                            isSelected={lastLaunchedProfileUuid === profile.uuid}
-                            canPlay={canLaunch && !runtimeWarning}
-                            onEdit={() => {
-                                log("LauncherPage", `Opening the editor for "${profile.name}" (${profile.uuid})`);
-                                setEditingProfile(profile.uuid);
-                                navigate("/profile-editor");
+                    return (
+                        <div
+                            key={profile.uuid}
+                            data-uuid={profile.uuid}
+                            className={`launcher-profile-card-wrapper${dragUuid === profile.uuid ? " dragging" : ""}`}
+                            draggable
+                            onDragStart={e => {
+                                dragUuidRef.current = profile.uuid;
+                                e.dataTransfer.setData("text/plain", profile.uuid);
+                                e.dataTransfer.effectAllowed = "move";
+                                const empty = document.createElement("img");
+                                empty.src =
+                                    "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+                                e.dataTransfer.setDragImage(empty, 0, 0);
+                                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                dragSizeRef.current = {
+                                    width: rect.width,
+                                    height: rect.height,
+                                };
+                                dragStartOrderRef.current = allProfiles.map(p => p.uuid);
+                                trackPointer(e.clientX, e.clientY);
+                                _setDragUuid(profile.uuid);
                             }}
-                            onPlay={() => launchGame(profile)}
-                            onDelete={() => deleteProfile(index)}
-                            onOpenInstallFolder={() => openInstallFolder(profile)}
-                            onOpenDataFolder={() => openDataFolder(profile)}
-                        />
-                    </div>;
+                            onDragOver={e => {
+                                e.preventDefault();
+                                e.dataTransfer.dropEffect = "move";
+                                handleReorder(profile.uuid);
+                            }}
+                            onDrop={e => e.preventDefault()}
+                            onDragEnd={() => {
+                                const startOrder = dragStartOrderRef.current;
+                                dragStartOrderRef.current = null;
+                                setDragUuid(null);
+
+                                // `dragend` fires for an abandoned drag too, and the reorder itself
+                                // happens on `dragover`, so only a changed order is a save.
+                                if (!startOrder) return;
+                                const order = allProfiles.map(p => p.uuid);
+                                if (
+                                    order.length === startOrder.length &&
+                                    order.every((uuid, i) => uuid === startOrder[i])
+                                )
+                                    return;
+
+                                log("LauncherPage", `Profile order saved: ${allProfiles.map(p => p.name).join(", ")}`);
+                                saveData();
+                            }}
+                        >
+                            <ProfileCard
+                                profile={profile}
+                                versionName={displayVersion(profile)}
+                                runtimeWarning={runtimeWarning}
+                                isSelected={lastLaunchedProfileUuid === profile.uuid}
+                                canPlay={canLaunch && !runtimeWarning}
+                                onEdit={() => {
+                                    log("LauncherPage", `Opening the editor for "${profile.name}" (${profile.uuid})`);
+                                    setEditingProfile(profile.uuid);
+                                    navigate("/profile-editor");
+                                }}
+                                onPlay={() => launchGame(profile)}
+                                onDelete={() => deleteProfile(index)}
+                                onOpenInstallFolder={() => openInstallFolder(profile)}
+                                onOpenDataFolder={() => openDataFolder(profile)}
+                            />
+                        </div>
+                    );
                 })}
-                <div className="launcher-profile-card launcher-create-card" data-uuid="__create__" onClick={async () => {
-                    snapshotPositions();
-                    try {
-                        const result = await createProfileFlow();
-                        if (!result) return;
-                        navigate(isModded(result.profile) ? "/profile-editor" : "/");
-                    } catch (e) {
-                        log("LauncherPage", `Profile creation failed: ${describeError(e)}`);
-                        setError(`Could not create the profile: ${userMessage(e)}`);
-                    }
-                }}>
+                <div
+                    className="launcher-profile-card launcher-create-card"
+                    data-uuid="__create__"
+                    onClick={async () => {
+                        snapshotPositions();
+                        try {
+                            const result = await createProfileFlow();
+                            if (!result) return;
+                            navigate(isModded(result.profile) ? "/profile-editor" : "/");
+                        } catch (e) {
+                            log("LauncherPage", `Profile creation failed: ${describeError(e)}`);
+                            setError(`Could not create the profile: ${userMessage(e)}`);
+                        }
+                    }}
+                >
                     <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
                         <path d="M10 4V16M4 10H16" stroke="#9f9f9f" strokeWidth="2.5" strokeLinecap="square" />
                     </svg>
@@ -406,29 +525,30 @@ export function LauncherPage() {
                 </div>
             </div>
 
-            {dragUuid && createPortal(
-                (() => {
-                    const dragProfile = allProfiles.find(p => p.uuid === dragUuid);
-                    if (!dragProfile) return null;
-                    return (
-                        <div className="launcher-drag-overlay" ref={attachDragOverlay}>
-                            <ProfileCard
-                                profile={dragProfile}
-                                versionName={displayVersion(dragProfile)}
-                                runtimeWarning={runtimeWarnings.get(dragProfile.uuid) ?? null}
-                                isSelected={lastLaunchedProfileUuid === dragProfile.uuid}
-                                canPlay={false}
-                                onEdit={() => {}}
-                                onPlay={() => {}}
-                                onDelete={() => {}}
-                                onOpenInstallFolder={() => {}}
-                                onOpenDataFolder={() => {}}
-                            />
-                        </div>
-                    );
-                })(),
-                document.body
-            )}
+            {dragUuid &&
+                createPortal(
+                    (() => {
+                        const dragProfile = allProfiles.find(p => p.uuid === dragUuid);
+                        if (!dragProfile) return null;
+                        return (
+                            <div className="launcher-drag-overlay" ref={attachDragOverlay}>
+                                <ProfileCard
+                                    profile={dragProfile}
+                                    versionName={displayVersion(dragProfile)}
+                                    runtimeWarning={runtimeWarnings.get(dragProfile.uuid) ?? null}
+                                    isSelected={lastLaunchedProfileUuid === dragProfile.uuid}
+                                    canPlay={false}
+                                    onEdit={() => {}}
+                                    onPlay={() => {}}
+                                    onDelete={() => {}}
+                                    onOpenInstallFolder={() => {}}
+                                    onOpenDataFolder={() => {}}
+                                />
+                            </div>
+                        );
+                    })(),
+                    document.body
+                )}
         </div>
     );
 }

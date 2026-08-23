@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import type { ModDependencyStatus, ModStatus, ProfileDiagnosisInput } from "../src/renderer/src/scripts/domain/ProfileDiagnosis.ts";
+import type {
+    ModDependencyStatus,
+    ModStatus,
+    ProfileDiagnosisInput,
+} from "../src/renderer/src/scripts/domain/ProfileDiagnosis.ts";
 import {
     describeProblem,
     diagnoseProfile,
@@ -31,21 +35,25 @@ describe("profile diagnosis", () => {
     });
 
     it("accepts a profile with exactly one runtime", () => {
-        const problems = diagnoseProfile(input({
-            modIds: ["Amethyst-Runtime", "Create"],
-            mods: [mod("Amethyst-Runtime", { isRuntime: true }), mod("Create")],
-        }));
+        const problems = diagnoseProfile(
+            input({
+                modIds: ["Amethyst-Runtime", "Create"],
+                mods: [mod("Amethyst-Runtime", { isRuntime: true }), mod("Create")],
+            })
+        );
         assert.deepEqual(problems, []);
     });
 
     it("carries the validator's own words for a mod it rejected", () => {
-        const problems = diagnoseProfile(input({
-            modIds: ["Create"],
-            mods: [
-                mod("Amethyst-Runtime", { isRuntime: true }),
-                mod("Create", { ok: false, errors: ['format_version "1.2.0" can no longer be run'] }),
-            ],
-        }));
+        const problems = diagnoseProfile(
+            input({
+                modIds: ["Create"],
+                mods: [
+                    mod("Amethyst-Runtime", { isRuntime: true }),
+                    mod("Create", { ok: false, errors: ['format_version "1.2.0" can no longer be run'] }),
+                ],
+            })
+        );
 
         const problem = problemFor(problems, "Create");
         assert.equal(problem?.kind, "mod-invalid");
@@ -56,10 +64,12 @@ describe("profile diagnosis", () => {
     // The bug this module was written for: an invalid runtime is not a missing runtime, and
     // reporting it as one sent the user looking for a mod that was sitting right there.
     it("blames the invalid runtime rather than claiming the profile has none", () => {
-        const problems = diagnoseProfile(input({
-            modIds: ["Amethyst-Runtime"],
-            mods: [mod("Amethyst-Runtime", { isRuntime: true, ok: false, errors: ["outdated"] })],
-        }));
+        const problems = diagnoseProfile(
+            input({
+                modIds: ["Amethyst-Runtime"],
+                mods: [mod("Amethyst-Runtime", { isRuntime: true, ok: false, errors: ["outdated"] })],
+            })
+        );
 
         assert.equal(problems.length, 1);
         assert.equal(problems[0].kind, "mod-invalid");
@@ -67,38 +77,46 @@ describe("profile diagnosis", () => {
     });
 
     it("reports a missing runtime when every mod it has is valid", () => {
-        const problems = diagnoseProfile(input({
-            modIds: ["Create"],
-            mods: [mod("Create")],
-        }));
+        const problems = diagnoseProfile(
+            input({
+                modIds: ["Create"],
+                mods: [mod("Create")],
+            })
+        );
         assert.equal(problems[0].kind, "runtime-absent");
     });
 
     it("separates a mod that is absent from one that is present and broken", () => {
-        const problems = diagnoseProfile(input({
-            modIds: ["Gone", "Broken"],
-            mods: [mod("Broken", { ok: false, errors: ["bad json"] })],
-        }));
+        const problems = diagnoseProfile(
+            input({
+                modIds: ["Gone", "Broken"],
+                mods: [mod("Broken", { ok: false, errors: ["bad json"] })],
+            })
+        );
         assert.equal(problemFor(problems, "Gone")?.kind, "mod-absent");
         assert.equal(problemFor(problems, "Broken")?.kind, "mod-invalid");
     });
 
     it("does not fault a mod that is still downloading", () => {
-        const problems = diagnoseProfile(input({
-            modIds: ["Amethyst-Runtime", "Create"],
-            mods: [mod("Amethyst-Runtime", { isRuntime: true })],
-            downloading: ["Create"],
-        }));
+        const problems = diagnoseProfile(
+            input({
+                modIds: ["Amethyst-Runtime", "Create"],
+                mods: [mod("Amethyst-Runtime", { isRuntime: true })],
+                downloading: ["Create"],
+            })
+        );
         assert.deepEqual(problems, []);
     });
 
     // Telling a user to install the thing they are installing is the one thing this must not do.
     it("says the runtime is on its way rather than absent while it downloads", () => {
-        const problems = diagnoseProfile(input({
-            modIds: ["Amethyst-Runtime"],
-            mods: [],
-            downloading: ["Amethyst-Runtime"],
-        }));
+        const problems = diagnoseProfile(
+            input({
+                modIds: ["Amethyst-Runtime"],
+                mods: [],
+                downloading: ["Amethyst-Runtime"],
+            })
+        );
 
         assert.equal(problems.length, 1);
         assert.equal(problems[0].kind, "runtime-downloading");
@@ -107,26 +125,32 @@ describe("profile diagnosis", () => {
     });
 
     it("waits rather than faulting while any listed mod could still turn out to be the runtime", () => {
-        const problems = diagnoseProfile(input({
-            modIds: ["Create", "Sodium"],
-            mods: [mod("Create")],
-            downloading: ["Sodium"],
-        }));
+        const problems = diagnoseProfile(
+            input({
+                modIds: ["Create", "Sodium"],
+                mods: [mod("Create")],
+                downloading: ["Sodium"],
+            })
+        );
         assert.equal(problems[0].kind, "runtime-downloading");
     });
 
     it("names the mod whose required dependency the profile does not have", () => {
-        const problems = diagnoseProfile(input({
-            modIds: ["Amethyst-Runtime", "Create"],
-            mods: [
-                mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
-                mod("Create", {
-                    uuid: "create-uuid",
-                    namespace: "create",
-                    dependencies: [{ uuid: "flywheel-uuid", namespace: "flywheel", versionRange: ">=1.0.0", isSoft: false }],
-                }),
-            ],
-        }));
+        const problems = diagnoseProfile(
+            input({
+                modIds: ["Amethyst-Runtime", "Create"],
+                mods: [
+                    mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
+                    mod("Create", {
+                        uuid: "create-uuid",
+                        namespace: "create",
+                        dependencies: [
+                            { uuid: "flywheel-uuid", namespace: "flywheel", versionRange: ">=1.0.0", isSoft: false },
+                        ],
+                    }),
+                ],
+            })
+        );
 
         const problem = problemFor(problems, "Create");
         assert.equal(problem?.kind, "dependency-missing");
@@ -134,70 +158,83 @@ describe("profile diagnosis", () => {
     });
 
     it("accepts a dependency satisfied by another mod in the profile", () => {
-        const problems = diagnoseProfile(input({
-            modIds: ["Amethyst-Runtime", "Create", "Flywheel"],
-            mods: [
-                mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
-                mod("Create", {
-                    uuid: "create-uuid",
-                    namespace: "create",
-                    dependencies: [{ uuid: "flywheel-uuid", namespace: "flywheel", versionRange: ">=1.0.0", isSoft: false }],
-                }),
-                mod("Flywheel", { uuid: "flywheel-uuid", namespace: "flywheel" }),
-            ],
-        }));
+        const problems = diagnoseProfile(
+            input({
+                modIds: ["Amethyst-Runtime", "Create", "Flywheel"],
+                mods: [
+                    mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
+                    mod("Create", {
+                        uuid: "create-uuid",
+                        namespace: "create",
+                        dependencies: [
+                            { uuid: "flywheel-uuid", namespace: "flywheel", versionRange: ">=1.0.0", isSoft: false },
+                        ],
+                    }),
+                    mod("Flywheel", { uuid: "flywheel-uuid", namespace: "flywheel" }),
+                ],
+            })
+        );
         assert.deepEqual(problems, []);
     });
 
     it("ignores a soft dependency, which the runtime loads without", () => {
-        const problems = diagnoseProfile(input({
-            modIds: ["Amethyst-Runtime", "Create"],
-            mods: [
-                mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
-                mod("Create", {
-                    uuid: "create-uuid",
-                    namespace: "create",
-                    dependencies: [{ uuid: "optional-uuid", namespace: "optional", versionRange: ">=1.0.0", isSoft: true }],
-                }),
-            ],
-        }));
+        const problems = diagnoseProfile(
+            input({
+                modIds: ["Amethyst-Runtime", "Create"],
+                mods: [
+                    mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
+                    mod("Create", {
+                        uuid: "create-uuid",
+                        namespace: "create",
+                        dependencies: [
+                            { uuid: "optional-uuid", namespace: "optional", versionRange: ">=1.0.0", isSoft: true },
+                        ],
+                    }),
+                ],
+            })
+        );
         assert.deepEqual(problems, []);
     });
 
     it("does not accuse a mod of a missing dependency that is still downloading", () => {
-        const problems = diagnoseProfile(input({
-            modIds: ["Amethyst-Runtime", "Create", "Flywheel"],
-            mods: [
-                mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
-                mod("Create", {
-                    uuid: "create-uuid",
-                    namespace: "create",
-                    dependencies: [{ uuid: "flywheel-uuid", namespace: "flywheel", versionRange: ">=1.0.0", isSoft: false }],
-                }),
-            ],
-            downloading: ["Flywheel"],
-        }));
+        const problems = diagnoseProfile(
+            input({
+                modIds: ["Amethyst-Runtime", "Create", "Flywheel"],
+                mods: [
+                    mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
+                    mod("Create", {
+                        uuid: "create-uuid",
+                        namespace: "create",
+                        dependencies: [
+                            { uuid: "flywheel-uuid", namespace: "flywheel", versionRange: ">=1.0.0", isSoft: false },
+                        ],
+                    }),
+                ],
+                downloading: ["Flywheel"],
+            })
+        );
         assert.deepEqual(problems, []);
     });
 
     it("reports more than one runtime, naming them", () => {
-        const problems = diagnoseProfile(input({
-            modIds: ["A", "B"],
-            mods: [mod("A", { isRuntime: true }), mod("B", { isRuntime: true })],
-        }));
+        const problems = diagnoseProfile(
+            input({
+                modIds: ["A", "B"],
+                mods: [mod("A", { isRuntime: true }), mod("B", { isRuntime: true })],
+            })
+        );
         assert.equal(problems[0].kind, "runtime-multiple");
         assert.ok(problems[0].reasons.some(r => r.includes("A")));
         assert.ok(problems[0].reasons.some(r => r.includes("B")));
     });
 
     it("leads with the cause, not the consequence", () => {
-        const problems = diagnoseProfile(input({
-            modIds: ["Amethyst-Runtime", "Create"],
-            mods: [
-                mod("Amethyst-Runtime", { isRuntime: true, ok: false, errors: ["outdated"] }),
-                mod("Create"),
-            ],
-        }));
+        const problems = diagnoseProfile(
+            input({
+                modIds: ["Amethyst-Runtime", "Create"],
+                mods: [mod("Amethyst-Runtime", { isRuntime: true, ok: false, errors: ["outdated"] }), mod("Create")],
+            })
+        );
         assert.equal(launchBlocker(problems)?.modId, "Amethyst-Runtime");
     });
 
@@ -222,13 +259,24 @@ describe("profile diagnosis", () => {
 });
 
 describe("dependency version ranges", () => {
-    const profile = (dependency: ModDependencyStatus, provider: Partial<ModStatus> | null, over: Partial<ProfileDiagnosisInput> = {}): ProfileDiagnosisInput =>
+    const profile = (
+        dependency: ModDependencyStatus,
+        provider: Partial<ModStatus> | null,
+        over: Partial<ProfileDiagnosisInput> = {}
+    ): ProfileDiagnosisInput =>
         input({
             modIds: provider === null ? ["Amethyst-Runtime", "Create"] : ["Amethyst-Runtime", "Create", "Flywheel"],
             mods: [
                 mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
-                mod("Create", { uuid: "create-uuid", namespace: "create", version: "1.0.0", dependencies: [dependency] }),
-                ...(provider === null ? [] : [mod("Flywheel", { uuid: "flywheel-uuid", namespace: "flywheel", ...provider })]),
+                mod("Create", {
+                    uuid: "create-uuid",
+                    namespace: "create",
+                    version: "1.0.0",
+                    dependencies: [dependency],
+                }),
+                ...(provider === null
+                    ? []
+                    : [mod("Flywheel", { uuid: "flywheel-uuid", namespace: "flywheel", ...provider })]),
             ],
             ...over,
         });
@@ -284,7 +332,10 @@ describe("dependency version ranges", () => {
     });
 
     it("holds a prerelease to the range unless the range named one itself", () => {
-        assert.equal(diagnoseProfile(profile(requires(">=1.0.0"), { version: "2.0.0-beta.1" }))[0]?.kind, "dependency-version");
+        assert.equal(
+            diagnoseProfile(profile(requires(">=1.0.0"), { version: "2.0.0-beta.1" }))[0]?.kind,
+            "dependency-version"
+        );
         assert.deepEqual(diagnoseProfile(profile(requires(">=2.0.0-alpha"), { version: "2.0.0-beta.1" })), []);
     });
 
@@ -293,7 +344,9 @@ describe("dependency version ranges", () => {
     });
 
     it("says nothing about versions while a listed mod is still downloading", () => {
-        const problems = diagnoseProfile(profile(requires(">=2.0.0"), { version: "1.4.2" }, { downloading: ["Flywheel"] }));
+        const problems = diagnoseProfile(
+            profile(requires(">=2.0.0"), { version: "1.4.2" }, { downloading: ["Flywheel"] })
+        );
         assert.deepEqual(problems, []);
     });
 
@@ -303,19 +356,21 @@ describe("dependency version ranges", () => {
     });
 
     it("takes the satisfying one when more than one mod answers the dependency", () => {
-        const problems = diagnoseProfile(input({
-            modIds: ["Amethyst-Runtime", "Create", "Flywheel-Old", "Flywheel-New"],
-            mods: [
-                mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
-                mod("Create", {
-                    uuid: "create-uuid",
-                    namespace: "create",
-                    dependencies: [{ uuid: "", namespace: "flywheel", versionRange: ">=2.0.0", isSoft: false }],
-                }),
-                mod("Flywheel-Old", { uuid: "old-uuid", namespace: "flywheel", version: "1.0.0" }),
-                mod("Flywheel-New", { uuid: "new-uuid", namespace: "flywheel", version: "2.1.0" }),
-            ],
-        }));
+        const problems = diagnoseProfile(
+            input({
+                modIds: ["Amethyst-Runtime", "Create", "Flywheel-Old", "Flywheel-New"],
+                mods: [
+                    mod("Amethyst-Runtime", { isRuntime: true, uuid: "runtime-uuid", namespace: "amethyst" }),
+                    mod("Create", {
+                        uuid: "create-uuid",
+                        namespace: "create",
+                        dependencies: [{ uuid: "", namespace: "flywheel", versionRange: ">=2.0.0", isSoft: false }],
+                    }),
+                    mod("Flywheel-Old", { uuid: "old-uuid", namespace: "flywheel", version: "1.0.0" }),
+                    mod("Flywheel-New", { uuid: "new-uuid", namespace: "flywheel", version: "2.1.0" }),
+                ],
+            })
+        );
         assert.deepEqual(problems, []);
     });
 });
