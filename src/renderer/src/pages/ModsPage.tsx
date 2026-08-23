@@ -63,9 +63,7 @@ export function ModsPage() {
                                         </p>
                                     )}
                                     {report.warnings.length === 0 && (
-                                        <p className="minecraft-seven mods-item-text">
-                                            No Warnings
-                                        </p>
+                                        <p className="minecraft-seven mods-item-text">No Warnings</p>
                                     )}
                                 </div>
                             </div>
@@ -77,18 +75,16 @@ export function ModsPage() {
                 </div>
             </MainPanel>
             {selectedReport && (
-                <PopupPanel
-                    title={selectedReport.id}
-                    onClose={() => setSelectedReport(undefined)}
-                    size="lg"
-                >
+                <PopupPanel title={selectedReport.id} onClose={() => setSelectedReport(undefined)} size="lg">
                     <p className="minecraft-seven mods-popup-subtitle">
                         {selectedReport.errors.length > 0 ? "Errors:" : "No errors detected!"}
                     </p>
                     {selectedReport.errors.length > 0 && (
                         <ul>
                             {selectedReport.errors.map(err => (
-                                <li className="minecraft-seven mods-popup-error-item" key={err}>- {err}</li>
+                                <li className="minecraft-seven mods-popup-error-item" key={err}>
+                                    - {err}
+                                </li>
                             ))}
                         </ul>
                     )}
@@ -98,7 +94,9 @@ export function ModsPage() {
                     {selectedReport.warnings.length > 0 && (
                         <ul>
                             {selectedReport.warnings.map(err => (
-                                <li className="minecraft-seven mods-popup-warning-item" key={err}>- {err}</li>
+                                <li className="minecraft-seven mods-popup-warning-item" key={err}>
+                                    - {err}
+                                </li>
                             ))}
                         </ul>
                     )}

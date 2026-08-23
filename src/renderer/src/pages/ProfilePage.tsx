@@ -81,7 +81,11 @@ export function ProfilePage() {
                                 uuid: crypto.randomUUID(),
                                 name: "New Profile",
                                 is_modded: false,
-                                minecraft_version: versionDatabase.getAllVersions().find(v => v.type === "release")?.version.toString() ?? null,
+                                minecraft_version:
+                                    versionDatabase
+                                        .getAllVersions()
+                                        .find(v => v.type === "release")
+                                        ?.version.toString() ?? null,
                                 mods: [],
                                 runtime: "Vanilla",
                             };

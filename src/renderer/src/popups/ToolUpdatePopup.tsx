@@ -2,7 +2,13 @@ import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
 import { PopupPanel } from "@renderer/components/PopupPanel";
 
-export default function ToolUpdatePopup({ name, currentVersion, latestVersion, accept, decline }: {
+export default function ToolUpdatePopup({
+    name,
+    currentVersion,
+    latestVersion,
+    accept,
+    decline,
+}: {
     name: string;
     currentVersion: string;
     latestVersion: string;
@@ -24,8 +30,12 @@ export default function ToolUpdatePopup({ name, currentVersion, latestVersion, a
             <p className="minecraft-seven" style={{ fontSize: "12px", lineHeight: 1.5 }}>
                 {name} is outdated, do you want to update it?
             </p>
-            <p className="minecraft-seven" style={{ fontSize: "12px" }}>Current version: {currentVersion}</p>
-            <p className="minecraft-seven" style={{ fontSize: "12px" }}>Latest version: {latestVersion}</p>
+            <p className="minecraft-seven" style={{ fontSize: "12px" }}>
+                Current version: {currentVersion}
+            </p>
+            <p className="minecraft-seven" style={{ fontSize: "12px" }}>
+                Latest version: {latestVersion}
+            </p>
         </PopupPanel>
     );
 }

@@ -94,8 +94,8 @@ export interface ToolInstalledContext {
  * @template TCheckResult   Must extend {@link ToolCheckResult}.
  */
 export abstract class ToolArtifact<
-    TCheckOptions extends DefaultCheckOptions = DefaultCheckOptions, 
-    TCheckResult extends ToolCheckResult = ToolCheckResult
+    TCheckOptions extends DefaultCheckOptions = DefaultCheckOptions,
+    TCheckResult extends ToolCheckResult = ToolCheckResult,
 > implements IToolArtifact<TCheckOptions, TCheckResult> {
     readonly name: string;
     readonly repository: string;
@@ -148,7 +148,9 @@ export abstract class ToolArtifact<
         // Attempt to fetch the latest release from GitHub.
         let latestRelease: GithubRelease | null = null;
         try {
-            console.log(`[${this.name}] Fetching latest release from GitHub (timeout: ${options?.releaseFetchTimeout}ms)…`);
+            console.log(
+                `[${this.name}] Fetching latest release from GitHub (timeout: ${options?.releaseFetchTimeout}ms)…`
+            );
             latestRelease = await this.fetchLatestRelease(options?.releaseFetchTimeout);
             console.log(`[${this.name}] Latest release tag: '${latestRelease.tagName}'.`);
         } catch (error) {
@@ -156,7 +158,9 @@ export abstract class ToolArtifact<
             // If the tool is already installed and the caller allows an outdated
             // version, return the current installation rather than throwing.
             if (isInstalled && options?.allowOutdated) {
-                console.log(`[${this.name}] Falling back to installed version '${currentVersion}' (allowOutdated=true).`);
+                console.log(
+                    `[${this.name}] Falling back to installed version '${currentVersion}' (allowOutdated=true).`
+                );
                 return this.buildResult(currentVersion!, toolPath, executable, "up_to_date");
             }
             throw error;
@@ -173,7 +177,9 @@ export abstract class ToolArtifact<
 
         const latestTag = latestRelease.tagName;
         const compareResult = this.compareTags(currentVersion, latestTag);
-        console.log(`[${this.name}] Version comparison result: ${compareResult} (current='${currentVersion}', latest='${latestTag}').`);
+        console.log(
+            `[${this.name}] Version comparison result: ${compareResult} (current='${currentVersion}', latest='${latestTag}').`
+        );
 
         // Already on the latest (or newer) version – nothing to do.
         if (compareResult >= 0 && isInstalled) {
@@ -184,9 +190,7 @@ export abstract class ToolArtifact<
         // An update is available. Ask the user if required.
         if (isInstalled) {
             console.log(`[${this.name}] Update available: '${currentVersion}' → '${latestTag}'.`);
-            const shouldUpdate = options?.promptForUpdate
-                ? await this.promptUpdate(currentVersion!, latestTag)
-                : true;
+            const shouldUpdate = options?.promptForUpdate ? await this.promptUpdate(currentVersion!, latestTag) : true;
 
             if (!shouldUpdate) {
                 console.log(`[${this.name}] User declined the update.`);
@@ -259,23 +263,23 @@ export abstract class ToolArtifact<
         executable: string,
         action: CheckAction
     ): TCheckResult;
-    
+
     /** Returns the absolute path to the tool's installation folder. */
     getFolder(): string {
         const toolsPath = this.getToolsPath();
         return path.join(toolsPath, this.getFolderName());
     }
-    
+
     /** Returns the absolute path to the tool executable. */
     getExecutable(): string {
         return path.join(this.getFolder(), this.getExecutableName());
     }
-    
+
     /** Returns the absolute path to the `version.txt` file that tracks the installed version. */
     getVersionFile() {
         return path.join(this.getFolder(), "version.txt");
     }
-    
+
     /**
      * Reads the installed version from the `version.txt` file.
      * Returns `null` if the file does not exist yet.
@@ -289,7 +293,7 @@ export abstract class ToolArtifact<
         const content = await fs.promises.readFile(versionFile, "utf-8");
         return content.trim();
     }
-    
+
     /**
      * Convenience wrapper around {@link readVersionFile} that swallows errors
      * and returns `null` instead of throwing.
@@ -348,13 +352,15 @@ export abstract class ToolArtifact<
     protected async promptUpdate(currentVersion: string, latestVersion: string): Promise<boolean> {
         console.log(`[${this.name}] Prompting user for update: '${currentVersion}' → '${latestVersion}'.`);
         const accepted = await Popup.useAsync<boolean>(async ({ submit }) => {
-            return <ToolUpdatePopup 
-                name={this.name}
-                currentVersion={currentVersion}
-                latestVersion={latestVersion}
-                accept={() => submit(true)}
-                decline={() => submit(false)}
-            />
+            return (
+                <ToolUpdatePopup
+                    name={this.name}
+                    currentVersion={currentVersion}
+                    latestVersion={latestVersion}
+                    accept={() => submit(true)}
+                    decline={() => submit(false)}
+                />
+            );
         });
         console.log(`[${this.name}] User ${accepted ? "accepted" : "declined"} the update.`);
         return accepted;

@@ -1,4 +1,9 @@
-import { ILauncherPlatform, LauncherPaths, ProcessInfo, ShortcutOptions } from "@renderer/scripts/platform/LauncherPlatform";
+import {
+    ILauncherPlatform,
+    LauncherPaths,
+    ProcessInfo,
+    ShortcutOptions,
+} from "@renderer/scripts/platform/LauncherPlatform";
 import { PathUtils } from "../PathUtils";
 import { Profile } from "../Profiles";
 import { LauncherTools } from "../backend/tools/LauncherTools";
@@ -18,14 +23,14 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
             const exec_proc = child.spawn(cmd, args, { shell: true });
 
             if (stdout) {
-                exec_proc.stdout?.on("data", (data) => stdout(data.toString()));
+                exec_proc.stdout?.on("data", data => stdout(data.toString()));
             }
 
-            exec_proc.stderr?.on("data", (data) => {
+            exec_proc.stderr?.on("data", data => {
                 console.error(`[Command Error] ${data}`);
             });
 
-            exec_proc.on("close", (exit_code) => {
+            exec_proc.on("close", exit_code => {
                 if (exit_code !== 0) {
                     reject(new Error(`Command failed with exit code ${exit_code}.`));
                     return;
@@ -58,20 +63,25 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
         // For protocol URLs use xdg-open; otherwise invoke the executable directly.
         const exec = isProtocolUrl
             ? `xdg-open ${options.target}`
-            : (options.args ? `${options.target} ${options.args}` : options.target);
+            : options.args
+              ? `${options.target} ${options.args}`
+              : options.target;
 
-        const lines = [
-            "[Desktop Entry]",
-            "Version=1.0",
-            "Type=Application",
-            `Name=${appName}`,
-            options.description ? `Comment=${options.description}` : null,
-            `Exec=${exec}`,
-            options.workingDir ? `Path=${options.workingDir}` : null,
-            options.icon ? `Icon=${options.icon}` : null,
-            "Terminal=false",
-            "Categories=Game;",
-        ].filter(Boolean).join("\n") + "\n";
+        const lines =
+            [
+                "[Desktop Entry]",
+                "Version=1.0",
+                "Type=Application",
+                `Name=${appName}`,
+                options.description ? `Comment=${options.description}` : null,
+                `Exec=${exec}`,
+                options.workingDir ? `Path=${options.workingDir}` : null,
+                options.icon ? `Icon=${options.icon}` : null,
+                "Terminal=false",
+                "Categories=Game;",
+            ]
+                .filter(Boolean)
+                .join("\n") + "\n";
 
         fs.mkdirSync(desktopDir, { recursive: true });
         fs.writeFileSync(desktopFile, lines, { encoding: "utf-8" });
@@ -84,8 +94,7 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
     }
 
     getPaths(): LauncherPaths {
-        if (LinuxLauncherPlatform.CachedLauncherPaths)
-            return LinuxLauncherPlatform.CachedLauncherPaths;
+        if (LinuxLauncherPlatform.CachedLauncherPaths) return LinuxLauncherPlatform.CachedLauncherPaths;
 
         const home: string = os.homedir();
         LinuxLauncherPlatform.CachedLauncherPaths = {
@@ -98,7 +107,7 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
             modsPath: `${home}/.amethyst/launcher/Mods`,
             launcherConfigPath: `${home}/.amethyst/launcher/launcher_config.json`,
             toolsPath: `${home}/.amethyst/launcher/tools`,
-            profileDataPath: `${home}/.amethyst/launcher/profile_data`
+            profileDataPath: `${home}/.amethyst/launcher/profile_data`,
         };
 
         PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.amethystPath);
@@ -132,13 +141,17 @@ export class LinuxLauncherPlatform implements ILauncherPlatform {
         return null;
     }
 
-    async runProfile(_profile: Profile, version: InstalledVersionModel, _onStatus?: (message: string) => void): Promise<void> {
+    async runProfile(
+        _profile: Profile,
+        version: InstalledVersionModel,
+        _onStatus?: (message: string) => void
+    ): Promise<void> {
         const versionPath = path.join(version.path, "Minecraft.Windows.exe");
         const prefixPath = path.join(this.getPaths().launcherPath, "gamedata", "default");
         fs.mkdirSync(path.join(prefixPath, "dosdevices"), { recursive: true });
 
         await LauncherTools.UMULauncher.runGame(versionPath, {
-            "WINEPREFIX": prefixPath
+            WINEPREFIX: prefixPath,
         });
     }
 }

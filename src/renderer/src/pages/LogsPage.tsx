@@ -44,7 +44,11 @@ function highlightSegment(text: string, lowerQuery: string, keyPrefix: string): 
             break;
         }
         if (idx > i) parts.push(text.slice(i, idx));
-        parts.push(<mark key={`${keyPrefix}-${segIdx++}`} className="logs-viewer-highlight">{text.slice(idx, idx + lowerQuery.length)}</mark>);
+        parts.push(
+            <mark key={`${keyPrefix}-${segIdx++}`} className="logs-viewer-highlight">
+                {text.slice(idx, idx + lowerQuery.length)}
+            </mark>
+        );
         i = idx + lowerQuery.length;
     }
     return parts;
@@ -70,29 +74,42 @@ function parseLine(rawLine: string): ParsedLine {
 
 function levelClass(level: string): string {
     switch (level) {
-        case "ERROR": return "logs-line-level-error";
+        case "ERROR":
+            return "logs-line-level-error";
         case "WARN":
-        case "WARNING": return "logs-line-level-warn";
+        case "WARNING":
+            return "logs-line-level-warn";
         case "DEBUG":
-        case "TRACE": return "logs-line-level-debug";
-        default: return "logs-line-level-info";
+        case "TRACE":
+            return "logs-line-level-debug";
+        default:
+            return "logs-line-level-info";
     }
 }
 
 function renderParsedLine(p: ParsedLine, lineIdx: number, lowerQuery: string): React.ReactNode {
     if (!p.thread || !p.mod) {
-        return <div key={lineIdx} className="logs-line">{highlightSegment(p.raw || " ", lowerQuery, `l${lineIdx}`)}</div>;
+        return (
+            <div key={lineIdx} className="logs-line">
+                {highlightSegment(p.raw || " ", lowerQuery, `l${lineIdx}`)}
+            </div>
+        );
     }
     const cls = levelClass(p.level);
     const showLevelTag = p.level !== "INFO";
     return (
         <div key={lineIdx} className="logs-line">
-            <span className="logs-line-meta">{highlightSegment(p.thread, lowerQuery, `l${lineIdx}t`)}</span>
-            {" "}
+            <span className="logs-line-meta">{highlightSegment(p.thread, lowerQuery, `l${lineIdx}t`)}</span>{" "}
             <span className="logs-line-meta">{highlightSegment(p.mod, lowerQuery, `l${lineIdx}m`)}</span>
             {showLevelTag && " "}
-            {showLevelTag && <span className={cls}>{highlightSegment(`[${p.level}]`, lowerQuery, `l${lineIdx}e`)}</span>}
-            {p.rest && <span className={showLevelTag ? cls : undefined}>{highlightSegment(p.rest, lowerQuery, `l${lineIdx}r`)}</span>}
+            {showLevelTag && (
+                <span className={cls}>{highlightSegment(`[${p.level}]`, lowerQuery, `l${lineIdx}e`)}</span>
+            )}
+            {p.rest && (
+                <span className={showLevelTag ? cls : undefined}>
+                    {highlightSegment(p.rest, lowerQuery, `l${lineIdx}r`)}
+                </span>
+            )}
         </div>
     );
 }
@@ -158,9 +175,7 @@ function VirtualLogView({ lines, query }: VirtualLogViewProps) {
     return (
         <div ref={containerRef} className="logs-viewer-content scrollbar">
             <div style={{ height: totalH, position: "relative" }}>
-                <div style={{ position: "absolute", top: start * LINE_HEIGHT, left: 0, right: 0 }}>
-                    {visible}
-                </div>
+                <div style={{ position: "absolute", top: start * LINE_HEIGHT, left: 0, right: 0 }}>{visible}</div>
             </div>
         </div>
     );
@@ -201,26 +216,34 @@ function CheckboxFilter({ label, options, selected, setSelected }: CheckboxFilte
             <div className="logs-filter-trigger-wrap">
                 <div className="logs-filter-trigger" onClick={() => setOpen(o => !o)}>
                     <span className="minecraft-seven logs-filter-trigger-text">{summary}</span>
-                    <svg width="8" height="6" viewBox="0 0 8 6"><path d="M0 0l4 6 4-6z" fill="#a0a0a0" /></svg>
+                    <svg width="8" height="6" viewBox="0 0 8 6">
+                        <path d="M0 0l4 6 4-6z" fill="#a0a0a0" />
+                    </svg>
                 </div>
                 {open && (
                     <div className="logs-filter-panel">
-                    {options.length === 0 && <p className="minecraft-seven logs-filter-empty">No values</p>}
-                    {options.map(opt => {
-                        const checked = selected.has(opt);
-                        return (
-                            <div key={opt} className="logs-filter-option" onClick={() => toggle(opt)}>
-                                <div className={`logs-filter-checkbox${checked ? " checked" : ""}`}>
-                                    {checked && (
-                                        <svg width="10" height="10" viewBox="0 0 10 10">
-                                            <path d="M1 5l3 3 5-6" stroke="#FFFFFF" strokeWidth="2" fill="none" strokeLinecap="square" />
-                                        </svg>
-                                    )}
+                        {options.length === 0 && <p className="minecraft-seven logs-filter-empty">No values</p>}
+                        {options.map(opt => {
+                            const checked = selected.has(opt);
+                            return (
+                                <div key={opt} className="logs-filter-option" onClick={() => toggle(opt)}>
+                                    <div className={`logs-filter-checkbox${checked ? " checked" : ""}`}>
+                                        {checked && (
+                                            <svg width="10" height="10" viewBox="0 0 10 10">
+                                                <path
+                                                    d="M1 5l3 3 5-6"
+                                                    stroke="#FFFFFF"
+                                                    strokeWidth="2"
+                                                    fill="none"
+                                                    strokeLinecap="square"
+                                                />
+                                            </svg>
+                                        )}
+                                    </div>
+                                    <span className="minecraft-seven logs-filter-option-text">{opt}</span>
                                 </div>
-                                <span className="minecraft-seven logs-filter-option-text">{opt}</span>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
                     </div>
                 )}
             </div>
@@ -310,16 +333,20 @@ export function LogsPage() {
                 }
                 throw e;
             }
-            const loaded = (await Promise.all(entries.map(async name => {
-                const full = path.join(logsDir, name);
-                try {
-                    const stat = await fs.promises.stat(full);
-                    if (!stat.isFile()) return null;
-                    return { name, path: full, size: stat.size, mtimeMs: stat.mtimeMs } as LogFile;
-                } catch {
-                    return null;
-                }
-            }))).filter((f): f is LogFile => f !== null);
+            const loaded = (
+                await Promise.all(
+                    entries.map(async name => {
+                        const full = path.join(logsDir, name);
+                        try {
+                            const stat = await fs.promises.stat(full);
+                            if (!stat.isFile()) return null;
+                            return { name, path: full, size: stat.size, mtimeMs: stat.mtimeMs } as LogFile;
+                        } catch {
+                            return null;
+                        }
+                    })
+                )
+            ).filter((f): f is LogFile => f !== null);
             loaded.sort((a, b) => b.mtimeMs - a.mtimeMs);
             setFiles(loaded);
             setError("");
@@ -338,10 +365,17 @@ export function LogsPage() {
             return;
         }
         let cancelled = false;
-        fs.promises.readFile(selected, "utf-8")
-            .then(text => { if (!cancelled) setContent(text); })
-            .catch(e => { if (!cancelled) setContent(`Failed to read file: ${(e as Error).message}`); });
-        return () => { cancelled = true; };
+        fs.promises
+            .readFile(selected, "utf-8")
+            .then(text => {
+                if (!cancelled) setContent(text);
+            })
+            .catch(e => {
+                if (!cancelled) setContent(`Failed to read file: ${(e as Error).message}`);
+            });
+        return () => {
+            cancelled = true;
+        };
     }, [selected]);
 
     const deleteAllLogs = async () => {
@@ -353,10 +387,20 @@ export function LogsPage() {
         });
         if (!ok) return;
         try {
-            await ProgressBar.useAsync(async (state) => {
-                state.setMessage(`Clearing ${files.length} log file(s)...`);
-                await Promise.all(files.map(f => fs.promises.unlink(f.path).catch(() => { /* ignore per-file */ })));
-            }, true, FULL_PROGRESS_RESET_OPTIONS);
+            await ProgressBar.useAsync(
+                async state => {
+                    state.setMessage(`Clearing ${files.length} log file(s)...`);
+                    await Promise.all(
+                        files.map(f =>
+                            fs.promises.unlink(f.path).catch(() => {
+                                /* ignore per-file */
+                            })
+                        )
+                    );
+                },
+                true,
+                FULL_PROGRESS_RESET_OPTIONS
+            );
             setSelected(null);
             setContent("");
             await refresh();
@@ -405,7 +449,11 @@ export function LogsPage() {
         return Array.from(set).sort();
     }, [parsedLines]);
 
-    useEffect(() => { setThreadFilter(new Set()); setModFilter(new Set()); setLevelFilter(new Set()); }, [selected]);
+    useEffect(() => {
+        setThreadFilter(new Set());
+        setModFilter(new Set());
+        setLevelFilter(new Set());
+    }, [selected]);
 
     const filteredLines = useMemo(() => {
         if (threadFilter.size === 0 && modFilter.size === 0 && levelFilter.size === 0) {
@@ -430,10 +478,27 @@ export function LogsPage() {
             <div className="logs-header">
                 <p className="minecraft-seven logs-title">Logs</p>
                 <div className="logs-header-actions">
-                    <p className="minecraft-seven logs-total-size">All Logs: {formatSize(files.reduce((sum, f) => sum + f.size, 0))}</p>
-                    <MinecraftButton text="Refresh" colorPallete={GRAY_MINECRAFT_BUTTON} onClick={refresh} style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "100px" }} />
-                    <MinecraftButton text="Open Folder" colorPallete={GRAY_MINECRAFT_BUTTON} onClick={openLogsFolder} style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "130px" }} />
-                    <MinecraftButton text="Delete All" colorPallete={GRAY_MINECRAFT_BUTTON} onClick={deleteAllLogs} style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "110px" }} />
+                    <p className="minecraft-seven logs-total-size">
+                        All Logs: {formatSize(files.reduce((sum, f) => sum + f.size, 0))}
+                    </p>
+                    <MinecraftButton
+                        text="Refresh"
+                        colorPallete={GRAY_MINECRAFT_BUTTON}
+                        onClick={refresh}
+                        style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "100px" }}
+                    />
+                    <MinecraftButton
+                        text="Open Folder"
+                        colorPallete={GRAY_MINECRAFT_BUTTON}
+                        onClick={openLogsFolder}
+                        style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "130px" }}
+                    />
+                    <MinecraftButton
+                        text="Delete All"
+                        colorPallete={GRAY_MINECRAFT_BUTTON}
+                        onClick={deleteAllLogs}
+                        style={{ "--mc-button-container-h": "32px", "--mc-button-container-w": "110px" }}
+                    />
                 </div>
             </div>
 
@@ -466,7 +531,9 @@ export function LogsPage() {
                                 }}
                             >
                                 <p className="minecraft-seven logs-list-item-name">{f.name}</p>
-                                <p className="minecraft-seven logs-list-item-meta">{formatTime(f.mtimeMs)} &middot; {formatSize(f.size)}</p>
+                                <p className="minecraft-seven logs-list-item-meta">
+                                    {formatTime(f.mtimeMs)} &middot; {formatSize(f.size)}
+                                </p>
                             </div>
                         ))}
                     </div>
@@ -479,7 +546,9 @@ export function LogsPage() {
                                     <p className="minecraft-seven logs-viewer-name">{path.basename(selected)}</p>
                                     {(() => {
                                         const f = files.find(x => x.path === selected);
-                                        return f ? <p className="minecraft-seven logs-viewer-size">{formatSize(f.size)}</p> : null;
+                                        return f ? (
+                                            <p className="minecraft-seven logs-viewer-size">{formatSize(f.size)}</p>
+                                        ) : null;
                                     })()}
                                 </div>
                                 <div className="logs-viewer-search-wrap">
@@ -497,14 +566,43 @@ export function LogsPage() {
                                         </span>
                                     )}
                                 </div>
-                                <MinecraftButton text="Copy" colorPallete={GRAY_MINECRAFT_BUTTON} onClick={copySelected} style={{ "--mc-button-container-h": "28px", "--mc-button-container-w": "80px" }} />
+                                <MinecraftButton
+                                    text="Copy"
+                                    colorPallete={GRAY_MINECRAFT_BUTTON}
+                                    onClick={copySelected}
+                                    style={{ "--mc-button-container-h": "28px", "--mc-button-container-w": "80px" }}
+                                />
                             </div>
                             <div className="logs-viewer-filters">
-                                <CheckboxFilter label="Level" options={levelOptions} selected={levelFilter} setSelected={setLevelFilter} />
-                                <CheckboxFilter label="Thread" options={threadOptions} selected={threadFilter} setSelected={setThreadFilter} />
-                                <CheckboxFilter label="Mod" options={modOptions} selected={modFilter} setSelected={setModFilter} />
+                                <CheckboxFilter
+                                    label="Level"
+                                    options={levelOptions}
+                                    selected={levelFilter}
+                                    setSelected={setLevelFilter}
+                                />
+                                <CheckboxFilter
+                                    label="Thread"
+                                    options={threadOptions}
+                                    selected={threadFilter}
+                                    setSelected={setThreadFilter}
+                                />
+                                <CheckboxFilter
+                                    label="Mod"
+                                    options={modOptions}
+                                    selected={modFilter}
+                                    setSelected={setModFilter}
+                                />
                                 {(threadFilter.size > 0 || modFilter.size > 0 || levelFilter.size > 0) && (
-                                    <span className="minecraft-seven logs-viewer-filter-clear" onClick={() => { setThreadFilter(new Set()); setModFilter(new Set()); setLevelFilter(new Set()); }}>Clear</span>
+                                    <span
+                                        className="minecraft-seven logs-viewer-filter-clear"
+                                        onClick={() => {
+                                            setThreadFilter(new Set());
+                                            setModFilter(new Set());
+                                            setLevelFilter(new Set());
+                                        }}
+                                    >
+                                        Clear
+                                    </span>
                                 )}
                             </div>
                             <VirtualLogView lines={filteredLines} query={contentQuery} />
@@ -526,7 +624,10 @@ export function LogsPage() {
                     <div className="logs-context-menu-item" onClick={() => copyAsPath(contextMenu.file)}>
                         <p className="minecraft-seven">Copy as path</p>
                     </div>
-                    <div className="logs-context-menu-item logs-context-menu-item-danger" onClick={() => deleteLog(contextMenu.file)}>
+                    <div
+                        className="logs-context-menu-item logs-context-menu-item-danger"
+                        onClick={() => deleteLog(contextMenu.file)}
+                    >
                         <p className="minecraft-seven">Delete</p>
                     </div>
                 </div>

@@ -19,8 +19,8 @@ export function GetPackage() {
     const listed = regedit.listSync(PACKAGES_REG_KEY);
     if (!listed[PACKAGES_REG_KEY].exists) return undefined;
 
-    const minecraftKey = listed[PACKAGES_REG_KEY].keys.find(
-        key => key.toLowerCase().startsWith("microsoft.minecraftuwp_")
+    const minecraftKey = listed[PACKAGES_REG_KEY].keys.find(key =>
+        key.toLowerCase().startsWith("microsoft.minecraftuwp_")
     );
     if (minecraftKey === undefined) return undefined;
 
@@ -71,8 +71,7 @@ export async function UnregisterCurrent(): Promise<void> {
  */
 /** Minimal 1x1 transparent PNG (68 bytes). */
 const PLACEHOLDER_PNG = Buffer.from(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQAB" +
-    "Nl7BcQAAAABJRU5ErkJggg==",
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQAB" + "Nl7BcQAAAABJRU5ErkJggg==",
     "base64"
 );
 
@@ -143,7 +142,7 @@ function ensureMicrosoftGameConfig(versionPath: string, manifestXml: string): vo
 
     // Extract TitleId from protocol name (ms-xbl-XXXXXXXX pattern)
     const titleIdMatch = manifestXml.match(/Protocol\s+Name="ms-xbl-([0-9a-fA-F]+)"/);
-    const titleId = titleIdMatch ? titleIdMatch[1].toUpperCase() : (isPreview ? "717D695F" : "35760C07");
+    const titleId = titleIdMatch ? titleIdMatch[1].toUpperCase() : isPreview ? "717D695F" : "35760C07";
 
     // StoreId and MSAAppId for release vs preview
     const storeId = isPreview ? "9P5X4QVLC2XR" : "9NBLGGH2JHXJ";
@@ -258,7 +257,10 @@ async function installGameInputRedist(versionPath: string): Promise<void> {
  * Ensures all required files exist for the version (manifest patches, MicrosoftGame.Config, GameInput).
  * Safe to call repeatedly — each step is idempotent.
  */
-export async function EnsureVersionFiles(version: InstalledVersionModel, onStatus?: (message: string) => void): Promise<void> {
+export async function EnsureVersionFiles(
+    version: InstalledVersionModel,
+    onStatus?: (message: string) => void
+): Promise<void> {
     const status = onStatus ?? (() => {});
     const appxManifest = path.join(version.path, "appxmanifest.xml");
     const manifestXml = fs.readFileSync(appxManifest, "utf-8");
@@ -289,7 +291,11 @@ function getProxyDllPath(): string {
 /**
  * Ensures `dxgi.dll` is present for modded profiles and absent for vanilla profiles.
  */
-export function SyncProxyDllForProfile(profile: Profile, version: InstalledVersionModel, onStatus?: (message: string) => void): void {
+export function SyncProxyDllForProfile(
+    profile: Profile,
+    version: InstalledVersionModel,
+    onStatus?: (message: string) => void
+): void {
     const status = onStatus ?? (() => {});
     const targetPath = path.join(version.path, "dxgi.dll");
     const shouldHaveProxy = isModdedProfile(profile);

@@ -10,10 +10,12 @@ import { PopupPanel } from "@renderer/components/PopupPanel";
 import { ProgressBar } from "@renderer/states/ProgressBarStore";
 import { confirmAction } from "@renderer/popups/ConfirmPopup";
 
-const { shell: { openPath } } = window.require("electron") as typeof import("electron");
+const {
+    shell: { openPath },
+} = window.require("electron") as typeof import("electron");
 
-import "@renderer/styles/pages/SettingsPage.css"
-import "@renderer/styles/pages/LauncherPage.css"
+import "@renderer/styles/pages/SettingsPage.css";
+import "@renderer/styles/pages/LauncherPage.css";
 
 import { ImportVersionPopup, ImportVersionPopupData } from "@renderer/popups/ImportVersionPopup";
 import { useDownloadStore } from "@renderer/states/DownloadStore";
@@ -25,12 +27,7 @@ type VersionButtonProps = {
     onDelete: (version: InstalledVersionModel) => void;
 };
 
-const VersionButton = ({
-    version,
-    canDelete,
-    onInspect,
-    onDelete
-}: VersionButtonProps) => {
+const VersionButton = ({ version, canDelete, onInspect, onDelete }: VersionButtonProps) => {
     return (
         <div className="version-card">
             <div className="version-card-inner">
@@ -42,7 +39,9 @@ const VersionButton = ({
                     <div
                         className="version-icon-action version-icon-action-delete"
                         style={canDelete ? undefined : { opacity: 0.4, cursor: "not-allowed", pointerEvents: "none" }}
-                        onClick={() => { if (canDelete) onDelete(version); }}
+                        onClick={() => {
+                            if (canDelete) onDelete(version);
+                        }}
                     >
                         <img src={DeleteIconAsset} alt="" />
                     </div>
@@ -50,17 +49,16 @@ const VersionButton = ({
                     <div
                         className="version-icon-action version-icon-action-neutral"
                         onClick={() => {
-                            console.log(`Opening folder for version ${version.version.toString()} at path: ${version.path}`);
+                            console.log(
+                                `Opening folder for version ${version.version.toString()} at path: ${version.path}`
+                            );
                             openPath(version.path);
                         }}
                     >
                         <img src={OpenFolderIconAsset} alt="" />
                     </div>
 
-                    <div
-                        className="version-icon-action version-icon-action-neutral"
-                        onClick={() => onInspect(version)}
-                    >
+                    <div className="version-icon-action version-icon-action-neutral" onClick={() => onInspect(version)}>
                         <img src={InfoIconAsset} alt="" />
                     </div>
                 </div>
@@ -101,15 +99,18 @@ export function VersionPage() {
                     <div className="version-header-actions">
                         <div
                             className="version-icon-action version-icon-action-neutral"
-                            style={canManageVersions ? undefined : { opacity: 0.4, cursor: "not-allowed", pointerEvents: "none" }}
+                            style={
+                                canManageVersions
+                                    ? undefined
+                                    : { opacity: 0.4, cursor: "not-allowed", pointerEvents: "none" }
+                            }
                             onClick={async () => {
                                 if (!canManageVersions) return;
                                 const result = await Popup.useAsync<ImportVersionPopupData | null>(props => {
                                     return <ImportVersionPopup {...props} />;
                                 });
 
-                                if (!result)
-                                    return;
+                                if (!result) return;
 
                                 const dlId = `version-import-${result.uuid}-${Date.now()}`;
                                 const dlStore = useDownloadStore.getState();
@@ -122,51 +123,77 @@ export function VersionPage() {
                                     abortController: null,
                                 });
 
-                                versionManager.installVersion({
-                                    kind: "imported",
-                                    name: result.name,
-                                    version: result.version,
-                                    type: result.type,
-                                    uuid: result.uuid,
-                                    file: result.file
-                                }).then(() => {
-                                    console.log("Version installed successfully!");
-                                    useDownloadStore.getState().updateDownload(dlId, { status: "done", progress: 1 });
-                                }).catch(e => {
-                                    console.error("Failed to install version:", e);
-                                    useDownloadStore.getState().updateDownload(dlId, { status: "error", progress: 0 });
-                                });
+                                versionManager
+                                    .installVersion({
+                                        kind: "imported",
+                                        name: result.name,
+                                        version: result.version,
+                                        type: result.type,
+                                        uuid: result.uuid,
+                                        file: result.file,
+                                    })
+                                    .then(() => {
+                                        console.log("Version installed successfully!");
+                                        useDownloadStore
+                                            .getState()
+                                            .updateDownload(dlId, { status: "done", progress: 1 });
+                                    })
+                                    .catch(e => {
+                                        console.error("Failed to install version:", e);
+                                        useDownloadStore
+                                            .getState()
+                                            .updateDownload(dlId, { status: "error", progress: 0 });
+                                    });
                             }}
                         >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+                            <svg
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="white"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                            >
+                                <path d="M12 5v14M5 12h14" />
+                            </svg>
                         </div>
                     </div>
                 </div>
                 <div className="version-page-list scrollbar">
-                    {
-                        versionManager.getInstalledVersions().filter(v => !hiddenUuids.has(v.uuid)).map((version, index) => {
+                    {versionManager
+                        .getInstalledVersions()
+                        .filter(v => !hiddenUuids.has(v.uuid))
+                        .map((version, index) => {
                             return (
                                 <VersionButton
                                     version={version}
                                     canDelete={canManageVersions}
-                                    onInspect={async (version) => {
+                                    onInspect={async version => {
                                         await Popup.useAsync<void>(({ submit }) => (
                                             <PopupPanel
                                                 title={version.version.toString()}
                                                 onClose={() => submit()}
                                                 size="lg"
                                             >
-                                                <p className="minecraft-seven" style={{ fontSize: "12px", wordBreak: "break-all" }}>{version.path}</p>
+                                                <p
+                                                    className="minecraft-seven"
+                                                    style={{ fontSize: "12px", wordBreak: "break-all" }}
+                                                >
+                                                    {version.path}
+                                                </p>
                                             </PopupPanel>
                                         ));
                                     }}
                                     onDelete={async () => {
-                                        const ok = await confirmAction({
-                                            title: "Delete version?",
-                                            message: `You are about to delete "${version.name}". You can download (or import) this version again later.`,
-                                            confirmText: "Yeah, do it!",
-                                            cancelText: "No, don't do it!",
-                                        });
+                                        const ok =
+                                            !useAppStore.getState().confirmDelete ||
+                                            (await confirmAction({
+                                                title: "Delete version?",
+                                                message: `You are about to delete "${version.name}". You can download (or import) this version again later.`,
+                                                confirmText: "Yeah, do it!",
+                                                cancelText: "No, don't do it!",
+                                            }));
                                         if (ok) {
                                             setHiddenUuids(prev => new Set(prev).add(version.uuid));
                                             versionManager.uninstallVersion(version.uuid);
@@ -174,9 +201,8 @@ export function VersionPage() {
                                     }}
                                     key={index}
                                 />
-                            )
-                        })
-                    }
+                            );
+                        })}
                 </div>
             </div>
         </div>

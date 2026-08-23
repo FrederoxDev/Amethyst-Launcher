@@ -1,30 +1,30 @@
 import { create } from "zustand";
-import { SetStateAction, StateUtils } from "./StateUtils";
 
 export type NodeCallback<SubmitArgs> = (args: PopupUseArguments<SubmitArgs>) => React.ReactNode;
 export type NodeOrCallback<SubmitArgs> = React.ReactNode | NodeCallback<SubmitArgs> | null;
-export type PopupUseArguments<T> = { submit: (result: T) => void, state: PopupState };
+export type PopupUseArguments<T> = { submit: (result: T) => void; state: PopupState };
 
 interface PopupState {
-    node: React.ReactNode | null;
-    setNode(node: SetStateAction<React.ReactNode | null>): void;
+    /** Stack of mounted popup nodes. The last entry is the topmost popup. */
+    nodes: React.ReactNode[];
+    pushNode(node: React.ReactNode): void;
+    popNode(): void;
 }
 
-
 export class NodeUtils {
-    static resolveNode<SubmitArgs>(nodeOrCallback: NodeOrCallback<SubmitArgs>, args: PopupUseArguments<SubmitArgs>): React.ReactNode {
+    static resolveNode<SubmitArgs>(
+        nodeOrCallback: NodeOrCallback<SubmitArgs>,
+        args: PopupUseArguments<SubmitArgs>
+    ): React.ReactNode {
         return typeof nodeOrCallback === "function" ? nodeOrCallback(args) : nodeOrCallback;
     }
 }
 
 export class Popup {
-    private static nodeFactory: (() => React.ReactNode) | null = null;
-    private static busy = false;
-    private static state = create<PopupState>((set) => ({
-        node: null,
-        setNode: (node) => set((state) => ({
-            node: StateUtils.resolveSetStateAction(node, state.node)
-        }))
+    private static state = create<PopupState>(set => ({
+        nodes: [],
+        pushNode: node => set(state => ({ nodes: [...state.nodes, node] })),
+        popNode: () => set(state => ({ nodes: state.nodes.slice(0, -1) })),
     }));
 
     static useState(): PopupState;
@@ -38,28 +38,26 @@ export class Popup {
     }
 
     static isOpen() {
-        return this.busy;
+        return this.state.getState().nodes.length > 0;
     }
 
+    /**
+     * Opens a popup and resolves once it submits. Popups stack: opening one
+     * while another is already open layers it on top (LIFO), so flows like a
+     * Settings menu opening a nested Debug Info popup work without dismissing
+     * the parent. Submitting pops the topmost entry off the stack.
+     */
     static async useAsync<T = void>(node: NodeOrCallback<T>): Promise<T> {
-        if (this.busy) {
-            console.warn("[Popup.useAsync] called while another popup is already open — rejecting. Sequence your popups or check Popup.isOpen() first.");
-            return Promise.reject(new Error("Another popup is already open."));
-        }
-        this.busy = true;
-
-        return new Promise<T>((resolve) => {
+        return new Promise<T>(resolve => {
             const nodeArgs: PopupUseArguments<T> = {
                 submit: (result: T) => {
-                    this.busy = false;
-                    this.state.getState().setNode(null);
+                    this.state.getState().popNode();
                     resolve(result);
                 },
-                state: this.state.getState()
+                state: this.state.getState(),
             };
 
-            this.nodeFactory = () => NodeUtils.resolveNode(node, nodeArgs);
-            this.state.getState().setNode(this.nodeFactory());
+            this.state.getState().pushNode(NodeUtils.resolveNode(node, nodeArgs));
         });
     }
 }

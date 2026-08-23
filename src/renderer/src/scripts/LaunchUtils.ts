@@ -42,7 +42,9 @@ export async function launchProfile(profile: Profile): Promise<void> {
         }
 
         if (runtimeMods.length > 1) {
-            throw new Error(`Modded Profiles can only have one Runtime Mod. Found: ${runtimeMods.map(mod => `'${mod.id}'`).join(", ")}`);
+            throw new Error(
+                `Modded Profiles can only have one Runtime Mod. Found: ${runtimeMods.map(mod => `'${mod.id}'`).join(", ")}`
+            );
         }
     }
 

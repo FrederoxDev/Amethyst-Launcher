@@ -65,20 +65,20 @@ interface DownloadStoreState {
     clearCompleted: () => void;
 }
 
-export const useDownloadStore = create<DownloadStoreState>((set) => ({
+export const useDownloadStore = create<DownloadStoreState>(set => ({
     downloads: [],
     panelOpen: false,
-    setPanelOpen: (open) => set({ panelOpen: open }),
-    addDownload: (item) =>
+    setPanelOpen: open => set({ panelOpen: open }),
+    addDownload: item =>
         set(state => ({
             downloads: [...state.downloads, item],
             panelOpen: true,
         })),
     updateDownload: (id, partial) =>
         set(state => ({
-            downloads: state.downloads.map(d => d.id === id ? { ...d, ...partial } : d),
+            downloads: state.downloads.map(d => (d.id === id ? { ...d, ...partial } : d)),
         })),
-    removeDownload: (id) =>
+    removeDownload: id =>
         set(state => ({
             downloads: state.downloads.filter(d => d.id !== id),
         })),

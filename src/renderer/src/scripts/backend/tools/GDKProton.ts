@@ -41,7 +41,7 @@ export class GDKProton extends ToolArtifact {
             promptForUpdate: options?.promptForUpdate ?? false,
             allowOutdated: options?.allowOutdated ?? true,
             releaseFetchTimeout: options?.releaseFetchTimeout ?? 1000,
-            checkForUpdates: options?.checkForUpdates ?? true
+            checkForUpdates: options?.checkForUpdates ?? true,
         };
         return super.check(resolvedOptions);
     }
@@ -88,7 +88,7 @@ export class GDKProton extends ToolArtifact {
             version,
             path: toolPath,
             executable,
-            action
+            action,
         };
     }
 

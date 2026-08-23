@@ -1,9 +1,26 @@
-import { ILauncherPlatform, LauncherPaths, ProcessInfo, ShortcutOptions } from "@renderer/scripts/platform/LauncherPlatform";
-import { EnsureVersionFiles, IsRegistered, LaunchMinecraft, RegisterVersion, SyncProxyDllForProfile, UnregisterCurrent } from "../AppRegistry";
+import {
+    ILauncherPlatform,
+    LauncherPaths,
+    ProcessInfo,
+    ShortcutOptions,
+} from "@renderer/scripts/platform/LauncherPlatform";
+import {
+    EnsureVersionFiles,
+    IsRegistered,
+    LaunchMinecraft,
+    RegisterVersion,
+    SyncProxyDllForProfile,
+    UnregisterCurrent,
+} from "../AppRegistry";
 import { PathUtils } from "../PathUtils";
 import { Profile } from "../Profiles";
 import { InstalledVersionModel } from "../VersionManager";
-import { ensureProfileJunction, inspectRoamingState, resolveProfileDataPath, resolveRoamingPath } from "../ProfileDataLinker";
+import {
+    ensureProfileJunction,
+    inspectRoamingState,
+    resolveProfileDataPath,
+    resolveRoamingPath,
+} from "../ProfileDataLinker";
 
 const os = window.require("os") as typeof import("os");
 const child = window.require("child_process") as typeof import("child_process");
@@ -28,14 +45,14 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             const exec_proc = child.spawn(cmd, args, { shell: true });
 
             if (stdout) {
-                exec_proc.stdout?.on("data", (data) => stdout(data.toString()));
+                exec_proc.stdout?.on("data", data => stdout(data.toString()));
             }
 
-            exec_proc.stderr?.on("data", (data) => {
+            exec_proc.stderr?.on("data", data => {
                 console.error(`[Command Error] ${data}`);
             });
 
-            exec_proc.on("close", (exit_code) => {
+            exec_proc.on("close", exit_code => {
                 if (exit_code !== 0) {
                     reject(new Error(`Command failed with exit code ${exit_code}.`));
                     return;
@@ -56,15 +73,15 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         // alive (debuggers, leaked handles, etc.). A zombie has ThreadCount=0
         // and is not actually running, so we follow up with a WMI verification
         // when tasklist returns a hit.
-        return new Promise((resolve) => {
-            const proc = child.spawn(
-                "tasklist",
-                ["/FI", `IMAGENAME eq ${executableName}`, "/FO", "CSV", "/NH"],
-                { encoding: "utf-8" } as any
-            );
+        return new Promise(resolve => {
+            const proc = child.spawn("tasklist", ["/FI", `IMAGENAME eq ${executableName}`, "/FO", "CSV", "/NH"], {
+                encoding: "utf-8",
+            } as any);
 
             let stdout = "";
-            proc.stdout?.on("data", (data: string | Buffer) => { stdout += data.toString(); });
+            proc.stdout?.on("data", (data: string | Buffer) => {
+                stdout += data.toString();
+            });
             proc.on("error", () => resolve(null));
             proc.on("close", () => {
                 try {
@@ -79,7 +96,7 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
                         resolve(null);
                         return;
                     }
-                    this.isLiveProcess(pid).then((alive) => {
+                    this.isLiveProcess(pid).then(alive => {
                         resolve(alive ? { pid, cwd: "", executableName } : null);
                     });
                 } catch {
@@ -95,7 +112,7 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
      * by an external handle reports ThreadCount=0 and should be ignored.
      */
     private isLiveProcess(pid: number): Promise<boolean> {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             const proc = child.spawn(
                 "powershell",
                 [
@@ -108,7 +125,9 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             );
 
             let stdout = "";
-            proc.stdout?.on("data", (data: string | Buffer) => { stdout += data.toString(); });
+            proc.stdout?.on("data", (data: string | Buffer) => {
+                stdout += data.toString();
+            });
             // Fail-open: if WMI is unavailable, assume the tasklist hit is real
             // rather than letting the user launch over a possibly-running MC.
             proc.on("error", () => resolve(true));
@@ -128,33 +147,32 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         const isProtocolUrl = options.target.startsWith("amethyst-launcher://");
         // For protocol URLs Windows needs the target to go through explorer.exe
         // since .lnk files cannot directly invoke custom URI schemes.
-        const target = isProtocolUrl
-            ? `${process.env.WINDIR ?? "C:\\Windows"}\\explorer.exe`
-            : options.target;
-        const args = isProtocolUrl
-            ? options.target
-            : options.args;
+        const target = isProtocolUrl ? `${process.env.WINDIR ?? "C:\\Windows"}\\explorer.exe` : options.target;
+        const args = isProtocolUrl ? options.target : options.args;
         return new Promise<void>((resolve, reject) => {
             const shortcutPath = path.join(WindowsLauncherPlatform.StartMenuFolder, `${options.name}.lnk`);
-            windowsShortcuts.create(shortcutPath, {
-                target,
-                args,
-                desc: options.description,
-                icon: options.icon,
-                workingDir: options.workingDir
-            }, (err) => {
-                if (err) {
-                    reject(new Error(`Failed to create shortcut: ${err}`));
-                } else {
-                    resolve();
+            windowsShortcuts.create(
+                shortcutPath,
+                {
+                    target,
+                    args,
+                    desc: options.description,
+                    icon: options.icon,
+                    workingDir: options.workingDir,
+                },
+                err => {
+                    if (err) {
+                        reject(new Error(`Failed to create shortcut: ${err}`));
+                    } else {
+                        resolve();
+                    }
                 }
-            });
+            );
         });
     }
 
     getPaths(): LauncherPaths {
-        if (WindowsLauncherPlatform.CachedLauncherPaths)
-            return WindowsLauncherPlatform.CachedLauncherPaths;
+        if (WindowsLauncherPlatform.CachedLauncherPaths) return WindowsLauncherPlatform.CachedLauncherPaths;
         const appDataPath: string = process.env.APPDATA ?? path.join(os.homedir(), "AppData", "Roaming");
 
         WindowsLauncherPlatform.CachedLauncherPaths = {
@@ -167,7 +185,7 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             modsPath: `${appDataPath}\\Amethyst\\Launcher\\Mods`,
             launcherConfigPath: `${appDataPath}\\Amethyst\\Launcher\\launcher_config.json`,
             toolsPath: `${appDataPath}\\Amethyst\\Launcher\\Tools`,
-            profileDataPath: `${appDataPath}\\Amethyst\\Launcher\\ProfileData`
+            profileDataPath: `${appDataPath}\\Amethyst\\Launcher\\ProfileData`,
         };
 
         PathUtils.ValidatePath(WindowsLauncherPlatform.CachedLauncherPaths.amethystPath);
@@ -183,7 +201,11 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         return WindowsLauncherPlatform.CachedLauncherPaths;
     }
 
-    async runProfile(profile: Profile, version: InstalledVersionModel, onStatus?: (message: string) => void): Promise<void> {
+    async runProfile(
+        profile: Profile,
+        version: InstalledVersionModel,
+        onStatus?: (message: string) => void
+    ): Promise<void> {
         const status = onStatus ?? (() => {});
 
         status("Checking if Minecraft is already running...");
@@ -223,8 +245,7 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
     }
 
     static getRegeditModule(): RegeditModule {
-        if (WindowsLauncherPlatform.CachedRegedit)
-            return WindowsLauncherPlatform.CachedRegedit;
+        if (WindowsLauncherPlatform.CachedRegedit) return WindowsLauncherPlatform.CachedRegedit;
 
         if (typeof process === "undefined" || process.platform !== "win32") {
             WindowsLauncherPlatform.CachedRegedit = null;
@@ -234,24 +255,29 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         try {
             WindowsLauncherPlatform.CachedRegedit = window.require("regedit-rs") as RegeditModule;
         } catch (e) {
-            throw new Error(`Failed to load regedit-rs module. Ensure it is installed and available in the environment. \n ${e}`);
+            throw new Error(
+                `Failed to load regedit-rs module. Ensure it is installed and available in the environment. \n ${e}`
+            );
         }
         return WindowsLauncherPlatform.CachedRegedit;
     }
 
     static getWindowsShortcutsModule() {
-        if (WindowsLauncherPlatform.CachedWindowsShortcuts)
-            return WindowsLauncherPlatform.CachedWindowsShortcuts;
-        
+        if (WindowsLauncherPlatform.CachedWindowsShortcuts) return WindowsLauncherPlatform.CachedWindowsShortcuts;
+
         if (typeof process === "undefined" || process.platform !== "win32") {
             WindowsLauncherPlatform.CachedWindowsShortcuts = null;
             throw new Error("windows-shortcuts module is only available on Windows platforms.");
         }
 
         try {
-            WindowsLauncherPlatform.CachedWindowsShortcuts = window.require("windows-shortcuts") as typeof import("windows-shortcuts");
+            WindowsLauncherPlatform.CachedWindowsShortcuts = window.require(
+                "windows-shortcuts"
+            ) as typeof import("windows-shortcuts");
         } catch (e) {
-            throw new Error(`Failed to load windows-shortcuts module. Ensure it is installed and available in the environment. \n ${e}`);
+            throw new Error(
+                `Failed to load windows-shortcuts module. Ensure it is installed and available in the environment. \n ${e}`
+            );
         }
         return WindowsLauncherPlatform.CachedWindowsShortcuts;
     }

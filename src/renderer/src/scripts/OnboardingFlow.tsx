@@ -116,10 +116,7 @@ async function handleCandidate(candidate: Candidate, profileDataRoot: string): P
             await importAsProfile(candidate, plan, profileDataRoot);
             return;
         } catch (e) {
-            await showOnboardingError(
-                "Couldn't import the Minecraft data",
-                describeFsError(e, candidate.roamingPath)
-            );
+            await showOnboardingError("Couldn't import the Minecraft data", describeFsError(e, candidate.roamingPath));
             continue;
         }
     }
@@ -132,9 +129,7 @@ async function handleCandidate(candidate: Candidate, profileDataRoot: string): P
  * somewhere along the way.
  */
 async function collectImportPlan(): Promise<ImportPlan | null> {
-    let versionResult = await Popup.useAsync<VersionPickerResult | null>(props => (
-        <VersionPickerPopup {...props} />
-    ));
+    let versionResult = await Popup.useAsync<VersionPickerResult | null>(props => <VersionPickerPopup {...props} />);
     if (!versionResult) return null;
 
     while (true) {
@@ -161,19 +156,22 @@ async function collectImportPlan(): Promise<ImportPlan | null> {
         if (versionResult.importData) {
             const data = versionResult.importData;
             const versionManager = useAppStore.getState().versionManager;
-            versionManager.installVersion({
-                kind: "imported",
-                name: data.name,
-                version: SemVersion.fromString(data.version),
-                type: data.type.toLowerCase() as MinecraftVersionType,
-                uuid: data.uuid,
-                file: data.file,
-            }).then(() => {
-                console.log("[Onboarding] Imported version installed successfully");
-            }).catch(e => {
-                console.error("[Onboarding] Failed to install imported version:", e);
-                useAppStore.getState().setError(`Failed to install imported version: ${(e as Error).message ?? e}`);
-            });
+            versionManager
+                .installVersion({
+                    kind: "imported",
+                    name: data.name,
+                    version: SemVersion.fromString(data.version),
+                    type: data.type.toLowerCase() as MinecraftVersionType,
+                    uuid: data.uuid,
+                    file: data.file,
+                })
+                .then(() => {
+                    console.log("[Onboarding] Imported version installed successfully");
+                })
+                .catch(e => {
+                    console.error("[Onboarding] Failed to install imported version:", e);
+                    useAppStore.getState().setError(`Failed to install imported version: ${(e as Error).message ?? e}`);
+                });
         }
 
         return {
@@ -185,73 +183,77 @@ async function collectImportPlan(): Promise<ImportPlan | null> {
     }
 }
 
-async function importAsProfile(
-    candidate: Candidate,
-    plan: ImportPlan,
-    profileDataRoot: string
-): Promise<void> {
+async function importAsProfile(candidate: Candidate, plan: ImportPlan, profileDataRoot: string): Promise<void> {
     const newUuid = crypto.randomUUID();
     const targetPath = path.join(profileDataRoot, newUuid);
 
-    await ProgressBar.useAsync(async (state) => {
-        state.setStatus("importing");
-        state.setMessage(`Importing data as "${plan.name}"...`);
+    await ProgressBar.useAsync(
+        async state => {
+            state.setStatus("importing");
+            state.setMessage(`Importing data as "${plan.name}"...`);
 
-        ensureParentExists(targetPath);
+            ensureParentExists(targetPath);
 
-        let moved = false;
-        try {
-            await moveDirectory(candidate.roamingPath, targetPath);
-            moved = true;
+            let moved = false;
+            try {
+                await moveDirectory(candidate.roamingPath, targetPath);
+                moved = true;
 
-            const newProfile: Profile = {
-                uuid: newUuid,
-                name: plan.name,
-                is_modded: plan.isModded,
-                runtime: "Vanilla",
-                mods: [],
-                minecraft_version: plan.minecraftVersion,
-                version_uuid: plan.versionUuid,
-            };
+                const newProfile: Profile = {
+                    uuid: newUuid,
+                    name: plan.name,
+                    is_modded: plan.isModded,
+                    runtime: "Vanilla",
+                    mods: [],
+                    minecraft_version: plan.minecraftVersion,
+                    version_uuid: plan.versionUuid,
+                };
 
-            const store = useAppStore.getState();
-            // Defensive guard: crypto.randomUUID() collisions are astronomically
-            // improbable, but a duplicate would silently shadow an existing profile.
-            if (store.allProfiles.some(p => p.uuid === newUuid)) {
-                throw new Error(`UUID collision for new profile (${newUuid}) — this should never happen.`);
-            }
-            store.setAllProfiles([...store.allProfiles, newProfile]);
-            store.saveData();
-        } catch (e) {
-            if (moved) {
-                // Try to put the data back so the user doesn't lose access. The
-                // init marker hasn't been written yet, so onboarding will detect
-                // it again on next launch.
-                try {
-                    await moveDirectory(targetPath, candidate.roamingPath);
-                } catch (restoreErr) {
-                    // Both the import and the restore failed. The data is at
-                    // targetPath but no profile points at it. Surface a clear
-                    // recovery path so the user can rescue it manually.
-                    throw new Error(
-                        `Failed to register the new profile, and could not put the data back at "${candidate.roamingPath}".\n\n` +
-                        `Your data is safe at:\n${targetPath}\n\n` +
-                        `To recover, close the launcher and move that folder back to "${candidate.roamingPath}", then restart.\n\n` +
-                        `Original error: ${formatError(e)}\nRestore error: ${formatError(restoreErr)}`
-                    );
+                const store = useAppStore.getState();
+                // Defensive guard: crypto.randomUUID() collisions are astronomically
+                // improbable, but a duplicate would silently shadow an existing profile.
+                if (store.allProfiles.some(p => p.uuid === newUuid)) {
+                    throw new Error(`UUID collision for new profile (${newUuid}) — this should never happen.`);
                 }
+                store.setAllProfiles([...store.allProfiles, newProfile]);
+                store.saveData();
+            } catch (e) {
+                if (moved) {
+                    // Try to put the data back so the user doesn't lose access. The
+                    // init marker hasn't been written yet, so onboarding will detect
+                    // it again on next launch.
+                    try {
+                        await moveDirectory(targetPath, candidate.roamingPath);
+                    } catch (restoreErr) {
+                        // Both the import and the restore failed. The data is at
+                        // targetPath but no profile points at it. Surface a clear
+                        // recovery path so the user can rescue it manually.
+                        throw new Error(
+                            `Failed to register the new profile, and could not put the data back at "${candidate.roamingPath}".\n\n` +
+                                `Your data is safe at:\n${targetPath}\n\n` +
+                                `To recover, close the launcher and move that folder back to "${candidate.roamingPath}", then restart.\n\n` +
+                                `Original error: ${formatError(e)}\nRestore error: ${formatError(restoreErr)}`
+                        );
+                    }
+                }
+                throw e;
             }
-            throw e;
-        }
-    }, true, FULL_PROGRESS_RESET_OPTIONS);
+        },
+        true,
+        FULL_PROGRESS_RESET_OPTIONS
+    );
 }
 
 async function deleteData(candidate: Candidate): Promise<void> {
-    await ProgressBar.useAsync(async (state) => {
-        state.setStatus("deleting");
-        state.setMessage(`Deleting Minecraft data at ${candidate.roamingPath}...`);
-        await fs.promises.rm(candidate.roamingPath, { recursive: true, force: true });
-    }, true, FULL_PROGRESS_RESET_OPTIONS);
+    await ProgressBar.useAsync(
+        async state => {
+            state.setStatus("deleting");
+            state.setMessage(`Deleting Minecraft data at ${candidate.roamingPath}...`);
+            await fs.promises.rm(candidate.roamingPath, { recursive: true, force: true });
+        },
+        true,
+        FULL_PROGRESS_RESET_OPTIONS
+    );
 }
 
 function formatError(e: unknown): string {
@@ -285,13 +287,7 @@ async function showOnboardingError(title: string, body: string): Promise<void> {
         <PopupPanel
             title={title}
             size="md"
-            footer={
-                <MinecraftButton
-                    text="OK"
-                    onClick={() => submit()}
-                    style={{ flex: 1, minWidth: 0 }}
-                />
-            }
+            footer={<MinecraftButton text="OK" onClick={() => submit()} style={{ flex: 1, minWidth: 0 }} />}
         >
             <p className="minecraft-seven" style={{ fontSize: "14px", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
                 {body}

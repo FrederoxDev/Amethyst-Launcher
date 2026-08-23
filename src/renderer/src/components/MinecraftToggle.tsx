@@ -14,8 +14,12 @@ export function MinecraftToggle({ isChecked, setIsChecked }: MinecraftToggleProp
     };
 
     const toggleClass = hasInteracted.current
-        ? (isChecked ? " toggle-anim-on" : " toggle-anim-off")
-        : (isChecked ? " toggle-no-anim-on" : " toggle-no-anim-off");
+        ? isChecked
+            ? " toggle-anim-on"
+            : " toggle-anim-off"
+        : isChecked
+          ? " toggle-no-anim-on"
+          : " toggle-no-anim-off";
 
     return (
         <div className="toggle_panel" onClick={handleCheckboxChange}>

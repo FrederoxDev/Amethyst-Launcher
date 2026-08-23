@@ -17,7 +17,9 @@ function getInstalledVersionForProfile(profile: Profile): InstalledVersionModel 
         if (byUuid) return byUuid;
     }
     if (profile.minecraft_version) {
-        return versionManager.getInstalledVersions().find(v => v.version.toString() === profile.minecraft_version) ?? null;
+        return (
+            versionManager.getInstalledVersions().find(v => v.version.toString() === profile.minecraft_version) ?? null
+        );
     }
     return null;
 }
@@ -41,6 +43,8 @@ export function openDataFolder(profile: Profile): void {
 
 /** Shows the "are you sure" popup. Resolves to true if the user confirmed deletion. */
 export async function confirmProfileDeletion(profile: Profile): Promise<boolean> {
+    // Respect the "Confirm before deleting" setting — skip the dialog if disabled.
+    if (!useAppStore.getState().confirmDelete) return true;
     return confirmAction({
         title: "Delete Profile?",
         message: `All data for "${profile.name}" will be permanently deleted, including worlds, resource packs, and settings. This cannot be undone.`,
@@ -59,44 +63,48 @@ export async function finalizeProfileDeletion(profile: Profile): Promise<void> {
     const store = useAppStore.getState();
     const profileDataDir = resolveProfileDataPath(profile);
 
-    await ProgressBar.useAsync(async (progress) => {
-        progress.setStatus("deleting");
-        progress.setMessage(`Deleting profile "${profile.name}"...`);
+    await ProgressBar.useAsync(
+        async progress => {
+            progress.setStatus("deleting");
+            progress.setMessage(`Deleting profile "${profile.name}"...`);
 
-        let removedActiveJunction = false;
-        for (const type of ["release", "preview"] as const) {
-            const roaming = resolveRoamingPath(type);
-            const state = inspectRoamingState(roaming);
-            if (state.kind !== "junction") continue;
-            const normalized = path.resolve(profileDataDir).toLowerCase();
-            if (state.target.toLowerCase() === normalized) {
-                try {
-                    fs.unlinkSync(roaming);
-                    removedActiveJunction = true;
-                } catch (e) {
-                    console.error(`[ProfileActions] Failed to remove junction at ${roaming}:`, e);
+            let removedActiveJunction = false;
+            for (const type of ["release", "preview"] as const) {
+                const roaming = resolveRoamingPath(type);
+                const state = inspectRoamingState(roaming);
+                if (state.kind !== "junction") continue;
+                const normalized = path.resolve(profileDataDir).toLowerCase();
+                if (state.target.toLowerCase() === normalized) {
+                    try {
+                        fs.unlinkSync(roaming);
+                        removedActiveJunction = true;
+                    } catch (e) {
+                        console.error(`[ProfileActions] Failed to remove junction at ${roaming}:`, e);
+                    }
                 }
             }
-        }
 
-        if (removedActiveJunction) {
-            try {
-                await UnregisterCurrent();
-            } catch (e) {
-                console.warn("[ProfileActions] Failed to unregister Minecraft:", e);
+            if (removedActiveJunction) {
+                try {
+                    await UnregisterCurrent();
+                } catch (e) {
+                    console.warn("[ProfileActions] Failed to unregister Minecraft:", e);
+                }
             }
-        }
 
-        progress.setMessage(`Deleting profile data for "${profile.name}"...`);
-        try {
-            await fs.promises.rm(profileDataDir, { recursive: true, force: true });
-        } catch (e) {
-            console.error(`[ProfileActions] Failed to delete profile data folder ${profileDataDir}:`, e);
-        }
+            progress.setMessage(`Deleting profile data for "${profile.name}"...`);
+            try {
+                await fs.promises.rm(profileDataDir, { recursive: true, force: true });
+            } catch (e) {
+                console.error(`[ProfileActions] Failed to delete profile data folder ${profileDataDir}:`, e);
+            }
 
-        const newProfiles = store.allProfiles.filter(p => p.uuid !== profile.uuid);
-        store.setAllProfiles(newProfiles);
-        store.saveData();
-        store.refreshAllMods();
-    }, true, FULL_PROGRESS_RESET_OPTIONS);
+            const newProfiles = store.allProfiles.filter(p => p.uuid !== profile.uuid);
+            store.setAllProfiles(newProfiles);
+            store.saveData();
+            store.refreshAllMods();
+        },
+        true,
+        FULL_PROGRESS_RESET_OPTIONS
+    );
 }

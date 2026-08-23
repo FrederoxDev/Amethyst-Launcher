@@ -27,7 +27,7 @@ export const GREEN_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
     baseHoverBgColor: "#2a641c",
     textColor: "#fff",
     cursor: "pointer",
-    pointerEvents: "auto"
+    pointerEvents: "auto",
 };
 
 export const RED_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
@@ -39,7 +39,7 @@ export const RED_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
     baseHoverBgColor: "#c02d2d",
     textColor: "#fff",
     cursor: "pointer",
-    pointerEvents: "auto"
+    pointerEvents: "auto",
 };
 
 export const WHITE_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
@@ -51,7 +51,7 @@ export const WHITE_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
     baseHoverBgColor: "#b1b2b5",
     textColor: "#000",
     cursor: "pointer",
-    pointerEvents: "auto"
+    pointerEvents: "auto",
 };
 
 export const GRAY_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
@@ -63,7 +63,7 @@ export const GRAY_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
     baseHoverBgColor: "#3a3b3c",
     textColor: "#fff",
     cursor: "pointer",
-    pointerEvents: "auto"
+    pointerEvents: "auto",
 };
 
 export const DISABLED_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
@@ -75,7 +75,7 @@ export const DISABLED_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
     baseHoverBgColor: "#b1b2b5",
     textColor: "#58585a",
     cursor: "not-allowed",
-    pointerEvents: "none"
+    pointerEvents: "none",
 };
 
 type MinecraftButtonProps = {
@@ -87,11 +87,18 @@ type MinecraftButtonProps = {
     buttonStyle?: MinecraftButtonStyle;
 };
 
-export function MinecraftButton({ text, onClick, disabled = false, style = {}, colorPallete = GREEN_MINECRAFT_BUTTON, buttonStyle }: MinecraftButtonProps) {
+export function MinecraftButton({
+    text,
+    onClick,
+    disabled = false,
+    style = {},
+    colorPallete = GREEN_MINECRAFT_BUTTON,
+    buttonStyle,
+}: MinecraftButtonProps) {
     if (buttonStyle === MinecraftButtonStyle.Warn) {
         colorPallete = RED_MINECRAFT_BUTTON;
     }
-    colorPallete = disabled ? DISABLED_MINECRAFT_BUTTON : (colorPallete || GREEN_MINECRAFT_BUTTON);
+    colorPallete = disabled ? DISABLED_MINECRAFT_BUTTON : colorPallete || GREEN_MINECRAFT_BUTTON;
     const cssVars: MinecraftCSSVariables = {
         "--mc-button-container-h": "48px",
         "--mc-button-container-w": "100%",
@@ -104,16 +111,20 @@ export function MinecraftButton({ text, onClick, disabled = false, style = {}, c
         "--mc-button-base-hover-bg-color": colorPallete?.baseHoverBgColor,
         "--mc-button-shadow-size": "4px",
         "--mc-button-text-color": colorPallete?.textColor,
-        ...style
+        ...style,
     };
 
     return (
         <div style={cssVars}>
-            <div className="button-container" onClick={() => {
-                if (!disabled && onClick) onClick();
-            }} style={{ 
-                cursor: colorPallete?.cursor 
-            }}>
+            <div
+                className="button-container"
+                onClick={() => {
+                    if (!disabled && onClick) onClick();
+                }}
+                style={{
+                    cursor: colorPallete?.cursor,
+                }}
+            >
                 <div className="button-real-container" style={{ pointerEvents: colorPallete?.pointerEvents }}>
                     <div className="button-base">
                         <div className="button-text">{text}</div>

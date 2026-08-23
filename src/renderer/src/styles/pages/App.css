@@ -27,6 +27,13 @@
     height: calc(100% - 64px);
 }
 
+/* Native window frame: no custom titlebar is rendered, so use the full height
+   instead of reserving 64px for it (which would otherwise leave a gap). */
+.app-contents--native {
+    top: 0;
+    height: 100%;
+}
+
 .app-navbar-container {
     height: 100%;
     width: 68px;
@@ -41,7 +48,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 8px;
-    border: 3px solid #1E1E1F;
+    border: 3px solid #1e1e1f;
 }
 
 .app-nav-links {
@@ -55,9 +62,16 @@
     width: 46px;
     height: 46px;
     border-width: 3px;
-    border-color: #1E1E1F;
-    transition: transform 0.1s ease;
+    border-color: #1e1e1f;
+    transition: transform 0.1s ease, border-color 0.1s ease;
     cursor: pointer;
+}
+
+/* Hover feedback for inactive icons: lighten the border + nudge up slightly.
+   Active icons keep their white border (see .nav-icon--active). */
+.nav-icon:not(.nav-icon--active):hover {
+    border-color: #8a8b8c;
+    transform: scale(1.05);
 }
 
 .nav-icon:active {
@@ -65,7 +79,7 @@
 }
 
 .nav-icon--active {
-    border-color: #FFFFFF;
+    border-color: #ffffff;
 }
 
 .app-nav-icon-image {
@@ -96,6 +110,10 @@
     height: 46px;
     cursor: pointer;
     transition: transform 0.1s ease;
+}
+
+.app-settings-button:hover {
+    transform: scale(1.1);
 }
 
 .app-settings-button:active {
@@ -185,7 +203,7 @@
     width: 280px;
     max-height: 320px;
     background-color: #313233;
-    border: 3px solid #1E1E1F;
+    border: 3px solid #1e1e1f;
     z-index: 100;
     display: flex;
     flex-direction: column;
@@ -251,7 +269,7 @@
 
 .download-manager-progress-track {
     height: 3px;
-    background-color: #1E1E1F;
+    background-color: #1e1e1f;
     border-radius: 2px;
     overflow: hidden;
 }

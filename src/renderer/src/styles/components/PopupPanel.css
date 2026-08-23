@@ -7,14 +7,20 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: #000000BB;
+    background-color: #000000bb;
     z-index: 100;
+}
+
+/* Stacked popups: only the topmost popup paints the dark backdrop so the ones
+   below don't compound into an ever-darker overlay. */
+.popup-panel-no-overlay {
+    background-color: transparent;
 }
 
 .popup-box {
     position: relative;
-    background-color: #48494A;
-    border: 3px solid #1E1E1F;
+    background-color: #48494a;
+    border: 3px solid #1e1e1f;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -24,20 +30,42 @@
     animation: popup-scale-in 0.1s ease-out;
 }
 
-.popup-box--sm { width: 380px; }
-.popup-box--md { width: 450px; }
-.popup-box--lg { width: 600px; }
-.popup-box--xl { width: 900px; }
-.popup-box--xxl { width: 1100px; }
+.popup-box--sm {
+    width: 380px;
+}
+.popup-box--md {
+    width: 450px;
+}
+.popup-box--lg {
+    width: 600px;
+}
+.popup-box--xl {
+    width: 900px;
+}
+.popup-box--xxl {
+    width: 1100px;
+}
 
 @keyframes popup-scale-in {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 @keyframes popup-scale-out {
-    from { opacity: 1; transform: scale(1); }
-    to { opacity: 0; transform: scale(0.9); }
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.9);
+    }
 }
 
 .popup-panel-closing {
@@ -45,8 +73,12 @@
 }
 
 @keyframes popup-backdrop-out {
-    from { background-color: #000000BB; }
-    to { background-color: #00000000; }
+    from {
+        background-color: #000000bb;
+    }
+    to {
+        background-color: #00000000;
+    }
 }
 
 .popup-header {
@@ -68,7 +100,9 @@
     align-items: center;
     cursor: pointer;
     border-radius: 3px;
-    transition: background-color 0.1s, transform 0.1s ease;
+    transition:
+        background-color 0.1s,
+        transform 0.1s ease;
 }
 
 .popup-close:hover {
@@ -81,7 +115,7 @@
 
 .popup-divider {
     height: 3px;
-    background-color: #1E1E1F;
+    background-color: #1e1e1f;
     flex-shrink: 0;
 }
 
@@ -112,9 +146,15 @@
     flex-shrink: 0;
 }
 
-.popup-footer--start    { justify-content: flex-start; }
-.popup-footer--end      { justify-content: flex-end; }
-.popup-footer--between  { justify-content: space-between; }
+.popup-footer--start {
+    justify-content: flex-start;
+}
+.popup-footer--end {
+    justify-content: flex-end;
+}
+.popup-footer--between {
+    justify-content: space-between;
+}
 
 .popup-box .text-input-box {
     height: 32px;
@@ -147,10 +187,12 @@
     min-height: 40px;
     box-sizing: border-box;
     cursor: pointer;
-    color: #FFFFFF;
+    color: #ffffff;
     font-size: 14px;
     border-radius: 3px;
-    transition: background-color 0.1s, transform 0.1s ease;
+    transition:
+        background-color 0.1s,
+        transform 0.1s ease;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -184,8 +226,10 @@
     height: 24px;
     border-radius: 3px;
     cursor: pointer;
-    color: #FFFFFF;
-    transition: background-color 0.1s, transform 0.1s ease;
+    color: #ffffff;
+    transition:
+        background-color 0.1s,
+        transform 0.1s ease;
 }
 
 .version-picker-item:hover .version-picker-item-btn {
@@ -210,7 +254,7 @@
     align-items: center;
     gap: 8px;
     font-size: 14px;
-    color: #FFFFFF;
+    color: #ffffff;
     cursor: pointer;
     user-select: none;
 }
@@ -223,7 +267,7 @@
 .version-picker-skeleton-text {
     height: 14px;
     border-radius: 3px;
-    background-color: #48494A;
+    background-color: #48494a;
     animation: skeleton-pulse 1s ease-in-out infinite;
 }
 
@@ -231,13 +275,18 @@
     width: 40px;
     height: 11px;
     border-radius: 3px;
-    background-color: #48494A;
+    background-color: #48494a;
     animation: skeleton-pulse 1s ease-in-out infinite;
 }
 
 @keyframes skeleton-pulse {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 1; }
+    0%,
+    100% {
+        opacity: 0.4;
+    }
+    50% {
+        opacity: 1;
+    }
 }
 
 .version-picker-preview-item {
@@ -253,17 +302,37 @@
 }
 
 @keyframes preview-slide-in {
-    from { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
-    to { opacity: 1; max-height: 40px; padding-top: 8px; padding-bottom: 8px; }
+    from {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 40px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
 }
 
 @keyframes preview-slide-out {
-    from { opacity: 1; max-height: 40px; padding-top: 8px; padding-bottom: 8px; }
-    to { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
+    from {
+        opacity: 1;
+        max-height: 40px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+    to {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
 }
 
 .new-instance-version-field {
-    border: 3px solid #1E1E1F;
+    border: 3px solid #1e1e1f;
     height: 32px;
     background-color: #313233;
     display: flex;

@@ -15,9 +15,7 @@ interface MainPanelSectionProps extends MainPanelProps {
 export function MainPanelSection({ children, className }: MainPanelSectionProps) {
     return (
         <MainPanel>
-            <div className={`main-panel-section ${className}`}>
-                {children}
-            </div>
+            <div className={`main-panel-section ${className}`}>{children}</div>
         </MainPanel>
     );
 }
@@ -43,9 +41,7 @@ interface PanelButtonProps extends MainPanelProps {
 export function PanelButton({ children, onClick, className }: PanelButtonProps) {
     return (
         <div className="panel-card" onClick={onClick}>
-            <div className={`panel-card-inner ${className}`}>
-                {children}
-            </div>
+            <div className={`panel-card-inner ${className}`}>{children}</div>
         </div>
     );
 }
@@ -57,9 +53,7 @@ interface PanelSectionProps extends MainPanelProps {
 export function PanelSection({ children, className }: PanelSectionProps) {
     return (
         <div className="panel-card">
-            <div className={`panel-card-inner ${className}`}>
-                {children}
-            </div>
+            <div className={`panel-card-inner ${className}`}>{children}</div>
         </div>
     );
 }

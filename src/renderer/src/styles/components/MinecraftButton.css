@@ -58,7 +58,7 @@
 }
 
 .button-text {
-    font-family: 'Minecraft-Seven', sans-serif;
+    font-family: "Minecraft-Seven", sans-serif;
     font-size: 16px;
     color: var(--mc-button-text-color);
     text-align: center;

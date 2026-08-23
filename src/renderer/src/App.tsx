@@ -1,8 +1,10 @@
-import { useAppStore } from "@renderer/states/AppStore";
+import { AnalyticsConsent, useAppStore } from "@renderer/states/AppStore";
 import { Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Popup } from "@renderer/states/PopupStore";
 import { createProfileFlow } from "@renderer/scripts/ProfileCreation";
 import { runFirstLaunchOnboarding } from "@renderer/scripts/OnboardingFlow";
+import { AskAnalyticsConsent } from "@renderer/components/AnalyticsConsentPanel";
+import { GetLauncherConfig } from "@renderer/scripts/Launcher";
 
 import lushCaveImage from "@renderer/assets/images/art/lush_cave.jpg";
 import craftingIcon from "@renderer/assets/images/icons/crafting-icon.png";
@@ -42,14 +44,18 @@ function DownloadManagerButton() {
     const panelRef = useRef<HTMLDivElement>(null);
     const [panelPos, setPanelPos] = useState({ bottom: 0, left: 0 });
 
-    const activeCount = downloads.filter(d => d.status === "downloading" || d.status === "extracting" || d.status === "queued").length;
+    const activeCount = downloads.filter(
+        d => d.status === "downloading" || d.status === "extracting" || d.status === "queued"
+    ).length;
 
     useEffect(() => {
         if (!panelOpen) return;
         const handleClick = (e: MouseEvent) => {
             if (
-                btnRef.current && !btnRef.current.contains(e.target as Node) &&
-                panelRef.current && !panelRef.current.contains(e.target as Node)
+                btnRef.current &&
+                !btnRef.current.contains(e.target as Node) &&
+                panelRef.current &&
+                !panelRef.current.contains(e.target as Node)
             ) {
                 setPanelOpen(false);
             }
@@ -76,58 +82,85 @@ function DownloadManagerButton() {
     };
 
     return (
-        <div className="download-manager-btn" ref={btnRef} onClick={() => setPanelOpen(!panelOpen)}>
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round">
+        <div className="download-manager-btn" data-tooltip="Downloads" ref={btnRef} onClick={() => setPanelOpen(!panelOpen)}>
+            <svg
+                width="20"
+                height="20"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="#FFFFFF"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+            >
                 <path d="M8 2v8M4.5 7.5L8 11l3.5-3.5M2 14h12" />
             </svg>
             {activeCount > 0 && <div className="download-manager-badge" />}
 
-            {panelOpen && createPortal(
-                <div
-                    className="download-manager-panel"
-                    ref={panelRef}
-                    style={{ bottom: panelPos.bottom, left: panelPos.left }}
-                    onClick={e => e.stopPropagation()}
-                >
-                    <p className="minecraft-seven download-manager-title">Downloads</p>
-                    <div className="download-manager-list scrollbar">
-                        {downloads.length === 0 && (
-                            <p className="minecraft-seven download-manager-empty">No downloads</p>
-                        )}
-                        {downloads.map(dl => (
-                            <div key={dl.id} className="download-manager-item">
-                                <div className="download-manager-item-info">
-                                    <p className="minecraft-seven download-manager-item-name">{dl.name}</p>
-                                    <p className="minecraft-seven download-manager-item-status">
-                                        {dl.status === "downloading" ? `${Math.round(dl.progress * 100)}%` : dl.status}
-                                    </p>
-                                </div>
-                                <div className="download-manager-progress-track">
-                                    <div
-                                        className={`download-manager-progress-fill ${dl.status === "error" ? "download-manager-progress-error" : ""}`}
-                                        style={{ width: `${Math.round(dl.progress * 100)}%` }}
-                                    />
-                                </div>
-                                {(dl.status === "downloading" || dl.status === "queued") && (
-                                    <div className="download-manager-item-cancel" onClick={() => cancelDownload(dl.id)}>
-                                        <svg width="10" height="10" viewBox="0 0 12 12">
-                                            <path d="M2 2L10 10M10 2L2 10" stroke="#9f9f9f" strokeWidth="2" strokeLinecap="round" />
-                                        </svg>
+            {panelOpen &&
+                createPortal(
+                    <div
+                        className="download-manager-panel"
+                        ref={panelRef}
+                        style={{ bottom: panelPos.bottom, left: panelPos.left }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <p className="minecraft-seven download-manager-title">Downloads</p>
+                        <div className="download-manager-list scrollbar">
+                            {downloads.length === 0 && (
+                                <p className="minecraft-seven download-manager-empty">No downloads</p>
+                            )}
+                            {downloads.map(dl => (
+                                <div key={dl.id} className="download-manager-item">
+                                    <div className="download-manager-item-info">
+                                        <p className="minecraft-seven download-manager-item-name">{dl.name}</p>
+                                        <p className="minecraft-seven download-manager-item-status">
+                                            {dl.status === "downloading"
+                                                ? `${Math.round(dl.progress * 100)}%`
+                                                : dl.status}
+                                        </p>
                                     </div>
-                                )}
-                                {(dl.status === "done" || dl.status === "error") && (
-                                    <div className="download-manager-item-cancel" onClick={() => removeDownload(dl.id)}>
-                                        <svg width="10" height="10" viewBox="0 0 12 12">
-                                            <path d="M2 2L10 10M10 2L2 10" stroke="#9f9f9f" strokeWidth="2" strokeLinecap="round" />
-                                        </svg>
+                                    <div className="download-manager-progress-track">
+                                        <div
+                                            className={`download-manager-progress-fill ${dl.status === "error" ? "download-manager-progress-error" : ""}`}
+                                            style={{ width: `${Math.round(dl.progress * 100)}%` }}
+                                        />
                                     </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>,
-                document.body
-            )}
+                                    {(dl.status === "downloading" || dl.status === "queued") && (
+                                        <div
+                                            className="download-manager-item-cancel"
+                                            onClick={() => cancelDownload(dl.id)}
+                                        >
+                                            <svg width="10" height="10" viewBox="0 0 12 12">
+                                                <path
+                                                    d="M2 2L10 10M10 2L2 10"
+                                                    stroke="#9f9f9f"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="round"
+                                                />
+                                            </svg>
+                                        </div>
+                                    )}
+                                    {(dl.status === "done" || dl.status === "error") && (
+                                        <div
+                                            className="download-manager-item-cancel"
+                                            onClick={() => removeDownload(dl.id)}
+                                        >
+                                            <svg width="10" height="10" viewBox="0 0 12 12">
+                                                <path
+                                                    d="M2 2L10 10M10 2L2 10"
+                                                    stroke="#9f9f9f"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="round"
+                                                />
+                                            </svg>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>,
+                    document.body
+                )}
         </div>
     );
 }
@@ -170,6 +203,10 @@ export default function App() {
     const location = useLocation();
     const navigate = useNavigate();
     const onboardingStarted = useRef(false);
+    // Match the actual window frame (set by main at startup). With the native
+    // frame, the custom titlebar isn't rendered, so the layout must reclaim the
+    // 64px it normally reserves for it.
+    const [nativeDecorations] = useState(() => GetLauncherConfig().native_decorations);
 
     useEffect(() => {
         setTimeout(() => useAppStore.getState().versionManager.cleanupStaleLocks(), 0);
@@ -181,10 +218,24 @@ export default function App() {
         // from this tree.
         if (onboardingStarted.current) return;
         onboardingStarted.current = true;
-        runFirstLaunchOnboarding().catch(e => {
-            console.error("[App] First-launch onboarding failed:", e);
-            useAppStore.getState().setError(`Onboarding failed: ${(e as Error).message ?? e}`);
-        });
+        runFirstLaunchOnboarding()
+            .catch(e => {
+                console.error("[App] First-launch onboarding failed:", e);
+                useAppStore.getState().setError(`Onboarding failed: ${(e as Error).message ?? e}`);
+            })
+            .finally(() => {
+                // Ask for analytics consent once onboarding is out of the way so
+                // the two first-launch popups don't fight over the screen.
+                if (useAppStore.getState().analyticsConsent !== AnalyticsConsent.Unknown) return;
+                AskAnalyticsConsent()
+                    .then(consent => {
+                        if (!consent || consent === AnalyticsConsent.Unknown) return;
+                        useAppStore.getState().setAnalyticsConsent(consent);
+                    })
+                    .catch(() => {
+                        /* consent popup dismissed */
+                    });
+            });
     }, []);
 
     useEffect(() => {
@@ -245,36 +296,31 @@ export default function App() {
                     <img src={lushCaveImage} className="app-background-image" alt="" />
                 </div>
 
-                <div className="contents_container app-contents">
+                <div className={`contents_container app-contents${nativeDecorations ? " app-contents--native" : ""}`}>
                     <div className="navbar_container app-navbar-container">
                         <div className="app-navbar">
                             <div className="app-nav-links">
                                 <Link to="/" draggable={false}>
                                     <div
                                         className={`nav-icon ${location.pathname === "/" ? "nav-icon--active" : ""}`}
+                                        data-tooltip="Launcher"
                                     >
-                                        <img
-                                            src={craftingIcon}
-                                            className="app-nav-icon-image pixelated"
-                                            alt=""
-                                        />
+                                        <img src={craftingIcon} className="app-nav-icon-image pixelated" alt="" />
                                     </div>
                                 </Link>
                                 {MOD_DISCOVERY_ENABLED && (
                                     <Link to="/mod-discovery" draggable={false}>
                                         <div
                                             className={`nav-icon ${location.pathname === "/mod-discovery" ? "nav-icon--active" : ""}`}
+                                            data-tooltip="Browse Mods"
                                         >
-                                            <img
-                                                src={earthIcon}
-                                                className="app-nav-icon-image pixelated"
-                                                alt=""
-                                            />
+                                            <img src={earthIcon} className="app-nav-icon-image pixelated" alt="" />
                                         </div>
                                     </Link>
                                 )}
                                 <div
                                     className="nav-icon nav-icon-add"
+                                    data-tooltip="New Instance"
                                     onClick={async () => {
                                         const result = await createProfileFlow();
                                         if (!result) return;
@@ -282,31 +328,44 @@ export default function App() {
                                     }}
                                 >
                                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                        <path d="M10 4V16M4 10H16" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="square" />
+                                        <path
+                                            d="M10 4V16M4 10H16"
+                                            stroke="#FFFFFF"
+                                            strokeWidth="2.5"
+                                            strokeLinecap="square"
+                                        />
                                     </svg>
                                 </div>
                             </div>
 
                             <Link to="/logs" draggable={false}>
-                                <div className={`app-logs-button${location.pathname === "/logs" ? " app-logs-button--active" : ""}`}>
+                                <div
+                                    className={`app-logs-button${location.pathname === "/logs" ? " app-logs-button--active" : ""}`}
+                                    data-tooltip="Logs"
+                                >
                                     <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
                                         <path d="M4 2h8l4 4v12H4V2z" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
                                         <path d="M12 2v4h4" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
-                                        <path d="M6.5 10h7M6.5 13h7M6.5 16h5" stroke="#FFFFFF" strokeWidth="1.2" strokeLinecap="square" />
+                                        <path
+                                            d="M6.5 10h7M6.5 13h7M6.5 16h5"
+                                            stroke="#FFFFFF"
+                                            strokeWidth="1.2"
+                                            strokeLinecap="square"
+                                        />
                                     </svg>
                                 </div>
                             </Link>
 
                             <DownloadManagerButton />
 
-                            <div className="app-settings-button" onClick={() => {
-                                Popup.useAsync<void>(props => <SettingsPopup {...props} />);
-                            }}>
-                                <img
-                                    src={settingsIcon}
-                                    className="app-settings-icon pixelated"
-                                    alt=""
-                                />
+                            <div
+                                className="app-settings-button"
+                                data-tooltip="Settings"
+                                onClick={() => {
+                                    Popup.useAsync<void>(props => <SettingsPopup {...props} />);
+                                }}
+                            >
+                                <img src={settingsIcon} className="app-settings-icon pixelated" alt="" />
                             </div>
                         </div>
                     </div>

@@ -1,5 +1,7 @@
+import { Analytics, getAnalytics } from "firebase/analytics";
 import { create } from "zustand";
 
+import { firebaseApp } from "@renderer/firebase/Firebase";
 import { GetLauncherConfig, LauncherConfig, SetLauncherConfig } from "@renderer/scripts/Launcher";
 import { GetAllMods, ValidatedMod } from "@renderer/scripts/Mods";
 import { GetProfiles, getProfileType, Profile, SetProfiles } from "@renderer/scripts/Profiles";
@@ -13,6 +15,24 @@ import { StateSetter, StateUtils } from "./StateUtils";
 import { resumePendingDownloads } from "@renderer/scripts/DownloadRecovery";
 
 const { ipcRenderer } = window.require("electron");
+
+export enum AnalyticsConsent {
+    Unknown = "Unknown",
+    Accepted = "Accepted",
+    Declined = "Declined",
+}
+
+function getInitialAnalyticsConsent(): AnalyticsConsent {
+    const stored = localStorage.getItem("analyticsConsent");
+    if (stored === AnalyticsConsent.Accepted) return AnalyticsConsent.Accepted;
+    if (stored === AnalyticsConsent.Declined) return AnalyticsConsent.Declined;
+    return AnalyticsConsent.Unknown;
+}
+
+function getAnalyticsInstanceForConsent(consent: AnalyticsConsent): Analytics | null {
+    if (consent !== AnalyticsConsent.Accepted) return null;
+    return getAnalytics(firebaseApp);
+}
 
 interface AppStore {
     allMods: ValidatedMod[];
@@ -47,6 +67,29 @@ interface AppStore {
     developerMode: boolean;
     setDeveloperMode: StateSetter<boolean>;
 
+    autoCheckUpdates: boolean;
+    setAutoCheckUpdates: StateSetter<boolean>;
+
+    confirmDelete: boolean;
+    setConfirmDelete: StateSetter<boolean>;
+
+    trustAllMods: boolean;
+    setTrustAllMods: StateSetter<boolean>;
+
+    showConsole: boolean;
+    setShowConsole: StateSetter<boolean>;
+
+    hardwareAcceleration: boolean;
+    setHardwareAcceleration: StateSetter<boolean>;
+
+    nativeDecorations: boolean;
+    setNativeDecorations: StateSetter<boolean>;
+
+    analyticsConsent: AnalyticsConsent;
+    setAnalyticsConsent: StateSetter<AnalyticsConsent>;
+
+    analyticsInstance: Analytics | null;
+
     error: string;
     setError: StateSetter<string>;
 
@@ -65,6 +108,8 @@ interface AppStore {
 }
 
 export const useAppStore = create<AppStore>((set, get) => {
+    const initialConsent = getInitialAnalyticsConsent();
+
     let platformInstance: ILauncherPlatform;
     if (process.platform === "win32") {
         platformInstance = new WindowsLauncherPlatform();
@@ -87,14 +132,24 @@ export const useAppStore = create<AppStore>((set, get) => {
         UITheme: "System",
         keepLauncherOpen: true,
         developerMode: false,
+        autoCheckUpdates: true,
+        confirmDelete: true,
+        trustAllMods: false,
+        showConsole: false,
+        hardwareAcceleration: true,
+        nativeDecorations: false,
+        analyticsConsent: initialConsent,
+        analyticsInstance: getAnalyticsInstanceForConsent(initialConsent),
         error: "",
         downloadingMods: [],
         installingForProfile: null,
 
         setAllValidMods: value =>
             set(state => ({ allValidMods: StateUtils.resolveSetStateAction(value, state.allValidMods) })),
-        setAllRuntimes: value => set(state => ({ allRuntimes: StateUtils.resolveSetStateAction(value, state.allRuntimes) })),
-        setAllProfiles: value => set(state => ({ allProfiles: StateUtils.resolveSetStateAction(value, state.allProfiles) })),
+        setAllRuntimes: value =>
+            set(state => ({ allRuntimes: StateUtils.resolveSetStateAction(value, state.allRuntimes) })),
+        setAllProfiles: value =>
+            set(state => ({ allProfiles: StateUtils.resolveSetStateAction(value, state.allProfiles) })),
         setSelectedProfileUuid: (type, uuid) =>
             set(state => ({ selectedProfileUuids: { ...state.selectedProfileUuids, [type]: uuid } })),
         setLaunchedProfileUuid: value =>
@@ -117,12 +172,55 @@ export const useAppStore = create<AppStore>((set, get) => {
             set(state => ({ developerMode: StateUtils.resolveSetStateAction(value, state.developerMode) }));
             get().saveData();
         },
+        setAutoCheckUpdates: value => {
+            set(state => ({ autoCheckUpdates: StateUtils.resolveSetStateAction(value, state.autoCheckUpdates) }));
+            get().saveData();
+        },
+        setConfirmDelete: value => {
+            set(state => ({ confirmDelete: StateUtils.resolveSetStateAction(value, state.confirmDelete) }));
+            get().saveData();
+        },
+        setTrustAllMods: value => {
+            set(state => ({ trustAllMods: StateUtils.resolveSetStateAction(value, state.trustAllMods) }));
+            get().saveData();
+        },
+        setShowConsole: value => {
+            set(state => ({ showConsole: StateUtils.resolveSetStateAction(value, state.showConsole) }));
+            get().saveData();
+        },
+        setHardwareAcceleration: value => {
+            set(state => ({
+                hardwareAcceleration: StateUtils.resolveSetStateAction(value, state.hardwareAcceleration),
+            }));
+            get().saveData();
+        },
+        setNativeDecorations: value => {
+            set(state => ({
+                nativeDecorations: StateUtils.resolveSetStateAction(value, state.nativeDecorations),
+            }));
+            get().saveData();
+        },
+        setAnalyticsConsent: value =>
+            set(state => {
+                const nextConsent = StateUtils.resolveSetStateAction(value, state.analyticsConsent);
+
+                if (nextConsent !== AnalyticsConsent.Unknown) {
+                    localStorage.setItem("analyticsConsent", nextConsent);
+                }
+
+                return {
+                    analyticsConsent: nextConsent,
+                    analyticsInstance: getAnalyticsInstanceForConsent(nextConsent),
+                };
+            }),
         setError: value => set(state => ({ error: StateUtils.resolveSetStateAction(value, state.error) })),
 
         setDownloadingMods: value =>
             set(state => ({ downloadingMods: StateUtils.resolveSetStateAction(value, state.downloadingMods) })),
         setInstallingForProfile: value =>
-            set(state => ({ installingForProfile: StateUtils.resolveSetStateAction(value, state.installingForProfile) })),
+            set(state => ({
+                installingForProfile: StateUtils.resolveSetStateAction(value, state.installingForProfile),
+            })),
 
         refreshAllMods: () => {
             const mods = GetAllMods();
@@ -143,15 +241,14 @@ export const useAppStore = create<AppStore>((set, get) => {
             const state = get();
 
             const runtimeIds = new Set(
-                state.allMods
-                    .filter(mod => mod.ok && mod.config.meta.type === "runtime")
-                    .map(mod => mod.id)
+                state.allMods.filter(mod => mod.ok && mod.config.meta.type === "runtime").map(mod => mod.id)
             );
 
             const normalizedProfiles = state.allProfiles.map(profile => {
                 const runtimeMods = profile.mods.filter(modId => runtimeIds.has(modId));
                 const normalizedRuntime = runtimeMods.length > 0 ? runtimeMods[0] : "Vanilla";
-                const normalizedIsModded = profile.is_modded || profile.mods.length > 0 || normalizedRuntime !== "Vanilla";
+                const normalizedIsModded =
+                    profile.is_modded || profile.mods.length > 0 || normalizedRuntime !== "Vanilla";
 
                 return {
                     ...profile,
@@ -178,6 +275,12 @@ export const useAppStore = create<AppStore>((set, get) => {
                 selected_profile_uuid: state.launchedProfileUuid,
                 ui_theme: state.UITheme,
                 developer_mode: state.developerMode,
+                auto_check_updates: state.autoCheckUpdates,
+                confirm_delete: state.confirmDelete,
+                trust_all_mods: state.trustAllMods,
+                show_console: state.showConsole,
+                hardware_acceleration: state.hardwareAcceleration,
+                native_decorations: state.nativeDecorations,
             };
 
             SetLauncherConfig(launcherConfig);
@@ -211,9 +314,15 @@ async function hydrateStore(): Promise<void> {
         allProfiles: profiles,
         keepLauncherOpen: config.keep_open ?? true,
         developerMode: config.developer_mode ?? false,
+        autoCheckUpdates: config.auto_check_updates ?? true,
+        confirmDelete: config.confirm_delete ?? true,
+        trustAllMods: config.trust_all_mods ?? false,
+        showConsole: config.show_console ?? false,
+        hardwareAcceleration: config.hardware_acceleration ?? true,
+        nativeDecorations: config.native_decorations ?? false,
         selectedProfileUuids,
         launchedProfileUuid: config.selected_profile_uuid ?? null,
-        UITheme: config.ui_theme ?? "Light"
+        UITheme: config.ui_theme ?? "Light",
     });
 
     ipcRenderer.send("WINDOW_UI_THEME", useAppStore.getState().UITheme);
@@ -225,10 +334,20 @@ export function InitializeAppState(): void {
     ipcRenderer.removeAllListeners("APP_STATE_INIT");
 
     ipcRenderer.on("APP_STATE_INIT", async () => {
-        await hydrateStore();
-        resumePendingDownloads();
+        try {
+            await hydrateStore();
+            resumePendingDownloads();
 
-        // Defer non-critical work until after the UI is interactive
+            // Defer non-critical work until after the UI is interactive
+        } finally {
+            // Tell the main process the renderer has finished hydrating and is
+            // painting real content, so it can reveal the window. This is the
+            // primary show trigger — it runs from JS and so is independent of
+            // the GPU/compositor "ready-to-show" event (which can never fire on
+            // some Linux/hardware-accel setups, leaving the window hidden).
+            // Sent from `finally` so a hydration failure still reveals the UI.
+            requestAnimationFrame(() => ipcRenderer.send("RENDERER_READY"));
+        }
     });
 
     ipcRenderer.send("APP_STATE_INIT_REQUEST");

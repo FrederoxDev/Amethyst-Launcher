@@ -37,7 +37,9 @@ export default function OnboardingChoicePopup({ submit, type, roamingPath }: Pro
             <div style={{ display: "flex", flexDirection: "column" }}>
                 <p className="minecraft-seven text-input-label">Found data at</p>
                 <div className="new-instance-version-field" style={{ cursor: "default" }}>
-                    <span className="minecraft-seven" style={{ wordBreak: "break-all" }}>{roamingPath}</span>
+                    <span className="minecraft-seven" style={{ wordBreak: "break-all" }}>
+                        {roamingPath}
+                    </span>
                 </div>
             </div>
             <p className="minecraft-seven" style={{ fontSize: "14px", lineHeight: 1.5 }}>

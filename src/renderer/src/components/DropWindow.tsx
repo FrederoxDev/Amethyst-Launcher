@@ -110,10 +110,14 @@ export function DropWindow() {
         // IMPORT FOLDER
         async function ImportFolder(folder_path: string) {
             try {
-                await ProgressBar.useAsync(async (state) => {
-                    state.setMessage(`Importing ${path.basename(folder_path)}...`);
-                    await CopyRecursive(folder_path, paths.modsPath);
-                }, true, FULL_PROGRESS_RESET_OPTIONS);
+                await ProgressBar.useAsync(
+                    async state => {
+                        state.setMessage(`Importing ${path.basename(folder_path)}...`);
+                        await CopyRecursive(folder_path, paths.modsPath);
+                    },
+                    true,
+                    FULL_PROGRESS_RESET_OPTIONS
+                );
                 refreshAllMods();
             } catch (error) {
                 setError((error as Error).message);
@@ -135,14 +139,10 @@ export function DropWindow() {
     }, [setError, refreshAllMods]);
 
     return (
-        <div
-            className={`drop-window ${hovered ? "drop-window-visible" : "drop-window-hidden"}`}
-        >
+        <div className={`drop-window ${hovered ? "drop-window-visible" : "drop-window-hidden"}`}>
             <div className="drop-window-backdrop" />
 
-            <h1 className="minecraft-seven drop-window-text">
-                Drop mod .zip or folder to import
-            </h1>
+            <h1 className="minecraft-seven drop-window-text">Drop mod .zip or folder to import</h1>
         </div>
     );
 }

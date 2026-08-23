@@ -95,8 +95,10 @@ void DestroyConsole()
 
 void HideConsole()
 {
-    // HWND consoleWindow = GetConsoleWindow();
-    // ShowWindow(consoleWindow, SW_HIDE);
+    HWND consoleWindow = GetConsoleWindow();
+    if (consoleWindow != NULL) {
+        ShowWindow(consoleWindow, SW_HIDE);
+    }
 }
 
 fs::path GetLegacyComMojangPath()
@@ -144,6 +146,14 @@ void Proxy()
         std::cerr << red << "[Amethyst-Loader] Failed to parse launcher_config.json: " << e.what() << "\n" << reset;
         ResumeMinecraftThread();
         return;
+    }
+
+    // Whether the user wants the Amethyst console window for modded launches.
+    // Default to true when the key is absent so older configs keep their
+    // current behavior.
+    bool showConsole = true;
+    if (launcherConfig.contains("show_console") && launcherConfig["show_console"].is_boolean()) {
+        showConsole = launcherConfig["show_console"].get<bool>();
     }
 
     std::string runtimeName;
@@ -267,6 +277,13 @@ void Proxy()
         std::println("{}[  proxy] [AmethystProxy] The proxy expects function 'void Init(DWORD dMcThreadID, HANDLE hMcThreadHandle)' to be exported and was unable to find it.{}", red, reset);
         ResumeMinecraftThread();
         return ShutdownWait();
+    }
+
+    // All setup that might need to surface errors (and the ShutdownWait prompt)
+    // has succeeded by this point, so it's safe to hide the console now if the
+    // user disabled it. The runtime's own logs will go to the hidden console.
+    if (!showConsole) {
+        HideConsole();
     }
 
     // MC is still suspended here. The runtime is responsible for resuming

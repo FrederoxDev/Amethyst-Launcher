@@ -1,47 +1,64 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 import { MinecraftRadialButtonPanel } from "@renderer/components/MinecraftRadialButtonPanel";
 import { MinecraftToggle } from "@renderer/components/MinecraftToggle";
-import { ReadOnlyTextBox } from "@renderer/components/ReadOnlyTextBox";
 
-import { useAppStore } from "@renderer/states/AppStore";
-
-const fs = window.require("fs") as typeof import("fs");
+import { AnalyticsConsent, useAppStore } from "@renderer/states/AppStore";
+import { AskAnalyticsConsent } from "@renderer/components/AnalyticsConsentPanel";
 
 export function GeneralSettingsTab() {
     const keepLauncherOpen = useAppStore(state => state.keepLauncherOpen);
     const setKeepLauncherOpen = useAppStore(state => state.setKeepLauncherOpen);
     const developerMode = useAppStore(state => state.developerMode);
     const setDeveloperMode = useAppStore(state => state.setDeveloperMode);
-    const allProfiles = useAppStore(state => state.allProfiles);
-    const selectedProfileUuids = useAppStore(state => state.selectedProfileUuids);
     const UITheme = useAppStore(state => state.UITheme);
     const setUITheme = useAppStore(state => state.setUITheme);
-    const platform = useAppStore(state => state.platform);
-    const paths = platform.getPaths();
-    const [ 
-        launcherCfg,
-        setLauncherCfg
-    ] = useState<string>("");
+    const analyticsConsent = useAppStore(state => state.analyticsConsent);
+    const setAnalyticsConsent = useAppStore(state => state.setAnalyticsConsent);
+    const autoCheckUpdates = useAppStore(state => state.autoCheckUpdates);
+    const setAutoCheckUpdates = useAppStore(state => state.setAutoCheckUpdates);
+    const confirmDelete = useAppStore(state => state.confirmDelete);
+    const setConfirmDelete = useAppStore(state => state.setConfirmDelete);
+    const trustAllMods = useAppStore(state => state.trustAllMods);
+    const setTrustAllMods = useAppStore(state => state.setTrustAllMods);
+    const showConsole = useAppStore(state => state.showConsole);
+    const setShowConsole = useAppStore(state => state.setShowConsole);
+    const hardwareAcceleration = useAppStore(state => state.hardwareAcceleration);
+    const setHardwareAcceleration = useAppStore(state => state.setHardwareAcceleration);
+    const nativeDecorations = useAppStore(state => state.nativeDecorations);
+    const setNativeDecorations = useAppStore(state => state.setNativeDecorations);
 
-    const updateCfgText = () => {
-        if (!fs.existsSync(paths.launcherConfigPath)) {
-            setLauncherCfg("Launcher config does not exist...");
-            return;
-        }
-
-        const data = fs.readFileSync(paths.launcherConfigPath, "utf-8");
-        setLauncherCfg(data);
-    };
-
-    useEffect(() => {
-        const timer = setTimeout(updateCfgText, 0);
-        return () => clearTimeout(timer);
-    }, [allProfiles, selectedProfileUuids, keepLauncherOpen, developerMode, UITheme]);
-    
     return (
         <div className="settings-page settings-scroll-hidden">
             <div className="settings-section">
+                <div className="settings-row">
+                    <div>
+                        <p className="minecraft-seven settings-title">Analytics Consent</p>
+                        <p className="minecraft-seven settings-subtitle">
+                            Send anonymous usage data to help improve the launcher.
+                        </p>
+                    </div>
+                    <div className="settings-toggle-wrap">
+                        <MinecraftToggle
+                            isChecked={analyticsConsent === AnalyticsConsent.Accepted}
+                            setIsChecked={isChecked => {
+                                if (!isChecked) {
+                                    setAnalyticsConsent(AnalyticsConsent.Declined);
+                                    return;
+                                }
+
+                                AskAnalyticsConsent()
+                                    .then(consent => {
+                                        if (!consent || consent === AnalyticsConsent.Unknown) return;
+                                        setAnalyticsConsent(consent);
+                                    })
+                                    .catch(() => {
+                                        /* dismissed */
+                                    });
+                            }}
+                        />
+                    </div>
+                </div>
                 <div className="settings-row">
                     <div>
                         <p className="minecraft-seven settings-title">Keep launcher open</p>
@@ -55,13 +72,35 @@ export function GeneralSettingsTab() {
                 </div>
                 <div className="settings-row">
                     <div>
-                        <p className="minecraft-seven settings-title">Developer mode</p>
+                        <p className="minecraft-seven settings-title">Check for updates on startup</p>
                         <p className="minecraft-seven settings-subtitle">
-                            Enables hot-reloading and prompting to attach a debugger.
+                            Automatically check for launcher updates when the app starts.
                         </p>
                     </div>
                     <div className="settings-toggle-wrap">
-                        <MinecraftToggle isChecked={developerMode} setIsChecked={setDeveloperMode} />
+                        <MinecraftToggle isChecked={autoCheckUpdates} setIsChecked={setAutoCheckUpdates} />
+                    </div>
+                </div>
+                <div className="settings-row">
+                    <div>
+                        <p className="minecraft-seven settings-title">Confirm before deleting</p>
+                        <p className="minecraft-seven settings-subtitle">
+                            Show a confirmation dialog before deleting profiles or versions.
+                        </p>
+                    </div>
+                    <div className="settings-toggle-wrap">
+                        <MinecraftToggle isChecked={confirmDelete} setIsChecked={setConfirmDelete} />
+                    </div>
+                </div>
+                <div className="settings-row">
+                    <div>
+                        <p className="minecraft-seven settings-title">Trust all community mods</p>
+                        <p className="minecraft-seven settings-subtitle">
+                            Skip the safety warning when installing mods not published by the Amethyst team.
+                        </p>
+                    </div>
+                    <div className="settings-toggle-wrap">
+                        <MinecraftToggle isChecked={trustAllMods} setIsChecked={setTrustAllMods} />
                     </div>
                 </div>
             </div>
@@ -83,14 +122,56 @@ export function GeneralSettingsTab() {
                 />
             </div>
 
-            <div className="minecraft-seven settings-debug">
-                <p className="settings-debug-title">Debug Info</p>
-                <p>Running Platform: {platform.getPlatformFullName()}</p>
-                <p>Amethyst Folder: {paths.amethystPath}</p>
-            </div>
+            <div className="popup-divider" />
 
-            <div className="settings-regular">
-                <ReadOnlyTextBox text={launcherCfg} label="Launcher Config" />
+            <div className="settings-section">
+                <div className="settings-row">
+                    <div>
+                        <p className="minecraft-seven settings-title">Developer mode</p>
+                        <p className="minecraft-seven settings-subtitle">
+                            Enables hot-reloading and prompting to attach a debugger.
+                        </p>
+                    </div>
+                    <div className="settings-toggle-wrap">
+                        <MinecraftToggle isChecked={developerMode} setIsChecked={setDeveloperMode} />
+                    </div>
+                </div>
+                <div className="settings-row">
+                    <div>
+                        <p className="minecraft-seven settings-title">Show console for modded instances</p>
+                        <p className="minecraft-seven settings-subtitle">
+                            Open the Amethyst console window when launching a modded profile.
+                        </p>
+                    </div>
+                    <div className="settings-toggle-wrap">
+                        <MinecraftToggle isChecked={showConsole} setIsChecked={setShowConsole} />
+                    </div>
+                </div>
+                <div className="settings-row">
+                    <div>
+                        <p className="minecraft-seven settings-title">Native window decorations</p>
+                        <p className="minecraft-seven settings-subtitle">
+                            Use your operating system's window frame and title bar instead of the custom
+                            Amethyst one. Changes apply after restarting the launcher.
+                        </p>
+                    </div>
+                    <div className="settings-toggle-wrap">
+                        <MinecraftToggle isChecked={nativeDecorations} setIsChecked={setNativeDecorations} />
+                    </div>
+                </div>
+                <div className="settings-row">
+                    <div>
+                        <p className="minecraft-seven settings-title">Hardware acceleration</p>
+                        <p className="minecraft-seven settings-subtitle">
+                            Uses your GPU to render the launcher. Leave this on unless you run into visual glitches or
+                            crashes — disabling it may help on some devices. Changes apply after restarting the
+                            launcher.
+                        </p>
+                    </div>
+                    <div className="settings-toggle-wrap">
+                        <MinecraftToggle isChecked={hardwareAcceleration} setIsChecked={setHardwareAcceleration} />
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -109,15 +190,15 @@ export function SettingsPage() {
     }
 
     return (
-        <div style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-        }}>
+        <div
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "20px",
+            }}
+        >
             <MinecraftRadialButtonPanel
-                elements={[
-                    { text: "General", value: "general_tab" }
-                ]}
+                elements={[{ text: "General", value: "general_tab" }]}
                 default_selected_value={"general_tab"}
                 onChange={value => {
                     setTab(value);

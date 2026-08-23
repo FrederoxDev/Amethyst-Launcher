@@ -138,10 +138,18 @@ async function verifyCopy(src: string, dest: string): Promise<void> {
 
     if (missingDirs.length > 0 || missingFiles.length > 0 || sizeMismatches.length > 0) {
         const details = [
-            missingDirs.length > 0 ? `missing dirs: ${missingDirs.slice(0, 5).join(", ")}${missingDirs.length > 5 ? "..." : ""}` : null,
-            missingFiles.length > 0 ? `missing files: ${missingFiles.slice(0, 5).join(", ")}${missingFiles.length > 5 ? "..." : ""}` : null,
-            sizeMismatches.length > 0 ? `size mismatches: ${sizeMismatches.slice(0, 5).join(", ")}${sizeMismatches.length > 5 ? "..." : ""}` : null
-        ].filter(Boolean).join("; ");
+            missingDirs.length > 0
+                ? `missing dirs: ${missingDirs.slice(0, 5).join(", ")}${missingDirs.length > 5 ? "..." : ""}`
+                : null,
+            missingFiles.length > 0
+                ? `missing files: ${missingFiles.slice(0, 5).join(", ")}${missingFiles.length > 5 ? "..." : ""}`
+                : null,
+            sizeMismatches.length > 0
+                ? `size mismatches: ${sizeMismatches.slice(0, 5).join(", ")}${sizeMismatches.length > 5 ? "..." : ""}`
+                : null,
+        ]
+            .filter(Boolean)
+            .join("; ");
         throw new Error(`Migration copy verification failed — ${details}. Source has not been deleted.`);
     }
 }
@@ -219,9 +227,7 @@ export async function ensureProfileJunction(
 
     switch (state.kind) {
         case "file":
-            throw new Error(
-                `"${roamingPath}" exists as a file, not a folder. Remove or rename it before launching.`
-            );
+            throw new Error(`"${roamingPath}" exists as a file, not a folder. Remove or rename it before launching.`);
 
         case "missing": {
             status("Creating profile data folder...");
@@ -247,7 +253,11 @@ export async function ensureProfileJunction(
                 createJunction(roamingPath, targetPath);
             } catch (e) {
                 // Try to restore the previous junction so we don't lose the link.
-                try { fs.symlinkSync(state.target, roamingPath, "junction"); } catch { /* best-effort */ }
+                try {
+                    fs.symlinkSync(state.target, roamingPath, "junction");
+                } catch {
+                    /* best-effort */
+                }
                 removeEmptyDirsUpTo(targetPath, profileDataRoot);
                 throw e;
             }
@@ -259,12 +269,20 @@ export async function ensureProfileJunction(
             if (state.empty) {
                 // No user data to lose — just replace with a junction.
                 status("Linking data folder to this profile...");
-                try { fs.rmdirSync(roamingPath); } catch { /* ignore */ }
+                try {
+                    fs.rmdirSync(roamingPath);
+                } catch {
+                    /* ignore */
+                }
                 try {
                     createJunction(roamingPath, targetPath);
                 } catch (e) {
                     // Recreate the empty roaming folder so the system is back where it was.
-                    try { fs.mkdirSync(roamingPath, { recursive: true }); } catch { /* best-effort */ }
+                    try {
+                        fs.mkdirSync(roamingPath, { recursive: true });
+                    } catch {
+                        /* best-effort */
+                    }
                     removeEmptyDirsUpTo(targetPath, profileDataRoot);
                     throw e;
                 }
@@ -279,7 +297,7 @@ export async function ensureProfileJunction(
             // either way, refuse to touch it.
             throw new Error(
                 `"${roamingPath}" contains data that isn't associated with any profile. ` +
-                `Move or remove the folder manually, then restart the launcher.`
+                    `Move or remove the folder manually, then restart the launcher.`
             );
         }
     }

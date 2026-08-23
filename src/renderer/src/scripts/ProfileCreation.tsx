@@ -41,18 +41,21 @@ export async function createProfileFlow(): Promise<CreateProfileResult | null> {
         if (versionResult.importData) {
             const data = versionResult.importData;
             const versionManager = useAppStore.getState().versionManager;
-            versionManager.installVersion({
-                kind: "imported",
-                name: data.name,
-                version: SemVersion.fromString(data.version),
-                type: data.type.toLowerCase() as MinecraftVersionType,
-                uuid: data.uuid,
-                file: data.file,
-            }).then(() => {
-                console.log("Imported version installed successfully!");
-            }).catch(e => {
-                console.error("Failed to install imported version:", e);
-            });
+            versionManager
+                .installVersion({
+                    kind: "imported",
+                    name: data.name,
+                    version: SemVersion.fromString(data.version),
+                    type: data.type.toLowerCase() as MinecraftVersionType,
+                    uuid: data.uuid,
+                    file: data.file,
+                })
+                .then(() => {
+                    console.log("Imported version installed successfully!");
+                })
+                .catch(e => {
+                    console.error("Failed to install imported version:", e);
+                });
         }
 
         const isModded = instanceResult.runtime === "modded";

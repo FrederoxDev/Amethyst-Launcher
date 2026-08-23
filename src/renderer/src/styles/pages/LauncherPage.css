@@ -10,9 +10,9 @@
     display: flex;
     flex-direction: row;
     gap: 8px;
-    background-color: #CA3636;
+    background-color: #ca3636;
     width: 100%;
-    border: 3px solid #CF4A4A;
+    border: 3px solid #cf4a4a;
     justify-content: space-between;
     align-items: center;
     flex-shrink: 0;
@@ -31,7 +31,7 @@
 }
 
 .launcher-error-text {
-    color: #FFFFFF;
+    color: #ffffff;
     font-size: 16px;
 }
 
@@ -63,11 +63,13 @@
 }
 
 .launcher-profile-card {
-    background-color: #48494A;
-    border: 3px solid #1E1E1F;
+    background-color: #48494a;
+    border: 3px solid #1e1e1f;
     padding: 12px;
     cursor: pointer;
-    transition: border-color 0.1s, transform 0.1s ease;
+    transition:
+        border-color 0.1s,
+        transform 0.1s ease;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -79,7 +81,7 @@
 }
 
 .launcher-profile-card.selected {
-    border-color: #FFFFFF;
+    border-color: #ffffff;
 }
 
 .launcher-profile-card:active:not(:has(.launcher-profile-card-dots:active)) {
@@ -99,7 +101,6 @@
 .launcher-profile-card-wrapper.dragging {
     opacity: 0;
 }
-
 
 .launcher-create-card {
     flex-direction: column;
@@ -147,8 +148,8 @@
     opacity: 0;
     pointer-events: none;
     background-color: #313233;
-    border: 2px solid #1E1E1F;
-    color: #F3C642;
+    border: 2px solid #1e1e1f;
+    color: #f3c642;
     font-size: 13px;
     line-height: 1.3;
     padding: 8px 10px;
@@ -156,7 +157,9 @@
     max-width: 280px;
     white-space: normal;
     z-index: 20;
-    transition: opacity 0.12s ease, transform 0.12s ease;
+    transition:
+        opacity 0.12s ease,
+        transform 0.12s ease;
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
 }
 
@@ -167,7 +170,7 @@
     bottom: 100%;
     border-width: 0 5px 6px 5px;
     border-style: solid;
-    border-color: transparent transparent #1E1E1F transparent;
+    border-color: transparent transparent #1e1e1f transparent;
 }
 
 .launcher-profile-card-play-wrap:hover .launcher-profile-card-play-tooltip,
@@ -205,7 +208,7 @@
 .launcher-profile-card-dropdown {
     position: fixed;
     background-color: #313233;
-    border: 3px solid #1E1E1F;
+    border: 3px solid #1e1e1f;
     z-index: 10;
     min-width: 160px;
     transform-origin: top right;
@@ -216,7 +219,7 @@
 .launcher-profile-card-dropdown-item {
     padding: 6px 10px;
     cursor: pointer;
-    color: #FFFFFF;
+    color: #ffffff;
     font-size: 15px;
     white-space: nowrap;
     display: flex;
@@ -232,15 +235,15 @@
 }
 
 .launcher-profile-card-dropdown-item:hover {
-    background-color: #48494A;
+    background-color: #48494a;
 }
 
 .launcher-profile-card-dropdown-item--danger {
-    color: #FF6B6B;
+    color: #ff6b6b;
 }
 
 .launcher-profile-card-name {
-    color: #FFFFFF;
+    color: #ffffff;
     font-size: 15px;
     margin: 0;
     white-space: nowrap;
@@ -275,8 +278,8 @@
     opacity: 0;
     pointer-events: none;
     background-color: #313233;
-    border: 2px solid #1E1E1F;
-    color: #F3C642;
+    border: 2px solid #1e1e1f;
+    color: #f3c642;
     font-size: 13px;
     line-height: 1.3;
     padding: 8px 10px;
@@ -284,7 +287,9 @@
     max-width: 280px;
     white-space: normal;
     z-index: 20;
-    transition: opacity 0.12s ease, transform 0.12s ease;
+    transition:
+        opacity 0.12s ease,
+        transform 0.12s ease;
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
 }
 
@@ -296,7 +301,7 @@
     transform: translateX(-50%);
     border-width: 0 5px 6px 5px;
     border-style: solid;
-    border-color: transparent transparent #1E1E1F transparent;
+    border-color: transparent transparent #1e1e1f transparent;
 }
 
 .launcher-profile-card-warning-inline:hover .launcher-profile-card-warning-tooltip,
@@ -344,4 +349,3 @@
 .launcher-drag-overlay > .launcher-profile-card {
     flex: 1;
 }
-

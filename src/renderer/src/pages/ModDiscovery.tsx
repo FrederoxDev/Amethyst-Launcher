@@ -1,12 +1,15 @@
 import { collection, doc, getDocs, increment, updateDoc } from "firebase/firestore";
 const fs = window.require("fs") as typeof import("fs");
 const os = window.require("os") as typeof import("os");
-import { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import vscDarkPlus from "react-syntax-highlighter/dist/esm/styles/prism/vsc-dark-plus";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 
 import { MainPanelSection, PanelIndent } from "@renderer/components/MainPanel";
+import { ModVideoPlayer } from "@renderer/components/ModVideoPlayer";
 import { MinecraftButton } from "@renderer/components/MinecraftButton";
 import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
 import { MinecraftRadialButtonPanel } from "@renderer/components/MinecraftRadialButtonPanel";
@@ -21,7 +24,6 @@ import { db } from "@renderer/firebase/Firebase";
 import { useDownloadStore, addPendingDownload, removePendingDownload } from "@renderer/states/DownloadStore";
 
 import { Extractor } from "@renderer/scripts/backend/Extractor";
-
 
 const { shell } = window.require("electron");
 const path = window.require("path");
@@ -51,7 +53,9 @@ function useCachedIcon(url: string): string {
             })
             .catch(() => {});
 
-        return () => { revoked = true; };
+        return () => {
+            revoked = true;
+        };
     }, [url]);
 
     return src;
@@ -86,10 +90,16 @@ function ModCard({ mod, onOpenDetails }: { mod: ModDiscoveryData; onOpenDetails:
     const [imgError, setImgError] = useState(false);
     return (
         <div className="mod-card" onClick={onOpenDetails}>
-            {imgError
-                ? <div className="mod-card-icon mod-card-icon-placeholder" />
-                : <img src={bannerSrc} alt={`${mod.name} banner`} className="mod-card-icon" onError={() => setImgError(true)} />
-            }
+            {imgError ? (
+                <div className="mod-card-icon mod-card-icon-placeholder" />
+            ) : (
+                <img
+                    src={bannerSrc}
+                    alt={`${mod.name} banner`}
+                    className="mod-card-icon"
+                    onError={() => setImgError(true)}
+                />
+            )}
             <div className="mod-card-body">
                 <h3 className="minecraft-seven mod-card-title">{mod.name}</h3>
                 <p className="minecraft-seven mod-card-authors">{mod.authors.join(", ")}</p>
@@ -97,7 +107,16 @@ function ModCard({ mod, onOpenDetails }: { mod: ModDiscoveryData; onOpenDetails:
             </div>
             <div className="mod-card-footer">
                 <div className="mod-card-installs">
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#a0a0a0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        stroke="#a0a0a0"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
                         <path d="M8 2v8M4.5 7.5L8 11l3.5-3.5M2 14h12" />
                     </svg>
                     <span className="minecraft-seven">{mod.downloads}</span>
@@ -107,8 +126,39 @@ function ModCard({ mod, onOpenDetails }: { mod: ModDiscoveryData; onOpenDetails:
     );
 }
 
+export function resolveGithubAsset(src: string, githubUrl: string): string {
+    if (src.startsWith("http://") || src.startsWith("https://")) return src;
+    const rawBase =
+        githubUrl.replace("https://github.com/", "https://raw.githubusercontent.com/").replace(/\/$/, "") + "/main/";
+    return rawBase + src.replace(/^\.\//, "");
+}
+
 export function ModReadme({ githubUrl }: { githubUrl: string }) {
-    const [readme, setReadme] = useState<string>(() => readmeCache.get(githubUrl) ?? "Loading...");
+    const [readme, setReadme] = useState<string>(() => readmeCache.get(githubUrl) ?? "");
+    const [loading, setLoading] = useState(!readmeCache.has(githubUrl));
+
+    const MarkdownImage = useMemo(
+        () =>
+            function MarkdownImage({ src, alt, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) {
+                const [loaded, setLoaded] = useState(false);
+                if (!src) return null;
+                return (
+                    <>
+                        {!loaded && <div className="mod-md-img-skeleton" />}
+                        <img
+                            className="mod-md-img"
+                            style={loaded ? undefined : { display: "none" }}
+                            draggable
+                            {...props}
+                            src={resolveGithubAsset(src, githubUrl)}
+                            alt={alt}
+                            onLoad={() => setLoaded(true)}
+                        />
+                    </>
+                );
+            },
+        [githubUrl]
+    );
 
     useEffect(() => {
         if (readmeCache.has(githubUrl)) return;
@@ -128,6 +178,8 @@ export function ModReadme({ githubUrl }: { githubUrl: string }) {
                 const fallback = "README could not be loaded.";
                 readmeCache.set(githubUrl, fallback);
                 setReadme(fallback);
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -136,69 +188,92 @@ export function ModReadme({ githubUrl }: { githubUrl: string }) {
 
     return (
         <PanelIndent>
-            <div className="mod-readme-container">
-                <ReactMarkdown
-                    components={{
-                        h1: ({ node, ...props }) => (
-                            <h1 className="minecraft-seven mod-md-h1" {...props} />
-                        ),
-                        h2: ({ node, ...props }) => (
-                            <h2 className="minecraft-seven mod-md-h2" {...props} />
-                        ),
-                        h3: ({ node, ...props }) => (
-                            <h3 className="minecraft-seven mod-md-h3" {...props} />
-                        ),
-                        p: ({ node, ...props }) => (
-                            <p className="minecraft-seven mod-md-p" {...props} />
-                        ),
-                        li: ({ node, ...props }) => (
-                            <li className="minecraft-seven mod-md-li" {...props} />
-                        ),
-                        ol: ({ node, ...props }) => <ol className="mod-md-ol" {...props} />,
-                        ul: ({ node, ...props }) => <ul className="mod-md-ul" {...props} />,
-                        code: ({ node, ...props }) => (
-                            <code className="minecraft-seven mod-md-code" {...props} />
-                        ),
-                        pre: ({ node, ...props }) => (
-                            <pre className="mod-md-pre" {...props} />
-                        ),
-                        blockquote: ({ node, ...props }) => (
-                            <blockquote className="mod-md-blockquote" {...props} />
-                        ),
-                        table: ({ node, ...props }) => (
-                            <table className="minecraft-seven mod-md-table" {...props} />
-                        ),
-                        thead: ({ node, ...props }) => <thead className="mod-md-thead" {...props} />,
-                        tr: ({ node, ...props }) => <tr className="mod-md-tr" {...props} />,
-                        th: ({ node, ...props }) => (
-                            <th className="minecraft-seven mod-md-th" {...props} />
-                        ),
-                        td: ({ node, ...props }) => (
-                            <td className="minecraft-seven mod-md-td" {...props} />
-                        ),
-                        img: ({ node, ...props }) => {
-                            if (props.src) return <img className="mod-md-img" {...props} />;
-                            return null; // ignore all other HTML
-                        },
-                        a: ({ node, ...props }) => (
-                            <a
-                                {...props}
-                                className="minecraft-seven mod-md-link"
-                                onClick={e => {
-                                    e.preventDefault();
-                                    if (props.href) {
-                                        shell.openExternal(props.href);
-                                    }
-                                }}
-                            />
-                        ),
-                    }}
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw]}
-                >
-                    {readme}
-                </ReactMarkdown>
-            </div>
+            {loading ? (
+                <div className="mod-readme-skeleton">
+                    <div className="mod-readme-skeleton-heading" style={{ width: "45%" }} />
+                    <div className="mod-readme-skeleton-line" style={{ width: "95%" }} />
+                    <div className="mod-readme-skeleton-line" style={{ width: "88%" }} />
+                    <div className="mod-readme-skeleton-line" style={{ width: "92%" }} />
+                    <div className="mod-readme-skeleton-line" style={{ width: "65%" }} />
+                    <div className="mod-readme-skeleton-block" />
+                    <div className="mod-readme-skeleton-heading" style={{ width: "30%" }} />
+                    <div className="mod-readme-skeleton-line" style={{ width: "90%" }} />
+                    <div className="mod-readme-skeleton-line" style={{ width: "80%" }} />
+                    <div className="mod-readme-skeleton-line" style={{ width: "55%" }} />
+                </div>
+            ) : (
+                <div className="mod-readme-container">
+                    <ReactMarkdown
+                        components={{
+                            h1: ({ node, ...props }) => <h1 className="minecraft-seven mod-md-h1" {...props} />,
+                            h2: ({ node, ...props }) => <h2 className="minecraft-seven mod-md-h2" {...props} />,
+                            h3: ({ node, ...props }) => <h3 className="minecraft-seven mod-md-h3" {...props} />,
+                            h4: ({ node, ...props }) => <h4 className="minecraft-seven mod-md-h4" {...props} />,
+                            h5: ({ node, ...props }) => <h5 className="minecraft-seven mod-md-h5" {...props} />,
+                            p: ({ node, ...props }) => <p className="minecraft-seven mod-md-p" {...props} />,
+                            li: ({ node, ...props }) => <li className="minecraft-seven mod-md-li" {...props} />,
+                            ol: ({ node, ...props }) => <ol className="mod-md-ol" {...props} />,
+                            ul: ({ node, ...props }) => <ul className="mod-md-ul" {...props} />,
+                            code: ({ node, ...props }) => <code className="minecraft-seven mod-md-code" {...props} />,
+                            pre: ({ children }) => {
+                                type CodeProps = { className?: string; children?: React.ReactNode };
+                                const codeEl = (
+                                    Array.isArray(children) ? children[0] : children
+                                ) as React.ReactElement<CodeProps>;
+                                const lang = /language-(\w+)/.exec(codeEl?.props?.className ?? "")?.[1];
+                                if (lang) {
+                                    return (
+                                        <SyntaxHighlighter
+                                            language={lang}
+                                            style={{ ...vscDarkPlus, italic: { fontStyle: "normal" } }}
+                                            customStyle={{
+                                                margin: "8px 0",
+                                                fontSize: "13px",
+                                                borderRadius: "4px",
+                                                fontStyle: "normal",
+                                            }}
+                                        >
+                                            {String(codeEl.props.children ?? "").replace(/\n$/, "")}
+                                        </SyntaxHighlighter>
+                                    );
+                                }
+                                return <pre className="mod-md-pre">{children}</pre>;
+                            },
+                            blockquote: ({ node, ...props }) => <blockquote className="mod-md-blockquote" {...props} />,
+                            table: ({ node, ...props }) => <table className="minecraft-seven mod-md-table" {...props} />,
+                            thead: ({ node, ...props }) => <thead className="mod-md-thead" {...props} />,
+                            tr: ({ node, ...props }) => <tr className="mod-md-tr" {...props} />,
+                            th: ({ node, ...props }) => <th className="minecraft-seven mod-md-th" {...props} />,
+                            td: ({ node, ...props }) => <td className="minecraft-seven mod-md-td" {...props} />,
+                            img: MarkdownImage,
+                            video: props => <ModVideoPlayer {...props} />,
+                            source: ({ src, type }: { src?: string; type?: string }) => (
+                                <source type={type} src={src ? resolveGithubAsset(src, githubUrl) : undefined} />
+                            ),
+                            hr: ({ ...props }) => <hr className="mod-md-hr" {...props} />,
+                            strong: ({ ...props }) => <strong className="minecraft-seven mod-md-strong" {...props} />,
+                            em: ({ ...props }) => <em className="minecraft-seven mod-md-em" {...props} />,
+                            del: ({ ...props }) => <del className="minecraft-seven mod-md-del" {...props} />,
+                            a: ({ node, ...props }) => (
+                                <a
+                                    {...props}
+                                    className="minecraft-seven mod-md-link"
+                                    onClick={e => {
+                                        e.preventDefault();
+                                        if (props.href) {
+                                            shell.openExternal(props.href);
+                                        }
+                                    }}
+                                />
+                            ),
+                        }}
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                    >
+                        {readme}
+                    </ReactMarkdown>
+                </div>
+            )}
         </PanelIndent>
     );
 }
@@ -209,9 +284,11 @@ interface GithubRelease {
     tag_name: string;
     html_url: string;
     published_at: string;
+    prerelease: boolean;
     assets: {
         id: number;
         name: string;
+        size: number;
         browser_download_url: string;
     }[];
 }
@@ -226,6 +303,9 @@ interface ParsedGithubRelease {
     name: string;
     id: number;
     published_at: string;
+    prerelease: boolean;
+    size: number;
+    target_commitish: string;
 
     download_name: string;
     download_url: string;
@@ -342,6 +422,9 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                         id: release.id,
                         name: release.name,
                         published_at: release.published_at,
+                        prerelease: release.prerelease,
+                        size: asset.size,
+                        target_commitish: release.tag_name,
                         download_name: asset.name.replace(".zip", ""),
                         download_url: asset.browser_download_url,
                     });
@@ -359,8 +442,18 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
         fetchReleases();
     }, [mod.githubUrl]);
 
+    /** Formats a byte count as human-readable text (e.g. "1.5 MB"). */
+    const formatBytes = (bytes: number, decimals = 2): string => {
+        if (!+bytes) return "0 Bytes";
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+    };
+
     const handleInstallClick = (release: ParsedGithubRelease, isTrusted: boolean) => {
-        if (isTrusted) {
+        if (isTrusted || useAppStore.getState().trustAllMods) {
             // proceed directly
             installMod(release);
             onClose?.();
@@ -387,10 +480,19 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                         onClose={() => submit(null)}
                         size="md"
                         bodyClassName="version-picker-list scrollbar"
-                        footer={<MinecraftButton text="New Profile" style={{ "--mc-button-container-w": "140px" }} onClick={() => submit(-1)} />}
+                        footer={
+                            <MinecraftButton
+                                text="New Profile"
+                                style={{ "--mc-button-container-w": "140px" }}
+                                onClick={() => submit(-1)}
+                            />
+                        }
                     >
                         {profiles.length === 0 && (
-                            <p className="minecraft-seven" style={{ color: "#9f9f9f", padding: "12px", textAlign: "center" }}>
+                            <p
+                                className="minecraft-seven"
+                                style={{ color: "#9f9f9f", padding: "12px", textAlign: "center" }}
+                            >
                                 No profiles yet. Create one below.
                             </p>
                         )}
@@ -512,15 +614,40 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                         </>
                     }
                 >
-                    <p className="minecraft-seven" style={{ fontSize: "12px", lineHeight: 1.5, color: "#BCBEC0" }}>
-                        This mod is not officially published or reviewed by the Amethyst team. The code has not
-                        been checked for security or stability issues, and may behave unexpectedly. Only install
-                        if you trust the source.
-                    </p>
+                    <div className="mod-confirm-body">
+                        <p className="minecraft-seven mod-confirm-description">
+                            {confirmingMod.download_name} is not officially published or reviewed by the Amethyst team.
+                        </p>
+
+                        <div className="mod-confirm-items">
+                            {[
+                                "Code has not been reviewed for security issues",
+                                "May cause instability or unexpected behaviour",
+                                "Only install if you trust the source",
+                            ].map(item => (
+                                <div key={item} className="mod-confirm-item">
+                                    <span className="mod-confirm-dot" />
+                                    <p className="minecraft-seven">{item}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        <p className="minecraft-seven mod-confirm-note">
+                            To skip this warning for all community mods, enable Trust all community mods in Settings.
+                        </p>
+                    </div>
                 </PopupPanel>
             )}
 
-            {loading && <p className="minecraft-seven mod-release-empty">Loading releases...</p>}
+            {loading &&
+                Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="version-picker-item mod-downloads-skeleton-item">
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                            <div className="mod-card-skeleton-text" style={{ width: "180px", height: "13px" }} />
+                            <div className="mod-card-skeleton-text" style={{ width: "90px", height: "11px" }} />
+                        </div>
+                    </div>
+                ))}
             {!loading && releases.length === 0 && (
                 <p className="minecraft-seven mod-release-empty">No releases found.</p>
             )}
@@ -531,23 +658,42 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                     return (
                         <div key={release.id} className="version-picker-item">
                             <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-                                <p className="minecraft-seven" style={{ color: "white", fontSize: "13px" }}>{release.download_name}</p>
+                                <p className="minecraft-seven" style={{ color: "white", fontSize: "13px" }}>
+                                    {release.download_name}
+                                </p>
                                 <p className="minecraft-seven" style={{ color: "#9f9f9f", fontSize: "11px" }}>
-                                    {new Date(release.published_at).toLocaleDateString()}
+                                    {new Date(release.published_at).toLocaleDateString()} &middot;{" "}
+                                    {formatBytes(release.size)}
+                                    {release.prerelease && (
+                                        <>
+                                            {" "}
+                                            &middot; <span>Pre-release</span>
+                                        </>
+                                    )}
                                 </p>
                             </div>
                             <div className="version-picker-item-actions">
                                 {!isInstalled && (
                                     <div
                                         className="version-picker-item-btn"
-                                        style={isInstalling ? { display: "flex", opacity: 0.5, cursor: "wait" } : undefined}
+                                        style={
+                                            isInstalling ? { display: "flex", opacity: 0.5, cursor: "wait" } : undefined
+                                        }
                                         onClick={e => {
                                             e.stopPropagation();
                                             if (isInstalling) return;
                                             handleInstallClick(release, mod.isAmethystOrgMod ?? false);
                                         }}
                                     >
-                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                                        <svg
+                                            width="14"
+                                            height="14"
+                                            viewBox="0 0 16 16"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="1.5"
+                                            strokeLinecap="round"
+                                        >
                                             <path d="M8 2v8M4.5 7.5L8 11l3.5-3.5M2 14h12" />
                                         </svg>
                                     </div>
@@ -567,7 +713,9 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                                                     const profile = state.allProfiles[installingFor];
                                                     if (profile && !profile.mods.includes(release.download_name)) {
                                                         const updatedProfiles = state.allProfiles.map((p, i) =>
-                                                            i === installingFor ? { ...p, mods: [...p.mods, release.download_name] } : p
+                                                            i === installingFor
+                                                                ? { ...p, mods: [...p.mods, release.download_name] }
+                                                                : p
                                                         );
                                                         state.setAllProfiles(updatedProfiles);
                                                         state.saveData();
@@ -579,7 +727,15 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                                                 onClose?.();
                                             }}
                                         >
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                            <svg
+                                                width="14"
+                                                height="14"
+                                                viewBox="0 0 16 16"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                            >
                                                 <path d="M8 3v10M3 8h10" />
                                             </svg>
                                         </div>
@@ -593,12 +749,19 @@ export function ModDownloads({ mod, onClose }: { mod: ModDiscoveryData; onClose?
                                             }}
                                         >
                                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                                                <path d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                                <path
+                                                    d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4"
+                                                    stroke="currentColor"
+                                                    strokeWidth="1.5"
+                                                    strokeLinecap="round"
+                                                />
                                             </svg>
                                         </div>
                                     </>
                                 )}
-                                <span className="minecraft-seven version-picker-item-tag">{isInstalled ? "Installed" : ""}</span>
+                                <span className="minecraft-seven version-picker-item-tag">
+                                    {isInstalled ? "Installed" : ""}
+                                </span>
                             </div>
                         </div>
                     );
@@ -665,11 +828,7 @@ function ModDetailsPopup({ mod, onClose }: { mod: ModDiscoveryData; onClose: () 
     const close = () => animateClose(onClose);
 
     return (
-        <PopupPanel
-            onClose={close}
-            boxClassName="mod-details-popup"
-            bodyClassName="popup-body--flush"
-        >
+        <PopupPanel onClose={close} boxClassName="mod-details-popup" bodyClassName="popup-body--flush">
             <ModDetails mod={mod} onClose={close} />
         </PopupPanel>
     );
@@ -718,7 +877,17 @@ export function ModDiscovery() {
                 <div className="mod-grid-search">
                     <div className="mod-search-row">
                         <div className="mod-search-box">
-                            <svg className="mod-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f6f6f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <svg
+                                className="mod-search-icon"
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="#6f6f6f"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
                                 <circle cx="11" cy="11" r="8" />
                                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
                             </svg>
@@ -741,25 +910,29 @@ export function ModDiscovery() {
                         </select>
                     </div>
                 </div>
-                {fetching ? (
-                    Array.from({ length: 8 }).map((_, i) => (
-                        <div key={i} className="mod-card mod-card-skeleton">
-                            <div className="mod-card-skeleton-icon" />
-                            <div className="mod-card-body">
-                                <div className="mod-card-skeleton-text" style={{ width: `${60 + (i % 3) * 20}%`, height: "16px" }} />
-                                <div className="mod-card-skeleton-text" style={{ width: `${40 + (i % 2) * 30}%`, height: "13px" }} />
-                            </div>
-                            <div className="mod-card-footer">
-                                <div className="mod-card-skeleton-text" style={{ width: "60%", height: "12px" }} />
-                                <div className="mod-card-skeleton-text" style={{ width: "40%", height: "12px" }} />
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    filteredMods.map(mod => (
-                        <ModCard key={mod.name} mod={mod} onOpenDetails={() => setSelectedMod(mod)} />
-                    ))
-                )}
+                {fetching
+                    ? Array.from({ length: 8 }).map((_, i) => (
+                          <div key={i} className="mod-card mod-card-skeleton">
+                              <div className="mod-card-skeleton-icon" />
+                              <div className="mod-card-body">
+                                  <div
+                                      className="mod-card-skeleton-text"
+                                      style={{ width: `${60 + (i % 3) * 20}%`, height: "16px" }}
+                                  />
+                                  <div
+                                      className="mod-card-skeleton-text"
+                                      style={{ width: `${40 + (i % 2) * 30}%`, height: "13px" }}
+                                  />
+                              </div>
+                              <div className="mod-card-footer">
+                                  <div className="mod-card-skeleton-text" style={{ width: "60%", height: "12px" }} />
+                                  <div className="mod-card-skeleton-text" style={{ width: "40%", height: "12px" }} />
+                              </div>
+                          </div>
+                      ))
+                    : filteredMods.map(mod => (
+                          <ModCard key={mod.name} mod={mod} onOpenDetails={() => setSelectedMod(mod)} />
+                      ))}
             </div>
 
             <div className="launcher-footer">

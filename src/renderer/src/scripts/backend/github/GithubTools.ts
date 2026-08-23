@@ -17,8 +17,8 @@ export class GithubTools {
                 tagName: data.tag_name,
                 assets: data.assets.map((asset: any) => ({
                     name: asset.name,
-                    downloadUrl: asset.browser_download_url
-                }))
+                    downloadUrl: asset.browser_download_url,
+                })),
             };
 
             return release;

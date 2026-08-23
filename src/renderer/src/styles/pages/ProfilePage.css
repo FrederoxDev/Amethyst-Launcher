@@ -4,8 +4,8 @@
     height: 100%;
     padding: 8px;
     gap: 8px;
-    background-color: #48494A;
-    border: 3px solid #1E1E1F;
+    background-color: #48494a;
+    border: 3px solid #1e1e1f;
     overflow: hidden;
 }
 
@@ -18,7 +18,7 @@
     display: flex;
     flex-direction: column;
     gap: 3px;
-    border: 3px solid #1E1E1F;
+    border: 3px solid #1e1e1f;
     height: 100%;
     background-color: #313233;
     overflow-y: auto;
@@ -26,13 +26,13 @@
 }
 
 .profile-page-footer {
-    background-color: #48494A;
+    background-color: #48494a;
     height: fit-content;
 }
 
 .profile-card {
     margin: -3px;
-    border: 3px solid #1E1E1F;
+    border: 3px solid #1e1e1f;
 }
 
 .profile-card-inner {
@@ -53,7 +53,7 @@
 }
 
 .profile-card-subtitle {
-    color: #B1B2B5;
+    color: #b1b2b5;
     font-size: 14px;
     padding: 0 4px;
 }

@@ -46,7 +46,7 @@ export class UMULauncher extends ToolArtifact {
             promptForUpdate: options?.promptForUpdate ?? false,
             allowOutdated: options?.allowOutdated ?? true,
             releaseFetchTimeout: options?.releaseFetchTimeout ?? 1000,
-            checkForUpdates: options?.checkForUpdates ?? true
+            checkForUpdates: options?.checkForUpdates ?? true,
         };
         return super.check(resolvedOptions);
     }
@@ -93,7 +93,7 @@ export class UMULauncher extends ToolArtifact {
             version,
             path: toolPath,
             executable,
-            action
+            action,
         };
     }
 
@@ -122,28 +122,28 @@ export class UMULauncher extends ToolArtifact {
             allowOutdated: true,
             promptForUpdate: false,
             releaseFetchTimeout: 1000,
-            checkForUpdates: true
+            checkForUpdates: true,
         });
 
         const { path: gdkProtonPath } = await LauncherTools.GDKProton.check({
             allowOutdated: true,
             promptForUpdate: false,
             releaseFetchTimeout: 1000,
-            checkForUpdates: true
+            checkForUpdates: true,
         });
 
         const envs = await shellEnv();
         const env = {
             ...envs,
             ...envVars,
-            "PROTONPATH": gdkProtonPath
+            PROTONPATH: gdkProtonPath,
         };
 
         const exec_proc = child.spawn(executable, [`${gamePath}`], {
             env: env,
             cwd: path.dirname(gamePath),
             stdio: ["ignore", "pipe", "pipe"],
-            detached: true
+            detached: true,
         });
 
         // exec_proc.stdout?.on("data", (data) => {
@@ -154,11 +154,11 @@ export class UMULauncher extends ToolArtifact {
         //     console.log(`[${this.name}] STDERR] ${data}`);
         // });
 
-        exec_proc.on("error", (err) => {
+        exec_proc.on("error", err => {
             console.error(`[${this.name}] Failed to run game:`, err);
         });
 
-        exec_proc.on("close", (code) => {
+        exec_proc.on("close", code => {
             console.log(`[${this.name}] Game process exited with code ${code}.`);
         });
 

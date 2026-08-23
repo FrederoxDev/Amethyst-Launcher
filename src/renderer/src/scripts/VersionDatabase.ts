@@ -37,7 +37,7 @@ export class MinecraftVersionData implements IJSONModel {
     }
 
     static toString(version: MinecraftVersionData): string {
-        return `${version.version.toString()}-${version.type}`
+        return `${version.version.toString()}-${version.type}`;
     }
 
     static fromObject(obj: any): MinecraftVersionData {
@@ -45,12 +45,7 @@ export class MinecraftVersionData implements IJSONModel {
             throw new Error("Invalid version data object");
         }
 
-        return new MinecraftVersionData(
-            SemVersion.fromString(obj.version),
-            obj.uuid,
-            obj.type,
-            obj.urls
-        );
+        return new MinecraftVersionData(SemVersion.fromString(obj.version), obj.uuid, obj.type, obj.urls);
     }
 
     static toObject(version: MinecraftVersionData): any {
@@ -77,7 +72,11 @@ export class MinecraftVersionData implements IJSONModel {
 
     // Version prettify copied from https://github.com/LukasPAH/minecraft-windows-gdk-version-db/blob/main/getLatestVersion.ts
     static prettifyVersionNumbers(version: string): string | null {
-        version = version.toLowerCase().replace("microsoft.minecraftuwp_", "").replace("microsoft.minecraftwindowsbeta_", "").replace(".0_x64__8wekyb3d8bbwe", "");
+        version = version
+            .toLowerCase()
+            .replace("microsoft.minecraftuwp_", "")
+            .replace("microsoft.minecraftwindowsbeta_", "")
+            .replace(".0_x64__8wekyb3d8bbwe", "");
 
         const versionMatch = version.match(this.VERSION_REGEX);
 
@@ -111,7 +110,10 @@ export class MinecraftVersionData implements IJSONModel {
     }
 
     static buildVersionPath(versionHasError: boolean, format: string, type: string, uuid: string): string {
-        return path.join(getPaths().versionsPath, `Minecraft-${!versionHasError ? format + "-" : "x.x.x.x-"}${type.toLowerCase()}-${uuid}.msixvc`);
+        return path.join(
+            getPaths().versionsPath,
+            `Minecraft-${!versionHasError ? format + "-" : "x.x.x.x-"}${type.toLowerCase()}-${uuid}.msixvc`
+        );
     }
 }
 
@@ -128,10 +130,12 @@ export class VersionCacheModel implements IJSONModel {
     }
 
     isOutdated(): boolean {
-        // We consider the cache outdated if it was last updated more than REFRESH_INTERVAL_MINUTES ago, 
+        // We consider the cache outdated if it was last updated more than REFRESH_INTERVAL_MINUTES ago,
         // this is to avoid hitting the remote database too often, especially since the version database doesn't change that often
         const currentTime = new Date();
-        const discardOldDataTime = new Date(currentTime.getTime() - VersionCacheModel.REFRESH_INTERVAL_MINUTES * 60 * 1000);
+        const discardOldDataTime = new Date(
+            currentTime.getTime() - VersionCacheModel.REFRESH_INTERVAL_MINUTES * 60 * 1000
+        );
         return this.lastUpdated < discardOldDataTime;
     }
 
@@ -155,9 +159,7 @@ export class VersionCacheModel implements IJSONModel {
         }
 
         return new VersionCacheModel(
-            obj.versions.map((v: any) =>
-                MinecraftVersionData.fromObject(v)
-            ),
+            obj.versions.map((v: any) => MinecraftVersionData.fromObject(v)),
             new Date(obj.last_updated),
             obj.file_version || 0
         );
@@ -199,7 +201,8 @@ interface HistoricalVersionsContract {
 }
 
 export class VersionDatabase {
-    private static readonly DATABASE_URL: string = "https://raw.githubusercontent.com/LukasPAH/minecraft-windows-gdk-version-db/refs/heads/main/historical_versions.json";
+    private static readonly DATABASE_URL: string =
+        "https://raw.githubusercontent.com/LukasPAH/minecraft-windows-gdk-version-db/refs/heads/main/historical_versions.json";
     private Versions: VersionCacheModel;
 
     constructor() {
@@ -207,66 +210,92 @@ export class VersionDatabase {
     }
 
     async update(): Promise<MinecraftVersionData[] | Error> {
-        // First we will check if we have a valid cache of the version database, 
+        // First we will check if we have a valid cache of the version database,
         const cachePath = getPaths().cachedVersionsFilePath;
         let cacheData: VersionCacheModel | null = null;
         if (fs.existsSync(cachePath)) {
             try {
                 cacheData = VersionCacheModel.fromJSON(fs.readFileSync(cachePath, "utf-8"));
-            }
-            catch (e) {
+            } catch (e) {
                 console.error("Failed to parse version cache file, ignoring cache. ", e);
             }
         }
 
-        // Helper function to fetch the remote database and convert it to our internal model, 
+        // Helper function to fetch the remote database and convert it to our internal model,
         // we will use this in multiple places in the code below, so it's better to have it as a separate function
         const fetchRemoteDatabase = async (): Promise<VersionCacheModel> => {
             // Try to fetch the remote database, if this fails we will throw an error, if it succeeds we will convert the data to our internal model and return it
             try {
                 const response = await fetch(VersionDatabase.DATABASE_URL);
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch version database from ${VersionDatabase.DATABASE_URL}: ${response.status} ${response.statusText}`);
+                    throw new Error(
+                        `Failed to fetch version database from ${VersionDatabase.DATABASE_URL}: ${response.status} ${response.statusText}`
+                    );
                 }
 
-                // Convert the data from the remote database to our internal model, 
-                const data: HistoricalVersionsContract = await response.json() as HistoricalVersionsContract;
-            
-                // Helper function to fix the version strings from the remote database, 
+                // Convert the data from the remote database to our internal model,
+                const data: HistoricalVersionsContract = (await response.json()) as HistoricalVersionsContract;
+
+                // Helper function to fix the version strings from the remote database,
                 // this is needed because some versions might have prefixes like "Release " or "Preview " that we want to remove before parsing them as SemVersion
                 const fixVersionString = (version: string): string => {
                     return version.replace("Release ", "").replace("Preview ", "");
-                }
+                };
 
                 // Join the release and preview versions from the remote database into a single array of MinecraftVersionData,
                 const allVersions = [
-                    ...data.releaseVersions.map(v => new MinecraftVersionData(SemVersion.fromString(fixVersionString(v.version)), v.urls[0].match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/)?.at(-1) ?? "", "release", v.urls)),
-                    ...data.previewVersions.map(v => new MinecraftVersionData(SemVersion.fromString(fixVersionString(v.version)), v.urls[0].match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/)?.at(-1) ?? "", "preview", v.urls)),
+                    ...data.releaseVersions.map(
+                        v =>
+                            new MinecraftVersionData(
+                                SemVersion.fromString(fixVersionString(v.version)),
+                                v.urls[0]
+                                    .match(
+                                        /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/
+                                    )
+                                    ?.at(-1) ?? "",
+                                "release",
+                                v.urls
+                            )
+                    ),
+                    ...data.previewVersions.map(
+                        v =>
+                            new MinecraftVersionData(
+                                SemVersion.fromString(fixVersionString(v.version)),
+                                v.urls[0]
+                                    .match(
+                                        /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/
+                                    )
+                                    ?.at(-1) ?? "",
+                                "preview",
+                                v.urls
+                            )
+                    ),
                 ];
 
                 return new VersionCacheModel(allVersions, new Date(), data.file_version);
-            }
-            catch (e) {
+            } catch (e) {
                 throw new Error("Failed to fetch version database. " + e);
             }
-        }
+        };
 
-
-        // Now we will check if the cache is valid, 
-        // if it is we will use it, if it's not we will try to fetch the remote database, 
-        // if that fails we will use the cache if it's available, 
+        // Now we will check if the cache is valid,
+        // if it is we will use it, if it's not we will try to fetch the remote database,
+        // if that fails we will use the cache if it's available,
         // if that also fails we will throw an error
         // (That's lot's of ifs lol)
-        console.log(`Checking version database cache validity. Cache exists: ${!!cacheData}, Cache is outdated: ${cacheData?.isOutdated() ?? "N/A"}`);
+        console.log(
+            `Checking version database cache validity. Cache exists: ${!!cacheData}, Cache is outdated: ${cacheData?.isOutdated() ?? "N/A"}`
+        );
         if (cacheData?.isOutdated()) {
             console.log("Cache is outdated, fetching remote database...");
             try {
                 this.Versions = await fetchRemoteDatabase();
                 fs.writeFileSync(cachePath, this.Versions.toJSON(), "utf-8");
-                console.log(`Updated version database cache with ${this.Versions.versions.length} versions (file_version: ${this.Versions.fileVersion}).`);
+                console.log(
+                    `Updated version database cache with ${this.Versions.versions.length} versions (file_version: ${this.Versions.fileVersion}).`
+                );
                 return this.Versions.versions;
-            }
-            catch (e) {
+            } catch (e) {
                 console.error("Failed to fetch version database, using cache if available. ", e);
                 if (cacheData) {
                     console.log("Using cached version database due to fetch failure.");
@@ -283,16 +312,17 @@ export class VersionDatabase {
             return cacheData.versions;
         }
 
-        console.warn("No version database cache available, and cache is not outdated but empty. This likely means the cache file was corrupted or invalid. Attempting to fetch remote database...");
+        console.warn(
+            "No version database cache available, and cache is not outdated but empty. This likely means the cache file was corrupted or invalid. Attempting to fetch remote database..."
+        );
         try {
-            // If we reached this point, it means the cache is either not present or invalid, 
-            // but it's also not outdated, which likely means the cache file was corrupted or invalid in some way, 
+            // If we reached this point, it means the cache is either not present or invalid,
+            // but it's also not outdated, which likely means the cache file was corrupted or invalid in some way,
             // so we will attempt to fetch the remote database, if that fails we will throw an error since we have no valid cache to fall back to
             this.Versions = await fetchRemoteDatabase();
             fs.writeFileSync(cachePath, this.Versions.toJSON(), "utf-8");
             return this.Versions.versions;
-        }
-        catch (e) {
+        } catch (e) {
             console.error("Failed to fetch version database, and no valid cache available. ", e);
             return new Error(`Failed to fetch version database and no valid cache available. ${e}`);
         }

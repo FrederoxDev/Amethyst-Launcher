@@ -2,9 +2,47 @@ import { is } from "@electron-toolkit/utils";
 import { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, nativeTheme } from "electron";
 import { autoUpdater } from "electron-updater";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 
 process.env["ELECTRON_DISABLE_SECURITY_WARNINGS"] = "true";
+
+/**
+ * Reads the launcher config straight off disk. Used during early startup
+ * (before the renderer/store exist) to honor window-related settings.
+ */
+function readLauncherConfig(): Record<string, unknown> {
+    const launcherConfigPath =
+        process.platform === "win32"
+            ? path.join(
+                  process.env.APPDATA ?? path.join(os.homedir(), "AppData", "Roaming"),
+                  "Amethyst",
+                  "Launcher",
+                  "launcher_config.json"
+              )
+            : path.join(os.homedir(), ".amethyst", "launcher", "launcher_config.json");
+
+    try {
+        if (fs.existsSync(launcherConfigPath)) {
+            return JSON.parse(fs.readFileSync(launcherConfigPath, "utf-8"));
+        }
+    } catch (e) {
+        console.error("[main] Failed to read launcher config:", e);
+    }
+    return {};
+}
+
+const launcherConfig = readLauncherConfig();
+
+// Honor the persisted hardware-acceleration setting. This MUST run before the
+// app "ready" event.
+if (launcherConfig.hardware_acceleration === false) {
+    app.disableHardwareAcceleration();
+    console.log("[main] Hardware acceleration disabled via launcher config.");
+}
+
+// When enabled, use the OS native window frame instead of the custom titlebar.
+const useNativeDecorations = launcherConfig.native_decorations === true;
 
 {
     const amethyst_appdata_path = path.join(app.getPath("appData"), "Amethyst", "Launcher", "AppData");
@@ -22,10 +60,10 @@ let mainWindow: Electron.BrowserWindow | null = null;
 
 function createWindow(): BrowserWindow {
     const win = new BrowserWindow({
-        width: 800,
-        height: 600,
-        minWidth: 600,
-        minHeight: 400,
+        width: 1400,
+        height: 780,
+        minWidth: 1060,
+        minHeight: 600,
         backgroundColor: "#1E1E1F",
         show: false,
         webPreferences: {
@@ -34,7 +72,7 @@ function createWindow(): BrowserWindow {
             webSecurity: false,
             contextIsolation: false,
         },
-        frame: false,
+        frame: useNativeDecorations,
     });
 
     win.setMenuBarVisibility(false);
@@ -94,7 +132,7 @@ ipcMain.handle("get-appdata-path", () => {
     return app.getPath("home");
 });
 
-ipcMain.on("get-appdata-path-sync", (event) => {
+ipcMain.on("get-appdata-path-sync", event => {
     event.returnValue = app.getPath("appData");
 });
 
@@ -146,12 +184,38 @@ else {
     app.on("ready", () => {
         mainWindow = createWindow();
 
-        mainWindow.once("ready-to-show", () => {
-            mainWindow!.show();
+        // The window is created hidden (show: false) and revealed by whichever
+        // of the triggers below fires first. `showWindow` is idempotent (the
+        // isVisible guard) so racing triggers are safe. backgroundColor on the
+        // window already prevents a white flash, so revealing slightly early is
+        // harmless.
+        let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+
+        const showWindow = (): void => {
+            if (!mainWindow || mainWindow.isVisible()) return;
+            if (fallbackTimer) {
+                clearTimeout(fallbackTimer);
+                fallbackTimer = null;
+            }
+            mainWindow.show();
             // Handle the case where the app was cold-started via a protocol URL.
             const url = extractProtocolUrl(process.argv);
             if (url) handleProtocolUrl(url);
-        });
+        };
+
+        // Primary path: the renderer signals once its store has hydrated and it
+        // has painted real content. This runs from JS, so unlike "ready-to-show"
+        // it does not depend on the GPU/compositor and fires reliably even when
+        // hardware acceleration is misbehaving (e.g. some Debian/Wayland setups).
+        ipcMain.once("RENDERER_READY", () => showWindow());
+
+        // Fast path on healthy systems: the compositor's first frame is ready.
+        mainWindow.once("ready-to-show", showWindow);
+
+        // Hard guarantee: if neither signal arrives (broken GPU + a renderer
+        // that never finished hydrating), reveal anyway so the window can never
+        // be stuck permanently hidden.
+        fallbackTimer = setTimeout(showWindow, 3000);
     });
 
     app.on("second-instance", (_event, commandLine) => {
@@ -189,7 +253,7 @@ ipcMain.handle("update-download", async () => {
 ipcMain.handle("dialog:openFile", async (_, filters) => {
     const result = await dialog.showOpenDialog({
         properties: ["openFile"],
-        filters
+        filters,
     });
     return result.filePaths[0] ?? null;
 });

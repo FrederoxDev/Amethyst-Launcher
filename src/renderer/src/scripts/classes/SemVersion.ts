@@ -37,12 +37,14 @@ export class SemVersion {
             throw new Error("Object is missing required version properties.");
         }
 
-        const { major, minor, patch, build } = obj as { major: number, minor: number, patch: number, build: number };
+        const { major, minor, patch, build } = obj as { major: number; minor: number; patch: number; build: number };
         return new SemVersion(major, minor, patch, build);
     }
 
     static toString(version: SemVersion) {
-        return version.originalString ? version.originalString : `${version.major}.${version.minor}.${version.patch}.${version.build}`;
+        return version.originalString
+            ? version.originalString
+            : `${version.major}.${version.minor}.${version.patch}.${version.build}`;
     }
 
     toString(): string {

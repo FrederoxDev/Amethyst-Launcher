@@ -1,5 +1,10 @@
 import { useAppStore } from "@renderer/states/AppStore";
-import { useDownloadStore, getPendingDownloads, removePendingDownload, PendingDownload } from "@renderer/states/DownloadStore";
+import {
+    useDownloadStore,
+    getPendingDownloads,
+    removePendingDownload,
+    PendingDownload,
+} from "@renderer/states/DownloadStore";
 import { Extractor } from "@renderer/scripts/backend/Extractor";
 
 const fs = window.require("fs") as typeof import("fs");
@@ -69,7 +74,11 @@ async function resumeModDownload(pending: PendingDownload) {
     const appState = useAppStore.getState();
     appState.setDownloadingMods([...appState.downloadingMods, pending.name]);
 
-    const { ok, path: filePath, error } = await downloadToTemp(
+    const {
+        ok,
+        path: filePath,
+        error,
+    } = await downloadToTemp(
         pending.url,
         pending.name + ".zip",
         (transferred, total) => {

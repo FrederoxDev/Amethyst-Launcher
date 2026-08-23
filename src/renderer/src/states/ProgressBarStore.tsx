@@ -16,28 +16,28 @@ interface ProgressBarState {
     /** Apply multiple field updates in a single zustand `set()` so subscribers see one consistent change. */
     update(partial: Partial<Pick<ProgressBarState, "busy" | "currentStatus" | "message" | "progress" | "show">>): void;
     reset(): void;
-};
+}
 
 type ProgressResetOptions = {
     status: boolean;
     message: boolean;
     progress: boolean;
     show: boolean;
-}
+};
 
 export const DEFAULT_PROGRESS_RESET_OPTIONS: ProgressResetOptions = {
     status: true,
     message: false,
     progress: false,
-    show: false
-}
+    show: false,
+};
 
 export const FULL_PROGRESS_RESET_OPTIONS: ProgressResetOptions = {
     status: true,
     message: true,
     progress: true,
-    show: true
-}
+    show: true,
+};
 
 export class ProgressBusyError extends Error {
     constructor() {
@@ -47,7 +47,7 @@ export class ProgressBusyError extends Error {
 }
 
 export class ProgressBar {
-    private static state = create<ProgressBarState>((set) => ({
+    private static state = create<ProgressBarState>(set => ({
         busy: false,
         currentStatus: "idle",
         message: "",
@@ -55,23 +55,23 @@ export class ProgressBar {
         show: false,
 
         setStatus(status) {
-            set((state) => ({
-                currentStatus: StateUtils.resolveSetStateAction(status, state.currentStatus)
+            set(state => ({
+                currentStatus: StateUtils.resolveSetStateAction(status, state.currentStatus),
             }));
         },
         setMessage(message) {
-            set((state) => ({
-                message: StateUtils.resolveSetStateAction(message, state.message)
+            set(state => ({
+                message: StateUtils.resolveSetStateAction(message, state.message),
             }));
         },
         setProgress(progress) {
-            set((state) => ({
-                progress: StateUtils.resolveSetStateAction(progress, state.progress)
+            set(state => ({
+                progress: StateUtils.resolveSetStateAction(progress, state.progress),
             }));
         },
         setShow(show) {
-            set((state) => ({
-                show: StateUtils.resolveSetStateAction(show, state.show)
+            set(state => ({
+                show: StateUtils.resolveSetStateAction(show, state.show),
             }));
         },
         update(partial) {
@@ -83,14 +83,14 @@ export class ProgressBar {
                 currentStatus: "idle",
                 message: "",
                 progress: 0,
-                show: false
+                show: false,
             });
-        }
+        },
     }));
 
     static getState(): ProgressBarState {
         return this.state.getState();
-    };
+    }
 
     static useState(): ProgressBarState;
     static useState<T>(selector: (state: ProgressBarState) => T): T;
@@ -98,7 +98,11 @@ export class ProgressBar {
         return selector ? this.state(selector) : this.state();
     }
 
-    static use(callback: (state: ProgressBarState) => void, showProgressBar: boolean = true, resetOptions: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS): void {
+    static use(
+        callback: (state: ProgressBarState) => void,
+        showProgressBar: boolean = true,
+        resetOptions: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS
+    ): void {
         // Re-entrant: a nested use() (e.g. XVDTool.decryptFile called from extractVersionByPath)
         // inherits the outer call's lifecycle instead of throwing. The outer call owns
         // busy/show; the inner one just runs and any state it sets persists.
@@ -117,7 +121,11 @@ export class ProgressBar {
         }
     }
 
-    static async useAsync(callback: (state: ProgressBarState) => Promise<void>, showProgressBar: boolean = true, resetOptions: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS): Promise<void> {
+    static async useAsync(
+        callback: (state: ProgressBarState) => Promise<void>,
+        showProgressBar: boolean = true,
+        resetOptions: ProgressResetOptions = FULL_PROGRESS_RESET_OPTIONS
+    ): Promise<void> {
         // Re-entrant: see use() above.
         if (this.getState().busy) {
             await callback(this.getState());

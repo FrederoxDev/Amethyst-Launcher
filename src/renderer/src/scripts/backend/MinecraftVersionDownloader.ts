@@ -238,10 +238,7 @@ export async function download(
     await Downloader.downloadFile(link, destination, onProgress, onComplete);
 }
 
-export async function downloadVersion(
-    version: MinecraftVersionData,
-    onComplete: ActionComplete = () => {}
-) {
+export async function downloadVersion(version: MinecraftVersionData, onComplete: ActionComplete = () => {}) {
     if (version.urls.length === 0) {
         onComplete(false);
         throw new Error(`No download URLs were available for GDK version ${version.version.toString()}!`);
@@ -249,5 +246,4 @@ export async function downloadVersion(
 
     const link: string = version.urls[0];
     console.log("Resolved download link:", link);
-    
 }
