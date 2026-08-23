@@ -81,7 +81,7 @@
     }
 
     .title_text_main {
-        color: #ffffff;
+        color: var(--color-text);
     }
 
     .title_text_sub {
@@ -94,12 +94,12 @@
     }
 
     .window_button_svg {
-        fill: #ffffff;
+        fill: var(--color-text);
     }
 
     .window_button_svg_box {
         fill: none;
-        stroke: #ffffff;
+        stroke: var(--color-text);
     }
 
     .window_button_hover:hover {
@@ -125,7 +125,7 @@
     }
 
     .title_text_main {
-        color: #1e1e1f;
+        color: var(--color-outline);
     }
 
     .title_text_sub {

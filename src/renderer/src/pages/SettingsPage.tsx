@@ -1,18 +1,45 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { MinecraftRadialButtonPanel } from "@renderer/components/MinecraftRadialButtonPanel";
 import { MinecraftToggle } from "@renderer/components/MinecraftToggle";
 
+import { ReadOnlyTextBox } from "@renderer/components/ReadOnlyTextBox";
+import { describeError, userMessage } from "@shared/diagnostics/Log";
+import { log } from "@renderer/scripts/LauncherLog";
 import { AnalyticsConsent, useAppStore } from "@renderer/states/AppStore";
 import { AskAnalyticsConsent } from "@renderer/components/AnalyticsConsentPanel";
+
+const fs = window.require("fs") as typeof import("fs");
 
 export function GeneralSettingsTab() {
     const keepLauncherOpen = useAppStore(state => state.keepLauncherOpen);
     const setKeepLauncherOpen = useAppStore(state => state.setKeepLauncherOpen);
     const developerMode = useAppStore(state => state.developerMode);
     const setDeveloperMode = useAppStore(state => state.setDeveloperMode);
+    const lastLaunchedProfileUuid = useAppStore(state => state.lastLaunchedProfileUuid);
     const UITheme = useAppStore(state => state.UITheme);
     const setUITheme = useAppStore(state => state.setUITheme);
+    const platform = useAppStore(state => state.platform);
+    const paths = platform.getPaths();
+    const [launcherCfg, setLauncherCfg] = useState<string>("");
+
+    useEffect(() => {
+        let cancelled = false;
+        fs.promises.readFile(paths.launcherConfigPath, "utf-8")
+            .then(text => { if (!cancelled) setLauncherCfg(text); })
+            .catch(e => {
+                if (cancelled) return;
+                if ((e as { code?: string }).code === "ENOENT") {
+                    log("Settings", `No launcher config to show at ${paths.launcherConfigPath}`);
+                    setLauncherCfg("No launcher config has been saved yet.");
+                    return;
+                }
+                log("Settings", `Could not read ${paths.launcherConfigPath} for display: ${describeError(e)}`);
+                setLauncherCfg(`${paths.launcherConfigPath}\n\nCould not be read: ${userMessage(e)}`);
+            });
+        return () => { cancelled = true; };
+    }, [paths.launcherConfigPath, lastLaunchedProfileUuid, keepLauncherOpen, developerMode, UITheme]);
+
     const analyticsConsent = useAppStore(state => state.analyticsConsent);
     const setAnalyticsConsent = useAppStore(state => state.setAnalyticsConsent);
     const autoCheckUpdates = useAppStore(state => state.autoCheckUpdates);
@@ -173,38 +200,20 @@ export function GeneralSettingsTab() {
                     </div>
                 </div>
             </div>
+
+            <div className="minecraft-seven settings-debug">
+                <p className="settings-debug-title">Debug Info</p>
+                <p>Running Platform: {platform.getPlatformFullName()}</p>
+                <p>Amethyst Folder: {paths.amethystPath}</p>
+            </div>
+
+            <div className="settings-regular">
+                <ReadOnlyTextBox text={launcherCfg} label="Launcher Config" />
+            </div>
         </div>
     );
 }
 
 export function SettingsPage() {
-    const [tab, setTab] = useState<string>("general_tab");
-    let node: React.ReactNode | null = null;
-    switch (tab) {
-        case "general_tab":
-            node = <GeneralSettingsTab />;
-            break;
-        default:
-            node = <GeneralSettingsTab />;
-            break;
-    }
-
-    return (
-        <div
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "20px",
-            }}
-        >
-            <MinecraftRadialButtonPanel
-                elements={[{ text: "General", value: "general_tab" }]}
-                default_selected_value={"general_tab"}
-                onChange={value => {
-                    setTab(value);
-                }}
-            />
-            {node}
-        </div>
-    );
+    return <GeneralSettingsTab />;
 }

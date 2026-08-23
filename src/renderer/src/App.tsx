@@ -1,10 +1,13 @@
 import { AnalyticsConsent, useAppStore } from "@renderer/states/AppStore";
 import { Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { describeError, userMessage } from "@shared/diagnostics/Log";
 import { Popup } from "@renderer/states/PopupStore";
-import { createProfileFlow } from "@renderer/scripts/ProfileCreation";
-import { runFirstLaunchOnboarding } from "@renderer/scripts/OnboardingFlow";
+import { createProfileFlow } from "@renderer/flows/CreateProfile";
+import { adoptAllForeignGameData } from "@renderer/flows/AdoptGameData";
+import { removeRetiredDotnet } from "@renderer/scripts/backend/RetiredTools";
+import { isModded } from "@renderer/scripts/domain/Profile";
+import { log } from "@renderer/scripts/LauncherLog";
 import { AskAnalyticsConsent } from "@renderer/components/AnalyticsConsentPanel";
-import { GetLauncherConfig } from "@renderer/scripts/Launcher";
 
 import lushCaveImage from "@renderer/assets/images/art/lush_cave.jpg";
 import craftingIcon from "@renderer/assets/images/icons/crafting-icon.png";
@@ -12,6 +15,7 @@ import earthIcon from "@renderer/assets/images/icons/earth-icon.png";
 import settingsIcon from "@renderer/assets/images/icons/settings-icon.png";
 
 import { DropWindow } from "@renderer/components/DropWindow";
+import { ErrorBanner } from "@renderer/components/ErrorBanner";
 import Title from "@renderer/components/Title";
 
 import { LauncherPage } from "@renderer/pages/LauncherPage";
@@ -22,7 +26,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import LoadingSpinnerRenderer from "./components/LoadingSpinnerRenderer";
 import ProgressBarRenderer from "./components/ProgressBarRenderer";
-import { useDownloadStore } from "@renderer/states/DownloadStore";
+import { removePendingDownload, useDownloadStore } from "@renderer/states/DownloadStore";
 import { MOD_DISCOVERY_ENABLED } from "@renderer/scripts/FeatureFlags";
 
 const fs = window.require("fs") as typeof import("fs");
@@ -62,7 +66,7 @@ function DownloadManagerButton() {
         };
         document.addEventListener("mousedown", handleClick);
         return () => document.removeEventListener("mousedown", handleClick);
-    }, [panelOpen]);
+    }, [panelOpen, setPanelOpen]);
 
     useEffect(() => {
         if (!panelOpen || !btnRef.current) return;
@@ -73,11 +77,21 @@ function DownloadManagerButton() {
         });
     }, [panelOpen]);
 
+    // Cancelling has to clear the crash-recovery record too, or the next start resumes what
+    // the user just stopped.
     const cancelDownload = (id: string) => {
         const dl = downloads.find(d => d.id === id);
-        if (dl?.abortController) {
+        if (!dl) {
+            log("Downloads", `Dismissed download ${id}, which is no longer in the list`);
+        }
+        else if (dl.abortController) {
+            log("Downloads", `User cancelled "${dl.name}" (${id}) at ${Math.round(dl.progress * 100)}%, status ${dl.status}`);
             dl.abortController.abort();
         }
+        else {
+            log("Downloads", `Removed "${dl.name}" (${id}) from the list; status ${dl.status} carries nothing to abort`);
+        }
+        removePendingDownload(id);
         removeDownload(id);
     };
 
@@ -168,19 +182,14 @@ function DownloadManagerButton() {
 function AnimatedRoutes() {
     const location = useLocation();
     const [displayLocation, setDisplayLocation] = useState(location);
-    const [transitionClass, setTransitionClass] = useState("page-enter-active");
+    const isExiting = location.pathname !== displayLocation.pathname;
+    const transitionClass = isExiting ? "page-exit-active" : "page-enter-active";
 
     useEffect(() => {
-        if (location.pathname !== displayLocation.pathname) {
-            setTransitionClass("page-exit-active");
-            const timer = setTimeout(() => {
-                setDisplayLocation(location);
-                setTransitionClass("page-enter-active");
-            }, 80);
+        if (!isExiting) return undefined;
+        const timer = setTimeout(() => setDisplayLocation(location), 80);
             return () => clearTimeout(timer);
-        }
-        return undefined;
-    }, [location, displayLocation]);
+    }, [location, isExiting]);
 
     return (
         <div className={`page-transition ${transitionClass}`}>
@@ -206,26 +215,36 @@ export default function App() {
     // Match the actual window frame (set by main at startup). With the native
     // frame, the custom titlebar isn't rendered, so the layout must reclaim the
     // 64px it normally reserves for it.
-    const [nativeDecorations] = useState(() => GetLauncherConfig().native_decorations);
+    const nativeDecorations = useAppStore(state => state.nativeDecorations);
 
     useEffect(() => {
-        setTimeout(() => useAppStore.getState().versionManager.cleanupStaleLocks(), 0);
+        setTimeout(() => {
+            useAppStore.getState().versions.cleanupStaleLocks().catch(e => {
+                log("App", `Stale lock sweep failed: ${describeError(e)}`);
+            });
+            removeRetiredDotnet().catch(e => {
+                log("App", `Retired .NET sweep failed: ${describeError(e)}`);
+            });
+        }, 0);
     }, []);
 
     useEffect(() => {
         // Guard against React StrictMode double-mount in dev (and any future
         // remount). Once we've kicked off onboarding, never kick it off again
         // from this tree.
-        if (onboardingStarted.current) return;
+        if (onboardingStarted.current) {
+            log("App", "Onboarding already started for this tree, not starting it again");
+            return;
+        }
         onboardingStarted.current = true;
-        runFirstLaunchOnboarding()
+        adoptAllForeignGameData()
             .catch(e => {
-                console.error("[App] First-launch onboarding failed:", e);
-                useAppStore.getState().setError(`Onboarding failed: ${(e as Error).message ?? e}`);
+                log("App", `Resolving existing game data failed: ${describeError(e)}`);
+                useAppStore.getState().setError(`Could not resolve existing game data: ${userMessage(e)}`);
             })
             .finally(() => {
-                // Ask for analytics consent once onboarding is out of the way so
-                // the two first-launch popups don't fight over the screen.
+                // Asked once the adoption flow is out of the way so the two first-launch popups
+                // don't fight over the screen.
                 if (useAppStore.getState().analyticsConsent !== AnalyticsConsent.Unknown) return;
                 AskAnalyticsConsent()
                     .then(consent => {
@@ -244,10 +263,11 @@ export default function App() {
 
         try {
             if (!fs.existsSync(modsPath)) {
+                log("App", `Creating the mods folder ${modsPath}`);
                 fs.mkdirSync(modsPath, { recursive: true });
             }
         } catch (e) {
-            console.error("Failed to initialize mods folder watcher:", e);
+            log("App", `No mods folder watcher: ${modsPath} could not be created: ${describeError(e)}`);
             return;
         }
 
@@ -268,8 +288,9 @@ export default function App() {
             watcher = fs.watch(modsPath, { persistent: false }, () => {
                 scheduleRefresh();
             });
+            log("App", `Watching ${modsPath} for mod changes`);
         } catch (e) {
-            console.error("Failed to watch mods folder:", e);
+            log("App", `No mods folder watcher: fs.watch on ${modsPath} failed: ${describeError(e)}`);
             return;
         }
 
@@ -324,7 +345,7 @@ export default function App() {
                                     onClick={async () => {
                                         const result = await createProfileFlow();
                                         if (!result) return;
-                                        navigate(result.profile.is_modded ? "/profile-editor" : "/");
+                                        navigate(isModded(result.profile) ? "/profile-editor" : "/");
                                     }}
                                 >
                                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -362,7 +383,7 @@ export default function App() {
                                 className="app-settings-button"
                                 data-tooltip="Settings"
                                 onClick={() => {
-                                    Popup.useAsync<void>(props => <SettingsPopup {...props} />);
+                                    Popup.ask<void>(props => <SettingsPopup {...props} />);
                                 }}
                             >
                                 <img src={settingsIcon} className="app-settings-icon pixelated" alt="" />
@@ -370,6 +391,7 @@ export default function App() {
                         </div>
                     </div>
                     <div className="view_container app-view-container">
+                        <ErrorBanner />
                         <div className="app-view-content">
                             <AnimatedRoutes />
                             <UpdatePage></UpdatePage>

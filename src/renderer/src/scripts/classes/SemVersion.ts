@@ -1,62 +1,53 @@
+/**
+ * Both patterns are anchored at both ends. A version string reaches disk as part of a folder
+ * name, so anything the parser accepts is something the launcher will create and delete.
+ */
+const FOUR_PART = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/;
+const THREE_PART = /^(\d+)\.(\d+)\.(\d+)$/;
+
 export class SemVersion {
-    major: number;
-    minor: number;
-    patch: number;
-    build: number;
-    originalString?: string;
+  major: number;
+  minor: number;
+  patch: number;
+  build: number;
+  originalString?: string;
 
-    constructor(major: number, minor: number, patch: number, build: number, originalString?: string) {
-        this.major = major;
-        this.minor = minor;
-        this.patch = patch;
-        this.build = build;
-        this.originalString = originalString;
+  constructor(
+    major: number,
+    minor: number,
+    patch: number,
+    build: number,
+    originalString?: string,
+  ) {
+    this.major = major;
+    this.minor = minor;
+    this.patch = patch;
+    this.build = build;
+    this.originalString = originalString;
+  }
+
+  static fromString(versionString: string): SemVersion {
+    const text = versionString.trim();
+
+    const four = FOUR_PART.exec(text);
+    if (four) {
+      const [, major, minor, patch, build] = four.map(Number);
+      return new SemVersion(major, minor, patch, build, text);
     }
 
-    static fromString(versionString: string): SemVersion {
-        const versionRegex = /^(\d+)\.(\d+)\.(\d+)\.(\d+)/;
-        const match = versionString.match(versionRegex);
-
-        if (match) {
-            const [, major, minor, patch, build] = match.map(Number);
-            return new SemVersion(major, minor, patch, build, versionString);
-        }
-
-        const newVersionRegex = /^(\d+)\.(\d+)\.(\d+)/;
-        const newMatch = versionString.match(newVersionRegex);
-        if (newMatch) {
-            const [, major, minor, patch] = newMatch.map(Number);
-            return new SemVersion(major, minor, patch, 0, versionString);
-        }
-
-        throw new Error(`Invalid version string format ${versionString}`);
+    const three = THREE_PART.exec(text);
+    if (three) {
+      const [, major, minor, patch] = three.map(Number);
+      return new SemVersion(major, minor, patch, 0, text);
     }
 
-    static fromObject(obj: Object): SemVersion {
-        if (!("major" in obj) || !("minor" in obj) || !("patch" in obj) || !("build" in obj)) {
-            throw new Error("Object is missing required version properties.");
-        }
+    throw new Error(`Invalid version string format ${versionString}`);
+  }
 
-        const { major, minor, patch, build } = obj as { major: number; minor: number; patch: number; build: number };
-        return new SemVersion(major, minor, patch, build);
-    }
-
-    static toString(version: SemVersion) {
-        return version.originalString
-            ? version.originalString
-            : `${version.major}.${version.minor}.${version.patch}.${version.build}`;
-    }
-
-    toString(): string {
-        return SemVersion.toString(this);
-    }
-
-    matches(other: SemVersion): boolean {
-        return (
-            this.major === other.major &&
-            this.minor === other.minor &&
-            this.patch === other.patch &&
-            this.build === other.build
-        );
-    }
+  toString(): string {
+    return (
+      this.originalString ??
+      `${this.major}.${this.minor}.${this.patch}.${this.build}`
+    );
+  }
 }

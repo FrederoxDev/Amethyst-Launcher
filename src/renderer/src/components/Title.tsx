@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
-import { GetLauncherConfig } from "@renderer/scripts/Launcher";
+import { useAppStore } from "@renderer/states/AppStore";
 
-const { ipcRenderer } = window.require("electron");
+const { ipcRenderer } = window.require("electron") as typeof import("electron");
 
 export default function Header() {
     const [appVersion, setAppVersion] = useState("-");
@@ -10,7 +10,9 @@ export default function Header() {
     // process actually created. We deliberately don't react to live toggles
     // since the OS frame only changes after a restart; hiding the custom bar
     // early would otherwise leave the window with no titlebar at all.
-    const [nativeDecorations] = useState(() => GetLauncherConfig().native_decorations);
+    // From the store, not a mount-time snapshot: the config is hydrated asynchronously, so a
+    // snapshot taken on first render would always read the default rather than the user's choice.
+    const nativeDecorations = useAppStore(state => state.nativeDecorations);
 
     useEffect(() => {
         ipcRenderer.invoke("get-app-version").then(version => {

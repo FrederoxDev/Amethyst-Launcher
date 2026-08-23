@@ -1,7 +1,7 @@
 export type TextInputProps = {
     label: string;
     text: string;
-    setText: React.Dispatch<React.SetStateAction<string>>;
+    setText: (text: string) => void;
     placeholder?: string;
     style?: React.CSSProperties;
     autoFocus?: boolean;

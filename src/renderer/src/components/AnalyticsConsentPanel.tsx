@@ -1,5 +1,7 @@
-import { PopupPanel, usePopupClose } from "@renderer/components/PopupPanel";
-import { MinecraftButton, RED_MINECRAFT_BUTTON } from "@renderer/components/MinecraftButton";
+import { PopupPanel } from "@renderer/components/PopupPanel";
+import { usePopupClose } from "@renderer/components/PopupCloseContext";
+import { MinecraftButton } from "@renderer/components/MinecraftButton";
+import { MinecraftButtonStyle } from "@renderer/components/MinecraftButtonStyle";
 import { AnalyticsConsent } from "@renderer/states/AppStore";
 import { Popup } from "@renderer/states/PopupStore";
 
@@ -14,13 +16,12 @@ export default function AnalyticsConsentPanel({ accept, decline }: { accept: () 
         <PopupPanel
             title="Analytics Consent"
             onClose={onDecline}
-            onConfirm={onAccept}
             size="lg"
             bodyClassName="analytics-consent-body"
             footer={
                 <>
                     <div style={{ flex: 1 }}>
-                        <MinecraftButton text="Decline" onClick={onDecline} colorPallete={RED_MINECRAFT_BUTTON} />
+                        <MinecraftButton text="Decline" onClick={onDecline} buttonStyle={MinecraftButtonStyle.Warn} />
                     </div>
                     <div style={{ flex: 1 }}>
                         <MinecraftButton text="I Agree" onClick={onAccept} />
@@ -64,7 +65,7 @@ export default function AnalyticsConsentPanel({ accept, decline }: { accept: () 
 }
 
 export async function AskAnalyticsConsent() {
-    return await Popup.useAsync<AnalyticsConsent>(({ submit }) => (
+    return await Popup.ask<AnalyticsConsent>(({ submit }) => (
         <AnalyticsConsentPanel
             accept={() => submit(AnalyticsConsent.Accepted)}
             decline={() => submit(AnalyticsConsent.Declined)}

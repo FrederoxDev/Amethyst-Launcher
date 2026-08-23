@@ -7,7 +7,7 @@ type DropdownProps = {
     labelText: string;
     options: (string | DropdownOption)[];
     value: string;
-    setValue: React.Dispatch<React.SetStateAction<string>>;
+    setValue: (value: string) => void;
 };
 
 function normalizeOption(option: string | DropdownOption): DropdownOption {

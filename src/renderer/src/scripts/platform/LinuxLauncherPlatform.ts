@@ -1,157 +1,204 @@
+import { log } from "@renderer/scripts/LauncherLog";
+import { PathUtils } from "@renderer/scripts/PathUtils";
 import {
-    ILauncherPlatform,
-    LauncherPaths,
-    ProcessInfo,
-    ShortcutOptions,
-} from "@renderer/scripts/platform/LauncherPlatform";
-import { PathUtils } from "../PathUtils";
-import { Profile } from "../Profiles";
-import { LauncherTools } from "../backend/tools/LauncherTools";
-import { InstalledVersionModel } from "../VersionManager";
+  SESSION_SCHEMA,
+  writeSession,
+} from "@renderer/scripts/session/Session";
+import { LauncherTools } from "@renderer/scripts/backend/tools/LauncherTools";
+import { describeError } from "@shared/diagnostics/Log";
+import {
+  DIRECTORY_PATHS,
+  FILE_PATHS,
+  ILauncherPlatform,
+  LauncherPaths,
+  LaunchOutcome,
+  LaunchRequest,
+  ProcessInfo,
+} from "./LauncherPlatform";
 
 const fs = window.require("fs") as typeof import("fs");
 const os = window.require("os") as typeof import("os");
-const child = window.require("child_process") as typeof import("child_process");
 const path = window.require("path") as typeof import("path");
 
+const GAME_EXECUTABLE = "Minecraft.Windows.exe";
+
+/**
+ * Each profile gets its own WINE prefix, so there is no shared data location for
+ * channels to collide over and nothing to adopt.
+ */
 export class LinuxLauncherPlatform implements ILauncherPlatform {
-    private static CachedLauncherPaths: LauncherPaths | null = null;
+  private static cachedPaths: LauncherPaths | null = null;
 
-    async runCommand(command: string, stdout?: (data: string) => void): Promise<number> {
-        return new Promise<number>((resolve, reject) => {
-            const [cmd, ...args] = command.split(" ");
-            const exec_proc = child.spawn(cmd, args, { shell: true });
-
-            if (stdout) {
-                exec_proc.stdout?.on("data", data => stdout(data.toString()));
-            }
-
-            exec_proc.stderr?.on("data", data => {
-                console.error(`[Command Error] ${data}`);
-            });
-
-            exec_proc.on("close", exit_code => {
-                if (exit_code !== 0) {
-                    reject(new Error(`Command failed with exit code ${exit_code}.`));
-                    return;
-                }
-                resolve(exit_code ?? 0);
-            });
-        });
-    }
-
-    getPlatformFullName(): string {
-        const osReleasePath = "/etc/os-release";
-        if (fs.existsSync(osReleasePath)) {
-            const osReleaseContent = fs.readFileSync(osReleasePath, "utf-8");
-            const lines = osReleaseContent.split("\n");
-            for (const line of lines) {
-                if (line.startsWith("PRETTY_NAME=")) {
-                    return `${line.split("=")[1].replace(/"/g, "")} ${os.release()} (${os.arch()})`;
-                }
-            }
+  getPlatformFullName(): string {
+    const osRelease = "/etc/os-release";
+    if (fs.existsSync(osRelease)) {
+      for (const line of fs.readFileSync(osRelease, "utf-8").split("\n")) {
+        if (line.startsWith("PRETTY_NAME=")) {
+          return `${line.split("=")[1].replace(/"/g, "")} ${os.release()} (${os.arch()})`;
         }
-        return `Linux ${os.release()} (${os.arch()})`;
+      }
+    }
+    return `Linux ${os.release()} (${os.arch()})`;
+  }
+
+  getPaths(): LauncherPaths {
+    if (LinuxLauncherPlatform.cachedPaths)
+      return LinuxLauncherPlatform.cachedPaths;
+
+    const launcher = path.join(os.homedir(), ".amethyst", "launcher");
+    const paths: LauncherPaths = {
+      amethystPath: path.join(os.homedir(), ".amethyst"),
+      launcherPath: launcher,
+      versionsPath: path.join(launcher, "versions"),
+      versionsFilePath: path.join(launcher, "versions", "versions.json"),
+      cachedVersionsFilePath: path.join(
+        launcher,
+        "versions",
+        "cached_versions.json",
+      ),
+      profilesFilePath: path.join(launcher, "profiles", "profiles.json"),
+      modsPath: path.join(launcher, "Mods"),
+      launcherConfigPath: path.join(launcher, "launcher_config.json"),
+      toolsPath: path.join(launcher, "tools"),
+      profileDataPath: path.join(launcher, "profile_data"),
+    };
+
+    for (const key of DIRECTORY_PATHS) PathUtils.ensureDirectory(paths[key]);
+    for (const key of FILE_PATHS) PathUtils.ensureParentDirectory(paths[key]);
+    LinuxLauncherPlatform.cachedPaths = paths;
+    log(
+      "Paths",
+      `Resolved from home ${os.homedir()}: ${Object.entries(paths)
+        .map(([k, v]) => `${k}=${v}`)
+        .join(", ")}`,
+    );
+    return paths;
+  }
+
+  /** One line for the whole /proc sweep: a per-pid line would be hundreds of them. */
+  private async listProcesses(executableName: string): Promise<ProcessInfo[]> {
+    const found: ProcessInfo[] = [];
+    let scanned = 0;
+    let unreadable = 0;
+
+    for (const pid of fs.readdirSync("/proc")) {
+      if (!/^\d+$/.test(pid)) continue;
+      scanned += 1;
+      try {
+        const cwd = fs.readlinkSync(`/proc/${pid}/cwd`);
+        const executablePath = path.join(cwd, executableName);
+        if (fs.existsSync(executablePath))
+          found.push({ pid: parseInt(pid, 10), executablePath });
+      } catch {
+        // Exited mid-scan, or belongs to another user. Counted, never listed.
+        unreadable += 1;
+      }
     }
 
-    createShortcut(options: ShortcutOptions): Promise<void> {
-        const isProtocolUrl = options.target.startsWith("amethyst-launcher://");
-        const appName = options.name;
-        const desktopDir = path.join(os.homedir(), ".local", "share", "applications");
-        const desktopFile = path.join(desktopDir, `${appName}.desktop`);
+    log(
+      "Processes",
+      `${found.length} running ${executableName} out of ${scanned} processes ` +
+        `(${unreadable} could not be read)` +
+        found.map((p) => `\n    ${p.pid} ${p.executablePath}`).join(""),
+    );
+    return found;
+  }
 
-        // For protocol URLs use xdg-open; otherwise invoke the executable directly.
-        const exec = isProtocolUrl
-            ? `xdg-open ${options.target}`
-            : options.args
-              ? `${options.target} ${options.args}`
-              : options.target;
+  profileDataDir(profileUuid: string): string {
+    return path.join(this.getPaths().profileDataPath, profileUuid);
+  }
 
-        const lines =
-            [
-                "[Desktop Entry]",
-                "Version=1.0",
-                "Type=Application",
-                `Name=${appName}`,
-                options.description ? `Comment=${options.description}` : null,
-                `Exec=${exec}`,
-                options.workingDir ? `Path=${options.workingDir}` : null,
-                options.icon ? `Icon=${options.icon}` : null,
-                "Terminal=false",
-                "Categories=Game;",
-            ]
-                .filter(Boolean)
-                .join("\n") + "\n";
+  private prefixDir(profileUuid: string): string {
+    return path.join(this.profileDataDir(profileUuid), "prefix");
+  }
 
-        fs.mkdirSync(desktopDir, { recursive: true });
-        fs.writeFileSync(desktopFile, lines, { encoding: "utf-8" });
-        fs.chmodSync(desktopFile, 0o755);
+  foreignGameData(): string | null {
+    return null;
+  }
 
-        // Notify the desktop environment to refresh the menu.
-        child.spawn("update-desktop-database", [desktopDir], { detached: true, stdio: "ignore" }).unref();
+  async adoptGameData(): Promise<void> {
+    log(
+      "Adopt",
+      "Nothing to adopt on Linux: every profile has its own WINE prefix",
+    );
+    throw new Error("There is no shared game data folder to adopt on Linux.");
+  }
 
-        return Promise.resolve();
+  liveProfileFor(): string | null {
+    return null;
+  }
+
+  async discardProfileData(profileUuid: string): Promise<boolean> {
+    const dir = this.profileDataDir(profileUuid);
+    log("Profiles", `Discarding the data of profile ${profileUuid} at ${dir}`);
+    try {
+      await fs.promises.rm(dir, { recursive: true, force: true });
+    } catch (e) {
+      log("Profiles", `Could not delete ${dir}: ${describeError(e)}`);
+      throw new Error(
+        `This profile's data could not be deleted.\n\n${dir} (${describeError(e)})`,
+        { cause: e },
+      );
+    }
+    log("Profiles", `Deleted ${dir}`);
+    return false;
+  }
+
+  async launch(
+    request: LaunchRequest,
+    onStatus?: (message: string) => void,
+  ): Promise<LaunchOutcome> {
+    const status = onStatus ?? (() => {});
+    const { profile, version } = request;
+
+    const dataDir = this.profileDataDir(profile.uuid);
+    const prefix = this.prefixDir(profile.uuid);
+
+    log(
+      "Launch",
+      `Launching "${profile.name}" (${profile.uuid}) on ${profile.channel}: build ${version.label} at ${version.path}, ` +
+        `prefix ${prefix}, runtime ${request.runtime ? `${request.runtime.id} from ${request.runtime.path}` : "none"}, ` +
+        `${request.mods.length} mods${request.mods.length > 0 ? ` (${request.mods.map((m) => m.id).join(", ")})` : ""}, ` +
+        `developer mode ${request.developerMode ? "on" : "off"}`,
+    );
+
+    status("Checking whether this profile is running...");
+    const running = await this.listProcesses(GAME_EXECUTABLE);
+    const own = running.find((p) => p.executablePath.startsWith(prefix));
+    if (own) {
+      log(
+        "Launch",
+        `Refusing to launch "${profile.name}": pid ${own.pid} already runs from its prefix ${prefix}`,
+      );
+      throw new Error(`"${profile.name}" is already running.`);
     }
 
-    getPaths(): LauncherPaths {
-        if (LinuxLauncherPlatform.CachedLauncherPaths) return LinuxLauncherPlatform.CachedLauncherPaths;
+    fs.mkdirSync(path.join(prefix, "dosdevices"), { recursive: true });
 
-        const home: string = os.homedir();
-        LinuxLauncherPlatform.CachedLauncherPaths = {
-            amethystPath: `${home}/.amethyst`,
-            launcherPath: `${home}/.amethyst/launcher`,
-            versionsPath: `${home}/.amethyst/launcher/versions`,
-            versionsFilePath: `${home}/.amethyst/launcher/versions/versions.json`,
-            cachedVersionsFilePath: `${home}/.amethyst/launcher/versions/cached_versions.json`,
-            profilesFilePath: `${home}/.amethyst/launcher/profiles/profiles.json`,
-            modsPath: `${home}/.amethyst/launcher/Mods`,
-            launcherConfigPath: `${home}/.amethyst/launcher/launcher_config.json`,
-            toolsPath: `${home}/.amethyst/launcher/tools`,
-            profileDataPath: `${home}/.amethyst/launcher/profile_data`,
-        };
+    writeSession(dataDir, {
+      schema: SESSION_SCHEMA,
+      launchedAt: new Date().toISOString(),
+      profile: { uuid: profile.uuid, name: profile.name },
+      channel: profile.channel,
+      version: { uuid: version.uuid, label: version.label, path: version.path },
+      runtime: request.runtime,
+      mods: request.mods,
+      developerMode: request.developerMode,
+    });
 
-        PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.amethystPath);
-        PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.launcherPath);
-        PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.versionsPath);
-        PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.versionsFilePath);
-        PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.cachedVersionsFilePath);
-        PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.profilesFilePath);
-        PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.modsPath);
-        PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.launcherConfigPath);
-        PathUtils.ValidatePath(LinuxLauncherPlatform.CachedLauncherPaths.toolsPath);
-        return LinuxLauncherPlatform.CachedLauncherPaths;
-    }
+    log("Launch", `Session file written to ${dataDir} for "${profile.name}"`);
 
-    async isProcessRunning(executableName: string): Promise<ProcessInfo | null> {
-        try {
-            for (const pid of fs.readdirSync("/proc")) {
-                if (!/^\d+$/.test(pid)) continue;
-                try {
-                    const cwd = fs.readlinkSync(`/proc/${pid}/cwd`);
-                    if (fs.existsSync(path.join(cwd, executableName))) {
-                        return { pid: parseInt(pid, 10), cwd, executableName };
-                    }
-                } catch {
-                    // process may have died or insufficient permissions — skip
-                }
-            }
-        } catch {
-            return null;
-        }
-        return null;
-    }
+    status("Starting Minecraft...");
+    await LauncherTools.UMULauncher.runGame(
+      path.join(version.path, GAME_EXECUTABLE),
+      {
+        WINEPREFIX: prefix,
+      },
+    );
+    log("Launch", `"${profile.name}" is running`);
 
-    async runProfile(
-        _profile: Profile,
-        version: InstalledVersionModel,
-        _onStatus?: (message: string) => void
-    ): Promise<void> {
-        const versionPath = path.join(version.path, "Minecraft.Windows.exe");
-        const prefixPath = path.join(this.getPaths().launcherPath, "gamedata", "default");
-        fs.mkdirSync(path.join(prefixPath, "dosdevices"), { recursive: true });
-
-        await LauncherTools.UMULauncher.runGame(versionPath, {
-            WINEPREFIX: prefixPath,
-        });
-    }
+    // Each profile has its own prefix, so no other way of starting the game can reach this
+    // manifest and there is nothing for a stale one to leak into.
+    return { confirmed: true, unconfirmedMessage: "" };
+  }
 }

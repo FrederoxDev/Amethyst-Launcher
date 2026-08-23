@@ -1,13 +1,11 @@
-import { Fragment } from "react";
 import { Popup } from "@renderer/states/PopupStore";
+import { PopupCloseBoundary } from "./PopupPanel";
 
 export default function PopupRenderer() {
-    const nodes = Popup.useState(state => state.nodes);
-    return (
-        <>
-            {nodes.map((node, index) => (
-                <Fragment key={index}>{node}</Fragment>
-            ))}
-        </>
-    );
+    const node = Popup.useState(state => state.node);
+    const generation = Popup.useState(state => state.generation);
+
+    if (node === null) return null;
+
+    return <PopupCloseBoundary key={generation}>{node}</PopupCloseBoundary>;
 }

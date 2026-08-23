@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import vscDarkPlus from "react-syntax-highlighter/dist/esm/styles/prism/vsc-dark-plus";
 
-import { PopupPanel, usePopupClose } from "@renderer/components/PopupPanel";
+import { PopupPanel } from "@renderer/components/PopupPanel";
+import { usePopupClose } from "@renderer/components/PopupCloseContext";
 import { useAppStore } from "@renderer/states/AppStore";
 import { PopupUseArguments } from "@renderer/states/PopupStore";
 

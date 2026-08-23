@@ -7,7 +7,7 @@
 .radial_button_border {
     height: 100%;
     border-width: 3px;
-    border-color: #1e1e1f;
+    border-color: var(--color-outline);
     cursor: pointer;
     transition:
         transform 0.08s cubic-bezier(0.2, 0, 0, 1),
@@ -41,7 +41,7 @@
 }
 
 .radial_button_text.selected {
-    color: #ffffff;
+    color: var(--color-text);
 }
 
 .radial_button_side {
@@ -57,31 +57,31 @@
     .radial_button_top {
         border-top-color: #6d6d6e;
         border-left-color: #6d6d6e;
-        border-right-color: #5a5b5c;
-        border-bottom-color: #5a5b5c;
-        background-color: #48494a;
+        border-right-color: var(--color-surface-hover);
+        border-bottom-color: var(--color-surface-hover);
+        background-color: var(--color-surface);
     }
 
     .radial_button_side {
-        background-color: #313233;
+        background-color: var(--color-surface-sunken);
     }
 
     .radial_button_text {
-        color: #ffffff;
+        color: var(--color-text);
     }
 
     .radial_button_top:hover {
         border-color: #68686a;
-        background-color: #58585a;
+        background-color: var(--color-border);
     }
 
     .radial_button_top.selected {
-        border-top-color: #5a5b5c;
-        border-left-color: #5a5b5c;
+        border-top-color: var(--color-surface-hover);
+        border-left-color: var(--color-surface-hover);
         border-right-color: #454647;
         border-bottom-color: #454647;
 
-        background-color: #313233;
+        background-color: var(--color-surface-sunken);
     }
 }
 
@@ -96,11 +96,11 @@
     }
 
     .radial_button_side {
-        background-color: #58585a;
+        background-color: var(--color-border);
     }
 
     .radial_button_text {
-        color: #1e1e1f;
+        color: var(--color-outline);
     }
 
     .radial_button_top:hover {
@@ -113,11 +113,11 @@
     }
 
     .radial_button_top.selected {
-        border-top-color: #639d52;
-        border-left-color: #639d52;
-        border-right-color: #4f913c;
-        border-bottom-color: #4f913c;
+        border-top-color: var(--color-confirm-light);
+        border-left-color: var(--color-confirm-light);
+        border-right-color: var(--color-confirm-mid);
+        border-bottom-color: var(--color-confirm-mid);
 
-        background-color: #3c8527;
+        background-color: var(--color-confirm);
     }
 }

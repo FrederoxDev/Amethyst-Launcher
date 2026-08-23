@@ -1,28 +1,22 @@
-import { useAppStore } from "@renderer/states/AppStore";
+import { log } from "./LauncherLog";
+import { userMessage } from "@shared/diagnostics/Log";
+import { inspectStamp, quarantineFile, stampFields, tryReadJsonFile, writeJsonAtomic } from "./Utility";
 
-const path = window.require("path");
-const fs = window.require("fs");
-
-function getPaths() {
-    return useAppStore.getState().platform.getPaths();
-}
+const fs = window.require("fs") as typeof import("fs");
+const path = window.require("path") as typeof import("path");
 
 export interface LauncherConfig {
     keep_open: boolean;
-    selected_release_profile_uuid?: string | null;
-    selected_preview_profile_uuid?: string | null;
-    /**
-     * UUID of the most recently launched profile. Written right before launch so
-     * the proxy DLL can pick the correct runtime. Not the source of UI selection
-     * highlighting — that's selected_release/preview_profile_uuid.
-     */
-    selected_profile_uuid?: string | null;
     ui_theme: string;
     developer_mode: boolean;
+    last_launched_profile_uuid: string | null;
     auto_check_updates: boolean;
     confirm_delete: boolean;
     trust_all_mods: boolean;
-    /** Read by the proxy DLL to decide whether to keep the Amethyst console window. */
+    /**
+     * Inert since the move to the PE-patch preload: that DLL never allocates a console, so there
+     * is nothing for this to hide. Kept so the user's saved choice survives a re-wiring.
+     */
     show_console: boolean;
     /** Read by the main process before app-ready to toggle Electron HW acceleration. */
     hardware_acceleration: boolean;
@@ -30,36 +24,101 @@ export interface LauncherConfig {
     native_decorations: boolean;
 }
 
-export function GetLauncherConfig(): LauncherConfig {
-    const paths = getPaths();
-    let data: Partial<LauncherConfig> = {};
+const DEFAULTS: LauncherConfig = {
+    keep_open: true,
+    ui_theme: "System",
+    developer_mode: false,
+    last_launched_profile_uuid: null,
+    auto_check_updates: true,
+    confirm_delete: true,
+    trust_all_mods: false,
+    show_console: false,
+    hardware_acceleration: true,
+    native_decorations: false,
+};
 
-    try {
-        const jsonData = fs.readFileSync(paths.launcherConfigPath, "utf-8");
-        data = JSON.parse(jsonData);
-    } catch {
-        console.error(`Failed to read/parse the launcherConfig file`);
+const FORMAT = "launcher-config";
+const FORMAT_VERSION = 1;
+
+/** Plain words for the user, since a quarantine notice reaches them as well as the log. */
+const WHAT = "launcher settings";
+
+/** A key this build added: absent or the wrong type falls back rather than failing the read. */
+function optionalBoolean(value: unknown, fallback: boolean): boolean {
+    return typeof value === "boolean" ? value : fallback;
+}
+
+function parseConfig(o: Record<string, unknown>): LauncherConfig {
+    if (typeof o.keep_open !== "boolean") throw new Error(`"keep_open" must be a boolean, not ${typeof o.keep_open}`);
+    if (typeof o.ui_theme !== "string") throw new Error(`"ui_theme" must be a string, not ${typeof o.ui_theme}`);
+    if (typeof o.developer_mode !== "boolean") throw new Error(`"developer_mode" must be a boolean, not ${typeof o.developer_mode}`);
+    if (o.last_launched_profile_uuid !== null && typeof o.last_launched_profile_uuid !== "string") {
+        throw new Error(`"last_launched_profile_uuid" must be a string or null, not ${typeof o.last_launched_profile_uuid}`);
     }
 
     return {
-        keep_open: true,
-        ui_theme: "System",
-        selected_release_profile_uuid: null,
-        selected_preview_profile_uuid: null,
-        selected_profile_uuid: null,
-        developer_mode: false,
-        auto_check_updates: true,
-        confirm_delete: true,
-        trust_all_mods: false,
-        show_console: false,
-        hardware_acceleration: true,
-        native_decorations: false,
-        ...data,
+        keep_open: o.keep_open,
+        ui_theme: o.ui_theme,
+        developer_mode: o.developer_mode,
+        last_launched_profile_uuid: o.last_launched_profile_uuid,
+        // Added after the first release of this format, so a config written by an older build
+        // simply lacks them. Missing means "default", never a reason to quarantine the file.
+        auto_check_updates: optionalBoolean(o.auto_check_updates, DEFAULTS.auto_check_updates),
+        confirm_delete: optionalBoolean(o.confirm_delete, DEFAULTS.confirm_delete),
+        trust_all_mods: optionalBoolean(o.trust_all_mods, DEFAULTS.trust_all_mods),
+        show_console: optionalBoolean(o.show_console, DEFAULTS.show_console),
+        hardware_acceleration: optionalBoolean(o.hardware_acceleration, DEFAULTS.hardware_acceleration),
+        native_decorations: optionalBoolean(o.native_decorations, DEFAULTS.native_decorations),
     };
 }
 
-export function SetLauncherConfig(config: LauncherConfig) {
-    const paths = getPaths();
-    fs.mkdirSync(path.dirname(paths.launcherConfigPath), { recursive: true });
-    fs.writeFileSync(paths.launcherConfigPath, JSON.stringify(config, undefined, 4));
+/**
+ * Settings the user chose, so nothing here is ever deleted: a file this build cannot read is
+ * moved aside and the launcher carries on with defaults.
+ */
+export function readLauncherConfig(filePath: string): LauncherConfig {
+    if (!fs.existsSync(filePath)) {
+        log("Config", `No config at ${filePath}, using defaults: ${JSON.stringify(DEFAULTS)}`);
+        return { ...DEFAULTS };
+    }
+
+    const read = tryReadJsonFile<unknown>("Config", filePath);
+    if (!read.ok) {
+        quarantineFile("Config", filePath, WHAT, read.reason);
+        return { ...DEFAULTS };
+    }
+
+    const stamp = inspectStamp("Config", filePath, read.value, FORMAT, FORMAT_VERSION);
+    if (stamp.state === "mismatch") {
+        quarantineFile("Config", filePath, WHAT, stamp.reason);
+        return { ...DEFAULTS };
+    }
+
+    if (typeof read.value !== "object" || read.value === null || Array.isArray(read.value)) {
+        quarantineFile("Config", filePath, WHAT, "it does not hold a JSON object");
+        return { ...DEFAULTS };
+    }
+
+    let config: LauncherConfig;
+    try {
+        config = parseConfig(read.value as Record<string, unknown>);
+    } catch (e) {
+        quarantineFile("Config", filePath, WHAT, userMessage(e));
+        return { ...DEFAULTS };
+    }
+
+    log(
+        "Config",
+        `Read ${filePath}${stamp.state === "legacy" ? " as an unstamped file, it gets a stamp on the next save" : ""}: `
+        + `keep_open=${config.keep_open}, ui_theme=${config.ui_theme}, developer_mode=${config.developer_mode}, `
+        + `last_launched_profile_uuid=${config.last_launched_profile_uuid}`
+    );
+    return config;
+}
+
+export function writeLauncherConfig(filePath: string, config: LauncherConfig): void {
+    // Not logged: every profile-editor keystroke saves, and the settings writes that matter
+    // are already logged as old -> new by the store that made them.
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    writeJsonAtomic(filePath, { ...stampFields(FORMAT, FORMAT_VERSION), ...config });
 }
