@@ -8,7 +8,8 @@ const fs = window.require("fs") as typeof import("fs");
 export function fetchWithTimeout(url: string, options: RequestInit = {}, timeout: number = 5000): Promise<Response> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(`Timeout reached! (timeout = ${timeout}ms)`), timeout);
-    return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+    return fetch(url, { ...options, signal: controller.signal })
+        .finally(() => clearTimeout(timer));
 }
 
 let appVersion: string | null = null;

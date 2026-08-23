@@ -1,42 +1,43 @@
 .launcher-progress {
-  background-color: var(--color-surface-sunken);
-  width: 100%;
-  position: relative;
-  flex-shrink: 0;
-  overflow: hidden;
+    background-color: var(--color-surface-sunken);
+    width: 100%;
+    position: relative;
+    flex-shrink: 0;
+    overflow: hidden;
 }
 
 .launcher-progress-visible {
-  height: 25px;
-  /* Appear instantly so short operations still flash a visible bar. */
+    height: 25px;
+    /* Appear instantly so short operations still flash a visible bar. */
 }
 
 .launcher-progress-hidden {
-  height: 0;
-  /* Smoothly retract when the work finishes. */
-  transition: height 300ms ease-in-out;
+    height: 0;
+    /* Smoothly retract when the work finishes. */
+    transition: height 300ms ease-in-out;
 }
 
 .launcher-progress-bar {
-  background-color: var(--color-confirm);
-  position: absolute;
+    background-color: var(--color-confirm);
+    position: absolute;
+    
 }
 
 .launcher-progress-bar-visible {
-  min-height: 25px;
+    min-height: 25px;
 }
 
 .launcher-progress-bar-hidden {
-  min-height: 0;
+    min-height: 0;
 }
 
 .launcher-progress-text {
-  position: absolute;
-  z-index: 30;
-  color: white;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-  padding: 0 8px;
+    position: absolute;
+    z-index: 30;
+    color: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    padding: 0 8px;
 }
