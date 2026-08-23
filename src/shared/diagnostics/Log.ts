@@ -28,8 +28,8 @@ export function clockStamp(time: number): string {
 export function fileStamp(time: number): string {
     const d = new Date(time);
     return (
-        `${d.getFullYear()}-${pad(d.getMonth() + 1, 2)}-${pad(d.getDate(), 2)}`
-        + `_${pad(d.getHours(), 2)}-${pad(d.getMinutes(), 2)}-${pad(d.getSeconds(), 2)}`
+        `${d.getFullYear()}-${pad(d.getMonth() + 1, 2)}-${pad(d.getDate(), 2)}` +
+        `_${pad(d.getHours(), 2)}-${pad(d.getMinutes(), 2)}-${pad(d.getSeconds(), 2)}`
     );
 }
 
@@ -41,7 +41,10 @@ export function fileStamp(time: number): string {
 export function formatEntry(entry: LogEntry): string {
     const tag = entry.level === "INFO" ? "" : ` [${entry.level}]`;
     const prefix = `${clockStamp(entry.time)} [${entry.source}] [${entry.scope}]${tag} `;
-    return entry.message.split(/\r?\n/).map(line => `${prefix}${line}`).join("\n");
+    return entry.message
+        .split(/\r?\n/)
+        .map(line => `${prefix}${line}`)
+        .join("\n");
 }
 
 /**
@@ -77,15 +80,17 @@ function describeValue(value: unknown): string {
 
     const seen = new WeakSet<object>();
     try {
-        return JSON.stringify(value, (_key, inner) => {
-            if (inner instanceof Error) return describeError(inner);
-            if (typeof inner === "object" && inner !== null) {
-                if (seen.has(inner)) return "[circular]";
-                seen.add(inner);
-            }
-            if (typeof inner === "bigint") return inner.toString();
-            return inner;
-        }) ?? String(value);
+        return (
+            JSON.stringify(value, (_key, inner) => {
+                if (inner instanceof Error) return describeError(inner);
+                if (typeof inner === "object" && inner !== null) {
+                    if (seen.has(inner)) return "[circular]";
+                    seen.add(inner);
+                }
+                if (typeof inner === "bigint") return inner.toString();
+                return inner;
+            }) ?? String(value)
+        );
     } catch {
         return String(value);
     }

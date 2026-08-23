@@ -46,7 +46,8 @@ export function UpdatePage() {
         setDownloadPercentage(0);
         setDownloadActive(true);
         tell("set-auto-install-on-app-quit", true);
-        ipcRenderer.invoke("update-download")
+        ipcRenderer
+            .invoke("update-download")
             .then(files => log("Update", `Update download finished: ${JSON.stringify(files)}`))
             .catch(e => {
                 log("Update", `Update download failed: ${describeError(e)}`);
@@ -115,7 +116,8 @@ export function UpdatePage() {
     }, [setUpdateAvailable, setPopupClosed, setDownloadActive, setDownloadPercentage, checkForUpdates]);
 
     useEffect(() => {
-        ipcRenderer.invoke("get-app-version")
+        ipcRenderer
+            .invoke("get-app-version")
             .then(version => setAppVersion(version))
             .catch(e => log("Update", `Could not read the launcher version: ${describeError(e)}`));
     }, []);
@@ -160,7 +162,10 @@ export function UpdatePage() {
                         )}
                         {downloadActive && (
                             <div className="update-popup-body">
-                            <LoadingWheel text={"Downloading update..."} percentage={downloadPercentage}></LoadingWheel>
+                                <LoadingWheel
+                                    text={"Downloading update..."}
+                                    percentage={downloadPercentage}
+                                ></LoadingWheel>
                                 <div className="update-popup-actions">
                                     <MinecraftButton
                                         text="Hide"

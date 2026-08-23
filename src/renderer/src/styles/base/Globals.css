@@ -1,61 +1,61 @@
 :root {
-  /* Surfaces, darkest to lightest. */
-  --color-outline: #1e1e1f;
-  --color-surface-sunken: #313233;
-  --color-surface: #48494a;
-  --color-surface-hover: #5a5b5c;
-  --color-surface-hover-strong: #6e6f70;
+    /* Surfaces, darkest to lightest. */
+    --color-outline: #1e1e1f;
+    --color-surface-sunken: #313233;
+    --color-surface: #48494a;
+    --color-surface-hover: #5a5b5c;
+    --color-surface-hover-strong: #6e6f70;
 
-  --color-border: #58585a;
+    --color-border: #58585a;
 
-  --color-text: #ffffff;
-  --color-text-dim: #e0e0e0;
-  --color-text-muted: #9f9f9f;
+    --color-text: #ffffff;
+    --color-text-dim: #e0e0e0;
+    --color-text-muted: #9f9f9f;
 
-  /* Actions. */
-  --color-confirm: #3c8527;
-  --color-confirm-light: #639d52;
-  --color-confirm-mid: #4f913c;
-  --color-confirm-dark: #2a641c;
-  --color-confirm-border: #1d4d13;
+    /* Actions. */
+    --color-confirm: #3c8527;
+    --color-confirm-light: #639d52;
+    --color-confirm-mid: #4f913c;
+    --color-confirm-dark: #2a641c;
+    --color-confirm-border: #1d4d13;
 
-  --color-danger: #ca3636;
-  --color-danger-light: #d55e5e;
-  --color-danger-mid: #cf4a4a;
-  --color-danger-dark: #c02d2d;
-  --color-danger-border: #ad1d1d;
-  --color-danger-text: #f87171;
+    --color-danger: #ca3636;
+    --color-danger-light: #d55e5e;
+    --color-danger-mid: #cf4a4a;
+    --color-danger-dark: #c02d2d;
+    --color-danger-border: #ad1d1d;
+    --color-danger-text: #f87171;
 
-  --color-scrim: #000000bb;
-  --color-scrim-clear: #00000000;
+    --color-scrim: #000000bb;
+    --color-scrim-clear: #00000000;
 }
 
 * {
-  user-select: none;
+    user-select: none;
 }
 
 p {
-  font-family: "Minecraft-Seven", sans-serif;
-  color: var(--color-text);
+    font-family: "Minecraft-Seven", sans-serif;
+    color: var(--color-text);
 }
 
 img {
-  -webkit-user-drag: none;
+    -webkit-user-drag: none;
 }
 
 .pixelated {
-  image-rendering: pixelated;
+    image-rendering: pixelated;
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-text);
-  outline-offset: 2px;
+    outline: 2px solid var(--color-text);
+    outline-offset: 2px;
 }
 
 .container {
-  width: 100vw;
-  max-width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  background-color: var(--color-surface-sunken);
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--color-surface-sunken);
 }

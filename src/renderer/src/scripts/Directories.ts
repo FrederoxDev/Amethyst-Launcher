@@ -68,19 +68,19 @@ async function assertCopyComplete(src: string, dest: string): Promise<void> {
     if (problems.length > 0) {
         log(
             "Directories",
-            `Copy of ${src} to ${dest} is incomplete, ${problems.length} problems, source kept: `
-            + `${problems.slice(0, 5).join("; ")}${problems.length > 5 ? ` (+${problems.length - 5} more)` : ""}`
+            `Copy of ${src} to ${dest} is incomplete, ${problems.length} problems, source kept: ` +
+                `${problems.slice(0, 5).join("; ")}${problems.length > 5 ? ` (+${problems.length - 5} more)` : ""}`
         );
         throw new Error(
             `Copy verification failed - ${problems.slice(0, 5).join("; ")}` +
-            `${problems.length > 5 ? ` (+${problems.length - 5} more)` : ""}. Source was not deleted.`
+                `${problems.length > 5 ? ` (+${problems.length - 5} more)` : ""}. Source was not deleted.`
         );
     }
 
     log(
         "Directories",
-        `Copy verified: ${a.files.size} files (${totalBytes(a.files)} bytes) in ${a.dirs.size} folders `
-        + `match between ${src} and ${dest}`
+        `Copy verified: ${a.files.size} files (${totalBytes(a.files)} bytes) in ${a.dirs.size} folders ` +
+            `match between ${src} and ${dest}`
     );
 }
 

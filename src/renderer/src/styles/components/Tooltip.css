@@ -12,16 +12,18 @@
     transform: translateY(-50%) scale(0.85);
     transform-origin: left center;
     background-color: #313233;
-    border: 3px solid #1E1E1F;
-    color: #FFFFFF;
-    font-family: 'Minecraft-Seven', sans-serif;
+    border: 3px solid #1e1e1f;
+    color: #ffffff;
+    font-family: "Minecraft-Seven", sans-serif;
     font-size: 11px;
     letter-spacing: 0.5px;
     padding: 5px 9px;
     white-space: nowrap;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.1s ease, transform 0.1s ease;
+    transition:
+        opacity 0.1s ease,
+        transform 0.1s ease;
     z-index: 9999;
 }
 

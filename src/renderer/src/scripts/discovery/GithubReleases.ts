@@ -62,8 +62,8 @@ async function releasesFailure(repo: GithubRepo, response: Response): Promise<Er
         const reset = Number(response.headers.get("x-ratelimit-reset"));
         const wait = Number.isFinite(reset) ? Math.max(1, Math.ceil((reset * 1000 - Date.now()) / 60000)) : 0;
         return new Error(
-            "GitHub is rate-limiting this launcher, so the release list could not be read. "
-            + (wait > 0 ? `Try again in about ${wait} minute(s).` : "Try again shortly.")
+            "GitHub is rate-limiting this launcher, so the release list could not be read. " +
+                (wait > 0 ? `Try again in about ${wait} minute(s).` : "Try again shortly.")
         );
     }
 

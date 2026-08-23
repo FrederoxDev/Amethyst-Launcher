@@ -24,8 +24,8 @@ export function ErrorBanner(): ReactNode | null {
                 <div className="launcher-error-message">
                     <p className="minecraft-seven launcher-error-text">{error}</p>
                     <p className="minecraft-seven launcher-error-hint">
-                        A full report was saved to the launcher log. Open Logs and send that
-                        file, it holds far more than this message does.
+                        A full report was saved to the launcher log. Open Logs and send that file, it holds far more
+                        than this message does.
                     </p>
                 </div>
             </div>

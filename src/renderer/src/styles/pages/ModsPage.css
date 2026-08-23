@@ -1,85 +1,85 @@
 .mods-page {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  height: 100%;
-  padding: 8px;
-  background-color: var(--color-surface);
-  border: 3px solid var(--color-outline);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+    padding: 8px;
+    background-color: var(--color-surface);
+    border: 3px solid var(--color-outline);
 }
 
 .mods-title {
-  color: white;
-  font-size: 14px;
+    color: white;
+    font-size: 14px;
 }
 
 .mods-list {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  border: 3px solid var(--color-outline);
-  height: 100%;
-  background-color: var(--color-surface-sunken);
-  overflow-y: auto;
-  overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    border: 3px solid var(--color-outline);
+    height: 100%;
+    background-color: var(--color-surface-sunken);
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .mods-item {
-  margin: -3px;
-  border: 3px solid var(--color-outline);
+    margin: -3px;
+    border: 3px solid var(--color-outline);
 }
 
 .mods-item-inner {
-  cursor: pointer;
-  border: 3px solid;
-  border-top-color: var(--color-surface-hover);
-  border-left-color: var(--color-surface-hover);
-  border-bottom-color: #333334;
-  border-right-color: #333334;
-  background-color: var(--color-surface);
-  padding: 8px;
+    cursor: pointer;
+    border: 3px solid;
+    border-top-color: var(--color-surface-hover);
+    border-left-color: var(--color-surface-hover);
+    border-bottom-color: #333334;
+    border-right-color: #333334;
+    background-color: var(--color-surface);
+    padding: 8px;
 }
 
 .mods-item-name {
-  color: white;
-  font-size: 14px;
-  padding: 0 4px;
+    color: white;
+    font-size: 14px;
+    padding: 0 4px;
 }
 
 .mods-item-text {
-  color: #bcbec0;
-  font-size: 14px;
-  padding: 0 4px;
+    color: #bcbec0;
+    font-size: 14px;
+    padding: 0 4px;
 }
 
 .mods-item-error {
-  color: var(--color-danger-text);
-  font-size: 14px;
-  padding: 0 4px;
+    color: var(--color-danger-text);
+    font-size: 14px;
+    padding: 0 4px;
 }
 
 .mods-item-warning {
-  color: #facc15;
-  font-size: 14px;
-  padding: 0 4px;
+    color: #facc15;
+    font-size: 14px;
+    padding: 0 4px;
 }
 
 .mods-footer {
-  width: 100%;
-  height: fit-content;
+    width: 100%;
+    height: fit-content;
 }
 
 .mods-popup-subtitle {
-  color: white;
-  font-size: 12px;
+    color: white;
+    font-size: 12px;
 }
 
 .mods-popup-error-item {
-  color: var(--color-danger-text);
-  font-size: 12px;
+    color: var(--color-danger-text);
+    font-size: 12px;
 }
 
 .mods-popup-warning-item {
-  color: #facc15;
-  font-size: 12px;
+    color: #facc15;
+    font-size: 12px;
 }

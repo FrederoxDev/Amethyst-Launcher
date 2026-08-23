@@ -40,10 +40,13 @@ const HRESULT_NEXT_STEPS: Record<string, string> = {
     "0x80070005": "Close the launcher and open it again normally, without running it as administrator.",
     "0x80070522": "Close the launcher and open it again normally, without running it as administrator.",
     "0x80270251": "Close the launcher and open it again normally, without running it as administrator.",
-    "0x80270253": "Sign in to Windows with your normal account instead of the built-in Administrator account, then press Play again.",
-    "0x80270252": "Turn User Account Control back on in Windows security settings, restart the computer, then press Play again.",
+    "0x80270253":
+        "Sign in to Windows with your normal account instead of the built-in Administrator account, then press Play again.",
+    "0x80270252":
+        "Turn User Account Control back on in Windows security settings, restart the computer, then press Play again.",
     "0x80270254": "Press Play again. The launcher will set Minecraft up from scratch this time.",
-    "0x80270256": "Press Play again. The launcher will clear the extra Minecraft registration and set this one up again.",
+    "0x80270256":
+        "Press Play again. The launcher will clear the extra Minecraft registration and set this one up again.",
     "0x80270257": "Restart the computer, then press Play again.",
     "0x8027025C": "Open Minecraft from the Start menu once and sign in, then come back and press Play again.",
     "0x8027025D": "Open Minecraft from the Start menu once and sign in, then come back and press Play again.",
@@ -91,15 +94,14 @@ export function classifyMachineReadiness(facts: {
         return {
             kind: "sideloading-blocked",
             headline: "This computer does not allow Minecraft to be set up.",
-            explanation:
-                "The block is set by whoever administers this computer, so the launcher cannot change it.",
+            explanation: "The block is set by whoever administers this computer, so the launcher cannot change it.",
             nextStep:
-                "If this is a work or school computer, ask its administrator to allow app sideloading. "
-                + "On your own computer, open Settings, then System, then For developers, and turn on Developer Mode.",
+                "If this is a work or school computer, ask its administrator to allow app sideloading. " +
+                "On your own computer, open Settings, then System, then For developers, and turn on Developer Mode.",
             manualStep:
-                "Ask whoever administers this computer to allow app sideloading. On your own computer, open "
-                + "Settings, then System, then For developers, turn on Developer Mode, restart the computer "
-                + "and press Play again.",
+                "Ask whoever administers this computer to allow app sideloading. On your own computer, open " +
+                "Settings, then System, then For developers, turn on Developer Mode, restart the computer " +
+                "and press Play again.",
         };
     }
 
@@ -108,14 +110,14 @@ export function classifyMachineReadiness(facts: {
             kind: "developer-mode-off",
             headline: "Windows needs a setting turned on",
             explanation:
-                "Windows will not run this Minecraft until Developer Mode is on. The launcher can turn it on "
-                + "for you, but Windows will ask for permission first.",
+                "Windows will not run this Minecraft until Developer Mode is on. The launcher can turn it on " +
+                "for you, but Windows will ask for permission first.",
             nextStep:
-                "Choose Yes when the Windows permission prompt appears and the launch carries on by itself. "
-                + "You can also turn it on yourself in Settings, then System, then For developers.",
+                "Choose Yes when the Windows permission prompt appears and the launch carries on by itself. " +
+                "You can also turn it on yourself in Settings, then System, then For developers.",
             manualStep:
-                "Open Settings, then System, then For developers, and turn on Developer Mode yourself. "
-                + "Then restart the computer and press Play again.",
+                "Open Settings, then System, then For developers, and turn on Developer Mode yourself. " +
+                "Then restart the computer and press Play again.",
         };
     }
 
@@ -152,14 +154,16 @@ export function classifyBuild(files: {
         const missing = [
             files.gameExecutable ? null : "the game itself",
             files.manifest ? null : "the file Windows needs to install it",
-        ].filter(Boolean).join(" and ");
+        ]
+            .filter(Boolean)
+            .join(" and ");
 
         return {
             kind: "files-missing",
             headline: `This Minecraft version is incomplete, so it cannot start. It is missing ${missing}.`,
             nextStep:
-                "Delete this version in the launcher and download it again. If it keeps happening, antivirus "
-                + "software is most likely removing files as they are written, so allow the launcher's folder in it.",
+                "Delete this version in the launcher and download it again. If it keeps happening, antivirus " +
+                "software is most likely removing files as they are written, so allow the launcher's folder in it.",
         };
     }
 
@@ -214,7 +218,10 @@ export interface LaunchVerdict {
 
 /** Case-insensitive, separator-insensitive path compare, without pulling in node's path module. */
 export function normalisePath(value: string): string {
-    return value.replace(/[\\/]+/g, "\\").replace(/\\+$/, "").toLowerCase();
+    return value
+        .replace(/[\\/]+/g, "\\")
+        .replace(/\\+$/, "")
+        .toLowerCase();
 }
 
 export function parentPath(value: string): string {
@@ -240,9 +247,9 @@ function crashedOnStartup(pid: number): LaunchVerdict {
         summary: `Windows started process ${pid} and it exited before the launcher saw a game`,
         headline: "Minecraft started and then closed itself straight away.",
         nextStep:
-            "This is a crash in the game or in one of its mods, not a problem with Windows. Open Logs and "
-            + "read the newest Minecraft log for the reason. If this profile uses mods, turn them off one at "
-            + "a time in the profile editor to find which one crashes.",
+            "This is a crash in the game or in one of its mods, not a problem with Windows. Open Logs and " +
+            "read the newest Minecraft log for the reason. If this profile uses mods, turn them off one at " +
+            "a time in the profile editor to find which one crashes.",
     };
 }
 
@@ -261,9 +268,10 @@ export function classifyLaunch(facts: LaunchFacts): LaunchVerdict {
     // Both ways of asking failed, and no process list can soften that, so it is decided before
     // the process list gets a say.
     if (facts.shellSpawnError !== "") {
-        const asked = facts.hresult === ACTIVATION_SUCCESS_HRESULT
-            ? `Windows accepted the activation (${facts.hresult}) but created no process`
-            : `Windows refused the activation (${facts.hresult || "no result"})`;
+        const asked =
+            facts.hresult === ACTIVATION_SUCCESS_HRESULT
+                ? `Windows accepted the activation (${facts.hresult}) but created no process`
+                : `Windows refused the activation (${facts.hresult || "no result"})`;
         return {
             kind: "activation-refused",
             started: false,
@@ -286,7 +294,8 @@ export function classifyLaunch(facts: LaunchFacts): LaunchVerdict {
         return {
             kind: "unverified",
             started: true,
-            summary: "Windows would not say which processes are running, so the launch could not be confirmed either way",
+            summary:
+                "Windows would not say which processes are running, so the launch could not be confirmed either way",
             headline: "Minecraft was asked to start, but the launcher could not check whether it did.",
             nextStep: "If Minecraft does not appear within a few seconds, press Play again.",
         };
@@ -299,8 +308,8 @@ export function classifyLaunch(facts: LaunchFacts): LaunchVerdict {
             summary: "The activation call never completed, so Windows never gave a result",
             headline: "Windows could not be asked to start Minecraft.",
             nextStep:
-                "Restart the computer and press Play again. If it still will not start, check that antivirus "
-                + "software is not blocking the launcher, then open Logs and send the log file.",
+                "Restart the computer and press Play again. If it still will not start, check that antivirus " +
+                "software is not blocking the launcher, then open Logs and send the log file.",
         };
     }
 
@@ -309,8 +318,8 @@ export function classifyLaunch(facts: LaunchFacts): LaunchVerdict {
             kind: "activation-refused",
             started: false,
             summary:
-                `Windows refused to start the app with ${facts.hresult} (${describeHresult(facts.hresult)})`
-                + (facts.usedShellFallback ? ", and the shell was asked instead and produced nothing" : ""),
+                `Windows refused to start the app with ${facts.hresult} (${describeHresult(facts.hresult)})` +
+                (facts.usedShellFallback ? ", and the shell was asked instead and produced nothing" : ""),
             headline: `Windows would not start Minecraft. It refused with code ${facts.hresult}.`,
             nextStep: nextStepForHresult(facts.hresult),
         };
@@ -328,8 +337,8 @@ export function classifyLaunch(facts: LaunchFacts): LaunchVerdict {
             summary: `Windows started process ${facts.activationPid}, which is still running but is not Minecraft`,
             headline: "Windows started something for Minecraft, but the game itself never appeared.",
             nextStep:
-                `Open Task Manager, end the task with process id ${facts.activationPid}, then press Play again. `
-                + "If it happens again, open Logs and send the log file.",
+                `Open Task Manager, end the task with process id ${facts.activationPid}, then press Play again. ` +
+                "If it happens again, open Logs and send the log file.",
         };
     }
 
@@ -339,8 +348,8 @@ export function classifyLaunch(facts: LaunchFacts): LaunchVerdict {
             kind: "other-build-running",
             started: false,
             summary:
-                `Minecraft is running as process ${other.pid} from ${other.executablePath || "an unreadable path"}, `
-                + `which is not the build this profile uses (${facts.versionPath})`,
+                `Minecraft is running as process ${other.pid} from ${other.executablePath || "an unreadable path"}, ` +
+                `which is not the build this profile uses (${facts.versionPath})`,
             headline: "A different copy of Minecraft is already running, so this profile could not start.",
             nextStep: "Close the Minecraft that is already open, then press Play again.",
         };
@@ -352,8 +361,8 @@ export function classifyLaunch(facts: LaunchFacts): LaunchVerdict {
         summary: `Windows accepted the request (${facts.hresult}) but created no process at all`,
         headline: "Windows agreed to open Minecraft but never actually started it.",
         nextStep:
-            "Antivirus software blocking Minecraft is the most common cause, so allow Minecraft and the "
-            + "launcher in it. Then restart the computer and press Play again.",
+            "Antivirus software blocking Minecraft is the most common cause, so allow Minecraft and the " +
+            "launcher in it. Then restart the computer and press Play again.",
     };
 }
 

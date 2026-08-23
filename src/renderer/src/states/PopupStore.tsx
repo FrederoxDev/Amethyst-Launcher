@@ -2,9 +2,11 @@ import { create } from "zustand";
 import { log } from "@renderer/scripts/LauncherLog";
 import { SetStateAction, StateUtils } from "./StateUtils";
 
-export type NodeCallback<SubmitArgs> = (args: PopupUseArguments<SubmitArgs>) => React.ReactNode | Promise<React.ReactNode>;
+export type NodeCallback<SubmitArgs> = (
+    args: PopupUseArguments<SubmitArgs>
+) => React.ReactNode | Promise<React.ReactNode>;
 export type NodeOrCallback<SubmitArgs> = React.ReactNode | NodeCallback<SubmitArgs> | null;
-export type PopupUseArguments<T> = { submit: (result: T) => void, state: PopupState };
+export type PopupUseArguments<T> = { submit: (result: T) => void; state: PopupState };
 
 interface PopupState {
     node: React.ReactNode | null;
@@ -18,7 +20,10 @@ function isThenable(value: unknown): value is Promise<React.ReactNode> {
 }
 
 export class NodeUtils {
-    static async resolveNode<SubmitArgs>(nodeOrCallback: NodeOrCallback<SubmitArgs>, args: PopupUseArguments<SubmitArgs>): Promise<React.ReactNode> {
+    static async resolveNode<SubmitArgs>(
+        nodeOrCallback: NodeOrCallback<SubmitArgs>,
+        args: PopupUseArguments<SubmitArgs>
+    ): Promise<React.ReactNode> {
         const node = typeof nodeOrCallback === "function" ? nodeOrCallback(args) : nodeOrCallback;
         return isThenable(node) ? await node : node;
     }
@@ -34,11 +39,11 @@ export class Popup {
     private static state = create<PopupState>((set, get) => ({
         node: null,
         generation: 0,
-        setNode: (node) => {
+        setNode: node => {
             const next = StateUtils.resolveSetStateAction(node, get().node);
-            set((state) => ({ node: next, generation: state.generation + 1 }));
+            set(state => ({ node: next, generation: state.generation + 1 }));
             if (next === null) Popup.abandonActive?.();
-        }
+        },
     }));
 
     static useState(): PopupState;
@@ -60,7 +65,10 @@ export class Popup {
      * open queues behind it rather than failing, so callers never have to check first.
      */
     static ask<T = void>(node: NodeOrCallback<T>): Promise<T> {
-        const run = this.queue.then(() => this.open<T>(node), () => this.open<T>(node));
+        const run = this.queue.then(
+            () => this.open<T>(node),
+            () => this.open<T>(node)
+        );
         this.queue = run.catch(() => undefined);
         return run;
     }

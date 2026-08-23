@@ -51,9 +51,12 @@ function optionalBoolean(value: unknown, fallback: boolean): boolean {
 function parseConfig(o: Record<string, unknown>): LauncherConfig {
     if (typeof o.keep_open !== "boolean") throw new Error(`"keep_open" must be a boolean, not ${typeof o.keep_open}`);
     if (typeof o.ui_theme !== "string") throw new Error(`"ui_theme" must be a string, not ${typeof o.ui_theme}`);
-    if (typeof o.developer_mode !== "boolean") throw new Error(`"developer_mode" must be a boolean, not ${typeof o.developer_mode}`);
+    if (typeof o.developer_mode !== "boolean")
+        throw new Error(`"developer_mode" must be a boolean, not ${typeof o.developer_mode}`);
     if (o.last_launched_profile_uuid !== null && typeof o.last_launched_profile_uuid !== "string") {
-        throw new Error(`"last_launched_profile_uuid" must be a string or null, not ${typeof o.last_launched_profile_uuid}`);
+        throw new Error(
+            `"last_launched_profile_uuid" must be a string or null, not ${typeof o.last_launched_profile_uuid}`
+        );
     }
 
     return {
@@ -109,9 +112,9 @@ export function readLauncherConfig(filePath: string): LauncherConfig {
 
     log(
         "Config",
-        `Read ${filePath}${stamp.state === "legacy" ? " as an unstamped file, it gets a stamp on the next save" : ""}: `
-        + `keep_open=${config.keep_open}, ui_theme=${config.ui_theme}, developer_mode=${config.developer_mode}, `
-        + `last_launched_profile_uuid=${config.last_launched_profile_uuid}`
+        `Read ${filePath}${stamp.state === "legacy" ? " as an unstamped file, it gets a stamp on the next save" : ""}: ` +
+            `keep_open=${config.keep_open}, ui_theme=${config.ui_theme}, developer_mode=${config.developer_mode}, ` +
+            `last_launched_profile_uuid=${config.last_launched_profile_uuid}`
     );
     return config;
 }

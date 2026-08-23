@@ -7,9 +7,11 @@ const path = window.require("path") as typeof import("path");
 
 /** What a .NET root holds, so a folder that merely shares the name is left alone. */
 function looksLikeDotnetRoot(root: string): boolean {
-    return fs.existsSync(path.join(root, "shared", "Microsoft.NETCore.App"))
-        || fs.existsSync(path.join(root, "dotnet.exe"))
-        || fs.existsSync(path.join(root, "dotnet"));
+    return (
+        fs.existsSync(path.join(root, "shared", "Microsoft.NETCore.App")) ||
+        fs.existsSync(path.join(root, "dotnet.exe")) ||
+        fs.existsSync(path.join(root, "dotnet"))
+    );
 }
 
 /**

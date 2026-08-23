@@ -7,19 +7,19 @@ import { ArchiveToolArtifact } from "./ToolArtifact";
  * Supported platforms: **Linux** only.
  */
 export class GDKProton extends ArchiveToolArtifact {
-  constructor() {
-    super({
-      name: "gdk-proton",
-      repository: "raonygamer/gdk-proton",
-      executableName: "proton",
-      platforms: ["linux"],
-      permissions: 0o755,
-      checkDefaults: {
-        promptForUpdate: false,
-        allowOutdated: true,
-        releaseFetchTimeout: 1000,
-        checkForUpdates: true,
-      },
-    });
-  }
+    constructor() {
+        super({
+            name: "gdk-proton",
+            repository: "raonygamer/gdk-proton",
+            executableName: "proton",
+            platforms: ["linux"],
+            permissions: 0o755,
+            checkDefaults: {
+                promptForUpdate: false,
+                allowOutdated: true,
+                releaseFetchTimeout: 1000,
+                checkForUpdates: true,
+            },
+        });
+    }
 }

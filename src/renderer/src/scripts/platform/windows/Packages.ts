@@ -45,7 +45,11 @@ export type RegistrationBlocker =
     | "unknown";
 
 export class PackageRegistrationError extends Error {
-    constructor(readonly blocker: RegistrationBlocker, readonly detail: string, message: string) {
+    constructor(
+        readonly blocker: RegistrationBlocker,
+        readonly detail: string,
+        message: string
+    ) {
         super(message);
         this.name = "PackageRegistrationError";
     }
@@ -65,10 +69,13 @@ function familyNameFrom(packageFullName: string): string {
  * on the launch path, where "no <Identity Name>" tells a user nothing they can act on.
  */
 function damagedManifest(manifest: string, what: string, cause?: unknown): Error {
-    log("Packages", `${manifest} could not be read for ${what}: ${describeError(cause ?? "the value is not in the file")}`);
+    log(
+        "Packages",
+        `${manifest} could not be read for ${what}: ${describeError(cause ?? "the value is not in the file")}`
+    );
     return new Error(
-        "This Minecraft version is damaged, so Windows cannot install it.\n\n"
-        + "Delete this version in the launcher and download it again.",
+        "This Minecraft version is damaged, so Windows cannot install it.\n\n" +
+            "Delete this version in the launcher and download it again.",
         { cause }
     );
 }
@@ -168,7 +175,7 @@ export function listRegistered(): RegisteredPackage[] {
         let installPath: string | undefined;
         try {
             const values = regedit().listSync(fullKey)[fullKey];
-            installPath = values.exists ? values.values["PackageRootFolder"]?.value as string | undefined : undefined;
+            installPath = values.exists ? (values.values["PackageRootFolder"]?.value as string | undefined) : undefined;
         } catch (e) {
             log("Packages", `Skipping ${fullKey}, which could not be read: ${describeError(e)}`);
             continue;
@@ -304,23 +311,28 @@ export async function register(versionPath: string): Promise<void> {
     // The inner catch adds the two locale-invariant fields the shared wrapper does not carry,
     // then rethrows so the wrapper still writes the HRESULT and the message alongside them.
     const result = await runPowerShell(
-        `try {\n`
-        + `    Add-AppxPackage -Path '${psQuote(manifest)}' -Register -ErrorAction Stop\n`
-        + `}\n`
-        + `catch {\n`
-        + `    Write-Output ('NATIVEERROR=' + $_.Exception.NativeErrorCode)\n`
-        + `    Write-Output ('APPXERRORID=' + $_.FullyQualifiedErrorId)\n`
-        + `    throw\n`
-        + `}`,
+        `try {\n` +
+            `    Add-AppxPackage -Path '${psQuote(manifest)}' -Register -ErrorAction Stop\n` +
+            `}\n` +
+            `catch {\n` +
+            `    Write-Output ('NATIVEERROR=' + $_.Exception.NativeErrorCode)\n` +
+            `    Write-Output ('APPXERRORID=' + $_.FullyQualifiedErrorId)\n` +
+            `    throw\n` +
+            `}`,
         { timeoutMs: REGISTER_TIMEOUT_MS }
     );
 
-    const settings = `developerMode ${settingText(readDeveloperMode())}, `
-        + `policyBlocked ${settingText(readSideloadingPolicyBlock())}`;
+    const settings =
+        `developerMode ${settingText(readDeveloperMode())}, ` +
+        `policyBlocked ${settingText(readSideloadingPolicyBlock())}`;
 
     if (result.code !== 0) {
         const blocker = classify(result.output);
-        logBlock("Packages", `Add-AppxPackage failed for ${identity} (blocker ${blocker}, ${settings})`, describeResult(result));
+        logBlock(
+            "Packages",
+            `Add-AppxPackage failed for ${identity} (blocker ${blocker}, ${settings})`,
+            describeResult(result)
+        );
         throw new PackageRegistrationError(
             blocker,
             describeResult(result),
@@ -341,8 +353,8 @@ export async function register(versionPath: string): Promise<void> {
         const blocker = classify(result.output);
         logBlock(
             "Packages",
-            `Add-AppxPackage exited 0 but ${identity} is not registered to ${versionPath} `
-            + `(blocker ${blocker}, ${settings})`,
+            `Add-AppxPackage exited 0 but ${identity} is not registered to ${versionPath} ` +
+                `(blocker ${blocker}, ${settings})`,
             describeResult(result)
         );
         throw new PackageRegistrationError(
@@ -357,14 +369,14 @@ export async function register(versionPath: string): Promise<void> {
 
 /** The manual route, so a refused or broken permission prompt is never the end of the road. */
 const DEVELOPER_MODE_BY_HAND =
-    "You can turn it on yourself instead: open Settings, then System, then For developers, and turn on "
-    + "Developer Mode. Then come back and press Play.";
+    "You can turn it on yourself instead: open Settings, then System, then For developers, and turn on " +
+    "Developer Mode. Then come back and press Play.";
 
 export class ElevationDeclinedError extends Error {
     constructor() {
         super(
-            "Developer Mode was not turned on, because the Windows permission prompt was dismissed.\n\n"
-            + `Press Play again and choose Yes. ${DEVELOPER_MODE_BY_HAND}`
+            "Developer Mode was not turned on, because the Windows permission prompt was dismissed.\n\n" +
+                `Press Play again and choose Yes. ${DEVELOPER_MODE_BY_HAND}`
         );
         this.name = "ElevationDeclinedError";
     }
@@ -379,17 +391,17 @@ export async function enableDeveloperMode(): Promise<void> {
     const reportPath = path.join(os.tmpdir(), `amethyst-devmode-${Date.now()}.txt`);
 
     const inner =
-        `$ErrorActionPreference = 'Stop'\n`
-        + `try {\n`
-        + `    $key = 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock'\n`
-        + `    if (-not (Test-Path $key)) { New-Item -Path $key -Force | Out-Null }\n`
-        + `    New-ItemProperty -Path $key -Name 'AllowDevelopmentWithoutDevLicense' -Value 1 -PropertyType DWord -Force | Out-Null\n`
-        + `    New-ItemProperty -Path $key -Name 'AllowAllTrustedApps' -Value 1 -PropertyType DWord -Force | Out-Null\n`
-        + `}\n`
-        + `catch {\n`
-        + `    Set-Content -LiteralPath '${psQuote(reportPath)}' -Value $_.Exception.Message -Encoding utf8\n`
-        + `    exit 1\n`
-        + `}\n`;
+        `$ErrorActionPreference = 'Stop'\n` +
+        `try {\n` +
+        `    $key = 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock'\n` +
+        `    if (-not (Test-Path $key)) { New-Item -Path $key -Force | Out-Null }\n` +
+        `    New-ItemProperty -Path $key -Name 'AllowDevelopmentWithoutDevLicense' -Value 1 -PropertyType DWord -Force | Out-Null\n` +
+        `    New-ItemProperty -Path $key -Name 'AllowAllTrustedApps' -Value 1 -PropertyType DWord -Force | Out-Null\n` +
+        `}\n` +
+        `catch {\n` +
+        `    Set-Content -LiteralPath '${psQuote(reportPath)}' -Value $_.Exception.Message -Encoding utf8\n` +
+        `    exit 1\n` +
+        `}\n`;
 
     const innerEncoded = Buffer.from(inner, "utf16le").toString("base64");
 
@@ -398,11 +410,11 @@ export async function enableDeveloperMode(): Promise<void> {
     // The marker separates "the prompt never appeared" from "the elevated script failed": both
     // exit non-zero, and only the first of them is something the user just declined.
     const result = await runPowerShell(
-        `$p = Start-Process -FilePath 'powershell.exe' -ArgumentList `
-        + `'-NoProfile','-ExecutionPolicy','Bypass','-EncodedCommand','${innerEncoded}' `
-        + `-Verb RunAs -Wait -PassThru\n`
-        + `Write-Output ('ELEVATED=' + $p.ExitCode)\n`
-        + `exit $p.ExitCode`,
+        `$p = Start-Process -FilePath 'powershell.exe' -ArgumentList ` +
+            `'-NoProfile','-ExecutionPolicy','Bypass','-EncodedCommand','${innerEncoded}' ` +
+            `-Verb RunAs -Wait -PassThru\n` +
+            `Write-Output ('ELEVATED=' + $p.ExitCode)\n` +
+            `exit $p.ExitCode`,
         { timeoutMs: ELEVATION_TIMEOUT_MS }
     );
 
@@ -421,7 +433,11 @@ export async function enableDeveloperMode(): Promise<void> {
     }
 
     if (result.code !== 0) {
-        logBlock("Packages", `Elevated Developer Mode write failed (exit ${result.code})`, elevatedError || describeResult(result));
+        logBlock(
+            "Packages",
+            `Elevated Developer Mode write failed (exit ${result.code})`,
+            elevatedError || describeResult(result)
+        );
         throw new Error(`Developer Mode could not be turned on.\n\n${DEVELOPER_MODE_BY_HAND}`);
     }
 
@@ -430,16 +446,16 @@ export async function enableDeveloperMode(): Promise<void> {
     if (developerMode === false) {
         log("Packages", "Developer Mode still reads as off after the elevated write");
         throw new Error(
-            "Developer Mode was turned on but Windows still reports it as off.\n\n"
-            + "Restart the computer and press Play again."
+            "Developer Mode was turned on but Windows still reports it as off.\n\n" +
+                "Restart the computer and press Play again."
         );
     }
 
     if (developerMode === null) {
         log(
             "Packages",
-            "Windows would not say whether Developer Mode is on after the elevated write, so the launch carries "
-            + "on and lets registration give the real answer"
+            "Windows would not say whether Developer Mode is on after the elevated write, so the launch carries " +
+                "on and lets registration give the real answer"
         );
         return;
     }

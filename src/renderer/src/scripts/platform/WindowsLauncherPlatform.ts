@@ -6,7 +6,15 @@ import { PathUtils } from "@renderer/scripts/PathUtils";
 import { SESSION_SCHEMA, writeSession } from "@renderer/scripts/session/Session";
 import { InstalledVersion } from "@renderer/scripts/versions/InstalledVersion";
 import { describeError } from "@shared/diagnostics/Log";
-import { DIRECTORY_PATHS, FILE_PATHS, ILauncherPlatform, LauncherPaths, LaunchOutcome, LaunchRequest, ProcessInfo } from "./LauncherPlatform";
+import {
+    DIRECTORY_PATHS,
+    FILE_PATHS,
+    ILauncherPlatform,
+    LauncherPaths,
+    LaunchOutcome,
+    LaunchRequest,
+    ProcessInfo,
+} from "./LauncherPlatform";
 import * as Licence from "./windows/Licence";
 import * as Machine from "./windows/Machine";
 import * as VersionFiles from "./windows/VersionFiles";
@@ -20,8 +28,8 @@ const path = window.require("path") as typeof import("path");
  * boolean, so the words are repeated here rather than reached.
  */
 const UNCONFIRMED_LAUNCH_MESSAGE =
-    "Minecraft was asked to start, but the launcher could not check whether it did.\n\n"
-    + "If Minecraft does not appear within a few seconds, press Play again.";
+    "Minecraft was asked to start, but the launcher could not check whether it did.\n\n" +
+    "If Minecraft does not appear within a few seconds, press Play again.";
 
 export class WindowsLauncherPlatform implements ILauncherPlatform {
     private static cachedPaths: LauncherPaths | null = null;
@@ -52,7 +60,12 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         for (const key of DIRECTORY_PATHS) PathUtils.ensureDirectory(paths[key]);
         for (const key of FILE_PATHS) PathUtils.ensureParentDirectory(paths[key]);
         WindowsLauncherPlatform.cachedPaths = paths;
-        log("Paths", `Resolved from APPDATA ${appData}: ${Object.entries(paths).map(([k, v]) => `${k}=${v}`).join(", ")}`);
+        log(
+            "Paths",
+            `Resolved from APPDATA ${appData}: ${Object.entries(paths)
+                .map(([k, v]) => `${k}=${v}`)
+                .join(", ")}`
+        );
         return paths;
     }
 
@@ -102,7 +115,10 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         const resolved = path.resolve(target);
         const relative = path.relative(root, resolved);
         if (relative === "" || relative.startsWith("..") || path.isAbsolute(relative)) {
-            log("Profiles", `The ${channel} game data points at ${resolved}, which is outside ${root}, so no profile owns it`);
+            log(
+                "Profiles",
+                `The ${channel} game data points at ${resolved}, which is outside ${root}, so no profile owns it`
+            );
             return null;
         }
         return relative.split(path.sep)[0];
@@ -121,8 +137,8 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         const live = CHANNELS.filter(channel => this.liveProfileFor(channel) === profileUuid);
         log(
             "Profiles",
-            `Discarding the data of profile ${profileUuid} at ${dir}; it is the live data for `
-            + `[${live.join(", ") || "no channel"}]`
+            `Discarding the data of profile ${profileUuid} at ${dir}; it is the live data for ` +
+                `[${live.join(", ") || "no channel"}]`
         );
 
         try {
@@ -139,7 +155,10 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             } catch (e) {
                 // The data it pointed at is already gone, so a junction left behind is cleared by
                 // the next launch rather than a reason to keep a profile with no data on the list.
-                log("Profiles", `Could not unlink the ${channel} game data of profile ${profileUuid}: ${describeError(e)}`);
+                log(
+                    "Profiles",
+                    `Could not unlink the ${channel} game data of profile ${profileUuid}: ${describeError(e)}`
+                );
             }
         }
         return live.length > 0;
@@ -165,7 +184,10 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         for (const proc of probe.processes) {
             // Running, but its build cannot be read, so which family it belongs to is unknown.
             if (proc.executablePath === "") {
-                log("Launch", `pid ${proc.pid} is running Minecraft from an image path Windows would not report, treating it as a conflict`);
+                log(
+                    "Launch",
+                    `pid ${proc.pid} is running Minecraft from an image path Windows would not report, treating it as a conflict`
+                );
                 return proc;
             }
 
@@ -173,15 +195,24 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
             try {
                 family = Machine.packageFamilyFor(path.dirname(proc.executablePath));
             } catch (e) {
-                log("Launch", `Could not read the package family of the build pid ${proc.pid} runs from (${proc.executablePath}): ${describeError(e)}`);
+                log(
+                    "Launch",
+                    `Could not read the package family of the build pid ${proc.pid} runs from (${proc.executablePath}): ${describeError(e)}`
+                );
                 family = null;
             }
 
             if (family === null || family.toLowerCase() === wantFamily) {
-                log("Launch", `pid ${proc.pid} runs ${family ?? "an unreadable family"} from ${proc.executablePath}, which conflicts with ${wantFamily}`);
+                log(
+                    "Launch",
+                    `pid ${proc.pid} runs ${family ?? "an unreadable family"} from ${proc.executablePath}, which conflicts with ${wantFamily}`
+                );
                 return proc;
             }
-            log("Launch", `pid ${proc.pid} runs ${family}, a different game from ${wantFamily}, so it is not a conflict`);
+            log(
+                "Launch",
+                `pid ${proc.pid} runs ${family}, a different game from ${wantFamily}, so it is not a conflict`
+            );
         }
 
         log("Launch", `No running Minecraft conflicts with ${wantFamily}`);
@@ -204,12 +235,12 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
 
         log(
             "Launch",
-            `Refusing to launch "${profile.name}" (${version.path}): pid ${running.pid} runs the same `
-            + `${profile.channel} game from ${runningBuild}`
+            `Refusing to launch "${profile.name}" (${version.path}): pid ${running.pid} runs the same ` +
+                `${profile.channel} game from ${runningBuild}`
         );
         return new Error(
             `Another ${profile.channel} profile is already running from ${runningBuild}. ` +
-            `Close it before launching "${profile.name}" (${version.label}).`
+                `Close it before launching "${profile.name}" (${version.label}).`
         );
     }
 
@@ -219,10 +250,10 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
 
         log(
             "Launch",
-            `Launching "${profile.name}" (${profile.uuid}) on ${profile.channel}: build ${version.label} at ${version.path}, `
-            + `runtime ${request.runtime ? `${request.runtime.id} from ${request.runtime.path}` : "none"}, `
-            + `${request.mods.length} mods${request.mods.length > 0 ? ` (${request.mods.map(m => m.id).join(", ")})` : ""}, `
-            + `developer mode ${request.developerMode ? "on" : "off"}, modded ${isModded(profile) ? "yes" : "no"}`
+            `Launching "${profile.name}" (${profile.uuid}) on ${profile.channel}: build ${version.label} at ${version.path}, ` +
+                `runtime ${request.runtime ? `${request.runtime.id} from ${request.runtime.path}` : "none"}, ` +
+                `${request.mods.length} mods${request.mods.length > 0 ? ` (${request.mods.map(m => m.id).join(", ")})` : ""}, ` +
+                `developer mode ${request.developerMode ? "on" : "off"}, modded ${isModded(profile) ? "yes" : "no"}`
         );
 
         // Before anything reads the build: every step from here on opens a file inside it, and a
@@ -236,12 +267,15 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
 
         const dataDir = this.profileDataDir(profile.uuid);
 
-        await Machine.reconcile({
-            channel: profile.channel,
-            versionPath: version.path,
-            dataDir,
-            modded: isModded(profile),
-        }, status);
+        await Machine.reconcile(
+            {
+                channel: profile.channel,
+                versionPath: version.path,
+                dataDir,
+                modded: isModded(profile),
+            },
+            status
+        );
 
         // The runtime reads this to find out which mods to load, so a launch that cannot write it
         // would start a game that silently has no mods in it.
@@ -259,9 +293,9 @@ export class WindowsLauncherPlatform implements ILauncherPlatform {
         } catch (e) {
             log("Launch", `Could not write the session file into ${dataDir}: ${describeError(e)}`);
             throw new Error(
-                "This profile's folder could not be written to, so Minecraft was not started.\n\n"
-                + "Check that the drive is not full and that antivirus software is not blocking the "
-                + `launcher, then press Play again.\n\n${dataDir}`,
+                "This profile's folder could not be written to, so Minecraft was not started.\n\n" +
+                    "Check that the drive is not full and that antivirus software is not blocking the " +
+                    `launcher, then press Play again.\n\n${dataDir}`,
                 { cause: e }
             );
         }

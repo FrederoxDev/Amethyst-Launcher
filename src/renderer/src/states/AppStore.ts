@@ -205,7 +205,8 @@ export const useAppStore = create<AppStore>((set, get) => {
         setKeepLauncherOpen: value => {
             set(state => {
                 const next = StateUtils.resolveSetStateAction(value, state.keepLauncherOpen);
-                if (next !== state.keepLauncherOpen) log("Settings", `Keep launcher open: ${state.keepLauncherOpen} -> ${next}`);
+                if (next !== state.keepLauncherOpen)
+                    log("Settings", `Keep launcher open: ${state.keepLauncherOpen} -> ${next}`);
                 return { keepLauncherOpen: next };
             });
             get().saveData();
@@ -272,19 +273,20 @@ export const useAppStore = create<AppStore>((set, get) => {
 
         // Every banner the user is shown is recorded, so a screenshot of one can be matched
         // to the run that produced it.
-        setError: value => set(state => {
-            const next = StateUtils.resolveSetStateAction(value, state.error);
-            if (next === "") {
-                stickyError = "";
-                return { error: "" };
-            }
-            if (stickyError !== "" && next !== stickyError) {
-                log("AppStore", `Not replacing the banner "${stickyError}" with: ${next}`);
-                return { error: stickyError };
-            }
-            if (next !== state.error) log("AppStore", `Showing error banner: ${next}`);
-            return { error: next };
-        }),
+        setError: value =>
+            set(state => {
+                const next = StateUtils.resolveSetStateAction(value, state.error);
+                if (next === "") {
+                    stickyError = "";
+                    return { error: "" };
+                }
+                if (stickyError !== "" && next !== stickyError) {
+                    log("AppStore", `Not replacing the banner "${stickyError}" with: ${next}`);
+                    return { error: stickyError };
+                }
+                if (next !== state.error) log("AppStore", `Showing error banner: ${next}`);
+                return { error: next };
+            }),
 
         setFatalError: message => {
             stickyError = message;
@@ -296,7 +298,9 @@ export const useAppStore = create<AppStore>((set, get) => {
             set(state => ({ downloadingMods: StateUtils.resolveSetStateAction(value, state.downloadingMods) })),
 
         setInstallingForProfile: value =>
-            set(state => ({ installingForProfile: StateUtils.resolveSetStateAction(value, state.installingForProfile) })),
+            set(state => ({
+                installingForProfile: StateUtils.resolveSetStateAction(value, state.installingForProfile),
+            })),
 
         refreshAllMods: () => {
             const mods = GetAllMods();
@@ -391,9 +395,9 @@ async function hydrate(): Promise<void> {
     const state = useAppStore.getState();
     log(
         "AppStore",
-        `Startup finished: ${state.profiles.length} profiles, ${state.installedVersions.length} installed versions, `
-        + `${state.allValidMods.length} valid mods, ${state.allInvalidMods.length} invalid mods, `
-        + `last launched ${state.lastLaunchedProfileUuid ?? "none"}`
+        `Startup finished: ${state.profiles.length} profiles, ${state.installedVersions.length} installed versions, ` +
+            `${state.allValidMods.length} valid mods, ${state.allInvalidMods.length} invalid mods, ` +
+            `last launched ${state.lastLaunchedProfileUuid ?? "none"}`
     );
 
     // Anything a loader had to move aside is the user's to know about, in their own words.
@@ -414,10 +418,12 @@ export function initializeAppState(): void {
         } catch (e) {
             writeGate = "closed by a failed startup";
             log("AppStore", `Startup failed while ${hydratePhase}: ${describeError(e)}`);
-            useAppStore.getState().setFatalError(
-                `Startup failed while ${hydratePhase}: ${userMessage(e)}. `
-                + "Nothing you change will be saved until this is fixed, so your files stay as they are."
-            );
+            useAppStore
+                .getState()
+                .setFatalError(
+                    `Startup failed while ${hydratePhase}: ${userMessage(e)}. ` +
+                        "Nothing you change will be saved until this is fixed, so your files stay as they are."
+                );
             return;
         } finally {
             // Tell the main process the renderer has hydrated and is painting real content, so it

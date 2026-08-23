@@ -6,9 +6,9 @@ import { log } from "@renderer/scripts/LauncherLog";
 
 /** Opens the file dialog and returns a readable `.msixvc`, or null if there is nothing to import. */
 export async function pickMsixvcFile(where: string): Promise<string | null> {
-    const picked = await ipcRenderer.invoke("dialog:openFile", [
-        { name: "MSIXVC Files", extensions: ["msixvc"] },
-    ]) as string | null;
+    const picked = (await ipcRenderer.invoke("dialog:openFile", [{ name: "MSIXVC Files", extensions: ["msixvc"] }])) as
+        | string
+        | null;
 
     if (!picked) {
         log(where, "File picker closed without a .msixvc");

@@ -46,9 +46,10 @@ export function reportFatal(scope: string, message: string): void {
 
 function installGlobalHandlers(): void {
     window.addEventListener("error", event => {
-        const detail = event.error instanceof Error
-            ? describeError(event.error)
-            : `${event.message} at ${event.filename}:${event.lineno}:${event.colno}`;
+        const detail =
+            event.error instanceof Error
+                ? describeError(event.error)
+                : `${event.message} at ${event.filename}:${event.lineno}:${event.colno}`;
         reportFatal("window", `uncaught: ${detail}`);
     });
 

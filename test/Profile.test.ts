@@ -9,7 +9,7 @@ const MODULE_URL = new URL("../src/renderer/src/scripts/domain/Profile.ts", impo
 let Module: ProfileModule = undefined as unknown as ProfileModule;
 let blocked = "";
 try {
-    Module = await import(MODULE_URL) as ProfileModule;
+    Module = (await import(MODULE_URL)) as ProfileModule;
 } catch (e) {
     blocked = `Profile.ts cannot be loaded by node --test: ${(e as Error).message}`;
 }
@@ -54,7 +54,13 @@ describe("parsing a saved profile", gate, () => {
     it("keeps only the fields the profile shape declares", () => {
         const profile = parse({ favourite: true, lastPlayed: "2026-01-01" }) as Record<string, unknown>;
         assert.deepEqual(Object.keys(profile).sort(), [
-            "channel", "modded", "mods", "name", "uuid", "versionLabel", "versionUuid",
+            "channel",
+            "modded",
+            "mods",
+            "name",
+            "uuid",
+            "versionLabel",
+            "versionUuid",
         ]);
     });
 

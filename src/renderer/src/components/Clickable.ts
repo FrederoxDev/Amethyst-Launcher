@@ -2,8 +2,8 @@ import React from "react";
 
 /** Anything a user can tab to inside a container. */
 export const FOCUSABLE_SELECTOR =
-    "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), "
-    + "[tabindex]:not([tabindex=\"-1\"])";
+    "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), " +
+    '[tabindex]:not([tabindex="-1"])';
 
 export interface ClickableOptions {
     disabled?: boolean;

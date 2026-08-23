@@ -34,19 +34,21 @@ async function handleProtocolUrl(url: string): Promise<void> {
         // amethyst-launcher://launchprofile/<uuid>
         if (parsed.hostname !== "launchprofile") {
             log("Protocol", `Ignoring ${url}: "${parsed.hostname}" is not an action this launcher knows`);
-            useAppStore.getState().setError(
-                `That link asked the launcher to do something it does not know how to do ("${parsed.hostname}").`
-                + "\n\nUpdate the launcher, or pick a profile here and press Play."
-            );
+            useAppStore
+                .getState()
+                .setError(
+                    `That link asked the launcher to do something it does not know how to do ("${parsed.hostname}").` +
+                        "\n\nUpdate the launcher, or pick a profile here and press Play."
+                );
             return;
         }
 
         const profileUuid = parsed.pathname.replace(/^\//, "");
         if (!profileUuid) {
             log("Protocol", `Ignoring ${url}: launchprofile carries no profile UUID after the slash`);
-            useAppStore.getState().setError(
-                "That link does not say which profile to start.\n\nPick a profile here and press Play."
-            );
+            useAppStore
+                .getState()
+                .setError("That link does not say which profile to start.\n\nPick a profile here and press Play.");
             return;
         }
 

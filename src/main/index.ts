@@ -202,10 +202,10 @@ function createWindow(): BrowserWindow {
 // Reload is not shipped: every child process is spawned from the renderer, so Ctrl+R during an
 // appx registration destroys the state awaiting an elevated PowerShell that keeps running.
 if (is.dev) {
-const windowMenu = new Menu();
-windowMenu.append(new MenuItem({ role: "toggleDevTools" }));
-windowMenu.append(new MenuItem({ role: "reload" }));
-Menu.setApplicationMenu(windowMenu);
+    const windowMenu = new Menu();
+    windowMenu.append(new MenuItem({ role: "toggleDevTools" }));
+    windowMenu.append(new MenuItem({ role: "reload" }));
+    Menu.setApplicationMenu(windowMenu);
 } else {
     Menu.setApplicationMenu(null);
 }
@@ -272,7 +272,7 @@ function handle<T>(
             mainLog("ERROR", "ipc", `${channel} failed: ${describeError(e)}`);
             throw e;
         }
-});
+    });
 }
 
 // Sync because every file the renderer writes stamps the version that wrote it, and the write
@@ -305,10 +305,10 @@ function handleProtocolUrl(url: string): void {
         return;
     }
 
-        if (mainWindow.isMinimized()) mainWindow.restore();
-        mainWindow.focus();
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
     sendToWindow("protocol", "AMETHYST_PROTOCOL_URL", url);
-    }
+}
 
 const MOD_ARCHIVE_EXTENSIONS = [".amethyst", ".zip"];
 
@@ -319,8 +319,7 @@ function extractModFilePath(argv: string[]): string | null {
 
     if (match) {
         mainLog("INFO", "fileopen", `argv holds mod archive "${match}"`);
-}
-    else if (candidates.length > 0) {
+    } else if (candidates.length > 0) {
         mainLog(
             "INFO",
             "fileopen",
@@ -351,7 +350,11 @@ function handleModFilePath(file_path: string): void {
 
 // Other window is open, so don't create a new one
 if (hasSingleInstanceLock === false) {
-    mainLog("INFO", "startup", `Another instance holds the lock; handing over argv [${process.argv.slice(1).join(" ")}] and quitting`);
+    mainLog(
+        "INFO",
+        "startup",
+        `Another instance holds the lock; handing over argv [${process.argv.slice(1).join(" ")}] and quitting`
+    );
     discardRun();
     app.quit();
 }
@@ -427,8 +430,7 @@ else {
         if (mainWindow) {
             if (mainWindow.isMinimized()) mainWindow.restore();
             mainWindow.focus();
-        }
-        else {
+        } else {
             mainLog("WARN", "startup", "second-instance arrived before this instance had a window");
         }
 
@@ -444,35 +446,55 @@ else {
 
 registerDownloadIpc();
 
-handle("get-app-version", () => app.getVersion(), result => result);
+handle(
+    "get-app-version",
+    () => app.getVersion(),
+    result => result
+);
 
-handle("check-for-updates", () => {
-    autoUpdater.checkForUpdates().catch(e => {
-        mainLog("ERROR", "update", `checkForUpdates failed: ${describeError(e)}`);
-});
-    return "check started";
-}, result => result);
+handle(
+    "check-for-updates",
+    () => {
+        autoUpdater.checkForUpdates().catch(e => {
+            mainLog("ERROR", "update", `checkForUpdates failed: ${describeError(e)}`);
+        });
+        return "check started";
+    },
+    result => result
+);
 
-handle("set-auto-download", (value: boolean) => {
-    autoUpdater.autoDownload = value;
-    return value;
-}, result => `autoDownload=${result}`);
+handle(
+    "set-auto-download",
+    (value: boolean) => {
+        autoUpdater.autoDownload = value;
+        return value;
+    },
+    result => `autoDownload=${result}`
+);
 
-handle("set-auto-install-on-app-quit", (value: boolean) => {
-    autoUpdater.autoInstallOnAppQuit = value;
-    return value;
-}, result => `autoInstallOnAppQuit=${result}`);
+handle(
+    "set-auto-install-on-app-quit",
+    (value: boolean) => {
+        autoUpdater.autoInstallOnAppQuit = value;
+        return value;
+    },
+    result => `autoInstallOnAppQuit=${result}`
+);
 
-handle("update-download", async () => {
-    const files = await autoUpdater.downloadUpdate();
-    return files;
-}, result => `downloaded ${Array.isArray(result) ? result.join(", ") : String(result)}`);
+handle(
+    "update-download",
+    async () => {
+        const files = await autoUpdater.downloadUpdate();
+        return files;
+    },
+    result => `downloaded ${Array.isArray(result) ? result.join(", ") : String(result)}`
+);
 
 handle(
     "dialog:openFile",
     async (filters: Electron.FileFilter[]) => {
         const result = await dialog.showOpenDialog({ properties: ["openFile"], filters });
-    return result.filePaths[0] ?? null;
+        return result.filePaths[0] ?? null;
     },
     result => result ?? "cancelled by user"
 );

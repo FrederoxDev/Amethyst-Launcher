@@ -20,7 +20,6 @@
 .launcher-progress-bar {
     background-color: var(--color-confirm);
     position: absolute;
-    
 }
 
 .launcher-progress-bar-visible {

@@ -176,9 +176,7 @@ export function diagnoseProfile(input: ProfileDiagnosisInput): ProfileProblem[] 
         }
     }
 
-    const present = input.modIds
-        .map(id => byId.get(id))
-        .filter((mod): mod is ModStatus => mod !== undefined && mod.ok);
+    const present = input.modIds.map(id => byId.get(id)).filter((mod): mod is ModStatus => mod !== undefined && mod.ok);
 
     // The runtime resolves dependencies only against the mods the launcher named in the session,
     // and aborts the load when a required one is not among them. Nothing downstream of here would
@@ -244,19 +242,19 @@ export function diagnoseProfile(input: ProfileDiagnosisInput): ProfileProblem[] 
         problems.push(
             arriving.length > 0
                 ? {
-                    kind: "runtime-downloading",
-                    modId: null,
-                    headline: "Still installing the mods this profile needs",
-                    reasons: [`Waiting for ${arriving.map(id => `"${id}"`).join(", ")} to finish downloading.`],
-                    blocksLaunch: true,
-                }
+                      kind: "runtime-downloading",
+                      modId: null,
+                      headline: "Still installing the mods this profile needs",
+                      reasons: [`Waiting for ${arriving.map(id => `"${id}"`).join(", ")} to finish downloading.`],
+                      blocksLaunch: true,
+                  }
                 : {
-                    kind: "runtime-absent",
-                    modId: null,
-                    headline: "A modded profile needs a runtime mod, and this one has none",
-                    reasons: ["Add a runtime mod to this profile, or turn mods off for it."],
-                    blocksLaunch: true,
-                }
+                      kind: "runtime-absent",
+                      modId: null,
+                      headline: "A modded profile needs a runtime mod, and this one has none",
+                      reasons: ["Add a runtime mod to this profile, or turn mods off for it."],
+                      blocksLaunch: true,
+                  }
         );
     }
 
@@ -274,7 +272,5 @@ export function problemFor(problems: readonly ProfileProblem[], modId: string): 
 
 /** Headline plus reasons, for somewhere with room for both. */
 export function describeProblem(problem: ProfileProblem): string {
-    return problem.reasons.length === 0
-        ? problem.headline
-        : `${problem.headline}\n\n${problem.reasons.join("\n")}`;
+    return problem.reasons.length === 0 ? problem.headline : `${problem.headline}\n\n${problem.reasons.join("\n")}`;
 }

@@ -58,11 +58,14 @@ export interface LaunchRequest {
 
 /** A channel's game data folder holds data that no profile owns. Recoverable by adopting it. */
 export class ForeignGameDataError extends Error {
-    constructor(readonly channel: Channel, readonly dataPath: string) {
+    constructor(
+        readonly channel: Channel,
+        readonly dataPath: string
+    ) {
         super(
-            `Minecraft's ${channel} folder holds worlds and settings that no profile owns, so this profile `
-            + `cannot use it.\n\nPress Play again and choose what to do with it, or move "${dataPath}" `
-            + "somewhere else yourself."
+            `Minecraft's ${channel} folder holds worlds and settings that no profile owns, so this profile ` +
+                `cannot use it.\n\nPress Play again and choose what to do with it, or move "${dataPath}" ` +
+                "somewhere else yourself."
         );
         this.name = "ForeignGameDataError";
     }
@@ -80,7 +83,7 @@ export class SystemSetupRequiredError extends Error {
         readonly explanation: string,
         /** What to do by hand, for when the launcher's own repair does not take. */
         readonly manualStep: string,
-        readonly repair: (onStatus: (message: string) => void) => Promise<void>,
+        readonly repair: (onStatus: (message: string) => void) => Promise<void>
     ) {
         super(title);
         this.name = "SystemSetupRequiredError";

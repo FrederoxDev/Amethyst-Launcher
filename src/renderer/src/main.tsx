@@ -37,7 +37,16 @@ class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryStat
         const report = `${this.state.detail}\n\nLog file: ${logPath}`;
 
         return (
-            <div style={{ padding: "24px", color: "#e6e6e6", fontFamily: "monospace", height: "100vh", overflow: "auto", background: "#1E1E1F" }}>
+            <div
+                style={{
+                    padding: "24px",
+                    color: "#e6e6e6",
+                    fontFamily: "monospace",
+                    height: "100vh",
+                    overflow: "auto",
+                    background: "#1E1E1F",
+                }}
+            >
                 <h1 style={{ fontSize: "18px", marginBottom: "8px" }}>The launcher could not draw this screen.</h1>
                 <p style={{ fontSize: "13px", marginBottom: "12px", color: "#a0a0a0" }}>
                     Copy the text below and send it over, then restart the launcher.
@@ -67,9 +76,12 @@ ReactDOM.createRoot(document.getElementById("app") as HTMLElement).render(
 log("Renderer", "React root mounted");
 
 // Registry and disk probes, so they wait until the window has drawn.
-window.requestIdleCallback(() => {
-    log("Renderer", "Window is idle, collecting the environment report for the log header");
-    reportEnvironment();
-}, { timeout: 5000 });
+window.requestIdleCallback(
+    () => {
+        log("Renderer", "Window is idle, collecting the environment report for the log header");
+        reportEnvironment();
+    },
+    { timeout: 5000 }
+);
 
 window.addEventListener("beforeunload", () => log("Renderer", "Window unloading"));

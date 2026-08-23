@@ -3,7 +3,7 @@ import { UMULauncher } from "./UMULauncher";
 import { GDKProton } from "./GDKProton";
 
 export const LauncherTools = {
-  XVDTool: new XVDTool(),
-  UMULauncher: new UMULauncher(),
-  GDKProton: new GDKProton(),
+    XVDTool: new XVDTool(),
+    UMULauncher: new UMULauncher(),
+    GDKProton: new GDKProton(),
 };

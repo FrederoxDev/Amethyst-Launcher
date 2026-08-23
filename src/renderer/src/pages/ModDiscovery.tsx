@@ -9,9 +9,19 @@ import { PopupPanel } from "@renderer/components/PopupPanel";
 import { usePopupClose } from "@renderer/components/PopupCloseContext";
 
 import { fetchReadme, invalidateReadmes } from "@renderer/scripts/discovery/GithubReadme";
-import { cachedReleases, fetchReleases, invalidateReleases, ModRelease } from "@renderer/scripts/discovery/GithubReleases";
+import {
+    cachedReleases,
+    fetchReleases,
+    invalidateReleases,
+    ModRelease,
+} from "@renderer/scripts/discovery/GithubReleases";
 import { cachedIcon, clearIconCache, loadIcon, subscribeIconCache } from "@renderer/scripts/discovery/IconCache";
-import { catalogSnapshot, DiscoveredMod, fetchCatalog, invalidateCatalog } from "@renderer/scripts/discovery/ModCatalog";
+import {
+    catalogSnapshot,
+    DiscoveredMod,
+    fetchCatalog,
+    invalidateCatalog,
+} from "@renderer/scripts/discovery/ModCatalog";
 import { createProfileFlow } from "@renderer/flows/CreateProfile";
 import { attachInstalledMod, installDiscoveredMod, uninstallMod } from "@renderer/flows/InstallDiscoveredMod";
 import { log } from "@renderer/scripts/LauncherLog";
@@ -53,10 +63,16 @@ function ModCard({ mod, onOpenDetails }: { mod: DiscoveredMod; onOpenDetails: ()
     const [imgError, setImgError] = useState(false);
     return (
         <div className="mod-card" onClick={onOpenDetails}>
-            {imgError
-                ? <div className="mod-card-icon mod-card-icon-placeholder" />
-                : <img src={bannerSrc} alt={`${mod.name} banner`} className="mod-card-icon" onError={() => setImgError(true)} />
-            }
+            {imgError ? (
+                <div className="mod-card-icon mod-card-icon-placeholder" />
+            ) : (
+                <img
+                    src={bannerSrc}
+                    alt={`${mod.name} banner`}
+                    className="mod-card-icon"
+                    onError={() => setImgError(true)}
+                />
+            )}
             <div className="mod-card-body">
                 <h3 className="minecraft-seven mod-card-title">{mod.name}</h3>
                 <p className="minecraft-seven mod-card-authors">{mod.authors.join(", ")}</p>
@@ -64,7 +80,16 @@ function ModCard({ mod, onOpenDetails }: { mod: DiscoveredMod; onOpenDetails: ()
             </div>
             <div className="mod-card-footer">
                 <div className="mod-card-installs">
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#a0a0a0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        stroke="#a0a0a0"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
                         <path d="M8 2v8M4.5 7.5L8 11l3.5-3.5M2 14h12" />
                     </svg>
                     <span className="minecraft-seven">{mod.downloads}</span>
@@ -107,13 +132,23 @@ function pickProfile(modName: string): Promise<ProfileChoice | null> {
                 onClose={() => submit(null)}
                 size="md"
                 bodyClassName="version-picker-list scrollbar"
-                footer={<MinecraftButton text="New Profile" style={{ "--mc-button-container-w": "140px" }} onClick={() => submit({ kind: "new" })} />}
+                footer={
+                    <MinecraftButton
+                        text="New Profile"
+                        style={{ "--mc-button-container-w": "140px" }}
+                        onClick={() => submit({ kind: "new" })}
+                    />
+                }
             >
                 {profiles.length === 0 && (
                     <p className="minecraft-seven mod-picker-empty">No profiles yet. Create one below.</p>
                 )}
                 {profiles.map(profile => (
-                    <div key={profile.uuid} className="version-picker-item" onClick={() => submit({ kind: "profile", uuid: profile.uuid })}>
+                    <div
+                        key={profile.uuid}
+                        className="version-picker-item"
+                        onClick={() => submit({ kind: "profile", uuid: profile.uuid })}
+                    >
                         <p className="minecraft-seven">{profile.name}</p>
                         <span className="minecraft-seven version-picker-item-tag">
                             {profile.mods.includes(modName) ? "Has mod" : profile.modded ? "Modded" : "Vanilla"}
@@ -133,7 +168,10 @@ async function chooseTargetProfile(modName: string): Promise<string | null> {
     if (installingFor !== null) {
         const profile = state.profiles.find(p => p.uuid === installingFor);
         if (profile) {
-            log("ModDiscovery", `Adding "${modName}" to "${profile.name}" (${profile.uuid}), the profile it was opened from`);
+            log(
+                "ModDiscovery",
+                `Adding "${modName}" to "${profile.name}" (${profile.uuid}), the profile it was opened from`
+            );
             return profile.uuid;
         }
         log("ModDiscovery", `The profile "${modName}" was opened from is gone; asking which profile to use instead`);
@@ -251,9 +289,9 @@ function ModDownloads({ mod, onClose }: { mod: DiscoveredMod; onClose?: () => vo
                     }
                 >
                     <p className="minecraft-seven mod-confirm-text">
-                        This mod is not officially published or reviewed by the Amethyst team. The code has not
-                        been checked for security or stability issues, and may behave unexpectedly. Only install
-                        if you trust the source.
+                        This mod is not officially published or reviewed by the Amethyst team. The code has not been
+                        checked for security or stability issues, and may behave unexpectedly. Only install if you trust
+                        the source.
                     </p>
                 </PopupPanel>
             )}
@@ -263,7 +301,8 @@ function ModDownloads({ mod, onClose }: { mod: DiscoveredMod; onClose?: () => vo
             {!loading && failure === "" && releases.length === 0 && (
                 <p className="minecraft-seven mod-release-empty">No releases found.</p>
             )}
-            {!loading && failure === "" &&
+            {!loading &&
+                failure === "" &&
                 releases.map(release => {
                     const isInstalled = allMods.find(m => m.id === release.downloadName) !== undefined;
                     const isInstalling = downloadingMods.includes(release.downloadName);
@@ -279,14 +318,24 @@ function ModDownloads({ mod, onClose }: { mod: DiscoveredMod; onClose?: () => vo
                                 {!isInstalled && (
                                     <div
                                         className="version-picker-item-btn"
-                                        style={isInstalling ? { display: "flex", opacity: 0.5, cursor: "wait" } : undefined}
+                                        style={
+                                            isInstalling ? { display: "flex", opacity: 0.5, cursor: "wait" } : undefined
+                                        }
                                         onClick={e => {
                                             e.stopPropagation();
                                             if (isInstalling) return;
                                             handleInstallClick(release);
                                         }}
                                     >
-                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                                        <svg
+                                            width="14"
+                                            height="14"
+                                            viewBox="0 0 16 16"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="1.5"
+                                            strokeLinecap="round"
+                                        >
                                             <path d="M8 2v8M4.5 7.5L8 11l3.5-3.5M2 14h12" />
                                         </svg>
                                     </div>
@@ -302,7 +351,15 @@ function ModDownloads({ mod, onClose }: { mod: DiscoveredMod; onClose?: () => vo
                                                 addToProfile(release);
                                             }}
                                         >
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                            <svg
+                                                width="14"
+                                                height="14"
+                                                viewBox="0 0 16 16"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                            >
                                                 <path d="M8 3v10M3 8h10" />
                                             </svg>
                                         </div>
@@ -315,12 +372,19 @@ function ModDownloads({ mod, onClose }: { mod: DiscoveredMod; onClose?: () => vo
                                             }}
                                         >
                                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                                                <path d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                                <path
+                                                    d="M2 4H14M5.5 4V2.5C5.5 2.22386 5.72386 2 6 2H10C10.2761 2 10.5 2.22386 10.5 2.5V4M6.5 7V11.5M9.5 7V11.5M3.5 4L4.25 13.5C4.25 13.7761 4.47386 14 4.75 14H11.25C11.5261 14 11.75 13.7761 11.75 13.5L12.5 4"
+                                                    stroke="currentColor"
+                                                    strokeWidth="1.5"
+                                                    strokeLinecap="round"
+                                                />
                                             </svg>
                                         </div>
                                     </>
                                 )}
-                                <span className="minecraft-seven version-picker-item-tag">{isInstalled ? "Installed" : ""}</span>
+                                <span className="minecraft-seven version-picker-item-tag">
+                                    {isInstalled ? "Installed" : ""}
+                                </span>
                             </div>
                         </div>
                     );
@@ -382,11 +446,7 @@ function ModDetailsPopup({ mod, onClose }: { mod: DiscoveredMod; onClose: () => 
     const close = () => animateClose(onClose);
 
     return (
-        <PopupPanel
-            onClose={close}
-            boxClassName="mod-details-popup"
-            bodyClassName="popup-body--flush"
-        >
+        <PopupPanel onClose={close} boxClassName="mod-details-popup" bodyClassName="popup-body--flush">
             <ModDetails mod={mod} onClose={close} />
         </PopupPanel>
     );
@@ -405,9 +465,11 @@ export function ModDiscovery() {
             setMods(await fetchCatalog());
         } catch (e) {
             log("ModDiscovery", `Could not load the mod list: ${describeError(e)}`);
-            useAppStore.getState().setError(
-                `The mod list could not be loaded: ${userMessage(e)} Check your internet connection and try again.`
-            );
+            useAppStore
+                .getState()
+                .setError(
+                    `The mod list could not be loaded: ${userMessage(e)} Check your internet connection and try again.`
+                );
         } finally {
             setFetching(false);
         }
@@ -441,7 +503,17 @@ export function ModDiscovery() {
                 <div className="mod-grid-search">
                     <div className="mod-search-row">
                         <div className="mod-search-box">
-                            <svg className="mod-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f6f6f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <svg
+                                className="mod-search-icon"
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="#6f6f6f"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
                                 <circle cx="11" cy="11" r="8" />
                                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
                             </svg>
@@ -469,31 +541,44 @@ export function ModDiscovery() {
                                 if (!fetching) refresh();
                             }}
                         >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
                                 <path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6" />
                             </svg>
                         </div>
                     </div>
                 </div>
-                {fetching ? (
-                    Array.from({ length: 8 }).map((_, i) => (
-                        <div key={i} className="mod-card mod-card-skeleton">
-                            <div className="mod-card-skeleton-icon" />
-                            <div className="mod-card-body">
-                                <div className="mod-card-skeleton-text" style={{ width: `${60 + (i % 3) * 20}%`, height: "16px" }} />
-                                <div className="mod-card-skeleton-text" style={{ width: `${40 + (i % 2) * 30}%`, height: "13px" }} />
-                            </div>
-                            <div className="mod-card-footer">
-                                <div className="mod-card-skeleton-text" style={{ width: "60%", height: "12px" }} />
-                                <div className="mod-card-skeleton-text" style={{ width: "40%", height: "12px" }} />
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    filteredMods.map(mod => (
-                        <ModCard key={mod.id} mod={mod} onOpenDetails={() => setSelectedMod(mod)} />
-                    ))
-                )}
+                {fetching
+                    ? Array.from({ length: 8 }).map((_, i) => (
+                          <div key={i} className="mod-card mod-card-skeleton">
+                              <div className="mod-card-skeleton-icon" />
+                              <div className="mod-card-body">
+                                  <div
+                                      className="mod-card-skeleton-text"
+                                      style={{ width: `${60 + (i % 3) * 20}%`, height: "16px" }}
+                                  />
+                                  <div
+                                      className="mod-card-skeleton-text"
+                                      style={{ width: `${40 + (i % 2) * 30}%`, height: "13px" }}
+                                  />
+                              </div>
+                              <div className="mod-card-footer">
+                                  <div className="mod-card-skeleton-text" style={{ width: "60%", height: "12px" }} />
+                                  <div className="mod-card-skeleton-text" style={{ width: "40%", height: "12px" }} />
+                              </div>
+                          </div>
+                      ))
+                    : filteredMods.map(mod => (
+                          <ModCard key={mod.id} mod={mod} onOpenDetails={() => setSelectedMod(mod)} />
+                      ))}
             </div>
 
             <div className="launcher-footer">

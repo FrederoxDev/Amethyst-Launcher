@@ -82,8 +82,8 @@ export function registerDownloadIpc(): void {
         mainLog(
             "INFO",
             "download",
-            `HEAD ${url} -> ${result.error !== null ? result.error : `${result.status} ${result.statusText}`} `
-            + `in ${result.ms}ms`
+            `HEAD ${url} -> ${result.error !== null ? result.error : `${result.status} ${result.statusText}`} ` +
+                `in ${result.ms}ms`
         );
         return result;
     });

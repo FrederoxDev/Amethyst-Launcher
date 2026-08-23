@@ -21,7 +21,11 @@ export default function AdoptChoicePopup({ submit, channel, dataPath }: Props) {
             size="md"
             footer={
                 <>
-                    <MinecraftButton text="Keep as a profile" onClick={() => submit("adopt")} style={{ flex: 1, minWidth: 0 }} />
+                    <MinecraftButton
+                        text="Keep as a profile"
+                        onClick={() => submit("adopt")}
+                        style={{ flex: 1, minWidth: 0 }}
+                    />
                     <MinecraftButton
                         text="Delete data"
                         buttonStyle={MinecraftButtonStyle.Warn}
@@ -33,8 +37,8 @@ export default function AdoptChoicePopup({ submit, channel, dataPath }: Props) {
         >
             <ReadOnlyTextBox label="Found data at" text={dataPath} />
             <p className="minecraft-seven" style={{ fontSize: "14px", lineHeight: 1.5 }}>
-                Amethyst keeps game data per profile. Turn this data into a new {channelLabel(channel)} profile,
-                or delete it permanently.
+                Amethyst keeps game data per profile. Turn this data into a new {channelLabel(channel)} profile, or
+                delete it permanently.
             </p>
         </PopupPanel>
     );

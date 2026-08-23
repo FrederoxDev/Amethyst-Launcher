@@ -54,8 +54,8 @@ function firstEntries(dir: string, limit = 6): string {
 function unreadable(channel: Channel, p: string, e: unknown): Error {
     log("DataLink", `Could not read ${p} for ${channel}: ${describe(e)}`);
     return new Error(
-        `Minecraft's ${channel} data folder could not be read, so this profile cannot be set up.\n\n`
-        + `${FOLDER_IN_USE_NEXT_STEP}\n\n"${p}"`,
+        `Minecraft's ${channel} data folder could not be read, so this profile cannot be set up.\n\n` +
+            `${FOLDER_IN_USE_NEXT_STEP}\n\n"${p}"`,
         { cause: e }
     );
 }
@@ -107,8 +107,7 @@ export function readLink(channel: Channel): LinkState {
 }
 
 /** Whatever holds the folder is a running program or an open window, so the fix is the same one. */
-const FOLDER_IN_USE_NEXT_STEP =
-    "Close Minecraft and any window showing that folder, then press Play again.";
+const FOLDER_IN_USE_NEXT_STEP = "Close Minecraft and any window showing that folder, then press Play again.";
 
 export function link(channel: Channel, target: string): void {
     const p = roamingPath(channel);
@@ -119,8 +118,8 @@ export function link(channel: Channel, target: string): void {
     } catch (e) {
         log("DataLink", `Could not point ${p} at ${target} for ${channel}: ${describe(e)}`);
         throw new Error(
-            `Minecraft's ${channel} data folder could not be pointed at this profile.\n\n`
-            + `${FOLDER_IN_USE_NEXT_STEP}\n\n"${p}"`,
+            `Minecraft's ${channel} data folder could not be pointed at this profile.\n\n` +
+                `${FOLDER_IN_USE_NEXT_STEP}\n\n"${p}"`,
             { cause: e }
         );
     }
@@ -143,10 +142,10 @@ export function relink(channel: Channel, target: string, previous: string): void
         } catch (restoreError) {
             log("DataLink", `Could not put the ${channel} junction back to ${previous}: ${describe(restoreError)}`);
             throw new Error(
-                `Minecraft's ${channel} data folder could not be pointed at this profile, and the link to the `
-                + `profile that was using it could not be put back.\n\n`
-                + `No worlds have been deleted - they are still in that profile's own folder. Restart the `
-                + `computer and press Play again.\n\n"${previous}"`,
+                `Minecraft's ${channel} data folder could not be pointed at this profile, and the link to the ` +
+                    `profile that was using it could not be put back.\n\n` +
+                    `No worlds have been deleted - they are still in that profile's own folder. Restart the ` +
+                    `computer and press Play again.\n\n"${previous}"`,
                 { cause: e }
             );
         }
@@ -163,8 +162,8 @@ export function unlink(channel: Channel): void {
     } catch (e) {
         log("DataLink", `Could not remove the ${channel} junction at ${p}: ${describe(e)}`);
         throw new Error(
-            `Minecraft's ${channel} data folder could not be unlinked from the profile using it.\n\n`
-            + `${FOLDER_IN_USE_NEXT_STEP}\n\n"${p}"`,
+            `Minecraft's ${channel} data folder could not be unlinked from the profile using it.\n\n` +
+                `${FOLDER_IN_USE_NEXT_STEP}\n\n"${p}"`,
             { cause: e }
         );
     }
@@ -178,8 +177,8 @@ export function removeEmptyDir(channel: Channel): void {
     } catch (e) {
         log("DataLink", `Could not remove the empty ${channel} folder at ${p}: ${describe(e)}`);
         throw new Error(
-            `The empty folder Minecraft's ${channel} data would replace could not be removed.\n\n`
-            + `${FOLDER_IN_USE_NEXT_STEP}\n\n"${p}"`,
+            `The empty folder Minecraft's ${channel} data would replace could not be removed.\n\n` +
+                `${FOLDER_IN_USE_NEXT_STEP}\n\n"${p}"`,
             { cause: e }
         );
     }

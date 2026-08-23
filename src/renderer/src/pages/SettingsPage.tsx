@@ -25,8 +25,11 @@ export function GeneralSettingsTab() {
 
     useEffect(() => {
         let cancelled = false;
-        fs.promises.readFile(paths.launcherConfigPath, "utf-8")
-            .then(text => { if (!cancelled) setLauncherCfg(text); })
+        fs.promises
+            .readFile(paths.launcherConfigPath, "utf-8")
+            .then(text => {
+                if (!cancelled) setLauncherCfg(text);
+            })
             .catch(e => {
                 if (cancelled) return;
                 if ((e as { code?: string }).code === "ENOENT") {
@@ -37,7 +40,9 @@ export function GeneralSettingsTab() {
                 log("Settings", `Could not read ${paths.launcherConfigPath} for display: ${describeError(e)}`);
                 setLauncherCfg(`${paths.launcherConfigPath}\n\nCould not be read: ${userMessage(e)}`);
             });
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, [paths.launcherConfigPath, lastLaunchedProfileUuid, keepLauncherOpen, developerMode, UITheme]);
 
     const analyticsConsent = useAppStore(state => state.analyticsConsent);
@@ -178,8 +183,8 @@ export function GeneralSettingsTab() {
                     <div>
                         <p className="minecraft-seven settings-title">Native window decorations</p>
                         <p className="minecraft-seven settings-subtitle">
-                            Use your operating system's window frame and title bar instead of the custom
-                            Amethyst one. Changes apply after restarting the launcher.
+                            Use your operating system's window frame and title bar instead of the custom Amethyst one.
+                            Changes apply after restarting the launcher.
                         </p>
                     </div>
                     <div className="settings-toggle-wrap">

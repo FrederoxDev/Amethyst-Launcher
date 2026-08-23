@@ -48,7 +48,10 @@ export class FileLocker {
         try {
             record = JSON.parse(fs.readFileSync(lockFilePath, "utf-8")) as LockRecord;
         } catch (e) {
-            log("FileLocker", `${lockFilePath} could not be read as a lock record, so it holds nothing: ${describeError(e)}`);
+            log(
+                "FileLocker",
+                `${lockFilePath} could not be read as a lock record, so it holds nothing: ${describeError(e)}`
+            );
             return null;
         }
 
@@ -60,8 +63,8 @@ export class FileLocker {
         if (!processAlive(record.pid)) {
             log(
                 "FileLocker",
-                `${lockFilePath} was taken by session ${record.session} in pid ${record.pid}, which is no longer `
-                + `running, so it counts as stale and may be cleared`
+                `${lockFilePath} was taken by session ${record.session} in pid ${record.pid}, which is no longer ` +
+                    `running, so it counts as stale and may be cleared`
             );
             return null;
         }
@@ -73,7 +76,10 @@ export class FileLocker {
         const lockFilePath = FileLocker.lockPathFor(filePath);
         const record: LockRecord = { session: this.LOCK_SESSION, pid: process.pid, since: new Date().toISOString() };
         fs.writeFileSync(lockFilePath, JSON.stringify(record), "utf-8");
-        log("FileLocker", `Locked ${filePath} (wrote ${lockFilePath} for session ${this.LOCK_SESSION}, pid ${process.pid})`);
+        log(
+            "FileLocker",
+            `Locked ${filePath} (wrote ${lockFilePath} for session ${this.LOCK_SESSION}, pid ${process.pid})`
+        );
     }
 
     /** Releases a lock this run took. A lock another live process holds is left alone. */
@@ -81,7 +87,10 @@ export class FileLocker {
         const lockFilePath = FileLocker.lockPathFor(filePath);
         const held = this.holder(filePath);
         if (held !== null && held.session !== this.LOCK_SESSION) {
-            log("FileLocker", `Not unlocking ${filePath}: ${lockFilePath} belongs to session ${held.session} in pid ${held.pid}`);
+            log(
+                "FileLocker",
+                `Not unlocking ${filePath}: ${lockFilePath} belongs to session ${held.session} in pid ${held.pid}`
+            );
             return;
         }
 

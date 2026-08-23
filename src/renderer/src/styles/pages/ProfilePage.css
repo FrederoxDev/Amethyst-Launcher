@@ -1,65 +1,65 @@
 .profile-page {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 8px;
-  gap: 8px;
-  background-color: var(--color-surface);
-  border: 3px solid var(--color-outline);
-  overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 8px;
+    gap: 8px;
+    background-color: var(--color-surface);
+    border: 3px solid var(--color-outline);
+    overflow: hidden;
 }
 
 .profile-page-title {
-  color: white;
-  font-size: 14px;
+    color: white;
+    font-size: 14px;
 }
 
 .profile-page-list {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  border: 3px solid var(--color-outline);
-  height: 100%;
-  background-color: var(--color-surface-sunken);
-  overflow-y: auto;
-  overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    border: 3px solid var(--color-outline);
+    height: 100%;
+    background-color: var(--color-surface-sunken);
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .profile-page-footer {
-  background-color: var(--color-surface);
-  height: fit-content;
+    background-color: var(--color-surface);
+    height: fit-content;
 }
 
 .profile-card {
-  margin: -3px;
-  border: 3px solid var(--color-outline);
+    margin: -3px;
+    border: 3px solid var(--color-outline);
 }
 
 .profile-card-inner {
-  cursor: pointer;
-  border: 3px solid;
-  border-top-color: var(--color-surface-hover);
-  border-left-color: var(--color-surface-hover);
-  border-bottom-color: #333334;
-  border-right-color: #333334;
-  background-color: var(--color-surface);
-  padding: 8px;
+    cursor: pointer;
+    border: 3px solid;
+    border-top-color: var(--color-surface-hover);
+    border-left-color: var(--color-surface-hover);
+    border-bottom-color: #333334;
+    border-right-color: #333334;
+    background-color: var(--color-surface);
+    padding: 8px;
 }
 
 .profile-card-title {
-  color: white;
-  font-size: 14px;
-  padding: 0 4px;
+    color: white;
+    font-size: 14px;
+    padding: 0 4px;
 }
 
 .profile-card-subtitle {
-  color: #b1b2b5;
-  font-size: 14px;
-  padding: 0 4px;
+    color: #b1b2b5;
+    font-size: 14px;
+    padding: 0 4px;
 }
 
 .profile-card-warning {
-  color: var(--color-danger-text);
-  font-size: 14px;
-  padding: 0 4px;
+    color: var(--color-danger-text);
+    font-size: 14px;
+    padding: 0 4px;
 }

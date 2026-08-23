@@ -121,8 +121,8 @@ export function ValidateMod(id: string): ValidatedMod {
 
     if (format.support === "removed") {
         errors.push(
-            `${id} is built for Amethyst format_version "${formatVersion}", which this launcher can no longer run. `
-            + "Check for an update from its author, or remove it from the profile."
+            `${id} is built for Amethyst format_version "${formatVersion}", which this launcher can no longer run. ` +
+                "Check for an update from its author, or remove it from the profile."
         );
         return rejected();
     }
@@ -145,9 +145,9 @@ export function ValidateMod(id: string): ValidatedMod {
     // inside it, not something the format version says.
     if (config.meta.type === "runtime" && formatVersion !== RUNTIME_FORMAT_VERSION) {
         errors.push(
-            `This runtime is built for Amethyst format_version "${formatVersion}", and runtimes must be on `
-            + `"${RUNTIME_FORMAT_VERSION}" to start the game. Update the runtime, or pick a newer one. `
-            + "Your other mods are unaffected."
+            `This runtime is built for Amethyst format_version "${formatVersion}", and runtimes must be on ` +
+                `"${RUNTIME_FORMAT_VERSION}" to start the game. Update the runtime, or pick a newer one. ` +
+                "Your other mods are unaffected."
         );
         return rejected();
     }

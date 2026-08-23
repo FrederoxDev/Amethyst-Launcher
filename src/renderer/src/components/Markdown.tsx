@@ -44,7 +44,12 @@ function resolveGithubAsset(src: string, githubUrl: string): string {
 }
 
 /** Holds the layout with a placeholder so a slow image does not make the README jump. */
-function MarkdownImage({ src, alt, assetBaseUrl, ...props }: React.ImgHTMLAttributes<HTMLImageElement> & { assetBaseUrl?: string }) {
+function MarkdownImage({
+    src,
+    alt,
+    assetBaseUrl,
+    ...props
+}: React.ImgHTMLAttributes<HTMLImageElement> & { assetBaseUrl?: string }) {
     const [loaded, setLoaded] = useState(false);
     if (!src) return null;
     return (

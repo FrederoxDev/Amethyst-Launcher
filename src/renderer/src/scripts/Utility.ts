@@ -8,8 +8,7 @@ const fs = window.require("fs") as typeof import("fs");
 export function fetchWithTimeout(url: string, options: RequestInit = {}, timeout: number = 5000): Promise<Response> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(`Timeout reached! (timeout = ${timeout}ms)`), timeout);
-    return fetch(url, { ...options, signal: controller.signal })
-        .finally(() => clearTimeout(timer));
+    return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
 let appVersion: string | null = null;
@@ -92,23 +91,32 @@ export function stampFields(format: string, formatVersion: number): Record<strin
  * either way. A file written by a different launcher build is a branch to handle, not an
  * exception to discover halfway through validating it.
  */
-export function inspectStamp(scope: string, filePath: string, raw: unknown, format: string, formatVersion: number): StampState {
+export function inspectStamp(
+    scope: string,
+    filePath: string,
+    raw: unknown,
+    format: string,
+    formatVersion: number
+): StampState {
     const expected = `"${format}" v${formatVersion}`;
-    const object = typeof raw === "object" && raw !== null && !Array.isArray(raw)
-        ? raw as Record<string, unknown>
-        : null;
+    const object =
+        typeof raw === "object" && raw !== null && !Array.isArray(raw) ? (raw as Record<string, unknown>) : null;
 
     const foundFormat = typeof object?.format === "string" ? object.format : null;
     const foundVersion = typeof object?.format_version === "number" ? object.format_version : null;
     const writtenBy = typeof object?.written_by === "string" ? object.written_by : null;
 
     if (foundFormat === null && foundVersion === null) {
-        log(scope, `${filePath}: no format stamp, expected ${expected}; reading it as a file from an older launcher build`);
+        log(
+            scope,
+            `${filePath}: no format stamp, expected ${expected}; reading it as a file from an older launcher build`
+        );
         return { state: "legacy" };
     }
 
-    const found = `"${foundFormat ?? "unnamed"}" v${foundVersion ?? "unknown"}`
-        + `${writtenBy ? `, written by launcher ${writtenBy}` : ""}`;
+    const found =
+        `"${foundFormat ?? "unnamed"}" v${foundVersion ?? "unknown"}` +
+        `${writtenBy ? `, written by launcher ${writtenBy}` : ""}`;
 
     if (foundFormat !== format || foundVersion !== formatVersion) {
         log(scope, `${filePath}: stamp is ${found}, this build reads ${expected}`);
@@ -147,15 +155,18 @@ export function quarantineFile(scope: string, filePath: string, what: string, re
         fs.renameSync(filePath, target);
         log(scope, `Quarantined ${filePath} as ${target}, because ${reason}`);
         recordStartupNotice(
-            `Your saved ${what} could not be read, so the launcher started without it. `
-            + `The old file was kept as ${target}`
+            `Your saved ${what} could not be read, so the launcher started without it. ` +
+                `The old file was kept as ${target}`
         );
         return true;
     } catch (e) {
-        log(scope, `Could not move ${filePath} aside (${describeError(e)}); it stays in place. It was rejected because ${reason}`);
+        log(
+            scope,
+            `Could not move ${filePath} aside (${describeError(e)}); it stays in place. It was rejected because ${reason}`
+        );
         recordStartupNotice(
-            `Your saved ${what} could not be read, and the launcher could not move it aside, `
-            + `so it started without it and will not save over ${filePath}`
+            `Your saved ${what} could not be read, and the launcher could not move it aside, ` +
+                `so it started without it and will not save over ${filePath}`
         );
         return false;
     }

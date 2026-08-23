@@ -2,7 +2,13 @@ import { describeError, userMessage } from "@shared/diagnostics/Log";
 import { SemVersion } from "@renderer/scripts/classes/SemVersion";
 import { Channel, channelLabel, isChannel } from "@renderer/scripts/domain/Channel";
 import { log } from "@renderer/scripts/LauncherLog";
-import { discardCacheFile, inspectStamp, stampFields, tryReadJsonFile, writeJsonAtomic } from "@renderer/scripts/Utility";
+import {
+    discardCacheFile,
+    inspectStamp,
+    stampFields,
+    tryReadJsonFile,
+    writeJsonAtomic,
+} from "@renderer/scripts/Utility";
 
 const fs = window.require("fs") as typeof import("fs");
 
@@ -32,7 +38,11 @@ export function catalogLabel(v: CatalogVersion): string {
  * of those, so the two are never worded the same.
  */
 class CatalogFetchError extends Error {
-    constructor(readonly kind: "unreachable" | "malformed", message: string, options?: ErrorOptions) {
+    constructor(
+        readonly kind: "unreachable" | "malformed",
+        message: string,
+        options?: ErrorOptions
+    ) {
         super(message, options);
         this.name = "CatalogFetchError";
     }
@@ -86,7 +96,8 @@ function serialize(cache: CachedCatalog): unknown {
 function deserialize(o: Record<string, unknown>, where: string): CachedCatalog {
     if (!Array.isArray(o.versions)) throw new Error(`"versions" must be an array, not ${typeof o.versions}`);
     if (typeof o.fetched_at !== "string") throw new Error(`"fetched_at" must be a string, not ${typeof o.fetched_at}`);
-    if (typeof o.file_version !== "number") throw new Error(`"file_version" must be a number, not ${typeof o.file_version}`);
+    if (typeof o.file_version !== "number")
+        throw new Error(`"file_version" must be a number, not ${typeof o.file_version}`);
 
     const versions = o.versions.map((raw, index) => {
         const e = raw as Record<string, unknown>;
@@ -97,7 +108,12 @@ function deserialize(o: Record<string, unknown>, where: string): CachedCatalog {
         if (!Array.isArray(e.urls) || !e.urls.every(u => typeof u === "string")) {
             throw new Error(`${at}: "urls" must be an array of strings`);
         }
-        return { uuid: e.uuid, channel: e.channel, version: SemVersion.fromString(e.version), urls: e.urls as string[] };
+        return {
+            uuid: e.uuid,
+            channel: e.channel,
+            version: SemVersion.fromString(e.version),
+            urls: e.urls as string[],
+        };
     });
 
     const fetchedAt = new Date(o.fetched_at);
@@ -166,19 +182,25 @@ async function fetchRemote(): Promise<CachedCatalog> {
 
     if (!response.ok) {
         log("Catalog", `Version database returned ${response.status} ${response.statusText}`);
-        throw new CatalogFetchError("unreachable", `Version database returned ${response.status} ${response.statusText}`);
+        throw new CatalogFetchError(
+            "unreachable",
+            `Version database returned ${response.status} ${response.statusText}`
+        );
     }
 
     let data: Record<string, unknown>;
     try {
-        data = await response.json() as Record<string, unknown>;
+        data = (await response.json()) as Record<string, unknown>;
     } catch (e) {
         log("Catalog", `${DATABASE_URL} did not return JSON: ${describeError(e)}`);
         throw new CatalogFetchError("malformed", "the version database is not valid JSON", { cause: e });
     }
 
     if (typeof data !== "object" || data === null || Array.isArray(data)) {
-        throw new CatalogFetchError("malformed", `the version database is a ${Array.isArray(data) ? "array" : typeof data}, not an object`);
+        throw new CatalogFetchError(
+            "malformed",
+            `the version database is a ${Array.isArray(data) ? "array" : typeof data}, not an object`
+        );
     }
 
     if (typeof data.file_version !== "number") {
@@ -225,7 +247,11 @@ export class Catalog {
         if (stamp.state === "legacy") {
             // Unstamped means an older launcher wrote it, and that is exactly the drift that
             // used to dead-end the version list. It costs one fetch to be certain.
-            discardCacheFile("Catalog", this.cacheFilePath, "it carries no format stamp, so an older launcher build wrote it");
+            discardCacheFile(
+                "Catalog",
+                this.cacheFilePath,
+                "it carries no format stamp, so an older launcher build wrote it"
+            );
             return null;
         }
 
@@ -251,8 +277,8 @@ export class Catalog {
                 this.cache = onDisk;
                 log(
                     "Catalog",
-                    `Serving the cached list of ${onDisk.versions.length} versions, fetched ${ageMinutes.toFixed(1)} `
-                    + `minutes ago, under the ${REFRESH_INTERVAL_MS / 60000} minute refresh interval`
+                    `Serving the cached list of ${onDisk.versions.length} versions, fetched ${ageMinutes.toFixed(1)} ` +
+                        `minutes ago, under the ${REFRESH_INTERVAL_MS / 60000} minute refresh interval`
                 );
                 return this.cache.versions;
             }
@@ -269,8 +295,8 @@ export class Catalog {
             } catch (writeError) {
                 log(
                     "Catalog",
-                    `Refreshed ${this.cache.versions.length} versions but could not write `
-                    + `${this.cacheFilePath}: ${describeError(writeError)}`
+                    `Refreshed ${this.cache.versions.length} versions but could not write ` +
+                        `${this.cacheFilePath}: ${describeError(writeError)}`
                 );
             }
         } catch (e) {
@@ -286,8 +312,8 @@ export class Catalog {
             }
             log(
                 "Catalog",
-                `Refresh failed, falling back to the ${onDisk.versions.length}-version cache fetched `
-                + `${onDisk.fetchedAt.toISOString()}: ${describeError(e)}`
+                `Refresh failed, falling back to the ${onDisk.versions.length}-version cache fetched ` +
+                    `${onDisk.fetchedAt.toISOString()}: ${describeError(e)}`
             );
             this.cache = onDisk;
         }
@@ -311,8 +337,10 @@ export class Catalog {
 }
 
 function compare(a: CatalogVersion, b: CatalogVersion): number {
-    return (a.version.major - b.version.major)
-        || (a.version.minor - b.version.minor)
-        || (a.version.patch - b.version.patch)
-        || (a.version.build - b.version.build);
+    return (
+        a.version.major - b.version.major ||
+        a.version.minor - b.version.minor ||
+        a.version.patch - b.version.patch ||
+        a.version.build - b.version.build
+    );
 }

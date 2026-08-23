@@ -83,20 +83,29 @@ function DownloadManagerButton() {
         const dl = downloads.find(d => d.id === id);
         if (!dl) {
             log("Downloads", `Dismissed download ${id}, which is no longer in the list`);
-        }
-        else if (dl.abortController) {
-            log("Downloads", `User cancelled "${dl.name}" (${id}) at ${Math.round(dl.progress * 100)}%, status ${dl.status}`);
+        } else if (dl.abortController) {
+            log(
+                "Downloads",
+                `User cancelled "${dl.name}" (${id}) at ${Math.round(dl.progress * 100)}%, status ${dl.status}`
+            );
             dl.abortController.abort();
-        }
-        else {
-            log("Downloads", `Removed "${dl.name}" (${id}) from the list; status ${dl.status} carries nothing to abort`);
+        } else {
+            log(
+                "Downloads",
+                `Removed "${dl.name}" (${id}) from the list; status ${dl.status} carries nothing to abort`
+            );
         }
         removePendingDownload(id);
         removeDownload(id);
     };
 
     return (
-        <div className="download-manager-btn" data-tooltip="Downloads" ref={btnRef} onClick={() => setPanelOpen(!panelOpen)}>
+        <div
+            className="download-manager-btn"
+            data-tooltip="Downloads"
+            ref={btnRef}
+            onClick={() => setPanelOpen(!panelOpen)}
+        >
             <svg
                 width="20"
                 height="20"
@@ -188,7 +197,7 @@ function AnimatedRoutes() {
     useEffect(() => {
         if (!isExiting) return undefined;
         const timer = setTimeout(() => setDisplayLocation(location), 80);
-            return () => clearTimeout(timer);
+        return () => clearTimeout(timer);
     }, [location, isExiting]);
 
     return (
@@ -219,9 +228,12 @@ export default function App() {
 
     useEffect(() => {
         setTimeout(() => {
-            useAppStore.getState().versions.cleanupStaleLocks().catch(e => {
-                log("App", `Stale lock sweep failed: ${describeError(e)}`);
-            });
+            useAppStore
+                .getState()
+                .versions.cleanupStaleLocks()
+                .catch(e => {
+                    log("App", `Stale lock sweep failed: ${describeError(e)}`);
+                });
             removeRetiredDotnet().catch(e => {
                 log("App", `Retired .NET sweep failed: ${describeError(e)}`);
             });

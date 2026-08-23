@@ -33,9 +33,12 @@ export function PopupCloseBoundary({ children }: { children: React.ReactNode }) 
     const animationDone = useRef(false);
     const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    useEffect(() => () => {
-        if (timer.current !== null) clearTimeout(timer.current);
-    }, []);
+    useEffect(
+        () => () => {
+            if (timer.current !== null) clearTimeout(timer.current);
+        },
+        []
+    );
 
     const animateClose = useCallback((callback: () => void) => {
         // Closing handlers wrap each other — a panel's onClose is usually itself a wrapped
@@ -54,11 +57,7 @@ export function PopupCloseBoundary({ children }: { children: React.ReactNode }) 
         }, CLOSE_ANIMATION_MS);
     }, []);
 
-    return (
-        <PopupCloseContext.Provider value={{ closing, animateClose }}>
-            {children}
-        </PopupCloseContext.Provider>
-    );
+    return <PopupCloseContext.Provider value={{ closing, animateClose }}>{children}</PopupCloseContext.Provider>;
 }
 
 export function PopupPanel({
@@ -89,38 +88,41 @@ export function PopupPanel({
         animateClose(onClose);
     }, [onClose, animateClose]);
 
-    const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
-        if (event.key === "Escape") {
-            event.stopPropagation();
-            requestClose();
-            return;
-        }
-        if (event.key !== "Tab") return;
+    const handleKeyDown = useCallback(
+        (event: React.KeyboardEvent<HTMLDivElement>) => {
+            if (event.key === "Escape") {
+                event.stopPropagation();
+                requestClose();
+                return;
+            }
+            if (event.key !== "Tab") return;
 
-        const box = boxRef.current;
-        if (!box) return;
+            const box = boxRef.current;
+            if (!box) return;
 
-        const focusable = Array.from(box.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-            .filter(element => element.offsetParent !== null);
-        if (focusable.length === 0) {
-            event.preventDefault();
-            box.focus();
-            return;
-        }
+            const focusable = Array.from(box.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+                element => element.offsetParent !== null
+            );
+            if (focusable.length === 0) {
+                event.preventDefault();
+                box.focus();
+                return;
+            }
 
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        const active = document.activeElement;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            const active = document.activeElement;
 
-        if (event.shiftKey && (active === first || active === box)) {
-            event.preventDefault();
-            last.focus();
-        }
-        else if (!event.shiftKey && (active === last || active === box)) {
-            event.preventDefault();
-            first.focus();
-        }
-    }, [requestClose]);
+            if (event.shiftKey && (active === first || active === box)) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && (active === last || active === box)) {
+                event.preventDefault();
+                first.focus();
+            }
+        },
+        [requestClose]
+    );
 
     const hasHeader = title !== undefined || onClose !== undefined;
 
@@ -147,8 +149,11 @@ export function PopupPanel({
                             {onClose && (
                                 <div className="popup-close" {...clickable(requestClose, { label: "Close" })}>
                                     <svg width="20" height="20" viewBox="0 0 12 12">
-                                        <polygon className="fill-[#FFFFFF]" fillRule="evenodd"
-                                            points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
+                                        <polygon
+                                            className="fill-[#FFFFFF]"
+                                            fillRule="evenodd"
+                                            points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1"
+                                        />
                                     </svg>
                                 </div>
                             )}
@@ -156,7 +161,9 @@ export function PopupPanel({
                         <div className="popup-divider" />
                     </>
                 )}
-                <div className={bodyClassName} style={bodyStyle}>{children}</div>
+                <div className={bodyClassName} style={bodyStyle}>
+                    {children}
+                </div>
                 {footer !== undefined && (
                     <>
                         <div className="popup-divider" />

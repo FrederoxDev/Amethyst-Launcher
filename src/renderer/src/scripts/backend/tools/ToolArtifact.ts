@@ -128,7 +128,10 @@ export abstract class ToolArtifact implements IToolArtifact {
      * downloading / updating it as needed. Calls are serialised per tool.
      */
     check(options?: Partial<DefaultCheckOptions>): Promise<ToolCheckResult> {
-        const run = this.queue.then(() => this.runCheck(options), () => this.runCheck(options));
+        const run = this.queue.then(
+            () => this.runCheck(options),
+            () => this.runCheck(options)
+        );
         this.queue = run.catch(() => {});
         return run;
     }
@@ -148,9 +151,9 @@ export abstract class ToolArtifact implements IToolArtifact {
 
         log(
             this.name,
-            `check() for ${this.repository}: checkForUpdates=${options.checkForUpdates}, `
-            + `promptForUpdate=${options.promptForUpdate}, allowOutdated=${options.allowOutdated}, `
-            + `releaseFetchTimeout=${options.releaseFetchTimeout}ms`
+            `check() for ${this.repository}: checkForUpdates=${options.checkForUpdates}, ` +
+                `promptForUpdate=${options.promptForUpdate}, allowOutdated=${options.allowOutdated}, ` +
+                `releaseFetchTimeout=${options.releaseFetchTimeout}ms`
         );
 
         // Reject unsupported platforms before doing any disk/network I/O.
@@ -174,7 +177,10 @@ export abstract class ToolArtifact implements IToolArtifact {
 
         // If already installed and the caller does not need an update check, return immediately.
         if (isInstalled && !options.checkForUpdates) {
-            log(this.name, `Already installed at '${currentVersion}' and no update check was asked for, skipping GitHub`);
+            log(
+                this.name,
+                `Already installed at '${currentVersion}' and no update check was asked for, skipping GitHub`
+            );
             return this.buildResult(currentVersion, toolPath, executable, "up_to_date");
         }
 
@@ -194,9 +200,9 @@ export abstract class ToolArtifact implements IToolArtifact {
             }
             log(
                 this.name,
-                `GitHub could not be read and there is no usable installation to fall back on `
-                + `(installed ${currentVersion ?? "none"}, allowOutdated ${options.allowOutdated}): `
-                + `${describeError(error)}`
+                `GitHub could not be read and there is no usable installation to fall back on ` +
+                    `(installed ${currentVersion ?? "none"}, allowOutdated ${options.allowOutdated}): ` +
+                    `${describeError(error)}`
             );
             throw error;
         }
@@ -207,9 +213,9 @@ export abstract class ToolArtifact implements IToolArtifact {
             const msg = `No suitable asset found for the latest release of ${this.name}.`;
             log(
                 this.name,
-                `${msg} Release ${latestRelease.tagName} offers: `
-                + `${latestRelease.assets.map(a => a.name).join(", ") || "no assets"} `
-                + `(looking for platform ${window.process.platform}, arch ${window.process.arch})`
+                `${msg} Release ${latestRelease.tagName} offers: ` +
+                    `${latestRelease.assets.map(a => a.name).join(", ") || "no assets"} ` +
+                    `(looking for platform ${window.process.platform}, arch ${window.process.arch})`
             );
             throw new Error(msg);
         }
@@ -218,8 +224,8 @@ export abstract class ToolArtifact implements IToolArtifact {
         const compareResult = this.compareTags(currentVersion, latestTag);
         log(
             this.name,
-            `Latest is '${latestTag}' with asset '${asset.name}'; installed '${currentVersion ?? "none"}' `
-            + `compares ${compareResult}`
+            `Latest is '${latestTag}' with asset '${asset.name}'; installed '${currentVersion ?? "none"}' ` +
+                `compares ${compareResult}`
         );
 
         // Already on the latest (or newer) version, nothing to do.
@@ -230,9 +236,7 @@ export abstract class ToolArtifact implements IToolArtifact {
 
         // An update is available. Ask the user if required.
         if (isInstalled) {
-            const shouldUpdate = options.promptForUpdate
-                ? await this.promptUpdate(currentVersion, latestTag)
-                : true;
+            const shouldUpdate = options.promptForUpdate ? await this.promptUpdate(currentVersion, latestTag) : true;
 
             if (!shouldUpdate) {
                 if (options.allowOutdated) {
@@ -317,7 +321,10 @@ export abstract class ToolArtifact implements IToolArtifact {
         } catch (error) {
             if (hadInstall) {
                 await fs.promises.rename(backupPath, toolPath).catch(restoreError => {
-                    log(this.name, `Could not put '${backupPath}' back as '${toolPath}': ${describeError(restoreError)}`);
+                    log(
+                        this.name,
+                        `Could not put '${backupPath}' back as '${toolPath}': ${describeError(restoreError)}`
+                    );
                 });
             }
             throw error;
@@ -325,7 +332,10 @@ export abstract class ToolArtifact implements IToolArtifact {
 
         if (!hadInstall) return;
         await fs.promises.rm(backupPath, { recursive: true, force: true }).catch(error => {
-            log(this.name, `'${latestTag}' is in place but '${backupPath}' could not be deleted: ${describeError(error)}`);
+            log(
+                this.name,
+                `'${latestTag}' is in place but '${backupPath}' could not be deleted: ${describeError(error)}`
+            );
         });
     }
 
@@ -356,7 +366,7 @@ export abstract class ToolArtifact implements IToolArtifact {
             promptForUpdate: false,
             allowOutdated: true,
             releaseFetchTimeout: 5000,
-            checkForUpdates: false
+            checkForUpdates: false,
         };
     }
 
@@ -407,7 +417,10 @@ export abstract class ToolArtifact implements IToolArtifact {
         try {
             version = await this.readVersionFile();
         } catch (error) {
-            log(this.name, `'${this.getVersionFile()}' could not be read, treating the tool as not installed: ${describeError(error)}`);
+            log(
+                this.name,
+                `'${this.getVersionFile()}' could not be read, treating the tool as not installed: ${describeError(error)}`
+            );
             return null;
         }
 
@@ -417,8 +430,8 @@ export abstract class ToolArtifact implements IToolArtifact {
         if (!fs.existsSync(executable)) {
             log(
                 this.name,
-                `version.txt claims '${version}' but '${executable}' is missing, so the tool will be reinstalled. `
-                + `Folder holds: ${this.listFolder(this.getFolder()).join(", ") || "nothing"}`
+                `version.txt claims '${version}' but '${executable}' is missing, so the tool will be reinstalled. ` +
+                    `Folder holds: ${this.listFolder(this.getFolder()).join(", ") || "nothing"}`
             );
             return null;
         }
@@ -520,12 +533,12 @@ export abstract class ToolArtifact implements IToolArtifact {
 
         log(
             this.name,
-            `Extraction of '${version}' left no executable in '${folder}'. `
-            + `It holds: ${this.listFolder(folder).join(", ") || "nothing"}`
+            `Extraction of '${version}' left no executable in '${folder}'. ` +
+                `It holds: ${this.listFolder(folder).join(", ") || "nothing"}`
         );
         throw new Error(
             `${this.name} ${version} did not install correctly - "${this.getExecutableName()}" is missing. ` +
-            `The download may be incomplete. Try again.`
+                `The download may be incomplete. Try again.`
         );
     }
 
@@ -582,8 +595,8 @@ export class ArchiveToolArtifact extends ToolArtifact {
         if (!supported) {
             log(
                 this.name,
-                `Not supported on platform '${window.process.platform}', `
-                + `${this.options.platforms.join(" and ")} only`
+                `Not supported on platform '${window.process.platform}', ` +
+                    `${this.options.platforms.join(" and ")} only`
             );
         }
         return supported;
@@ -613,8 +626,8 @@ export class ArchiveToolArtifact extends ToolArtifact {
         if (archives.length === 0) {
             log(
                 this.name,
-                `Release ${release.tagName} ships no archive this tool can use; it offers `
-                + `${release.assets.map(a => a.name).join(", ") || "no assets"}`
+                `Release ${release.tagName} ships no archive this tool can use; it offers ` +
+                    `${release.assets.map(a => a.name).join(", ") || "no assets"}`
             );
             return null;
         }

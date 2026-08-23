@@ -19,7 +19,7 @@ export const GREEN_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
     baseHoverBgColor: "var(--color-confirm-dark)",
     textColor: "var(--color-text)",
     cursor: "pointer",
-    pointerEvents: "auto"
+    pointerEvents: "auto",
 };
 
 export const RED_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
@@ -31,7 +31,7 @@ export const RED_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
     baseHoverBgColor: "var(--color-danger-dark)",
     textColor: "var(--color-text)",
     cursor: "pointer",
-    pointerEvents: "auto"
+    pointerEvents: "auto",
 };
 
 export const GRAY_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
@@ -43,7 +43,7 @@ export const GRAY_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
     baseHoverBgColor: "#3a3b3c",
     textColor: "var(--color-text)",
     cursor: "pointer",
-    pointerEvents: "auto"
+    pointerEvents: "auto",
 };
 
 export const DISABLED_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
@@ -55,5 +55,5 @@ export const DISABLED_MINECRAFT_BUTTON: MinecraftButtonColorPallete = {
     baseHoverBgColor: "#b1b2b5",
     textColor: "var(--color-border)",
     cursor: "not-allowed",
-    pointerEvents: "none"
+    pointerEvents: "none",
 };

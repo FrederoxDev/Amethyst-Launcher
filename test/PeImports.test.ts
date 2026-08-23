@@ -14,7 +14,7 @@ const MODULE_URL = new URL("../src/renderer/src/scripts/platform/windows/PeImpor
 let Pe: PeImportsModule = undefined as unknown as PeImportsModule;
 let blocked = "";
 try {
-    Pe = await import(MODULE_URL) as PeImportsModule;
+    Pe = (await import(MODULE_URL)) as PeImportsModule;
 } catch (e) {
     blocked = `PeImports.ts cannot be loaded by node --test: ${(e as Error).message}`;
 }
@@ -118,7 +118,13 @@ function buildImage(options: FixtureOptions = {}): Buffer {
     return image;
 }
 
-function writeDescriptor(image: Buffer, at: number, originalFirstThunk: number, nameRva: number, firstThunk: number): void {
+function writeDescriptor(
+    image: Buffer,
+    at: number,
+    originalFirstThunk: number,
+    nameRva: number,
+    firstThunk: number
+): void {
     image.writeUInt32LE(originalFirstThunk, at);
     image.writeUInt32LE(nameRva, at + 12);
     image.writeUInt32LE(firstThunk, at + 16);
@@ -272,10 +278,7 @@ describe("adding an import to a PE image", gate, () => {
 
         const layout = readLayout(fs.readFileSync(exe));
         assert.equal(layout.numberOfSections, FIXTURE_SECTIONS.length + 1);
-        assert.deepEqual(
-            layout.sections.slice(0, FIXTURE_SECTIONS.length),
-            FIXTURE_SECTIONS
-        );
+        assert.deepEqual(layout.sections.slice(0, FIXTURE_SECTIONS.length), FIXTURE_SECTIONS);
     });
 
     it("places the new section past the last one in both address spaces", () => {
@@ -421,11 +424,14 @@ describe("adding an import to a PE image", gate, () => {
         const exe = fixture();
         Pe.addImport(exe, DLL, FUNCTION);
 
-        assert.throws(() => Pe.addImport(exe, DLL, FUNCTION), (e: unknown) => {
-            assert.ok(e instanceof Pe.AlreadyImportedError);
-            assert.equal(e.dllName, DLL);
-            return true;
-        });
+        assert.throws(
+            () => Pe.addImport(exe, DLL, FUNCTION),
+            (e: unknown) => {
+                assert.ok(e instanceof Pe.AlreadyImportedError);
+                assert.equal(e.dllName, DLL);
+                return true;
+            }
+        );
     });
 
     it("refuses a section name longer than the eight bytes the header holds", () => {

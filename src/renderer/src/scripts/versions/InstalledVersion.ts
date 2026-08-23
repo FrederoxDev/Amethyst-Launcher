@@ -23,7 +23,9 @@ const SAFE_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9 ._-]*[A-Za-z0-9_-]$/;
 export function artifactSlug(version: string, channel: Channel, uuid: string): string {
     const slug = `Minecraft-${version}-${channel}-${uuid}`;
     if (!SAFE_SEGMENT.test(slug)) {
-        throw new Error(`"${slug}" cannot be used as a folder name: only letters, digits, spaces, ".", "_" and "-" are allowed.`);
+        throw new Error(
+            `"${slug}" cannot be used as a folder name: only letters, digits, spaces, ".", "_" and "-" are allowed.`
+        );
     }
     return slug;
 }

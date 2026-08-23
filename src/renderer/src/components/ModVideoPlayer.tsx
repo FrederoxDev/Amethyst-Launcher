@@ -31,7 +31,9 @@ export function ModVideoPlayer(rawProps: React.VideoHTMLAttributes<HTMLVideoElem
 
     const formatTime = (s: number): string => {
         const m = Math.floor(s / 60);
-        return `${m}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
+        return `${m}:${Math.floor(s % 60)
+            .toString()
+            .padStart(2, "0")}`;
     };
 
     const progress = duration ? (currentTime / duration) * 100 : 0;
