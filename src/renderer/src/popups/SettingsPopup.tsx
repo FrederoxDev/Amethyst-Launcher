@@ -48,13 +48,7 @@ export function SettingsPopup({ submit: rawSubmit }: PopupUseArguments<void>) {
                     </div>
                     <div
                         className="minecraft-seven settings-footer-link"
-                        onClick={() => {
-                            // Queued before closing rather than opened on top: only one popup is
-                            // shown at a time, so asking first puts Debug Info next in line and it
-                            // takes over as Settings finishes closing.
-                            void Popup.ask<void>(props => <DebugInfoPopup {...props} />);
-                            submit();
-                        }}
+                        onClick={() => void Popup.ask<void>(props => <DebugInfoPopup {...props} />)}
                     >
                         <LinkIcon />
                         <span>Debug Info</span>
